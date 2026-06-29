@@ -6,7 +6,8 @@ import {
   FileArchive, 
   Image as ImageIcon, 
   Link as LinkIcon,
-  UserSquare
+  UserSquare,
+  SplitSquareHorizontal
 } from 'lucide-react';
 import './Home.css';
 
@@ -22,6 +23,12 @@ const tools = [
     icon: <FileStack size={24} />,
     title: 'Công Cụ Nối Tách File PDF',
     desc: 'Gộp nhiều file PDF lại với nhau hoặc trích xuất các trang cụ thể thành file PDF mới.'
+  },
+  {
+    path: '/pdf-compare',
+    icon: <SplitSquareHorizontal size={24} />,
+    title: 'So Sánh PDF',
+    desc: 'Phát hiện mọi sự khác biệt về văn bản và bố cục giữa hai tài liệu một cách trực quan.'
   },
   {
     path: '/image-compressor',
