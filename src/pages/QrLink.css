@@ -198,11 +198,11 @@
 }
 
 .qr-image-container {
-  padding: 1rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .qr-image-container img {

@@ -116,7 +116,7 @@ export default function QrLink() {
     setIsDownloading(true);
     try {
       // Sử dụng QuickChart API để lấy ảnh QR kèm theo màu và khoảng trắng tùy chỉnh
-      const qrImageUrl = `https://quickchart.io/qr?text=${encodeURIComponent(shortenedUrl)}&size=500&margin=${qrMargin}&dark=${qrColor.replace('#', '')}`;
+      const qrImageUrl = `https://quickchart.io/qr?text=${encodeURIComponent(shortenedUrl)}&size=500&margin=${qrMargin}&dark=${qrColor.replace('#', '')}&light=ffffff`;
       const response = await fetch(qrImageUrl);
       const blob = await response.blob();
       
@@ -227,7 +227,7 @@ export default function QrLink() {
                 
                 <div className="qr-image-container">
                   <img 
-                    src={`https://quickchart.io/qr?text=${encodeURIComponent(shortenedUrl)}&size=200&margin=${qrMargin}&dark=${qrColor.replace('#', '')}`} 
+                    src={`https://quickchart.io/qr?text=${encodeURIComponent(shortenedUrl)}&size=200&margin=${qrMargin}&dark=${qrColor.replace('#', '')}&light=ffffff`} 
                     alt="QR Code" 
                   />
                 </div>
