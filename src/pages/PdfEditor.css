@@ -236,9 +236,10 @@
   border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 800px;
-  max-height: 90vh;
+  width: fit-content;
+  min-width: 320px;
+  max-width: 95vw;
+  max-height: 95vh;
   box-shadow: var(--shadow-xl);
   overflow: hidden;
 }
@@ -253,7 +254,7 @@
 }
 
 .preview-modal-body {
-  padding: 2rem;
+  padding: 0;
   background: var(--bg-tertiary);
   display: flex;
   align-items: center;
@@ -272,9 +273,8 @@
 
 .preview-modal-img-wrapper img {
   max-width: 100%;
-  max-height: 60vh;
+  max-height: calc(95vh - 65px); /* subtract header height roughly */
   object-fit: contain;
-  box-shadow: var(--shadow-md);
-  border-radius: var(--radius-sm);
   background: white;
+  display: block;
 }
