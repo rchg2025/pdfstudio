@@ -64,43 +64,26 @@ export default function QrLink() {
     setIsLoading(true);
 
     try {
-      // Xây dựng URL gọi API is.gd
-      let apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(urlToProcess)}`;
+      const response = await fetch('/api/shorten', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          originalUrl: urlToProcess,
+          customAlias: customAlias.trim()
+        })
+      });
       
-      // Thêm custom alias nếu người dùng có nhập
-      if (customAlias.trim()) {
-        apiUrl += `&shorturl=${encodeURIComponent(customAlias.trim())}`;
-      }
-
-      // Sử dụng CORS Proxy để tránh lỗi trình duyệt chặn Cross-Origin
-      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
-
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) {
-        throw new Error('Lỗi kết nối đến máy chủ rút gọn.');
-      }
-
       const data = await response.json();
 
-      if (data.shorturl) {
-        setShortenedUrl(data.shorturl);
+      if (response.ok && data.success) {
+        setShortenedUrl(`${window.location.origin}/${data.alias}`);
       } else {
-        // Dịch một số lỗi phổ biến từ API sang tiếng Việt
-        let errorMsg = data.errormessage || 'Không thể rút gọn link này. Vui lòng thử link khác.';
-        if (errorMsg.toLowerCase().includes('already taken') || errorMsg.toLowerCase().includes('already used')) {
-          errorMsg = 'Đuôi link tùy chỉnh này đã có người sử dụng. Vui lòng chọn đuôi khác.';
-        } else if (errorMsg.toLowerCase().includes('must be between')) {
-          errorMsg = 'Đuôi link tùy chỉnh phải từ 5 đến 30 ký tự (chỉ gồm chữ, số, dấu gạch dưới).';
-        } else if (errorMsg.toLowerCase().includes('invalid')) {
-          errorMsg = 'Đuôi link có chứa ký tự không hợp lệ.';
-        } else if (errorMsg.toLowerCase().includes('problem with the url')) {
-          errorMsg = 'Đường liên kết không hợp lệ hoặc không tồn tại.';
-        }
-        setError(errorMsg);
+        setError(data.error || 'Lỗi khi tạo link rút gọn. Vui lòng thử lại.');
       }
     } catch (err) {
-      setError('Đã xảy ra lỗi mạng. Vui lòng thử lại sau.');
+      setError('Đã xảy ra lỗi kết nối. Vui lòng thử lại sau.');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -180,7 +163,7 @@ export default function QrLink() {
 
             <div className="input-group">
               <div className="input-prefix">
-                is.gd/
+                {typeof window !== 'undefined' ? window.location.hostname + '/' : 'pdfstudio.com/'}
               </div>
               <input
                 type="text"

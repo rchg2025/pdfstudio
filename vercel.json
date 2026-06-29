@@ -1,8 +1,14 @@
 {
   "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/pdf-editor", "destination": "/index.html" },
+    { "source": "/pdf-merge", "destination": "/index.html" },
+    { "source": "/pdf-compress", "destination": "/index.html" },
+    { "source": "/pdf-to-image", "destination": "/index.html" },
+    { "source": "/image-compress", "destination": "/index.html" },
+    { "source": "/qr-link", "destination": "/index.html" },
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/:alias", "destination": "/api/redirect?alias=$alias" }
   ]
 }
