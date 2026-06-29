@@ -1,0 +1,15 @@
+.image-converter-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.image-converter-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary), #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

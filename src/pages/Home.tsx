@@ -7,7 +7,9 @@ import {
   Image as ImageIcon, 
   Link as LinkIcon,
   SplitSquareHorizontal,
-  ShieldCheck
+  ShieldCheck,
+  RefreshCw,
+  FileText
 } from 'lucide-react';
 import './Home.css';
 
@@ -53,6 +55,18 @@ const tools = [
     icon: <LinkIcon size={24} />,
     title: 'Công cụ rút gọn link và tạo QR',
     desc: 'Rút gọn các đường dẫn URL dài và tự động tạo mã QR để dễ dàng quét bằng điện thoại.'
+  },
+  {
+    path: '/image-converter',
+    icon: <RefreshCw size={24} />,
+    title: 'Chuyển Đổi Định Dạng Ảnh',
+    desc: 'Chuyển đổi ảnh giữa các định dạng HEIC, JPG, PNG, WEBP một cách nhanh chóng.'
+  },
+  {
+    path: '/pdf-to-word',
+    icon: <FileText size={24} />,
+    title: 'PDF sang Word',
+    desc: 'Chuyển đổi PDF sang file Word (.docx) giữ nguyên cấu trúc và định dạng.'
   },
   {
     path: '/bao-mat-pdf',
