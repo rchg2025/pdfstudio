@@ -10,7 +10,6 @@ const PdfToImage = React.lazy(() => import('./pages/PdfToImage'));
 const PdfCompressor = React.lazy(() => import('./pages/PdfCompressor'));
 const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
-const IdPhotoMaker = React.lazy(() => import('./pages/IdPhotoMaker'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
 
@@ -46,9 +45,6 @@ function App() {
           } />
           <Route path="image-compressor" element={
             <Suspense fallback={<FallbackLoader />}><ImageCompressor /></Suspense>
-          } />
-          <Route path="id-photo-maker" element={
-            <Suspense fallback={<FallbackLoader />}><IdPhotoMaker /></Suspense>
           } />
           <Route path="qr-link" element={
             <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
