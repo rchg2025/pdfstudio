@@ -7,7 +7,8 @@ import {
   Image as ImageIcon, 
   Link as LinkIcon,
   UserSquare,
-  SplitSquareHorizontal
+  SplitSquareHorizontal,
+  ShieldCheck
 } from 'lucide-react';
 import './Home.css';
 
@@ -59,6 +60,12 @@ const tools = [
     icon: <UserSquare size={24} />,
     title: 'Công cụ Tạo Ảnh Thẻ AI',
     desc: 'Tự động tách nền bằng trí tuệ nhân tạo và tạo ảnh thẻ với phông xanh/trắng chuẩn.'
+  },
+  {
+    path: '/bao-mat-pdf',
+    icon: <ShieldCheck size={24} />,
+    title: 'Công Cụ Bảo Mật PDF',
+    desc: 'Đặt mật khẩu bảo vệ hoặc gỡ bỏ lớp bảo mật cho file PDF một cách dễ dàng và an toàn.'
   }
 ];
 

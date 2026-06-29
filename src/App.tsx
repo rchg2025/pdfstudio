@@ -12,6 +12,7 @@ const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
 const IdPhotoMaker = React.lazy(() => import('./pages/IdPhotoMaker'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
+const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -51,6 +52,9 @@ function App() {
           } />
           <Route path="qr-link" element={
             <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
+          } />
+          <Route path="bao-mat-pdf" element={
+            <Suspense fallback={<FallbackLoader />}><PdfSecurity /></Suspense>
           } />
         </Route>
       </Routes>

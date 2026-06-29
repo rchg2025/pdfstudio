@@ -40,6 +40,7 @@ const Navbar = () => {
           <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>
           <NavLink to="/id-photo-maker" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Tạo Ảnh Thẻ</NavLink>
           <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>
+          <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
         </nav>
       </div>
     </header>

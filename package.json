@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",
+    "@pdfsmaller/pdf-decrypt": "^1.0.1",
+    "@pdfsmaller/pdf-encrypt": "^1.0.2",
     "@types/jszip": "^3.4.0",
     "@types/pg": "^8.20.0",
     "@vercel/postgres": "^0.10.0",
