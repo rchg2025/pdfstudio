@@ -31,16 +31,19 @@
   color: inherit;
   padding: 1.5rem;
   border-radius: var(--radius-xl);
-  background: rgba(24, 24, 27, 0.4);
-  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-sm);
 }
 
 .tool-card:hover {
-  background: rgba(24, 24, 27, 0.8);
-  border-color: var(--border-focus);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(37, 99, 235, 0.3);
   transform: translateY(-4px);
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px var(--primary-glow);
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(37, 99, 235, 0.1);
 }
 
 .tool-icon {
