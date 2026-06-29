@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Download, RefreshCw, Loader2, UserSquare, Palette } from 'lucide-react';
+import { Download, RefreshCw, Loader2, UserSquare, Palette, Maximize, SlidersHorizontal } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import './IdPhotoMaker.css';
 
@@ -9,11 +9,23 @@ const BG_COLORS = [
   { id: 'transparent', value: 'transparent', label: 'Trong suốt' }
 ];
 
+const SIZES = [
+  { id: '3x4', label: '3x4 cm' },
+  { id: '4x6', label: '4x6 cm' },
+  { id: 'original', label: 'Bản gốc' }
+];
+
 export default function IdPhotoMaker() {
   const [originalFile, setOriginalFile] = useState<File | null>(null);
   const [originalUrl, setOriginalUrl] = useState<string>('');
   const [processedBlob, setProcessedBlob] = useState<Blob | null>(null);
   const [bgColor, setBgColor] = useState<string>('#0b5ab0');
+  const [photoSize, setPhotoSize] = useState<string>('3x4');
+  
+  // Customization controls
+  const [zoom, setZoom] = useState<number>(1);
+  const [panX, setPanX] = useState<number>(0);
+  const [panY, setPanY] = useState<number>(0);
   
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -30,14 +42,28 @@ export default function IdPhotoMaker() {
     };
   }, [originalUrl]);
 
-  // Redraw canvas whenever processed blob or background color changes
+  // Reset controls when size or image changes
+  useEffect(() => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  }, [photoSize, processedBlob]);
+
+  // Redraw canvas whenever parameters change
   useEffect(() => {
     if (processedBlob && canvasRef.current) {
-      drawToCanvas(processedBlob, bgColor);
+      drawToCanvas(processedBlob, bgColor, photoSize, zoom, panX, panY);
     }
-  }, [processedBlob, bgColor]);
+  }, [processedBlob, bgColor, photoSize, zoom, panX, panY]);
 
-  const drawToCanvas = async (imageBlob: Blob, backgroundColor: string) => {
+  const drawToCanvas = async (
+    imageBlob: Blob, 
+    backgroundColor: string, 
+    ratio: string,
+    currentZoom: number,
+    currentPanX: number,
+    currentPanY: number
+  ) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -52,8 +78,83 @@ export default function IdPhotoMaker() {
       img.src = blobUrl;
     });
 
-    canvas.width = img.width;
-    canvas.height = img.height;
+    let targetWidth = img.width;
+    let targetHeight = img.height;
+    let destX = 0;
+    let destY = 0;
+    let destWidth = img.width;
+    let destHeight = img.height;
+
+    if (ratio !== 'original') {
+      // Create an offscreen canvas to analyze pixels
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = img.width;
+      offCanvas.height = img.height;
+      const offCtx = offCanvas.getContext('2d');
+      
+      if (offCtx) {
+        offCtx.drawImage(img, 0, 0);
+        const imageData = offCtx.getImageData(0, 0, img.width, img.height);
+        const data = imageData.data;
+        
+        let minX = img.width, minY = img.height, maxX = 0, maxY = 0;
+        
+        // Scan pixels to find bounding box of the person (non-transparent pixels)
+        for (let y = 0; y < img.height; y++) {
+          for (let x = 0; x < img.width; x++) {
+            const alpha = data[(y * img.width + x) * 4 + 3];
+            if (alpha > 10) { 
+              if (x < minX) minX = x;
+              if (x > maxX) maxX = x;
+              if (y < minY) minY = y;
+              if (y > maxY) maxY = y;
+            }
+          }
+        }
+        
+        if (minX <= maxX && minY <= maxY) {
+          const bboxWidth = maxX - minX + 1;
+          const bboxHeight = maxY - minY + 1;
+          
+          const targetRatio = ratio === '3x4' ? 3 / 4 : 4 / 6;
+          
+          // Add 30% padding to width for shoulders
+          let calcWidth = bboxWidth * 1.3;
+          let calcHeight = calcWidth / targetRatio;
+          
+          // Ensure height has at least 15% padding
+          if (calcHeight < bboxHeight * 1.15) {
+            calcHeight = bboxHeight * 1.15;
+            calcWidth = calcHeight * targetRatio;
+          }
+          
+          targetWidth = calcWidth;
+          targetHeight = calcHeight;
+          
+          // Top padding for the head is roughly 10% of total height
+          const topPadding = targetHeight * 0.1;
+          destY = topPadding - minY;
+          
+          // Horizontally center the bounding box
+          const horizontalPadding = (targetWidth - bboxWidth) / 2;
+          destX = horizontalPadding - minX;
+        }
+      }
+    }
+
+    canvas.width = targetWidth;
+    canvas.height = targetHeight;
+
+    // Apply custom zoom and pan
+    const finalDestWidth = destWidth * currentZoom;
+    const finalDestHeight = destHeight * currentZoom;
+    
+    // Zoom from center of the image bounding box
+    const centerX = destX + destWidth / 2;
+    const centerY = destY + destHeight / 2;
+    
+    const finalDestX = centerX - finalDestWidth / 2 + currentPanX;
+    const finalDestY = centerY - finalDestHeight / 2 + currentPanY;
 
     // Draw background
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -63,7 +164,7 @@ export default function IdPhotoMaker() {
     }
 
     // Draw foreground (person)
-    ctx.drawImage(img, 0, 0);
+    ctx.drawImage(img, finalDestX, finalDestY, finalDestWidth, finalDestHeight);
     URL.revokeObjectURL(blobUrl);
   };
 
@@ -150,12 +251,12 @@ export default function IdPhotoMaker() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Anh_The_${Date.now()}.${extension}`;
+      a.download = `Anh_The_${photoSize}_${Date.now()}.${extension}`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    }, format, 0.95);
+    }, format, 1.0);
   };
 
   return (
@@ -217,7 +318,7 @@ export default function IdPhotoMaker() {
               Tuỳ chỉnh Phông Nền
             </h3>
             
-            <div className="color-options">
+            <div className="color-options" style={{ marginBottom: '1rem' }}>
               {BG_COLORS.map(color => (
                 <div 
                   key={color.id}
@@ -226,6 +327,77 @@ export default function IdPhotoMaker() {
                   title={color.label}
                 />
               ))}
+            </div>
+
+            <h3 style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+              <Maximize size={20} className="text-primary" />
+              Kích thước ảnh
+            </h3>
+            
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '1rem' }}>
+              {SIZES.map(size => (
+                <button
+                  key={size.id}
+                  className={`btn ${photoSize === size.id ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setPhotoSize(size.id)}
+                  style={{ flex: 1, padding: '0.5rem' }}
+                >
+                  {size.label}
+                </button>
+              ))}
+            </div>
+
+            <h3 style={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem' }}>
+              <SlidersHorizontal size={20} className="text-primary" />
+              Căn chỉnh thủ công
+            </h3>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <label>Phóng to / Thu nhỏ</label>
+                  <span>{Math.round(zoom * 100)}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0.5" 
+                  max="2.5" 
+                  step="0.05" 
+                  value={zoom} 
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <label>Di chuyển Lên / Xuống</label>
+                </div>
+                <input 
+                  type="range" 
+                  min="-500" 
+                  max="500" 
+                  step="10" 
+                  value={panY} 
+                  onChange={(e) => setPanY(parseInt(e.target.value))}
+                  style={{ width: '100%' }}
+                />
+              </div>
+
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', marginBottom: '0.25rem' }}>
+                  <label>Di chuyển Trái / Phải</label>
+                </div>
+                <input 
+                  type="range" 
+                  min="-500" 
+                  max="500" 
+                  step="10" 
+                  value={panX} 
+                  onChange={(e) => setPanX(parseInt(e.target.value))}
+                  style={{ width: '100%' }}
+                />
+              </div>
             </div>
 
             <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '1rem 0' }} />
