@@ -4,13 +4,11 @@ import {
   FileBox, Eye, Sparkles, BookOpen, MessageSquare, Volume2, VolumeX, Send, X, Undo
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { PDFDocument, degrees } from 'pdf-lib';
 import './PdfEditor.css';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
 

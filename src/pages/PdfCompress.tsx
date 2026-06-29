@@ -1,14 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { Upload, Download, Settings, RefreshCw, CheckCircle2, Info, FileBox } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { jsPDF } from "jspdf";
 import './PdfCompress.css';
 
 // Set worker path for pdfjs-dist
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.mjs',
-  import.meta.url
-).toString();
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
