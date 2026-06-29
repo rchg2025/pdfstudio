@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Download, RefreshCw, Loader2, UserSquare, Palette, Maximize, SlidersHorizontal } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Download, RefreshCw, Loader2, Palette, Maximize, SlidersHorizontal } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
 import FileUploadZone from '../components/FileUploadZone';
 import './IdPhotoMaker.css';
@@ -28,12 +28,11 @@ export default function IdPhotoMaker() {
   const [panX, setPanX] = useState<number>(0);
   const [panY, setPanY] = useState<number>(0);
   
-  const [isDragging, setIsDragging] = useState(false);
+  
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressText, setProgressText] = useState('');
   const [progress, setProgress] = useState(0);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // Cleanup object URLs to prevent memory leaks

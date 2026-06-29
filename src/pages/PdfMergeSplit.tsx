@@ -1,6 +1,6 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { 
-  Link, Scissors, Upload, FileBox, Eye, ArrowUp, ArrowDown, Trash2, X, RefreshCw
+  Link, Scissors, FileBox, Eye, ArrowUp, ArrowDown, Trash2, X, RefreshCw
 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { useDialogs } from '../components/CustomDialogs';
@@ -58,13 +58,11 @@ const PdfMergeSplit = () => {
   
   // Merge State
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
-  const mergeInputRef = useRef<HTMLInputElement>(null);
   
   // Split State
   const [splitFile, setSplitFile] = useState<File | null>(null);
   const [splitTotalPages, setSplitTotalPages] = useState(0);
   const [splitRange, setSplitRange] = useState('');
-  const splitInputRef = useRef<HTMLInputElement>(null);
   
   // Shared State
   const [isProcessing, setIsProcessing] = useState(false);
@@ -228,11 +226,6 @@ const PdfMergeSplit = () => {
       URL.revokeObjectURL(previewUrl);
       setPreviewUrl('');
     }
-  };
-
-  const preventDefaults = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
   };
 
   return (

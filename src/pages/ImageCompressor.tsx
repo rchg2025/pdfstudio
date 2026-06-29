@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { UploadCloud, Image as ImageIcon, Download, Settings, RefreshCw, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import FileUploadZone from '../components/FileUploadZone';
 import './ImageCompressor.css';
@@ -17,9 +17,6 @@ export default function ImageCompressor() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [warning, setWarning] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Byte';

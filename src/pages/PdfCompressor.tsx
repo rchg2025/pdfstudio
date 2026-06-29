@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Download, Settings, RefreshCw, CheckCircle2, Info, FileBox } from 'lucide-react';
+import { useState } from 'react';
+import { Download, Settings, RefreshCw, CheckCircle2, Info, FileBox } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { jsPDF } from "jspdf";
@@ -20,7 +20,6 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 export default function PdfCompressor() {
   const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [compressionLevel, setCompressionLevel] = useState('medium');
   const [targetSizeMB, setTargetSizeMB] = useState(1);
   const [isGrayscale, setIsGrayscale] = useState(false);

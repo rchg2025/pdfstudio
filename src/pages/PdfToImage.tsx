@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Upload, FileBox, RefreshCw, Download, AlertCircle, Archive, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { FileBox, RefreshCw, Download, AlertCircle, Archive, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import JSZip from 'jszip';
@@ -18,7 +18,6 @@ const ITEMS_PER_PAGE = 12;
 
 export default function PdfToImage() {
   const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [format, setFormat] = useState('png');
   const [scale, setScale] = useState(2);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -29,8 +28,6 @@ export default function PdfToImage() {
   const [isZipping, setIsZipping] = useState(false);
   const [error, setError] = useState('');
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
   useEffect(() => {
     return () => {
       imageResults.forEach(img => URL.revokeObjectURL(img.url));

@@ -1,7 +1,7 @@
-import React, { useState, useRef } from 'react';
+import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { 
-  Upload, FileText, RotateCcw, RotateCw, Trash2, Download, RefreshCw, 
+  FileText, RotateCcw, RotateCw, Trash2, Download, RefreshCw, 
   FileBox, Eye, X, Undo
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -32,7 +32,6 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 export default function PdfEditor() {
   const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [pages, setPages] = useState<PageData[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
