@@ -43,7 +43,7 @@
 
 .navbar-links {
   display: flex;
-  gap: 1.25rem;
+  gap: 0.5rem;
   align-items: center;
 }
 
@@ -52,8 +52,9 @@
   font-weight: 500;
   font-size: 0.875rem;
   transition: all 0.2s;
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem 0.5rem;
   border-radius: var(--radius-md);
+  white-space: nowrap;
 }
 
 .nav-link:hover {
@@ -73,7 +74,7 @@
   padding: 0.5rem;
 }
 
-@media (max-width: 860px) {
+@media (max-width: 992px) {
   .mobile-menu-btn {
     display: block;
   }
