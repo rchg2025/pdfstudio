@@ -303,7 +303,7 @@ export default function PdfToImage() {
       )}
 
       {imageResults.length > 0 && (
-        <div className="glass-card result-section">
+        <div className="glass-card pdf-result-section">
           <div className="result-header">
             <h2 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Kết quả chuyển đổi</h2>
             <div style={{ display: 'flex', gap: '1rem' }}>
