@@ -111,10 +111,13 @@ export default function PdfSecurity() {
       clearFile();
     } catch (error: any) {
       console.error(error);
-      if (error.message && error.message.includes('password')) {
+      const errMsg = error.message || '';
+      if (errMsg.toLowerCase().includes('password')) {
         showAlert('Mật khẩu không chính xác.');
+      } else if (errMsg.includes('not encrypted')) {
+        showAlert('File PDF này không có mật khẩu bảo vệ.');
       } else {
-        showAlert('Có lỗi xảy ra khi giải mã file. Có thể mật khẩu sai hoặc file bị hỏng.');
+        showAlert('Có lỗi xảy ra: ' + errMsg);
       }
     } finally {
       setIsProcessing(false);
