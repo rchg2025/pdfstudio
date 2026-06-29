@@ -42,19 +42,11 @@ const parseRange = (rangeStr: string, maxPages: number): number[] | null => {
 };
 
 const loadPdfDocument = async (arrayBuffer: ArrayBuffer, fileName: string): Promise<PDFDocument | null> => {
-  let currentPassword = undefined;
-  while (true) {
-    try {
-      return await PDFDocument.load(arrayBuffer, { ignoreEncryption: true, password: currentPassword });
-    } catch (e: any) {
-      if (e?.message?.toLowerCase().includes('password') || e?.message?.toLowerCase().includes('encrypt')) {
-         const pwd = prompt(currentPassword ? `Mật khẩu sai cho file "${fileName}". Vui lòng thử lại:` : `File "${fileName}" yêu cầu mật khẩu để xử lý. Vui lòng nhập:`);
-         if (pwd === null) return null;
-         currentPassword = pwd;
-      } else {
-         throw e;
-      }
-    }
+  try {
+    return await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+  } catch (e: any) {
+    alert(`Không thể xử lý file "${fileName}". File có thể bị hỏng hoặc đã được bảo vệ bằng mật khẩu cấp cao (User Password), điều này hiện chưa được hỗ trợ ở công cụ Nối/Tách.`);
+    return null;
   }
 };
 
