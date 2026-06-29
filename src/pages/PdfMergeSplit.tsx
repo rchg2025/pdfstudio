@@ -41,6 +41,23 @@ const parseRange = (rangeStr: string, maxPages: number): number[] | null => {
   return Array.from(pages).sort((a, b) => a - b);
 };
 
+const loadPdfDocument = async (arrayBuffer: ArrayBuffer, fileName: string): Promise<PDFDocument | null> => {
+  let currentPassword = undefined;
+  while (true) {
+    try {
+      return await PDFDocument.load(arrayBuffer, { ignoreEncryption: true, password: currentPassword });
+    } catch (e: any) {
+      if (e?.message?.toLowerCase().includes('password') || e?.message?.toLowerCase().includes('encrypt')) {
+         const pwd = prompt(currentPassword ? `Mật khẩu sai cho file "${fileName}". Vui lòng thử lại:` : `File "${fileName}" yêu cầu mật khẩu để xử lý. Vui lòng nhập:`);
+         if (pwd === null) return null;
+         currentPassword = pwd;
+      } else {
+         throw e;
+      }
+    }
+  }
+};
+
 const PdfMergeSplit = () => {
   const [activeTab, setActiveTab] = useState<'merge' | 'split'>('merge');
   
@@ -105,7 +122,12 @@ const PdfMergeSplit = () => {
 
       for (const file of mergeFiles) {
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+        const pdf = await loadPdfDocument(arrayBuffer, file.name);
+        if (!pdf) {
+          alert(`Đã hủy nối file do thiếu mật khẩu của "${file.name}".`);
+          setIsProcessing(false);
+          return;
+        }
         const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       }
@@ -143,7 +165,12 @@ const PdfMergeSplit = () => {
       
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+        const pdfDoc = await loadPdfDocument(arrayBuffer, file.name);
+        if (!pdfDoc) {
+          setSplitFile(null);
+          setIsProcessing(false);
+          return;
+        }
         setSplitTotalPages(pdfDoc.getPageCount());
       } catch (error) {
         console.error(error);
@@ -174,7 +201,11 @@ const PdfMergeSplit = () => {
     setIsProcessing(true);
     try {
       const arrayBuffer = await splitFile.arrayBuffer();
-      const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+      const srcDoc = await loadPdfDocument(arrayBuffer, splitFile.name);
+      if (!srcDoc) {
+        setIsProcessing(false);
+        return;
+      }
       const newDoc = await PDFDocument.create();
       
       // pdf-lib index is 0-based

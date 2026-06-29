@@ -67,18 +67,21 @@ export default function PdfEditor() {
     }
   };
 
-  const loadPdf = async (pdfFile: File) => {
+  const loadPdf = async (pdfFile: File, password?: string) => {
     setFile(pdfFile);
     setFileSize(pdfFile.size);
     setIsLoading(true);
-    setPages([]);
-    setCurrentPage(1);
+    if (!password) {
+      setPages([]);
+      setCurrentPage(1);
+    }
 
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const typedarray = new Uint8Array(arrayBuffer);
       const pdf = await pdfjsLib.getDocument({ 
         data: typedarray,
+        password: password,
         cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
         cMapPacked: true,
         standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/'
@@ -107,9 +110,22 @@ export default function PdfEditor() {
       }
       setPages(loadedPages);
       (pdf as any).destroy(); // Free memory
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert('Không thể đọc file PDF. File có thể bị hỏng hoặc đã được mã hóa mật khẩu.');
+      if (error?.name === 'PasswordException' || error?.message?.toLowerCase().includes('password')) {
+        const userPwd = prompt(password ? 'Mật khẩu sai! Vui lòng thử lại:' : 'File PDF này yêu cầu mật khẩu để mở:');
+        if (userPwd) {
+          loadPdf(pdfFile, userPwd);
+          return;
+        } else {
+          setFile(null);
+          setPages([]);
+        }
+      } else {
+        alert('Không thể đọc file PDF. File có thể bị hỏng (corrupted) hoặc cấu trúc không được hỗ trợ.');
+        setFile(null);
+        setPages([]);
+      }
     } finally {
       setIsLoading(false);
     }
