@@ -208,14 +208,14 @@ export default function PdfEditor() {
         </div>
 
         {file && !isLoading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap' }}>
             <button className="icon-btn" onClick={() => rotateAllPages('ccw')} title="Xoay trái tất cả">
               <RotateCcw size={18} />
             </button>
             <button className="icon-btn" onClick={() => rotateAllPages('cw')} title="Xoay phải tất cả">
               <RotateCw size={18} />
             </button>
-            <button onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', whiteSpace: 'nowrap', background: 'transparent', border: 'none', cursor: 'pointer', width: 'auto', height: 'auto' }}>
+            <button onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 0.5rem', whiteSpace: 'nowrap', background: 'transparent', border: 'none', cursor: 'pointer', width: 'auto', height: 'auto' }}>
               <Undo size={16} /> Khôi phục
             </button>
             
