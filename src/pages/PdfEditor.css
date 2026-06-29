@@ -114,7 +114,16 @@
 .page-header {
   padding: 0.5rem;
   display: flex;
-  justify-content: flex-start;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.page-number {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding-left: 0.5rem;
 }
 
 .page-badge {
@@ -126,21 +135,44 @@
   border-radius: 999px;
 }
 
-.page-preview {
+.page-preview-container {
+  position: relative;
   padding: 1rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #fff; /* White background for PDF preview to ensure readability */
+  background: #f8fafc;
   min-height: 250px;
   overflow: hidden;
 }
 
-.page-preview img {
-  max-width: 100%;
-  max-height: 250px;
-  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+.page-preview-wrapper {
   transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.page-preview-img {
+  max-width: 180px; 
+  max-height: 180px; 
+  object-fit: contain;
+  box-shadow: var(--shadow-sm);
+  background: white;
+}
+
+.deleted-overlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(255, 255, 255, 0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--danger);
+  z-index: 10;
 }
 
 .page-actions {
@@ -156,19 +188,95 @@
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   transition: all 0.2s;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.action-btn:hover {
+.action-btn:hover:not(:disabled) {
   background: var(--bg-tertiary);
   color: var(--text-primary);
 }
 
-.action-btn.delete:hover {
+.action-btn.delete:hover:not(:disabled) {
   background: rgba(239, 68, 68, 0.1);
   color: var(--danger);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* Modal styles for Preview */
+.preview-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+}
+
+.preview-modal-content {
+  background: white;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 800px;
+  max-height: 90vh;
+  box-shadow: var(--shadow-xl);
+  overflow: hidden;
+}
+
+.preview-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.preview-modal-body {
+  padding: 2rem;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  overflow: auto; 
+  position: relative;
+}
+
+.preview-modal-img-wrapper {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-modal-img-wrapper img {
+  max-width: 100%;
+  max-height: 60vh;
+  object-fit: contain;
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-sm);
+  background: white;
 }
