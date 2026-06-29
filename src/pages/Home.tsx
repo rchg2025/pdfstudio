@@ -52,7 +52,7 @@ const Home = () => {
   return (
     <div className="animate-fade-in">
       <section className="home-hero">
-        <h1 className="home-title text-gradient">Khám Phá Các Công Cụ PDF & Tiện Ích</h1>
+        <h1 className="home-title text-gradient">Công Cụ PDF & Tiện Ích</h1>
         <p className="home-subtitle">
           Một nền tảng duy nhất giúp bạn xử lý file PDF, tối ưu hóa hình ảnh và nhiều hơn thế nữa. 
           Tất cả đều được thực hiện ngay trên trình duyệt, đảm bảo an toàn tuyệt đối.
