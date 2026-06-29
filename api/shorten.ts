@@ -6,10 +6,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { originalUrl, customAlias } = req.body;
+  const { originalUrl } = req.body;
+  let { customAlias } = req.body;
 
-  if (!originalUrl || !customAlias) {
-    return res.status(400).json({ error: 'Thiếu tham số originalUrl hoặc customAlias' });
+  if (!originalUrl) {
+    return res.status(400).json({ error: 'Thiếu tham số originalUrl' });
+  }
+
+  if (!customAlias || customAlias.trim() === '') {
+    // Tự động tạo alias ngẫu nhiên 6 ký tự
+    customAlias = Math.random().toString(36).substring(2, 8);
+  } else {
+    customAlias = customAlias.trim();
   }
   
   // Basic URL validation
