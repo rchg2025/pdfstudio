@@ -77,7 +77,12 @@ export default function PdfEditor() {
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const typedarray = new Uint8Array(arrayBuffer);
-      const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
+      const pdf = await pdfjsLib.getDocument({ 
+        data: typedarray,
+        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+        cMapPacked: true,
+        standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/'
+      }).promise;
       
       const loadedPages: PageData[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -209,7 +214,7 @@ export default function PdfEditor() {
         </div>
 
         {file && !isLoading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button className="icon-btn" onClick={() => rotateAllPages('ccw')} title="Xoay trái tất cả">
               <RotateCcw size={18} />
             </button>

@@ -105,7 +105,7 @@ const PdfMergeSplit = () => {
 
       for (const file of mergeFiles) {
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await PDFDocument.load(arrayBuffer);
+        const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
         const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
         copiedPages.forEach((page) => mergedPdf.addPage(page));
       }
@@ -143,7 +143,7 @@ const PdfMergeSplit = () => {
       
       try {
         const arrayBuffer = await file.arrayBuffer();
-        const pdfDoc = await PDFDocument.load(arrayBuffer);
+        const pdfDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
         setSplitTotalPages(pdfDoc.getPageCount());
       } catch (error) {
         console.error(error);
@@ -174,7 +174,7 @@ const PdfMergeSplit = () => {
     setIsProcessing(true);
     try {
       const arrayBuffer = await splitFile.arrayBuffer();
-      const srcDoc = await PDFDocument.load(arrayBuffer);
+      const srcDoc = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
       const newDoc = await PDFDocument.create();
       
       // pdf-lib index is 0-based
