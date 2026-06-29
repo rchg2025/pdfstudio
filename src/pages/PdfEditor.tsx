@@ -208,7 +208,7 @@ export default function PdfEditor() {
         </div>
 
         {file && !isLoading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap' }}>
             <button className="icon-btn" onClick={() => rotateAllPages('ccw')} title="Xoay trái tất cả">
               <RotateCcw size={18} />
             </button>
@@ -216,7 +216,7 @@ export default function PdfEditor() {
               <RotateCw size={18} />
             </button>
             <button className="icon-btn" onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
-              <Undo size={16} /> Reset
+              <Undo size={16} /> Khôi phục
             </button>
             
             <div style={{ width: '1px', height: '1.5rem', background: 'var(--border)', margin: '0 0.5rem' }}></div>
