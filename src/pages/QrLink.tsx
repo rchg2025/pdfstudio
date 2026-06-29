@@ -161,8 +161,8 @@ export default function QrLink() {
               />
             </div>
 
-            <div className="input-group">
-              <div className="input-prefix">
+            <div className="input-group-flex">
+              <div className="input-prefix-flex">
                 {typeof window !== 'undefined' ? window.location.hostname + '/' : 'pdfstudio.com/'}
               </div>
               <input
@@ -170,7 +170,7 @@ export default function QrLink() {
                 value={customAlias}
                 onChange={handleAliasChange}
                 placeholder="Tùy chỉnh đuôi link (Ví dụ: ten_cua_ban)"
-                className="qr-input qr-input-prefix"
+                className="qr-input-flex"
               />
             </div>
             
