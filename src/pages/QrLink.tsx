@@ -72,7 +72,10 @@ export default function QrLink() {
         apiUrl += `&shorturl=${encodeURIComponent(customAlias.trim())}`;
       }
 
-      const response = await fetch(apiUrl);
+      // Sử dụng CORS Proxy để tránh lỗi trình duyệt chặn Cross-Origin
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(apiUrl)}`;
+
+      const response = await fetch(proxyUrl);
       
       if (!response.ok) {
         throw new Error('Lỗi kết nối đến máy chủ rút gọn.');
@@ -91,6 +94,8 @@ export default function QrLink() {
           errorMsg = 'Đuôi link tùy chỉnh phải từ 5 đến 30 ký tự (chỉ gồm chữ, số, dấu gạch dưới).';
         } else if (errorMsg.toLowerCase().includes('invalid')) {
           errorMsg = 'Đuôi link có chứa ký tự không hợp lệ.';
+        } else if (errorMsg.toLowerCase().includes('problem with the url')) {
+          errorMsg = 'Đường liên kết không hợp lệ hoặc không tồn tại.';
         }
         setError(errorMsg);
       }
