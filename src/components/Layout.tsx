@@ -8,8 +8,8 @@ const Layout = () => {
       <main className="container" style={{ padding: '2rem 1.5rem', flex: 1 }}>
         <Outlet />
       </main>
-      <footer style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-        <p>© 2026 PDF Studio by rchg2025. All rights reserved.</p>
+      <footer className="container" style={{ padding: '1.5rem', textAlign: 'center', borderTop: '1px solid var(--border)', marginTop: 'auto', color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
+        <p>© 2026 PDF Studio by <a href="https://rongcon.net" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 500, textDecoration: 'none' }}>Rồng Con HG</a>.</p>
       </footer>
     </>
   );
