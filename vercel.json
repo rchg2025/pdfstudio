@@ -9,6 +9,6 @@
     { "source": "/image-compressor", "destination": "/index.html" },
     { "source": "/qr-link", "destination": "/index.html" },
     { "source": "/", "destination": "/index.html" },
-    { "source": "/:alias", "destination": "/api/redirect?alias=$alias" }
+    { "source": "/:alias", "destination": "/api/redirect?alias=:alias" }
   ]
 }

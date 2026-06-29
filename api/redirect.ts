@@ -2,11 +2,16 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { Client } from 'pg';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const alias = req.query.alias as string;
+  let alias = (req.query.alias as string || '').trim();
+  
+  console.log("INCOMING ALIAS FROM REQ.QUERY.ALIAS:", alias, "REQ.URL:", req.url);
 
   if (!alias) {
     return res.redirect(302, '/');
   }
+
+  // Loại bỏ dấu gạch chéo cuối nếu có
+  alias = alias.replace(/\/$/, '');
 
   const dbUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_Yvd4phsckal3@ep-quiet-king-atdwf3ey-pooler.c-9.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require";
   const client = new Client({
@@ -17,7 +22,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await client.connect();
 
-    const queryResult = await client.query('SELECT original_url FROM urls WHERE alias = $1', [alias]);
+    // Sử dụng ILIKE để không phân biệt chữ hoa chữ thường
+    const queryResult = await client.query('SELECT original_url FROM urls WHERE alias ILIKE $1', [alias]);
 
     if (queryResult.rows.length > 0) {
       const { original_url } = queryResult.rows[0];
