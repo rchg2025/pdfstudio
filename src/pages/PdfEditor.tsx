@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Upload, FileText, RotateCcw, RotateCw, Trash2, Download, RefreshCw, 
   FileBox, Eye, X, Undo
@@ -327,7 +328,7 @@ export default function PdfEditor() {
         </div>
       </div>
 
-      {previewPage && (
+      {previewPage && createPortal(
         <div className="preview-modal-overlay" onClick={() => setPreviewPage(null)}>
           <div className="preview-modal-content" onClick={e => e.stopPropagation()}>
             <div className="preview-modal-header">
@@ -348,7 +349,8 @@ export default function PdfEditor() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
