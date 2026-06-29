@@ -208,23 +208,24 @@ export default function PdfEditor() {
         </div>
 
         {file && !isLoading && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'nowrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'flex-start' }}>
             <button className="icon-btn" onClick={() => rotateAllPages('ccw')} title="Xoay trái tất cả">
               <RotateCcw size={18} />
             </button>
             <button className="icon-btn" onClick={() => rotateAllPages('cw')} title="Xoay phải tất cả">
               <RotateCw size={18} />
             </button>
-            <button className="icon-btn" onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem' }}>
+            <button className="icon-btn" onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}>
               <Undo size={16} /> Khôi phục
             </button>
             
-            <div style={{ width: '1px', height: '1.5rem', background: 'var(--border)', margin: '0 0.5rem' }}></div>
+            <div className="desktop-divider" style={{ width: '1px', height: '1.5rem', background: 'var(--border)', margin: '0 0.5rem' }}></div>
             
             <button 
               className="btn btn-primary"
               onClick={exportPdf}
               disabled={isProcessing || activeCount === 0}
+              style={{ whiteSpace: 'nowrap' }}
             >
               {isProcessing ? (
                 <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang xuất...</>
