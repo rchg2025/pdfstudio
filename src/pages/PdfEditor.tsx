@@ -7,6 +7,7 @@ import {
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { PDFDocument, degrees } from 'pdf-lib';
+import { useDialogs } from '../components/CustomDialogs';
 import './PdfEditor.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
@@ -38,6 +39,8 @@ export default function PdfEditor() {
   const [fileSize, setFileSize] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const pagesPerPage = 12;
+
+  const { showAlert, showPrompt, DialogsComponent } = useDialogs();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -113,7 +116,7 @@ export default function PdfEditor() {
     } catch (error: any) {
       console.error(error);
       if (error?.name === 'PasswordException' || error?.message?.toLowerCase().includes('password')) {
-        const userPwd = prompt(password ? 'Mật khẩu sai! Vui lòng thử lại:' : 'File PDF này yêu cầu mật khẩu để mở:');
+        const userPwd = await showPrompt(password ? 'Mật khẩu sai! Vui lòng thử lại:' : 'File PDF này yêu cầu mật khẩu để mở:');
         if (userPwd) {
           loadPdf(pdfFile, userPwd);
           return;
@@ -122,7 +125,7 @@ export default function PdfEditor() {
           setPages([]);
         }
       } else {
-        alert('Không thể đọc file PDF. File có thể bị hỏng (corrupted) hoặc cấu trúc không được hỗ trợ.');
+        showAlert('Không thể đọc file PDF. File có thể bị hỏng (corrupted) hoặc cấu trúc không được hỗ trợ.');
         setFile(null);
         setPages([]);
       }
@@ -169,7 +172,7 @@ export default function PdfEditor() {
     try {
       const activePages = pages.filter(p => !p.isDeleted);
       if (activePages.length === 0) {
-        alert("Không thể xuất PDF trống.");
+        showAlert("Không thể xuất PDF trống.");
         setIsProcessing(false);
         return;
       }
@@ -198,7 +201,7 @@ export default function PdfEditor() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi xử lý file.');
+      showAlert('Có lỗi xảy ra khi xử lý file.');
     } finally {
       setIsProcessing(false);
     }
@@ -405,6 +408,8 @@ export default function PdfEditor() {
         </div>,
         document.body
       )}
+
+      <DialogsComponent />
     </div>
   );
 }

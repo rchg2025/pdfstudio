@@ -3,6 +3,7 @@ import {
   Link, Scissors, Upload, FileBox, Eye, ArrowUp, ArrowDown, Trash2, X, RefreshCw
 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { useDialogs } from '../components/CustomDialogs';
 import './PdfMergeSplit.css';
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -41,17 +42,18 @@ const parseRange = (rangeStr: string, maxPages: number): number[] | null => {
   return Array.from(pages).sort((a, b) => a - b);
 };
 
-const loadPdfDocument = async (arrayBuffer: ArrayBuffer, fileName: string): Promise<PDFDocument | null> => {
-  try {
-    return await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
-  } catch (e: any) {
-    alert(`Không thể xử lý file "${fileName}". File có thể bị hỏng hoặc đã được bảo vệ bằng mật khẩu cấp cao (User Password), điều này hiện chưa được hỗ trợ ở công cụ Nối/Tách.`);
-    return null;
-  }
-};
-
 const PdfMergeSplit = () => {
   const [activeTab, setActiveTab] = useState<'merge' | 'split'>('merge');
+  const { showAlert, DialogsComponent } = useDialogs();
+
+  const loadPdfDocument = async (arrayBuffer: ArrayBuffer, fileName: string): Promise<PDFDocument | null> => {
+    try {
+      return await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+    } catch (e: any) {
+      showAlert(`Không thể xử lý file "${fileName}". File có thể bị hỏng hoặc đã được bảo vệ bằng mật khẩu cấp cao (User Password), điều này hiện chưa được hỗ trợ ở công cụ Nối/Tách.`);
+      return null;
+    }
+  };
   
   // Merge State
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
@@ -84,7 +86,7 @@ const PdfMergeSplit = () => {
       if (validFiles.length > 0) {
         setMergeFiles(prev => [...prev, ...validFiles]);
       } else {
-        alert("Chỉ hỗ trợ file định dạng PDF.");
+        showAlert("Chỉ hỗ trợ file định dạng PDF.");
       }
     }
   };
@@ -104,7 +106,7 @@ const PdfMergeSplit = () => {
 
   const processMerge = async () => {
     if (mergeFiles.length < 2) {
-      alert('Cần ít nhất 2 file PDF để tiến hành nối.');
+      showAlert('Cần ít nhất 2 file PDF để tiến hành nối.');
       return;
     }
 
@@ -116,7 +118,7 @@ const PdfMergeSplit = () => {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await loadPdfDocument(arrayBuffer, file.name);
         if (!pdf) {
-          alert(`Đã hủy nối file do thiếu mật khẩu của "${file.name}".`);
+          showAlert(`Đã hủy nối file do thiếu mật khẩu của "${file.name}".`);
           setIsProcessing(false);
           return;
         }
@@ -130,7 +132,7 @@ const PdfMergeSplit = () => {
       setMergeFiles([]);
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi nối file. File có thể bị hỏng hoặc có mật khẩu.');
+      showAlert('Có lỗi xảy ra khi nối file. File có thể bị hỏng hoặc có mật khẩu.');
     } finally {
       setIsProcessing(false);
     }
@@ -149,7 +151,7 @@ const PdfMergeSplit = () => {
 
     if (file) {
       if (file.type !== 'application/pdf') {
-        alert("Chỉ hỗ trợ file định dạng PDF.");
+        showAlert("Chỉ hỗ trợ file định dạng PDF.");
         return;
       }
       setSplitFile(file);
@@ -166,7 +168,7 @@ const PdfMergeSplit = () => {
         setSplitTotalPages(pdfDoc.getPageCount());
       } catch (error) {
         console.error(error);
-        alert('Không thể đọc file PDF. File có thể bị hỏng hoặc có mật khẩu.');
+        showAlert('Không thể đọc file PDF. File có thể bị hỏng hoặc có mật khẩu.');
         setSplitFile(null);
       } finally {
         setIsProcessing(false);
@@ -179,14 +181,14 @@ const PdfMergeSplit = () => {
     
     const rangeInput = splitRange.trim();
     if (!rangeInput) {
-      alert('Vui lòng nhập số trang cần trích xuất.');
+      showAlert('Vui lòng nhập số trang cần trích xuất.');
       return;
     }
 
     const pagesToExtract = parseRange(rangeInput, splitTotalPages);
     
     if (!pagesToExtract || pagesToExtract.length === 0) {
-      alert('Định dạng trang không hợp lệ. Vui lòng kiểm tra lại cú pháp.');
+      showAlert('Định dạng trang không hợp lệ. Vui lòng kiểm tra lại cú pháp.');
       return;
     }
 
@@ -213,7 +215,7 @@ const PdfMergeSplit = () => {
       triggerDownload(blob, `${originalName}_TrichXuat.pdf`);
     } catch (error) {
       console.error(error);
-      alert('Có lỗi xảy ra khi trích xuất. Vui lòng thử lại.');
+      showAlert('Có lỗi xảy ra khi trích xuất. Vui lòng thử lại.');
     } finally {
       setIsProcessing(false);
     }
@@ -454,6 +456,7 @@ const PdfMergeSplit = () => {
           </div>
         </div>
       )}
+      <DialogsComponent />
     </div>
   );
 };
