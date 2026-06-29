@@ -23,6 +23,8 @@
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--text-primary);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .navbar-brand:hover {
@@ -48,6 +50,7 @@
   overflow-x: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  min-width: 0;
 }
 
 .navbar-links::-webkit-scrollbar {
