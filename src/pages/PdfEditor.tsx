@@ -101,6 +101,7 @@ export default function PdfEditor() {
         }
       }
       setPages(loadedPages);
+      (pdf as any).destroy(); // Free memory
     } catch (error) {
       console.error(error);
       alert('Không thể đọc file PDF. File có thể bị hỏng hoặc đã được mã hóa mật khẩu.');

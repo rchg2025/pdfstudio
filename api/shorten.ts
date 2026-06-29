@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { Client } from 'pg';
+import { createPool } from '@vercel/postgres';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -27,29 +27,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'URL không hợp lệ' });
   }
 
-  const dbUrl = process.env.DATABASE_URL || "postgresql://neondb_owner:npg_Yvd4phsckal3@ep-quiet-king-atdwf3ey-pooler.c-9.us-east-1.aws.neon.tech/neondb?channel_binding=require&sslmode=require";
-  const client = new Client({
-    connectionString: dbUrl,
-    ssl: { rejectUnauthorized: false }
+  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || "postgresql://neondb_owner:npg_Yvd4phsckal3@ep-quiet-king-atdwf3ey-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require";
+  const pool = createPool({
+    connectionString: dbUrl
   });
 
   try {
-    await client.connect();
-
     // Check if alias exists
-    const checkQuery = await client.query('SELECT id FROM urls WHERE alias = $1', [customAlias]);
+    const checkQuery = await pool.query('SELECT id FROM urls WHERE alias = $1', [customAlias]);
     if (checkQuery.rows.length > 0) {
       return res.status(409).json({ error: 'Đuôi tùy chỉnh này đã tồn tại, vui lòng chọn tên khác.' });
     }
 
     // Insert new URL
-    await client.query('INSERT INTO urls (original_url, alias) VALUES ($1, $2)', [originalUrl, customAlias]);
+    await pool.query('INSERT INTO urls (original_url, alias) VALUES ($1, $2)', [originalUrl, customAlias]);
     
     return res.status(200).json({ success: true, alias: customAlias });
   } catch (error: any) {
     console.error('Database error:', error);
     return res.status(500).json({ error: 'Lỗi hệ thống khi lưu URL' });
-  } finally {
-    await client.end();
   }
 }

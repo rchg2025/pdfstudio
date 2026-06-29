@@ -1,12 +1,24 @@
+import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Layout from './components/Layout';
 import Home from './pages/Home';
-import PdfEditor from './pages/PdfEditor';
-import PdfMergeSplit from './pages/PdfMergeSplit';
-import PdfToImage from './pages/PdfToImage';
-import PdfCompressor from './pages/PdfCompressor';
-import ImageCompressor from './pages/ImageCompressor';
-import QrLink from './pages/QrLink';
+
+// Lazy load heavy components
+const PdfEditor = React.lazy(() => import('./pages/PdfEditor'));
+const PdfMergeSplit = React.lazy(() => import('./pages/PdfMergeSplit'));
+const PdfToImage = React.lazy(() => import('./pages/PdfToImage'));
+const PdfCompressor = React.lazy(() => import('./pages/PdfCompressor'));
+const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
+const QrLink = React.lazy(() => import('./pages/QrLink'));
+
+const FallbackLoader = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+    <div className="text-secondary" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+      <div style={{ width: '40px', height: '40px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      <p style={{ fontWeight: 500 }}>Đang tải công cụ...</p>
+    </div>
+  </div>
+);
 
 function App() {
   return (
@@ -14,12 +26,24 @@ function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
-          <Route path="pdf-editor" element={<PdfEditor />} />
-          <Route path="pdf-merge-split" element={<PdfMergeSplit />} />
-          <Route path="pdf-to-image" element={<PdfToImage />} />
-          <Route path="pdf-compressor" element={<PdfCompressor />} />
-          <Route path="image-compressor" element={<ImageCompressor />} />
-          <Route path="qr-link" element={<QrLink />} />
+          <Route path="pdf-editor" element={
+            <Suspense fallback={<FallbackLoader />}><PdfEditor /></Suspense>
+          } />
+          <Route path="pdf-merge-split" element={
+            <Suspense fallback={<FallbackLoader />}><PdfMergeSplit /></Suspense>
+          } />
+          <Route path="pdf-to-image" element={
+            <Suspense fallback={<FallbackLoader />}><PdfToImage /></Suspense>
+          } />
+          <Route path="pdf-compressor" element={
+            <Suspense fallback={<FallbackLoader />}><PdfCompressor /></Suspense>
+          } />
+          <Route path="image-compressor" element={
+            <Suspense fallback={<FallbackLoader />}><ImageCompressor /></Suspense>
+          } />
+          <Route path="qr-link" element={
+            <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
+          } />
         </Route>
       </Routes>
     </BrowserRouter>

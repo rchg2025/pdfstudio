@@ -141,6 +141,7 @@ export default function PdfToImage() {
       setProgress(100);
       setProgressText(`Thành công! Đã xử lý xong ${numPages} trang.`);
       setIsProcessing(false);
+      (pdf as any).destroy(); // Free memory
       
     } catch (err) {
       console.error(err);
