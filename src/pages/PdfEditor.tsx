@@ -215,7 +215,7 @@ export default function PdfEditor() {
             <button className="icon-btn" onClick={() => rotateAllPages('cw')} title="Xoay phải tất cả">
               <RotateCw size={18} />
             </button>
-            <button className="icon-btn" onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}>
+            <button onClick={resetAllChanges} title="Khôi phục trạng thái ban đầu" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 500, fontSize: '0.875rem', padding: '0.5rem 1rem', whiteSpace: 'nowrap', background: 'transparent', border: 'none', cursor: 'pointer', width: 'auto', height: 'auto' }}>
               <Undo size={16} /> Khôi phục
             </button>
             
