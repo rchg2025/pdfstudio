@@ -85,9 +85,9 @@ export default function PdfEditor() {
       const pdf = await pdfjsLib.getDocument({ 
         data: typedarray,
         password: password,
-        cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+        cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
         cMapPacked: true,
-        standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/'
+        standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
       }).promise;
       
       const loadedPages: PageData[] = [];
