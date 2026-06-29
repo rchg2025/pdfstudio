@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Download, RefreshCw, Loader2, UserSquare, Palette, Maximize, SlidersHorizontal } from 'lucide-react';
 import { removeBackground } from '@imgly/background-removal';
+import FileUploadZone from '../components/FileUploadZone';
 import './IdPhotoMaker.css';
 
 const BG_COLORS = [
@@ -168,27 +169,8 @@ export default function IdPhotoMaker() {
     URL.revokeObjectURL(blobUrl);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type.startsWith('image/')) {
-      handleFileSelection(droppedFile);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+  const handleFileSelect = (files: FileList | null) => {
+    const selectedFile = files?.[0];
     if (selectedFile && selectedFile.type.startsWith('image/')) {
       handleFileSelection(selectedFile);
     }
@@ -270,26 +252,7 @@ export default function IdPhotoMaker() {
 
       {!originalFile ? (
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2rem' }}>
-          <div 
-            className={`id-photo-dropzone ${isDragging ? 'drag-active' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <UserSquare size={48} className="text-primary" style={{ margin: '0 auto 1rem' }} />
-            <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 600 }}>Tải ảnh chân dung của bạn lên</h3>
-            <p className="text-secondary" style={{ marginBottom: '1.5rem' }}>Hỗ trợ JPG, PNG</p>
-            <button className="btn btn-primary">Chọn Ảnh</button>
-            <input 
-              type="file" 
-              accept="image/*" 
-              className="hidden" 
-              ref={fileInputRef}
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
-          </div>
+          <FileUploadZone onFileSelect={handleFileSelect} accept="image/*" />
         </div>
       ) : (
         <div className="id-photo-layout">

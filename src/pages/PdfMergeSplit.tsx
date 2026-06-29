@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { useDialogs } from '../components/CustomDialogs';
+import FileUploadZone from '../components/FileUploadZone';
 import './PdfMergeSplit.css';
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -71,16 +72,7 @@ const PdfMergeSplit = () => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
 
   // --- Merge Logic ---
-  const handleMergeFiles = (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    let files: FileList | File[] | null = null;
-    
-    if ('dataTransfer' in e) {
-      files = e.dataTransfer.files;
-    } else if (e.target instanceof HTMLInputElement) {
-      files = e.target.files;
-    }
-
+  const handleMergeFilesSelect = (files: FileList | null) => {
     if (files) {
       const validFiles = Array.from(files).filter(f => f.type === 'application/pdf');
       if (validFiles.length > 0) {
@@ -139,16 +131,8 @@ const PdfMergeSplit = () => {
   };
 
   // --- Split Logic ---
-  const handleSplitFile = async (e: React.ChangeEvent<HTMLInputElement> | React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    let file: File | null = null;
-    
-    if ('dataTransfer' in e) {
-      file = e.dataTransfer.files[0];
-    } else if (e.target instanceof HTMLInputElement) {
-      file = e.target.files?.[0] || null;
-    }
-
+  const handleSplitFileSelect = async (files: FileList | null) => {
+    const file = files?.[0];
     if (file) {
       if (file.type !== 'application/pdf') {
         showAlert("Chỉ hỗ trợ file định dạng PDF.");
@@ -283,28 +267,7 @@ const PdfMergeSplit = () => {
                 <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Thêm file, sắp xếp lại thứ tự bằng các nút mũi tên và nhấn "Nối file".</p>
               </div>
 
-              <div 
-                className="dropzone"
-                onDragEnter={preventDefaults}
-                onDragOver={preventDefaults}
-                onDragLeave={preventDefaults}
-                onDrop={handleMergeFiles}
-                onClick={() => mergeInputRef.current?.click()}
-              >
-                <Upload size={40} className="text-primary" style={{ margin: '0 auto 1rem' }} />
-                <p style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>
-                  Kéo thả file vào đây hoặc <span className="text-gradient">nhấn để chọn file</span>
-                </p>
-                <p className="text-secondary" style={{ fontSize: '0.75rem' }}>Chỉ hỗ trợ file .pdf</p>
-                <input 
-                  type="file" 
-                  multiple 
-                  accept="application/pdf" 
-                  ref={mergeInputRef} 
-                  onChange={handleMergeFiles} 
-                  style={{ display: 'none' }} 
-                />
-              </div>
+              <FileUploadZone onFileSelect={handleMergeFilesSelect} accept="application/pdf" multiple={true} />
 
               {mergeFiles.length > 0 && (
                 <ul className="file-list" style={{ marginTop: '1.5rem' }}>
@@ -364,27 +327,7 @@ const PdfMergeSplit = () => {
               </div>
 
               {!splitFile ? (
-                <div 
-                  className="dropzone"
-                  onDragEnter={preventDefaults}
-                  onDragOver={preventDefaults}
-                  onDragLeave={preventDefaults}
-                  onDrop={handleSplitFile}
-                  onClick={() => splitInputRef.current?.click()}
-                >
-                  <Upload size={40} className="text-primary" style={{ margin: '0 auto 1rem' }} />
-                  <p style={{ fontSize: '1.125rem', marginBottom: '0.25rem' }}>
-                    Kéo thả file vào đây hoặc <span className="text-gradient">nhấn để chọn file</span>
-                  </p>
-                  <p className="text-secondary" style={{ fontSize: '0.75rem' }}>Chỉ hỗ trợ file .pdf</p>
-                  <input 
-                    type="file" 
-                    accept="application/pdf" 
-                    ref={splitInputRef} 
-                    onChange={handleSplitFile} 
-                    style={{ display: 'none' }} 
-                  />
-                </div>
+                <FileUploadZone onFileSelect={handleSplitFileSelect} accept="application/pdf" />
               ) : (
                 <div className="split-controls">
                   <div className="split-file-header">

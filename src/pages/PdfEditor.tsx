@@ -8,6 +8,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { useDialogs } from '../components/CustomDialogs';
+import FileUploadZone from '../components/FileUploadZone';
 import './PdfEditor.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
@@ -42,33 +43,14 @@ export default function PdfEditor() {
 
   const { showAlert, showPrompt, DialogsComponent } = useDialogs();
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'application/pdf') {
-      loadPdf(droppedFile);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+  const handleFileSelect = (files: FileList | null) => {
+    const selectedFile = files?.[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
       loadPdf(selectedFile);
     }
   };
+
+
 
   const loadPdf = async (pdfFile: File, password?: string) => {
     setFile(pdfFile);
@@ -211,7 +193,7 @@ export default function PdfEditor() {
     setFile(null);
     setPages([]);
     setCurrentPage(1);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setCurrentPage(1);
   };
 
   const activeCount = pages.filter(p => !p.isDeleted).length;
@@ -265,27 +247,7 @@ export default function PdfEditor() {
         <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {!file && (
             <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto', width: '100%', flex: 'none' }}>
-              <div 
-                className={`dropzone ${isDragging ? 'drag-active' : ''}`}
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                style={{ width: '100%' }}
-              >
-                <Upload size={48} className="text-primary" style={{ margin: '0 auto 1rem' }} />
-                <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 600 }}>Tải file PDF lên</h3>
-                <p className="text-secondary" style={{ marginBottom: '1.5rem' }}>Kéo thả file vào đây hoặc nhấn để chọn file từ máy tính</p>
-                <button className="btn btn-secondary">Chọn File PDF</button>
-                <input 
-                  type="file" 
-                  accept="application/pdf" 
-                  className="hidden" 
-                  ref={fileInputRef}
-                  onChange={handleFileChange}
-                  style={{ display: 'none' }}
-                />
-              </div>
+              <FileUploadZone onFileSelect={handleFileSelect} accept="application/pdf" hintText="Chỉ hỗ trợ file .pdf" />
             </div>
           )}
 

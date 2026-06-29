@@ -3,6 +3,7 @@ import { Upload, FileBox, RefreshCw, Download, AlertCircle, Archive, ChevronLeft
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import JSZip from 'jszip';
+import FileUploadZone from '../components/FileUploadZone';
 import './PdfToImage.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
@@ -36,27 +37,8 @@ export default function PdfToImage() {
     };
   }, [imageResults]);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type === 'application/pdf') {
-      handleFileSelection(droppedFile);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+  const handleFileSelect = (files: FileList | null) => {
+    const selectedFile = files?.[0];
     if (selectedFile && selectedFile.type === 'application/pdf') {
       handleFileSelection(selectedFile);
     }
@@ -199,28 +181,7 @@ export default function PdfToImage() {
       {!imageResults.length && !isProcessing ? (
         <div className="glass-card">
           {!file ? (
-            <div 
-              className={`dropzone ${isDragging ? 'drag-active' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <Upload size={48} className="text-primary" style={{ margin: '0 auto 1rem' }} />
-              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 600 }}>Kéo thả file PDF vào đây</h3>
-              <p className="text-secondary" style={{ marginBottom: '1.5rem' }}>hoặc nhấn để duyệt file từ thiết bị</p>
-              <button className="btn btn-primary">
-                Chọn file PDF
-              </button>
-              <input 
-                type="file" 
-                accept="application/pdf" 
-                className="hidden" 
-                ref={fileInputRef}
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-              />
-            </div>
+            <FileUploadZone onFileSelect={handleFileSelect} accept="application/pdf" />
           ) : (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '2rem' }}>

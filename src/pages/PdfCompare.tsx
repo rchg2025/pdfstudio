@@ -3,6 +3,7 @@ import { Upload, FileBox, Trash2, GitCompare, RefreshCw, ChevronLeft, ChevronRig
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { useDialogs } from '../components/CustomDialogs';
+import FileUploadZone from '../components/FileUploadZone';
 import './PdfCompare.css';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
@@ -49,8 +50,8 @@ export default function PdfCompare() {
     }
   };
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, fileNum: 1 | 2) => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = async (files: FileList | null, fileNum: 1 | 2) => {
+    const file = files?.[0];
     if (!file || file.type !== 'application/pdf') return;
     
     setIsProcessing(true);
@@ -202,11 +203,7 @@ export default function PdfCompare() {
               File Gốc
             </h3>
             {!file1 ? (
-              <label className="compare-dropzone">
-                <Upload size={32} className="text-primary" style={{ marginBottom: '1rem' }} />
-                <span style={{ fontWeight: 500 }}>Nhấn để chọn file</span>
-                <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={e => handleFileChange(e, 1)} />
-              </label>
+              <FileUploadZone onFileSelect={files => handleFileSelect(files, 1)} accept="application/pdf" />
             ) : (
               <div className="file-selected-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
@@ -224,11 +221,7 @@ export default function PdfCompare() {
               File Sửa Đổi
             </h3>
             {!file2 ? (
-              <label className="compare-dropzone">
-                <Upload size={32} className="text-primary" style={{ marginBottom: '1rem' }} />
-                <span style={{ fontWeight: 500 }}>Nhấn để chọn file</span>
-                <input type="file" accept="application/pdf" style={{ display: 'none' }} onChange={e => handleFileChange(e, 2)} />
-              </label>
+              <FileUploadZone onFileSelect={files => handleFileSelect(files, 2)} accept="application/pdf" />
             ) : (
               <div className="file-selected-card">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>

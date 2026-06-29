@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { UploadCloud, Image as ImageIcon, Download, Settings, RefreshCw, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import FileUploadZone from '../components/FileUploadZone';
 import './ImageCompressor.css';
 
 export default function ImageCompressor() {
@@ -29,29 +30,8 @@ export default function ImageCompressor() {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile && droppedFile.type.startsWith('image/')) {
-      processInitialFile(droppedFile);
-    } else {
-      setError('Vui lòng chọn một định dạng ảnh hợp lệ (JPG, PNG, WEBP).');
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
+  const handleFileSelect = (files: FileList | null) => {
+    const selectedFile = files?.[0];
     if (selectedFile && selectedFile.type.startsWith('image/')) {
       processInitialFile(selectedFile);
     } else {
@@ -263,38 +243,21 @@ export default function ImageCompressor() {
               1. Tải ảnh lên
             </h2>
             
-            <div 
-              className={`dropzone ${isDragging || file ? 'drag-active' : ''}`}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-              style={{ padding: '2rem' }}
-            >
-              <input 
-                type="file" 
-                ref={fileInputRef} 
-                className="hidden" 
-                accept="image/png, image/jpeg, image/webp"
-                onChange={handleFileChange}
-                style={{ display: 'none' }}
-              />
-              {file ? (
+            {!file ? (
+              <FileUploadZone onFileSelect={handleFileSelect} accept="image/png, image/jpeg, image/webp" hintText="Hỗ trợ JPG, PNG, WEBP" />
+            ) : (
+              <div 
+                className="dropzone"
+                onClick={() => setFile(null)}
+                style={{ padding: '2rem' }}
+              >
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                   <CheckCircle2 size={32} className="text-primary" />
                   <p style={{ fontWeight: 500, maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{file.name}</p>
-                  <p className="text-secondary" style={{ fontSize: '0.75rem' }}>Nhấn để thay đổi ảnh</p>
+                  <p className="text-secondary" style={{ fontSize: '0.75rem' }}>Nhấn để bỏ chọn ảnh</p>
                 </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
-                  <div style={{ background: 'rgba(139, 92, 246, 0.1)', padding: '0.75rem', borderRadius: '50%' }}>
-                    <UploadCloud size={24} className="text-primary" />
-                  </div>
-                  <p style={{ fontWeight: 500 }}>Kéo thả hoặc nhấn để chọn</p>
-                  <p className="text-secondary" style={{ fontSize: '0.75rem' }}>Hỗ trợ JPG, PNG, WEBP</p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <div className="glass-card" style={{ padding: '1.5rem', opacity: !file ? 0.5 : 1, pointerEvents: !file ? 'none' : 'auto' }}>
