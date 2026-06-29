@@ -5,7 +5,8 @@ import {
   ImageMinus, 
   FileArchive, 
   Image as ImageIcon, 
-  Link as LinkIcon 
+  Link as LinkIcon,
+  UserSquare
 } from 'lucide-react';
 import './Home.css';
 
@@ -45,6 +46,12 @@ const tools = [
     icon: <LinkIcon size={24} />,
     title: 'Công cụ rút gọn link và tạo QR',
     desc: 'Rút gọn các đường dẫn URL dài và tự động tạo mã QR để dễ dàng quét bằng điện thoại.'
+  },
+  {
+    path: '/id-photo-maker',
+    icon: <UserSquare size={24} />,
+    title: 'Công cụ Tạo Ảnh Thẻ AI',
+    desc: 'Tự động tách nền bằng trí tuệ nhân tạo và tạo ảnh thẻ với phông xanh/trắng chuẩn.'
   }
 ];
 
