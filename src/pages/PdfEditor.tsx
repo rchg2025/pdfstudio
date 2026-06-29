@@ -225,7 +225,7 @@ export default function PdfEditor() {
               className="btn btn-primary"
               onClick={exportPdf}
               disabled={isProcessing || activeCount === 0}
-              style={{ whiteSpace: 'nowrap' }}
+              style={{ whiteSpace: 'nowrap', width: 'auto', flexShrink: 0 }}
             >
               {isProcessing ? (
                 <><RefreshCw size={16} style={{ animation: 'spin 1s linear infinite' }} /> Đang xuất...</>
