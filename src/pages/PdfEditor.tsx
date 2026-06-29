@@ -36,6 +36,8 @@ export default function PdfEditor() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [previewPage, setPreviewPage] = useState<PageData | null>(null);
   const [fileSize, setFileSize] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pagesPerPage = 12;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +72,7 @@ export default function PdfEditor() {
     setFileSize(pdfFile.size);
     setIsLoading(true);
     setPages([]);
+    setCurrentPage(1);
 
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
@@ -182,6 +185,7 @@ export default function PdfEditor() {
   const handleClearFile = () => {
     setFile(null);
     setPages([]);
+    setCurrentPage(1);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -283,8 +287,10 @@ export default function PdfEditor() {
                 </button>
               </div>
 
-              <div className="pages-grid" style={{ overflowY: 'auto', paddingRight: '0.5rem' }}>
-                {pages.map((page, index) => (
+              <div className="pages-grid" style={{ overflowY: 'auto', paddingRight: '0.5rem', marginBottom: '1rem' }}>
+                {pages.slice((currentPage - 1) * pagesPerPage, currentPage * pagesPerPage).map((page, idx) => {
+                  const globalIndex = (currentPage - 1) * pagesPerPage + idx;
+                  return (
                   <div key={page.id} className={`page-card ${page.isDeleted ? 'deleted' : ''}`}>
                     <div className="page-header">
                       <span className="page-number">Trang {page.id}</span>
@@ -310,19 +316,43 @@ export default function PdfEditor() {
                     </div>
 
                     <div className="page-actions">
-                      <button className="action-btn" onClick={() => rotatePage(index, 'ccw')} disabled={page.isDeleted}>
+                      <button className="action-btn" onClick={() => rotatePage(globalIndex, 'ccw')} disabled={page.isDeleted}>
                         <RotateCcw size={18} />
                       </button>
-                      <button className="action-btn" onClick={() => rotatePage(index, 'cw')} disabled={page.isDeleted}>
+                      <button className="action-btn" onClick={() => rotatePage(globalIndex, 'cw')} disabled={page.isDeleted}>
                         <RotateCw size={18} />
                       </button>
-                      <button className="action-btn delete" onClick={() => toggleDeletePage(index)}>
+                      <button className="action-btn delete" onClick={() => toggleDeletePage(globalIndex)}>
                         {page.isDeleted ? <Undo size={18} /> : <Trash2 size={18} />}
                       </button>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
+
+              {Math.ceil(pages.length / pagesPerPage) > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '1rem', marginTop: 'auto', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    Trang trước
+                  </button>
+                  <span style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>
+                    {currentPage} / {Math.ceil(pages.length / pagesPerPage)}
+                  </span>
+                  <button 
+                    className="btn btn-secondary" 
+                    onClick={() => setCurrentPage(p => Math.min(Math.ceil(pages.length / pagesPerPage), p + 1))}
+                    disabled={currentPage === Math.ceil(pages.length / pagesPerPage)}
+                    style={{ padding: '0.5rem 1rem' }}
+                  >
+                    Trang sau
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
