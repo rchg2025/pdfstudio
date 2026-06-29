@@ -198,18 +198,18 @@ const ImageConverter: React.FC = () => {
           />
 
           {images.length > 0 && (
-            <div className="mt-8 space-y-6">
-              <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg border border-border">
-                <div className="flex items-center gap-3">
-                  <Settings className="text-primary" size={24} />
+            <div className="mt-8" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div className="ic-format-panel">
+                <div className="ic-format-info">
+                  <div style={{ color: 'var(--primary)' }}><Settings size={24} /></div>
                   <div>
-                    <h3 className="font-semibold text-foreground">Định dạng đầu ra</h3>
-                    <p className="text-sm text-muted">Chọn định dạng bạn muốn chuyển đổi sang</p>
+                    <h3 style={{ fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>Định dạng đầu ra</h3>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>Chọn định dạng bạn muốn chuyển đổi sang</p>
                   </div>
                 </div>
                 
                 <select 
-                  className="px-4 py-2 bg-background border border-input rounded-md text-foreground focus:ring-2 focus:ring-primary outline-none"
+                  className="ic-format-select"
                   value={outputFormat}
                   onChange={(e) => setOutputFormat(e.target.value as any)}
                   disabled={isProcessing}
@@ -220,33 +220,29 @@ const ImageConverter: React.FC = () => {
                 </select>
               </div>
 
-              <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="ic-list">
                 {images.map(img => (
-                  <div key={img.id} className="flex items-center gap-4 p-3 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors shadow-sm">
-                    <div className="w-16 h-16 shrink-0 bg-secondary/30 rounded flex items-center justify-center overflow-hidden">
+                  <div key={img.id} className="ic-item">
+                    <div className="ic-thumb">
                       {img.file.name.toLowerCase().endsWith('.heic') && !img.resultUrl ? (
-                        <ImageIcon size={24} className="text-muted" />
+                        <ImageIcon size={24} style={{ color: 'var(--text-muted)' }} />
                       ) : (
-                        <img 
-                          src={img.resultUrl || img.preview} 
-                          alt="preview" 
-                          className="w-full h-full object-cover" 
-                        />
+                        <img src={img.resultUrl || img.preview} alt="preview" />
                       )}
                     </div>
                     
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <p className="font-medium text-sm text-foreground truncate pr-4" title={img.file.name}>
+                    <div className="ic-info">
+                      <div className="ic-header">
+                        <span className="ic-name" title={img.file.name}>
                           {img.file.name}
-                        </p>
+                        </span>
                         
-                        <div className="flex items-center gap-2">
+                        <div className="ic-actions">
                           {img.status === 'done' && img.resultUrl && (
                             <a 
                               href={img.resultUrl}
                               download={`${img.file.name.substring(0, img.file.name.lastIndexOf('.')) || img.file.name}_converted.${outputFormat.split('/')[1]}`}
-                              className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"
+                              className="ic-btn download"
                               title="Tải ảnh này"
                             >
                               <Download size={16} />
@@ -255,7 +251,7 @@ const ImageConverter: React.FC = () => {
                           <button
                             onClick={() => removeImage(img.id)}
                             disabled={isProcessing}
-                            className="text-muted hover:bg-destructive/10 hover:text-destructive p-1.5 rounded transition-colors"
+                            className="ic-btn delete"
                             title="Xóa"
                           >
                             <Trash2 size={16} />
@@ -263,34 +259,34 @@ const ImageConverter: React.FC = () => {
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-2 text-xs">
-                        <span className="px-2 py-0.5 bg-secondary rounded text-muted font-medium uppercase">
+                      <div className="ic-meta">
+                        <span className="ic-badge source">
                           {img.file.name.split('.').pop() || 'IMG'}
                         </span>
-                        <ArrowRight size={12} className="text-muted" />
-                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">
+                        <ArrowRight size={12} style={{ color: 'var(--text-muted)' }} />
+                        <span className="ic-badge target">
                           {formatLabels[outputFormat]}
                         </span>
                         
-                        <span className="text-muted mx-1">•</span>
-                        <span className="text-muted">{(img.file.size / 1024).toFixed(1)} KB</span>
+                        <span style={{ color: 'var(--text-muted)', margin: '0 0.25rem' }}>•</span>
+                        <span className="ic-size">{(img.file.size / 1024).toFixed(1)} KB</span>
 
                         {img.status === 'processing' && (
-                          <span className="ml-2 text-primary flex items-center gap-1 font-medium">
-                            <div className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                          <span className="ic-status processing">
+                            <div className="spinner"></div>
                             Đang xử lý...
                           </span>
                         )}
                         
                         {img.status === 'done' && (
-                          <span className="ml-2 text-emerald-500 flex items-center gap-1 font-medium">
+                          <span className="ic-status done">
                             <CheckCircle2 size={14} />
                             Thành công
                           </span>
                         )}
 
                         {img.status === 'error' && (
-                          <span className="ml-2 text-destructive font-medium truncate max-w-[200px]" title={img.error}>
+                          <span className="ic-status error" title={img.error}>
                             Lỗi: {img.error}
                           </span>
                         )}

@@ -8,7 +8,6 @@ const PdfEditor = React.lazy(() => import('./pages/PdfEditor'));
 const PdfMergeSplit = React.lazy(() => import('./pages/PdfMergeSplit'));
 const PdfToImage = React.lazy(() => import('./pages/PdfToImage'));
 const PdfCompressor = React.lazy(() => import('./pages/PdfCompressor'));
-const PdfToWord = React.lazy(() => import('./pages/PdfToWord'));
 const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
 const ImageConverter = React.lazy(() => import('./pages/ImageConverter'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
@@ -38,9 +37,6 @@ function App() {
           } />
           <Route path="pdf-to-image" element={
             <Suspense fallback={<FallbackLoader />}><PdfToImage /></Suspense>
-          } />
-          <Route path="pdf-to-word" element={
-            <Suspense fallback={<FallbackLoader />}><PdfToWord /></Suspense>
           } />
           <Route path="pdf-compare" element={
             <Suspense fallback={<FallbackLoader />}><PdfCompare /></Suspense>

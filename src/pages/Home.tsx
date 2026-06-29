@@ -8,8 +8,7 @@ import {
   Link as LinkIcon,
   SplitSquareHorizontal,
   ShieldCheck,
-  RefreshCw,
-  FileText
+  RefreshCw
 } from 'lucide-react';
 import './Home.css';
 
@@ -61,12 +60,6 @@ const tools = [
     icon: <RefreshCw size={24} />,
     title: 'Chuyển Đổi Định Dạng Ảnh',
     desc: 'Chuyển đổi ảnh giữa các định dạng HEIC, JPG, PNG, WEBP một cách nhanh chóng.'
-  },
-  {
-    path: '/pdf-to-word',
-    icon: <FileText size={24} />,
-    title: 'PDF sang Word',
-    desc: 'Chuyển đổi PDF sang file Word (.docx) giữ nguyên cấu trúc và định dạng.'
   },
   {
     path: '/bao-mat-pdf',
