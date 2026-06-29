@@ -145,7 +145,7 @@
 }
 
 /* Modal */
-.preview-modal-overlay {
+.merge-preview-modal-overlay {
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -157,7 +157,7 @@
   backdrop-filter: blur(4px);
 }
 
-.preview-modal-content {
+.merge-preview-modal-content {
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -170,16 +170,17 @@
   box-shadow: var(--shadow-glow);
 }
 
-.preview-modal-header {
+.merge-preview-modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 1rem 1.5rem;
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
+  z-index: 10;
 }
 
-.preview-iframe {
+.merge-preview-iframe {
   flex: 1;
   width: 100%;
   border: none;

@@ -417,9 +417,9 @@ const PdfMergeSplit = () => {
 
       {/* Preview Modal */}
       {previewFile && (
-        <div className="preview-modal-overlay" onClick={closePreview}>
-          <div className="preview-modal-content" onClick={e => e.stopPropagation()}>
-            <div className="preview-modal-header">
+        <div className="merge-preview-modal-overlay" onClick={closePreview}>
+          <div className="merge-preview-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="merge-preview-modal-header">
               <h3 style={{ margin: 0, fontSize: '1.125rem' }} className="file-item-name">
                 Xem trước: {previewFile.name}
               </h3>
@@ -427,7 +427,7 @@ const PdfMergeSplit = () => {
                 <X size={24} />
               </button>
             </div>
-            <iframe className="preview-iframe" src={previewUrl}></iframe>
+            <iframe className="merge-preview-iframe" src={previewUrl}></iframe>
           </div>
         </div>
       )}
