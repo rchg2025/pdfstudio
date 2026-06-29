@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Download, Trash2, Image as ImageIcon, Settings } from 'lucide-react';
+import { ArrowRight, Download, Trash2, Image as ImageIcon, Settings, CheckCircle2 } from 'lucide-react';
 import heic2any from 'heic2any';
 import FileUploadZone from '../components/FileUploadZone';
 
@@ -220,66 +220,81 @@ const ImageConverter: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 {images.map(img => (
-                  <div key={img.id} className="relative group bg-background border border-border rounded-lg overflow-hidden flex flex-col">
-                    <div className="h-40 bg-secondary/20 flex items-center justify-center p-2">
+                  <div key={img.id} className="flex items-center gap-4 p-3 bg-background border border-border rounded-lg hover:border-primary/50 transition-colors shadow-sm">
+                    <div className="w-16 h-16 shrink-0 bg-secondary/30 rounded flex items-center justify-center overflow-hidden">
                       {img.file.name.toLowerCase().endsWith('.heic') && !img.resultUrl ? (
-                        <div className="text-center text-muted">
-                          <ImageIcon size={48} className="mx-auto mb-2 opacity-50" />
-                          <span className="text-sm font-medium">HEIC Image</span>
-                        </div>
+                        <ImageIcon size={24} className="text-muted" />
                       ) : (
                         <img 
                           src={img.resultUrl || img.preview} 
                           alt="preview" 
-                          className="max-h-full max-w-full object-contain rounded-md" 
+                          className="w-full h-full object-cover" 
                         />
                       )}
                     </div>
                     
-                    <div className="p-3 flex-1 flex flex-col justify-between">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium truncate" title={img.file.name}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <p className="font-medium text-sm text-foreground truncate pr-4" title={img.file.name}>
                           {img.file.name}
-                        </span>
-                        <button
-                          onClick={() => removeImage(img.id)}
-                          disabled={isProcessing}
-                          className="text-muted hover:text-destructive transition-colors p-1"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        </p>
+                        
+                        <div className="flex items-center gap-2">
+                          {img.status === 'done' && img.resultUrl && (
+                            <a 
+                              href={img.resultUrl}
+                              download={`${img.file.name.substring(0, img.file.name.lastIndexOf('.')) || img.file.name}_converted.${outputFormat.split('/')[1]}`}
+                              className="text-primary hover:bg-primary/10 p-1.5 rounded transition-colors"
+                              title="Tải ảnh này"
+                            >
+                              <Download size={16} />
+                            </a>
+                          )}
+                          <button
+                            onClick={() => removeImage(img.id)}
+                            disabled={isProcessing}
+                            className="text-muted hover:bg-destructive/10 hover:text-destructive p-1.5 rounded transition-colors"
+                            title="Xóa"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="px-2 py-1 bg-secondary rounded text-muted font-medium">
-                          {img.file.name.split('.').pop()?.toUpperCase() || 'IMG'}
+                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                        <span className="px-2 py-0.5 bg-secondary rounded text-muted font-medium uppercase">
+                          {img.file.name.split('.').pop() || 'IMG'}
                         </span>
                         <ArrowRight size={12} className="text-muted" />
-                        <span className="px-2 py-1 bg-primary/10 text-primary rounded font-medium">
+                        <span className="px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">
                           {formatLabels[outputFormat]}
                         </span>
-                      </div>
-                      
-                      {img.status === 'processing' && (
-                        <div className="mt-3 text-sm text-primary flex items-center gap-2">
-                          <div className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
-                          Đang xử lý...
-                        </div>
-                      )}
-                      
-                      {img.status === 'done' && (
-                        <div className="mt-3 text-sm text-emerald-500 font-medium">
-                          Hoàn tất!
-                        </div>
-                      )}
+                        
+                        <span className="text-muted mx-1">•</span>
+                        <span className="text-muted">{(img.file.size / 1024).toFixed(1)} KB</span>
 
-                      {img.status === 'error' && (
-                        <div className="mt-3 text-sm text-destructive font-medium truncate" title={img.error}>
-                          Lỗi: {img.error}
-                        </div>
-                      )}
+                        {img.status === 'processing' && (
+                          <span className="ml-2 text-primary flex items-center gap-1 font-medium">
+                            <div className="w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin"></div>
+                            Đang xử lý...
+                          </span>
+                        )}
+                        
+                        {img.status === 'done' && (
+                          <span className="ml-2 text-emerald-500 flex items-center gap-1 font-medium">
+                            <CheckCircle2 size={14} />
+                            Thành công
+                          </span>
+                        )}
+
+                        {img.status === 'error' && (
+                          <span className="ml-2 text-destructive font-medium truncate max-w-[200px]" title={img.error}>
+                            Lỗi: {img.error}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
