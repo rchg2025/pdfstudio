@@ -219,20 +219,18 @@ export default function PdfEditor() {
   return (
     <div className="pdf-editor-container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {/* HEADER */}
-      <div className="glass-card" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ padding: '0.75rem', background: 'var(--primary)', borderRadius: 'var(--radius-md)', color: 'white' }}>
-            <FileText size={24} />
-          </div>
-          <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              Công Cụ Chỉnh Sửa PDF 
-            </h1>
-            <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Xem trực quan, xoay chiều và xóa trang</p>
-          </div>
-        </div>
+      <div className="tool-header text-center" style={{ marginBottom: '2rem' }}>
+        <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Chỉnh Sửa PDF</h1>
+        <p className="text-secondary">Xem trực quan, xoay chiều và xóa các trang trong tài liệu.</p>
+      </div>
 
-        {file && !isLoading && (
+      {file && !isLoading && (
+        <div className="viewer-toolbar glass-card" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', overflow: 'hidden' }}>
+            <FileBox size={24} className="text-primary" />
+            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 500 }}>{file.name}</span>
+          </div>
+          
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <button className="icon-btn" onClick={() => rotateAllPages('ccw')} title="Xoay trái tất cả">
               <RotateCcw size={18} />
@@ -259,21 +257,21 @@ export default function PdfEditor() {
               )}
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       <div style={{ display: 'flex', gap: '1.5rem', flex: 1, minHeight: 0, flexDirection: 'row', flexWrap: 'wrap' }}>
         {/* PDF VIEWER/EDITOR */}
         <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {!file && (
-            <div className="glass-card" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto', width: '100%', flex: 'none' }}>
               <div 
                 className={`dropzone ${isDragging ? 'drag-active' : ''}`}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                style={{ width: '100%', maxWidth: '500px' }}
+                style={{ width: '100%' }}
               >
                 <Upload size={48} className="text-primary" style={{ margin: '0 auto 1rem' }} />
                 <h3 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', fontWeight: 600 }}>Tải file PDF lên</h3>
