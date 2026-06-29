@@ -7,7 +7,6 @@ import PdfToImage from './pages/PdfToImage';
 import PdfCompressor from './pages/PdfCompressor';
 import ImageCompressor from './pages/ImageCompressor';
 import QrLink from './pages/QrLink';
-import AiImage from './pages/AiImage';
 
 function App() {
   return (
@@ -21,7 +20,6 @@ function App() {
           <Route path="pdf-compressor" element={<PdfCompressor />} />
           <Route path="image-compressor" element={<ImageCompressor />} />
           <Route path="qr-link" element={<QrLink />} />
-          <Route path="ai-image" element={<AiImage />} />
         </Route>
       </Routes>
     </BrowserRouter>

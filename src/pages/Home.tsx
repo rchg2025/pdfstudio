@@ -2,7 +2,6 @@ import { Link } from 'react-router-dom';
 import { 
   FileEdit, 
   FileStack, 
-  Sparkles, 
   ImageMinus, 
   FileArchive, 
   Image as ImageIcon, 
@@ -22,12 +21,6 @@ const tools = [
     icon: <FileStack size={24} />,
     title: 'Công Cụ Nối Tách File PDF',
     desc: 'Gộp nhiều file PDF lại với nhau hoặc trích xuất các trang cụ thể thành file PDF mới.'
-  },
-  {
-    path: '/ai-image',
-    icon: <Sparkles size={24} />,
-    title: 'Công cụ Tạo Ảnh AI Tùy Chỉnh',
-    desc: 'Sử dụng trí tuệ nhân tạo để tạo ra các hình ảnh độc đáo dựa trên mô tả của bạn.'
   },
   {
     path: '/image-compressor',
