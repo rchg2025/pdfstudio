@@ -377,8 +377,8 @@ const WatermarkStudio: React.FC = () => {
                   )}
 
                   {baseImgUrl && (
-                      <div className="relative max-w-full max-h-[60vh] sm:max-h-[65vh] flex items-center justify-center shadow-lg rounded ring-1 ring-slate-900/5">
-                          <img ref={baseImageRef} src={baseImgUrl} alt="Base Image" className="max-w-full max-h-[60vh] sm:max-h-[65vh] object-contain rounded select-none pointer-events-none bg-white" />
+                      <div className="relative max-w-full max-h-[60vh] sm:max-h-[65vh] flex items-center justify-center p-3 sm:p-4 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-3xl overflow-hidden">
+                          <img ref={baseImageRef} src={baseImgUrl} alt="Base Image" className="max-w-full max-h-[56vh] sm:max-h-[60vh] object-contain rounded-xl select-none pointer-events-none bg-slate-100 shadow-inner ring-1 ring-slate-200/50" />
                           
                           {logoImgUrl && (
                               <div 
@@ -402,14 +402,14 @@ const WatermarkStudio: React.FC = () => {
               </div>
 
               {baseImgUrl && (
-                  <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
-                      <div className="flex items-center gap-2">
-                          <button onClick={() => bgFileInput.current?.click()} className="btn btn-secondary px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-sm">
+                  <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex flex-col sm:flex-row gap-3 items-center justify-between">
+                      <div className="flex w-full sm:w-auto items-center justify-center gap-2">
+                          <button onClick={() => bgFileInput.current?.click()} className="flex-1 sm:flex-none btn btn-secondary h-9 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 shadow-sm">
                               <RefreshCw className="w-3.5 h-3.5" />
                               Thay ảnh nền
                           </button>
                           {logoImgUrl && (
-                              <button onClick={removeLogo} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                              <button onClick={removeLogo} className="flex-1 sm:flex-none h-9 px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-medium transition flex items-center justify-center gap-1.5 shadow-sm">
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Gỡ logo
                               </button>
