@@ -5,13 +5,15 @@ import {
   FileBox, Eye, X, Undo
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
-import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
 import { PDFDocument, degrees } from 'pdf-lib';
 import { useDialogs } from '../components/CustomDialogs';
 import FileUploadZone from '../components/FileUploadZone';
 import './PdfEditor.css';
 
-pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerSrc;
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url
+).toString();
 
 interface PageData {
   id: number;
@@ -106,7 +108,7 @@ export default function PdfEditor() {
           setPages([]);
         }
       } else {
-        showAlert('Không thể đọc file PDF. File có thể bị hỏng (corrupted) hoặc cấu trúc không được hỗ trợ.');
+        showAlert(`Không thể đọc file PDF. File có thể bị hỏng (corrupted) hoặc cấu trúc không được hỗ trợ.\nChi tiết: ${error?.message || error}`);
         setFile(null);
         setPages([]);
       }
