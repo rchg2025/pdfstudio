@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, type DragEvent } from 'react';
 import { 
-  Zap, HelpCircle, UploadCloud, Move, RefreshCw, Trash2, Smartphone, Image as ImageIcon, 
+  UploadCloud, Move, RefreshCw, Trash2, Smartphone, Image as ImageIcon, 
   CheckCircle, Download, X, XCircle, CheckCircle2, AlertTriangle, Info 
 } from 'lucide-react';
 
@@ -290,61 +290,43 @@ const WatermarkStudio: React.FC = () => {
   };
 
   return (
-    <div className="bg-slate-950 text-slate-100 min-h-[calc(100vh-80px)] flex flex-col font-sans selection:bg-indigo-500 selection:text-white select-none">
+    <div className="animate-fade-in w-full select-none pb-12">
       <style>{`
         .accelerated { will-change: transform; transform: translate3d(0, 0, 0); backface-visibility: hidden; }
-        .checkerboard-bg {
-            background-color: #0f172a;
-            background-image: linear-gradient(45deg, #020617 25%, transparent 25%), 
-                              linear-gradient(-45deg, #020617 25%, transparent 25%), 
-                              linear-gradient(45deg, transparent 75%, #020617 75%), 
-                              linear-gradient(-45deg, transparent 75%, #020617 75%);
+        .checkerboard-light {
+            background-color: #f8fafc;
+            background-image: linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+                              linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+                              linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
             background-size: 16px 16px;
             background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
         }
       `}</style>
-      
-      {/* Header */}
-      <header className="border-b border-slate-900 bg-slate-900/80 backdrop-blur-md sticky top-0 z-10 px-4 py-3 sm:px-6">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                  <div className="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-500/30">
-                      <Zap className="w-6 h-6" />
-                  </div>
-                  <div>
-                      <h1 className="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-                          Watermark Studio Pro
-                      </h1>
-                      <p className="text-xs text-emerald-400 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                          Xử lý Offline an toàn • Lưu trực tiếp vào Thư viện
-                      </p>
-                  </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                  <button onClick={() => showAlert('Hướng Dẫn Sử Dụng Siêu Tốc', 'Kéo thả tệp ảnh nền vào đây. Sau đó tải logo. Di chuyển và tinh chỉnh thông qua bảng công cụ. Bấm Tải Xuống.', 'info')} className="text-sm text-slate-400 hover:text-white transition flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-slate-800">
-                      <HelpCircle className="w-4 h-4" />
-                      <span className="hidden sm:inline">Hướng dẫn</span>
-                  </button>
-              </div>
-          </div>
-      </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-2 mb-2">
+          Watermark Studio Pro
+        </h1>
+        <p className="text-slate-500">
+          Chèn logo, đóng dấu bản quyền vào ảnh một cách nhanh chóng và chuyên nghiệp.
+        </p>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 w-full">
           
-          {/* Left Side */}
-          <div className="flex-1 flex flex-col bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl min-h-[400px] lg:min-h-[550px]">
+          {/* Left Side: Workspace */}
+          <div className="flex-1 glass-card flex flex-col overflow-hidden min-h-[450px] lg:min-h-[600px] !p-0 shadow-xl border border-slate-200">
               
-              <div className="bg-slate-900/50 border-b border-slate-800/80 px-4 py-3 flex items-center justify-between text-xs text-slate-400">
+              <div className="bg-slate-50 border-b border-slate-200 px-4 py-3 flex items-center justify-between text-xs text-slate-500">
                   <span className="flex items-center gap-1.5 font-medium">
-                      <span className={`w-2 h-2 rounded-full ${baseImgUrl ? (logoImgUrl ? 'bg-emerald-500' : 'bg-yellow-500') : 'bg-slate-500'}`}></span>
+                      <span className={`w-2 h-2 rounded-full ${baseImgUrl ? (logoImgUrl ? 'bg-emerald-500' : 'bg-yellow-500') : 'bg-slate-400'}`}></span>
                       {baseImgUrl ? (logoImgUrl ? 'Đã kết nối logo. Kéo thả tự do trên ảnh!' : 'Đã tải ảnh nền thành công') : 'Chờ tải ảnh nền (Kéo thả ảnh vào khung)'}
                   </span>
-                  {resolution && <span className="font-mono bg-slate-800 px-2 py-0.5 rounded text-slate-300">{resolution.w}x{resolution.h} px</span>}
+                  {resolution && <span className="font-mono bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-600 shadow-sm">{resolution.w}x{resolution.h} px</span>}
               </div>
 
-              <div className="flex-1 flex items-center justify-center p-4 checkerboard-bg relative overflow-hidden">
+              <div className="flex-1 flex items-center justify-center p-4 checkerboard-light relative overflow-hidden">
                   
                   {!baseImgUrl && (
                       <div 
@@ -352,23 +334,23 @@ const WatermarkStudio: React.FC = () => {
                         onDragLeave={() => setIsDragOverBg(false)}
                         onDrop={onBgDrop}
                         onClick={() => bgFileInput.current?.click()}
-                        className={`text-center p-8 max-w-md w-full border-2 border-dashed ${isDragOverBg ? 'border-indigo-500 bg-slate-900/60' : 'border-slate-700 bg-slate-900/40'} hover:border-indigo-500 rounded-2xl cursor-pointer transition group backdrop-blur-sm`}
+                        className={`text-center p-8 max-w-md w-full border-2 border-dashed ${isDragOverBg ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white/60'} hover:border-blue-400 rounded-2xl cursor-pointer transition group backdrop-blur-sm shadow-sm`}
                       >
                           <input type="file" ref={bgFileInput} accept="image/*" className="hidden" onChange={(e) => { if(e.target.files?.length) handleBgFile(e.target.files[0]) }} />
-                          <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-indigo-600/10 group-hover:text-indigo-400 transition text-slate-400">
+                          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 group-hover:text-blue-600 transition text-slate-400 shadow-sm">
                               <UploadCloud className="w-8 h-8" />
                           </div>
-                          <h3 className="text-lg font-semibold text-slate-200 group-hover:text-white mb-2">Tải ảnh nền siêu tốc</h3>
-                          <p className="text-sm text-slate-400 mb-4">Click để chọn hoặc Kéo thả ảnh trực tiếp vào đây</p>
-                          <button className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-medium transition shadow-lg shadow-indigo-600/20">
+                          <h3 className="text-lg font-semibold text-slate-700 group-hover:text-blue-600 mb-2">Tải ảnh nền siêu tốc</h3>
+                          <p className="text-sm text-slate-500 mb-4">Click để chọn hoặc Kéo thả ảnh trực tiếp vào đây</p>
+                          <button className="btn btn-primary px-6 py-2.5 rounded-xl text-sm font-medium transition shadow-md">
                               Chọn từ thiết bị
                           </button>
                       </div>
                   )}
 
                   {baseImgUrl && (
-                      <div className="relative max-w-full max-h-[60vh] sm:max-h-[65vh] flex items-center justify-center">
-                          <img ref={baseImageRef} src={baseImgUrl} alt="Base Image" className="max-w-full max-h-[60vh] sm:max-h-[65vh] object-contain rounded select-none pointer-events-none" />
+                      <div className="relative max-w-full max-h-[60vh] sm:max-h-[65vh] flex items-center justify-center shadow-lg rounded ring-1 ring-slate-900/5">
+                          <img ref={baseImageRef} src={baseImgUrl} alt="Base Image" className="max-w-full max-h-[60vh] sm:max-h-[65vh] object-contain rounded select-none pointer-events-none bg-white" />
                           
                           {logoImgUrl && (
                               <div 
@@ -377,13 +359,13 @@ const WatermarkStudio: React.FC = () => {
                                 onPointerMove={onPointerMove}
                                 onPointerUp={onPointerUp}
                                 onPointerCancel={onPointerUp}
-                                className={`absolute cursor-move group select-none touch-none accelerated ${isDragging ? 'ring-2 ring-indigo-500/80' : ''}`}
+                                className={`absolute cursor-move group select-none touch-none accelerated ${isDragging ? 'ring-2 ring-blue-500/80 shadow-2xl' : ''}`}
                                 style={{ top: 0, left: 0, width: '100px', height: 'auto' }}
                               >
-                                  <img ref={logoImageRef} src={logoImgUrl} alt="Logo" className="w-full h-full object-contain pointer-events-none opacity-100 select-none" />
-                                  <div className="absolute -inset-1 border-2 border-dashed border-indigo-500 rounded scale-100 opacity-0 group-hover:opacity-100 group-active:opacity-100 pointer-events-none transition-opacity duration-150"></div>
-                                  <div className="absolute -top-3 -right-3 bg-indigo-500 text-white p-1 rounded-full shadow-md text-xs opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
-                                      <Move className="w-3.5 h-3.5" />
+                                  <img ref={logoImageRef} src={logoImgUrl} alt="Logo" className="w-full h-full object-contain pointer-events-none opacity-100 select-none drop-shadow-sm" />
+                                  <div className="absolute -inset-1 border-2 border-dashed border-blue-500 rounded scale-100 opacity-0 group-hover:opacity-100 group-active:opacity-100 pointer-events-none transition-opacity duration-150"></div>
+                                  <div className="absolute -top-3 -right-3 bg-blue-600 text-white p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+                                      <Move className="w-3 h-3" />
                                   </div>
                               </div>
                           )}
@@ -392,34 +374,34 @@ const WatermarkStudio: React.FC = () => {
               </div>
 
               {baseImgUrl && (
-                  <div className="bg-slate-900/90 border-t border-slate-800/80 px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
+                  <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
                       <div className="flex items-center gap-2">
-                          <button onClick={() => bgFileInput.current?.click()} className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                          <button onClick={() => bgFileInput.current?.click()} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
                               <RefreshCw className="w-3.5 h-3.5" />
                               Thay ảnh nền
                           </button>
                           {logoImgUrl && (
-                              <button onClick={removeLogo} className="px-3 py-1.5 bg-red-950/30 hover:bg-red-900/30 text-red-400 border border-red-900/20 rounded-lg text-xs font-medium transition flex items-center gap-1.5">
+                              <button onClick={removeLogo} className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
                                   <Trash2 className="w-3.5 h-3.5" />
                                   Gỡ logo
                               </button>
                           )}
                       </div>
-                      <div className="text-xs text-slate-400 flex items-center gap-1">
-                          <Smartphone className="w-3.5 h-3.5 text-indigo-400" />
+                      <div className="text-xs text-slate-500 flex items-center gap-1.5">
+                          <Smartphone className="w-4 h-4 text-blue-500" />
                           <span>Giữ & kéo logo để chỉnh vị trí tự do</span>
                       </div>
                   </div>
               )}
           </div>
 
-          {/* Right Side */}
+          {/* Right Side: Controls */}
           <div className="w-full lg:w-[380px] flex flex-col gap-6">
               
-              <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-lg">
+              <div className="glass-card !p-5 shadow-lg border border-slate-200">
                   <div className="flex items-center gap-2.5 mb-4">
-                      <span className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-indigo-400 text-xs font-bold flex items-center justify-center">1</span>
-                      <h2 className="text-md font-bold text-white">Tải Logo Lên</h2>
+                      <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">1</span>
+                      <h2 className="text-md font-bold text-slate-800">Tải Logo Lên</h2>
                   </div>
 
                   <div 
@@ -427,135 +409,135 @@ const WatermarkStudio: React.FC = () => {
                     onDragOver={(e) => { e.preventDefault(); setIsDragOverLogo(true); }}
                     onDragLeave={() => setIsDragOverLogo(false)}
                     onDrop={onLogoDrop}
-                    className={`border-2 border-dashed ${isDragOverLogo ? 'border-indigo-500/70 bg-slate-950/70' : 'border-slate-700 bg-slate-950/40'} hover:border-indigo-500/70 rounded-xl p-4 text-center cursor-pointer transition group relative`}
+                    className={`border-2 border-dashed ${isDragOverLogo ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-slate-50'} hover:border-blue-400 hover:bg-blue-50/50 rounded-xl p-4 text-center cursor-pointer transition group relative`}
                   >
                       <input type="file" ref={logoFileInput} accept="image/*" className="hidden" onChange={(e) => { if(e.target.files?.length) handleLogoFile(e.target.files[0]) }} />
-                      <div className="w-10 h-10 bg-slate-800/80 rounded-lg flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:bg-indigo-600/10 group-hover:text-indigo-400 transition">
+                      <div className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-lg flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:border-blue-200 group-hover:text-blue-500 transition">
                           <ImageIcon className="w-5 h-5" />
                       </div>
-                      <span className="text-sm font-semibold text-slate-200 group-hover:text-indigo-400 transition block mb-0.5">Chọn hình logo của bạn</span>
+                      <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-600 transition block mb-0.5">Chọn hình logo của bạn</span>
                       <span className="text-xs text-slate-500 block">Dạng PNG trong suốt để đạt hiệu quả tốt nhất</span>
                   </div>
 
                   {logoImgUrl && (
-                      <div className="mt-3 flex items-center justify-between bg-slate-950/50 rounded-lg px-3 py-2 text-xs border border-slate-800/80">
+                      <div className="mt-3 flex items-center justify-between bg-emerald-50 rounded-lg px-3 py-2 text-xs border border-emerald-100">
                           <div className="flex items-center gap-2 overflow-hidden">
                               <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
-                              <span className="text-slate-300 truncate font-mono">{logoName}</span>
+                              <span className="text-emerald-800 truncate font-mono font-medium">{logoName}</span>
                           </div>
-                          <button onClick={() => logoFileInput.current?.click()} className="text-indigo-400 hover:text-indigo-300 font-medium whitespace-nowrap ml-2">Đổi logo</button>
+                          <button onClick={() => logoFileInput.current?.click()} className="text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap ml-2 underline decoration-emerald-300 underline-offset-2">Đổi</button>
                       </div>
                   )}
               </div>
 
-              <div className={`bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-lg relative transition-all duration-200 ${!logoImgUrl ? 'opacity-40 pointer-events-none' : ''}`}>
+              <div className={`glass-card !p-5 shadow-lg border border-slate-200 relative transition-all duration-300 ${!logoImgUrl ? 'opacity-50 grayscale pointer-events-none' : ''}`}>
                   <div className="flex items-center gap-2.5 mb-4">
-                      <span className="w-6 h-6 rounded-full bg-slate-800 border border-slate-700 text-indigo-400 text-xs font-bold flex items-center justify-center">2</span>
-                      <h2 className="text-md font-bold text-white">Chỉnh Sửa & Căn Chỉnh</h2>
+                      <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-600 text-xs font-bold flex items-center justify-center">2</span>
+                      <h2 className="text-md font-bold text-slate-800">Căn Chỉnh Tùy Chỉnh</h2>
                   </div>
 
-                  <div className="mb-5">
-                      <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2.5">Căn vị trí nhanh</label>
-                      <div className="grid grid-cols-3 gap-1 p-1 bg-slate-950/60 rounded-xl border border-slate-800">
-                          <button onClick={() => setLogoPreset('top-left')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Trái Trên</button>
-                          <button onClick={() => setLogoPreset('top-center')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Giữa Trên</button>
-                          <button onClick={() => setLogoPreset('top-right')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Phải Trên</button>
+                  <div className="mb-6">
+                      <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5">Căn vị trí nhanh</label>
+                      <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-slate-100 rounded-xl border border-slate-200 shadow-inner">
+                          <button onClick={() => setLogoPreset('top-left')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Trái Trên</button>
+                          <button onClick={() => setLogoPreset('top-center')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Giữa Trên</button>
+                          <button onClick={() => setLogoPreset('top-right')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Phải Trên</button>
                           
-                          <button onClick={() => setLogoPreset('center-left')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Giữa Trái</button>
-                          <button onClick={() => setLogoPreset('center')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white text-xs font-semibold rounded-lg bg-indigo-600/10 text-indigo-400 border border-indigo-500/10 flex flex-col items-center gap-1">Trung Tâm</button>
-                          <button onClick={() => setLogoPreset('center-right')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Giữa Phải</button>
+                          <button onClick={() => setLogoPreset('center-left')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Giữa Trái</button>
+                          <button onClick={() => setLogoPreset('center')} className="py-2 px-1 bg-white shadow-sm text-blue-600 ring-1 ring-blue-500/20 rounded-lg text-xs font-bold">Trung Tâm</button>
+                          <button onClick={() => setLogoPreset('center-right')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Giữa Phải</button>
 
-                          <button onClick={() => setLogoPreset('bottom-left')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Trái Dưới</button>
-                          <button onClick={() => setLogoPreset('bottom-center')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Giữa Dưới</button>
-                          <button onClick={() => setLogoPreset('bottom-right')} className="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition text-xs flex flex-col items-center gap-1">Phải Dưới</button>
+                          <button onClick={() => setLogoPreset('bottom-left')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Trái Dưới</button>
+                          <button onClick={() => setLogoPreset('bottom-center')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Giữa Dưới</button>
+                          <button onClick={() => setLogoPreset('bottom-right')} className="py-2 px-1 hover:bg-white hover:shadow-sm text-slate-500 hover:text-slate-800 rounded-lg transition text-xs font-medium">Phải Dưới</button>
                       </div>
                   </div>
 
-                  <div className="space-y-4 pt-2 border-t border-slate-800/50">
+                  <div className="space-y-5 pt-4 border-t border-slate-100">
                       <div>
-                          <div className="flex justify-between items-center mb-1">
-                              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kích thước</label>
-                              <span className="text-xs text-indigo-400 font-mono font-bold">{logoScaleWidth}px</span>
+                          <div className="flex justify-between items-center mb-2">
+                              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Kích thước</label>
+                              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-mono font-bold">{logoScaleWidth}px</span>
                           </div>
-                          <input type="range" min="10" max={maxLogoSize} value={logoScaleWidth} onChange={(e) => setLogoScaleWidth(parseInt(e.target.value))} className="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg cursor-pointer" />
+                          <input type="range" min="10" max={maxLogoSize} value={logoScaleWidth} onChange={(e) => setLogoScaleWidth(parseInt(e.target.value))} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer" />
                       </div>
 
                       <div>
-                          <div className="flex justify-between items-center mb-1">
-                              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Độ mờ đục</label>
-                              <span className="text-xs text-indigo-400 font-mono font-bold">{Math.round(logoOpacity * 100)}%</span>
+                          <div className="flex justify-between items-center mb-2">
+                              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Độ mờ đục</label>
+                              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-mono font-bold">{Math.round(logoOpacity * 100)}%</span>
                           </div>
-                          <input type="range" min="0" max="100" value={logoOpacity * 100} onChange={(e) => setLogoOpacity(parseFloat(e.target.value)/100)} className="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg cursor-pointer" />
+                          <input type="range" min="0" max="100" value={logoOpacity * 100} onChange={(e) => setLogoOpacity(parseFloat(e.target.value)/100)} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer" />
                       </div>
 
                       <div>
-                          <div className="flex justify-between items-center mb-1">
-                              <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Góc xoay</label>
-                              <span className="text-xs text-indigo-400 font-mono font-bold">{logoRotation}°</span>
+                          <div className="flex justify-between items-center mb-2">
+                              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Góc xoay</label>
+                              <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-mono font-bold">{logoRotation}°</span>
                           </div>
-                          <input type="range" min="0" max="360" value={logoRotation} onChange={(e) => setLogoRotation(parseInt(e.target.value))} className="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg cursor-pointer" />
+                          <input type="range" min="0" max="360" value={logoRotation} onChange={(e) => setLogoRotation(parseInt(e.target.value))} className="w-full accent-blue-600 h-1.5 bg-slate-200 rounded-lg cursor-pointer" />
                       </div>
                   </div>
               </div>
 
-              <button onClick={exportFinalImage} className={`w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-4 px-6 rounded-2xl shadow-xl shadow-indigo-600/25 flex items-center justify-center gap-2.5 transition active:scale-[0.98] ${!logoImgUrl ? 'opacity-40 pointer-events-none' : ''}`}>
+              <button onClick={exportFinalImage} className={`btn btn-primary w-full py-4 text-base rounded-2xl shadow-lg flex items-center justify-center gap-2.5 transition-all ${!logoImgUrl ? 'opacity-50 grayscale pointer-events-none' : 'hover:shadow-blue-500/25 hover:-translate-y-0.5'}`}>
                   <Download className="w-5 h-5" />
                   <span>Tải Ảnh Chất Lượng Gốc</span>
               </button>
           </div>
-      </main>
+      </div>
 
       {/* Hidden Canvas */}
       <canvas ref={canvasRef} className="hidden"></canvas>
 
       {/* Modals */}
       {saveModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/90 backdrop-blur-md">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 shadow-2xl relative flex flex-col max-h-[90vh]">
-                  <button onClick={() => setSaveModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 p-1.5 rounded-full z-10">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+              <div className="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative flex flex-col max-h-[90vh]">
+                  <button onClick={() => setSaveModalOpen(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-full transition z-10">
                       <X className="w-5 h-5" />
                   </button>
-                  <div className="text-center mb-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-950/40 text-emerald-500 border border-emerald-900/30 flex items-center justify-center mx-auto mb-2">
-                          <CheckCircle className="w-5 h-5" />
+                  <div className="text-center mb-4">
+                      <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto mb-3 shadow-inner">
+                          <CheckCircle className="w-6 h-6" />
                       </div>
-                      <h3 className="text-base font-bold text-white">Đã Ghép Logo Thành Công!</h3>
-                      <p className="text-xs text-indigo-400 font-medium mt-1 animate-pulse px-4">
-                          👉 ĐIỆN THOẠI: Ấn giữ vào bức ảnh bên dưới 2 giây {'->'} Chọn "Lưu hình ảnh" hoặc "Thêm vào Ảnh" để tải về máy!
+                      <h3 className="text-lg font-bold text-slate-800">Đã Ghép Logo Thành Công!</h3>
+                      <p className="text-sm text-blue-600 font-medium mt-1.5 px-4 bg-blue-50 py-1.5 rounded-lg inline-block">
+                          👉 ĐIỆN THOẠI: Ấn giữ vào bức ảnh bên dưới 2 giây {'->'} Chọn "Lưu hình ảnh" để tải về máy!
                       </p>
                   </div>
-                  <div className="flex-1 overflow-auto bg-slate-950 rounded-xl p-2 border border-slate-800 flex items-center justify-center min-h-[180px] max-h-[50vh]">
-                      <img src={finalImgUrl} alt="Ấn giữ để lưu ảnh" className="max-w-full max-h-full object-contain rounded shadow-lg select-all" />
+                  <div className="flex-1 overflow-auto bg-slate-50 rounded-xl p-3 border border-slate-200 flex items-center justify-center min-h-[180px] max-h-[50vh] shadow-inner">
+                      <img src={finalImgUrl} alt="Ấn giữ để lưu ảnh" className="max-w-full max-h-full object-contain rounded drop-shadow-md select-all" />
                   </div>
-                  <div className="mt-4 text-center">
-                      <p className="text-[11px] text-slate-400 leading-relaxed mb-3">Nếu bạn dùng máy tính, trình duyệt sẽ tự động tải file xuống dưới góc màn hình.</p>
-                      <button onClick={() => setSaveModalOpen(false)} className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition">Đóng cửa sổ xem ảnh</button>
+                  <div className="mt-5 text-center space-y-3">
+                      <p className="text-xs text-slate-500 leading-relaxed">Trên máy tính, trình duyệt đã tự động tải file xuống.</p>
+                      <button onClick={() => setSaveModalOpen(false)} className="btn btn-secondary w-full py-2.5 rounded-xl text-sm">Đóng cửa sổ</button>
                   </div>
               </div>
           </div>
       )}
 
       {alertModal.open && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
-                  <button onClick={() => setAlertModal({...alertModal, open: false})} className="absolute top-4 right-4 text-slate-400 hover:text-white">
-                      <X className="w-5 h-5" />
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+              <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+                  <button onClick={() => setAlertModal({...alertModal, open: false})} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 bg-slate-100 p-1.5 rounded-full transition">
+                      <X className="w-4 h-4" />
                   </button>
-                  <div className={`w-11 h-11 rounded-full mb-3 flex items-center justify-center border ${
-                      alertModal.type === 'error' ? 'bg-red-950/40 text-red-500 border-red-900/20' :
-                      alertModal.type === 'success' ? 'bg-emerald-950/40 text-emerald-500 border-emerald-900/20' :
-                      alertModal.type === 'warning' ? 'bg-yellow-950/40 text-yellow-500 border-yellow-900/20' :
-                      'bg-indigo-950/40 text-indigo-500 border-indigo-900/20'
+                  <div className={`w-12 h-12 rounded-full mb-4 flex items-center justify-center shadow-inner ${
+                      alertModal.type === 'error' ? 'bg-red-100 text-red-600' :
+                      alertModal.type === 'success' ? 'bg-emerald-100 text-emerald-600' :
+                      alertModal.type === 'warning' ? 'bg-yellow-100 text-yellow-600' :
+                      'bg-blue-100 text-blue-600'
                   }`}>
-                      {alertModal.type === 'error' ? <XCircle className="w-5 h-5" /> :
-                       alertModal.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> :
-                       alertModal.type === 'warning' ? <AlertTriangle className="w-5 h-5" /> :
-                       <Info className="w-5 h-5" />}
+                      {alertModal.type === 'error' ? <XCircle className="w-6 h-6" /> :
+                       alertModal.type === 'success' ? <CheckCircle2 className="w-6 h-6" /> :
+                       alertModal.type === 'warning' ? <AlertTriangle className="w-6 h-6" /> :
+                       <Info className="w-6 h-6" />}
                   </div>
-                  <h3 className="text-base font-bold text-white mb-1.5">{alertModal.title}</h3>
-                  <p className="text-slate-300 text-sm leading-relaxed mb-5 whitespace-pre-wrap">{alertModal.message}</p>
+                  <h3 className="text-lg font-bold text-slate-800 mb-2">{alertModal.title}</h3>
+                  <p className="text-slate-600 text-sm leading-relaxed mb-6 whitespace-pre-wrap">{alertModal.message}</p>
                   <div className="flex justify-end">
-                      <button onClick={() => setAlertModal({...alertModal, open: false})} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-sm font-medium transition">Đã hiểu</button>
+                      <button onClick={() => setAlertModal({...alertModal, open: false})} className="btn btn-primary px-5 py-2.5 rounded-xl text-sm shadow-md">Đã hiểu</button>
                   </div>
               </div>
           </div>
