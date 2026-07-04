@@ -65,13 +65,14 @@ export default function PdfEditor() {
     try {
       const arrayBuffer = await pdfFile.arrayBuffer();
       const typedarray = new Uint8Array(arrayBuffer);
-      const pdf = await pdfjsLib.getDocument({ 
+      const loadingTask = pdfjsLib.getDocument({ 
         data: typedarray,
         password: password,
         cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
         cMapPacked: true,
         standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/standard_fonts/`
-      }).promise;
+      });
+      const pdf = await loadingTask.promise;
       
       const loadedPages: PageData[] = [];
       for (let i = 1; i <= pdf.numPages; i++) {
@@ -95,7 +96,7 @@ export default function PdfEditor() {
         }
       }
       setPages(loadedPages);
-      (pdf as any).destroy(); // Free memory
+      await loadingTask.destroy(); // Free memory
     } catch (error: any) {
       console.error(error);
       if (error?.name === 'PasswordException' || error?.message?.toLowerCase().includes('password')) {
