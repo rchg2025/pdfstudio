@@ -364,8 +364,8 @@ const WatermarkStudio: React.FC = () => {
                   )}
 
                   {baseImgUrl && (
-                      <div className="relative max-w-full max-h-[60vh] sm:max-h-[65vh] flex items-center justify-center p-3 sm:p-4 bg-white/60 backdrop-blur-xl border border-white/80 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-3xl overflow-hidden">
-                          <img ref={baseImageRef} src={baseImgUrl} alt="Base Image" className="max-w-full max-h-[56vh] sm:max-h-[60vh] object-contain rounded-xl select-none pointer-events-none bg-slate-100 shadow-inner ring-1 ring-slate-200/50" />
+                      <div className="relative inline-block max-w-full max-h-[60vh] sm:max-h-[65vh] p-3 sm:p-4 bg-white border border-slate-200 shadow-2xl rounded-2xl overflow-hidden">
+                          <img ref={baseImageRef} src={baseImgUrl} alt="Base Image" className="max-w-full max-h-[56vh] sm:max-h-[60vh] object-contain rounded-lg select-none pointer-events-none bg-slate-50 border border-slate-100" />
                           
                           {logoImgUrl && (
                               <div 
