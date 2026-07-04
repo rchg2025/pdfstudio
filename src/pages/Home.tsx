@@ -79,12 +79,22 @@ const tools = [
 const Home = () => {
   return (
     <div className="animate-fade-in">
-      <section className="home-hero">
+      <section className="home-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <img 
+          src="/logo.jpg" 
+          alt="PDF Studio Logo" 
+          style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1.5rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }} 
+        />
         <h1 className="home-title text-gradient">Công Cụ PDF & Tiện Ích</h1>
         <p className="home-subtitle">
           Một nền tảng duy nhất giúp bạn xử lý file PDF, tối ưu hóa hình ảnh và nhiều hơn thế nữa. 
           Tất cả đều được thực hiện ngay trên trình duyệt, đảm bảo an toàn tuyệt đối.
         </p>
+        <ul style={{ listStyle: 'none', padding: 0, display: 'flex', gap: '1.5rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '1.5rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FileEdit size={20} /> Chỉnh sửa PDF</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><ImageIcon size={20} /> Xử lý hình ảnh</li>
+          <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}><LinkIcon size={20} /> Chia sẻ dễ dàng</li>
+        </ul>
       </section>
 
       <section className="tools-grid">
