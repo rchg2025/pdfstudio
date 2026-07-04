@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect, type DragEvent } from 'react';
+import heic2any from 'heic2any';
 import { 
   UploadCloud, Move, RefreshCw, Trash2, Smartphone, Image as ImageIcon, 
-  CheckCircle, Download, X, XCircle, CheckCircle2, AlertTriangle, Info 
+  CheckCircle, Download, X, XCircle, CheckCircle2, AlertTriangle, Info, Loader2
 } from 'lucide-react';
 
 const WatermarkStudio: React.FC = () => {
@@ -42,6 +43,27 @@ const WatermarkStudio: React.FC = () => {
 
   const [isDragOverBg, setIsDragOverBg] = useState(false);
   const [isDragOverLogo, setIsDragOverLogo] = useState(false);
+  
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const processImageFile = async (file: File): Promise<File | null> => {
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.heic') || fileName.endsWith('.heif')) {
+      try {
+        setIsProcessing(true);
+        const converted = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+        const convertedBlob = Array.isArray(converted) ? converted[0] : converted;
+        setIsProcessing(false);
+        return new File([convertedBlob], file.name.replace(/\.hei(c|f)$/i, '.jpg'), { type: 'image/jpeg' });
+      } catch (error) {
+        console.error(error);
+        setIsProcessing(false);
+        showAlert('Lỗi', 'Không thể đọc file HEIC/HEIF này.', 'error');
+        return null;
+      }
+    }
+    return file;
+  };
 
   const updateLogoRendering = () => {
     if (!baseImageRef.current || !logoImageRef.current || !wrapperRef.current || !resolution) return;
@@ -93,14 +115,17 @@ const WatermarkStudio: React.FC = () => {
     setAlertModal({ open: true, title, message, type });
   };
 
-  const handleBgFile = (file: File) => {
-    if (!file.type.match('image.*')) {
+  const handleBgFile = async (file: File) => {
+    const processedFile = await processImageFile(file);
+    if (!processedFile) return;
+
+    if (!processedFile.type.match('image.*')) {
       showAlert('Lỗi Định Dạng', 'Vui lòng chọn một tệp ảnh hợp lệ.', 'error');
       return;
     }
     if (baseImgUrl) URL.revokeObjectURL(baseImgUrl);
     
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(processedFile);
     const img = new Image();
     img.onload = () => {
       setResolution({ w: img.naturalWidth, h: img.naturalHeight });
@@ -113,21 +138,24 @@ const WatermarkStudio: React.FC = () => {
     img.src = url;
   };
 
-  const handleLogoFile = (file: File) => {
+  const handleLogoFile = async (file: File) => {
     if (!baseImgUrl) {
       showAlert('Chưa tải ảnh nền', 'Vui lòng chọn hình ảnh nền trước khi tải ảnh logo!', 'warning');
       return;
     }
-    if (!file.type.match('image.*')) {
+    const processedFile = await processImageFile(file);
+    if (!processedFile) return;
+
+    if (!processedFile.type.match('image.*')) {
       showAlert('Lỗi Định Dạng', 'Định dạng logo không được hỗ trợ.', 'error');
       return;
     }
     if (logoImgUrl) URL.revokeObjectURL(logoImgUrl);
 
-    const url = URL.createObjectURL(file);
+    const url = URL.createObjectURL(processedFile);
     const img = new Image();
     img.onload = () => {
-      setLogoName(file.name);
+      setLogoName(processedFile.name);
       setLogoImgUrl(url);
       setLogoPreset('center');
     };
@@ -334,10 +362,10 @@ const WatermarkStudio: React.FC = () => {
                         onDragLeave={() => setIsDragOverBg(false)}
                         onDrop={onBgDrop}
                         onClick={() => bgFileInput.current?.click()}
-                        className={`text-center p-8 max-w-md w-full border-2 border-dashed ${isDragOverBg ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white/60'} hover:border-blue-400 rounded-2xl cursor-pointer transition group backdrop-blur-sm shadow-sm`}
+                        className={`flex flex-col items-center justify-center text-center p-8 max-w-md w-full border-2 border-dashed ${isDragOverBg ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white/60'} hover:border-blue-400 rounded-2xl cursor-pointer transition group backdrop-blur-sm shadow-sm`}
                       >
-                          <input type="file" ref={bgFileInput} accept="image/*" className="hidden" onChange={(e) => { if(e.target.files?.length) handleBgFile(e.target.files[0]) }} />
-                          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-100 group-hover:text-blue-600 transition text-slate-400 shadow-sm">
+                          <input type="file" ref={bgFileInput} accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { if(e.target.files?.length) handleBgFile(e.target.files[0]) }} />
+                          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-100 group-hover:text-blue-600 transition text-slate-400 shadow-sm">
                               <UploadCloud className="w-8 h-8" />
                           </div>
                           <h3 className="text-lg font-semibold text-slate-700 group-hover:text-blue-600 mb-2">Tải ảnh nền siêu tốc</h3>
@@ -409,10 +437,10 @@ const WatermarkStudio: React.FC = () => {
                     onDragOver={(e) => { e.preventDefault(); setIsDragOverLogo(true); }}
                     onDragLeave={() => setIsDragOverLogo(false)}
                     onDrop={onLogoDrop}
-                    className={`border-2 border-dashed ${isDragOverLogo ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-slate-50'} hover:border-blue-400 hover:bg-blue-50/50 rounded-xl p-4 text-center cursor-pointer transition group relative`}
+                    className={`flex flex-col items-center justify-center border-2 border-dashed ${isDragOverLogo ? 'border-blue-400 bg-blue-50' : 'border-slate-300 bg-slate-50'} hover:border-blue-400 hover:bg-blue-50/50 rounded-xl p-4 text-center cursor-pointer transition group relative`}
                   >
-                      <input type="file" ref={logoFileInput} accept="image/*" className="hidden" onChange={(e) => { if(e.target.files?.length) handleLogoFile(e.target.files[0]) }} />
-                      <div className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-lg flex items-center justify-center mx-auto mb-2 text-slate-400 group-hover:border-blue-200 group-hover:text-blue-500 transition">
+                      <input type="file" ref={logoFileInput} accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { if(e.target.files?.length) handleLogoFile(e.target.files[0]) }} />
+                      <div className="w-10 h-10 bg-white border border-slate-200 shadow-sm rounded-lg flex items-center justify-center mb-2 text-slate-400 group-hover:border-blue-200 group-hover:text-blue-500 transition">
                           <ImageIcon className="w-5 h-5" />
                       </div>
                       <span className="text-sm font-semibold text-slate-700 group-hover:text-blue-600 transition block mb-0.5">Chọn hình logo của bạn</span>
@@ -539,6 +567,15 @@ const WatermarkStudio: React.FC = () => {
                   <div className="flex justify-end">
                       <button onClick={() => setAlertModal({...alertModal, open: false})} className="btn btn-primary px-5 py-2.5 rounded-xl text-sm shadow-md">Đã hiểu</button>
                   </div>
+              </div>
+          </div>
+      )}
+      {isProcessing && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm">
+              <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center">
+                  <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+                  <h3 className="text-lg font-bold text-slate-800">Đang xử lý ảnh...</h3>
+                  <p className="text-sm text-slate-500 mt-1">Đang chuyển đổi định dạng ảnh Apple</p>
               </div>
           </div>
       )}
