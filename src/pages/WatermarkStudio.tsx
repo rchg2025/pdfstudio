@@ -136,6 +136,7 @@ const WatermarkStudio: React.FC = () => {
       setBaseImgUrl(url);
     };
     img.src = url;
+    if (bgFileInput.current) bgFileInput.current.value = '';
   };
 
   const handleLogoFile = async (file: File) => {
@@ -160,6 +161,7 @@ const WatermarkStudio: React.FC = () => {
       setLogoPreset('center');
     };
     img.src = url;
+    if (logoFileInput.current) logoFileInput.current.value = '';
   };
 
   const onBgDrop = (e: DragEvent) => {
@@ -355,6 +357,7 @@ const WatermarkStudio: React.FC = () => {
               </div>
 
               <div className="flex-1 flex items-center justify-center p-4 checkerboard-light relative overflow-hidden">
+                  <input type="file" ref={bgFileInput} accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { if(e.target.files?.length) handleBgFile(e.target.files[0]) }} />
                   
                   {!baseImgUrl && (
                       <div 
@@ -364,7 +367,6 @@ const WatermarkStudio: React.FC = () => {
                         onClick={() => bgFileInput.current?.click()}
                         className={`flex flex-col items-center justify-center text-center p-8 max-w-md w-full border-2 border-dashed ${isDragOverBg ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white/60'} hover:border-blue-400 rounded-2xl cursor-pointer transition group backdrop-blur-sm shadow-sm`}
                       >
-                          <input type="file" ref={bgFileInput} accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { if(e.target.files?.length) handleBgFile(e.target.files[0]) }} />
                           <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-100 group-hover:text-blue-600 transition text-slate-400 shadow-sm">
                               <UploadCloud className="w-8 h-8" />
                           </div>
