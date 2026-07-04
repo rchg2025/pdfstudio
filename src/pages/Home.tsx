@@ -71,7 +71,7 @@ const tools = [
   {
     path: '/watermark-studio',
     icon: <Stamp size={24} />,
-    title: 'Watermark Studio Pro',
+    title: 'Công cụ chèn Logo vào ảnh',
     desc: 'Chèn logo, đóng dấu bản quyền vào ảnh của bạn một cách nhanh chóng, chất lượng cao.'
   }
 ];

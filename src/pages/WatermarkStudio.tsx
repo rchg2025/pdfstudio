@@ -330,7 +330,7 @@ const WatermarkStudio: React.FC = () => {
 
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-2 mb-2">
-          Watermark Studio Pro
+          Công cụ chèn Logo vào ảnh
         </h1>
         <p className="text-slate-500">
           Chèn logo, đóng dấu bản quyền vào ảnh một cách nhanh chóng và chuyên nghiệp.
