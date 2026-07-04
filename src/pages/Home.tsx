@@ -8,7 +8,8 @@ import {
   Link as LinkIcon,
   SplitSquareHorizontal,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Stamp
 } from 'lucide-react';
 import './Home.css';
 
@@ -66,6 +67,12 @@ const tools = [
     icon: <ShieldCheck size={24} />,
     title: 'Công Cụ Bảo Mật PDF',
     desc: 'Đặt mật khẩu bảo vệ hoặc gỡ bỏ lớp bảo mật cho file PDF một cách dễ dàng và an toàn.'
+  },
+  {
+    path: '/watermark-studio',
+    icon: <Stamp size={24} />,
+    title: 'Watermark Studio Pro',
+    desc: 'Chèn logo, đóng dấu bản quyền vào ảnh của bạn một cách nhanh chóng, chất lượng cao.'
   }
 ];
 

@@ -13,6 +13,7 @@ const ImageConverter = React.lazy(() => import('./pages/ImageConverter'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
+const WatermarkStudio = React.lazy(() => import('./pages/WatermarkStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -55,6 +56,9 @@ function App() {
           } />
           <Route path="bao-mat-pdf" element={
             <Suspense fallback={<FallbackLoader />}><PdfSecurity /></Suspense>
+          } />
+          <Route path="watermark-studio" element={
+            <Suspense fallback={<FallbackLoader />}><WatermarkStudio /></Suspense>
           } />
         </Route>
       </Routes>
