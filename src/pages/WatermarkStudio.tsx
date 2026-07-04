@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, type DragEvent } from 'react';
 import heic2any from 'heic2any';
 import { 
-  UploadCloud, Move, RefreshCw, Trash2, Smartphone, Image as ImageIcon, 
+  Move, RefreshCw, Trash2, Smartphone, Image as ImageIcon, 
   CheckCircle, Download, X, XCircle, CheckCircle2, AlertTriangle, Info, Loader2
 } from 'lucide-react';
+import FileUploadZone from '../components/FileUploadZone';
 
 const WatermarkStudio: React.FC = () => {
   const [baseImgUrl, setBaseImgUrl] = useState<string | null>(null);
@@ -41,7 +42,6 @@ const WatermarkStudio: React.FC = () => {
     open: false, title: '', message: '', type: 'info'
   });
 
-  const [isDragOverBg, setIsDragOverBg] = useState(false);
   const [isDragOverLogo, setIsDragOverLogo] = useState(false);
   
   const [isProcessing, setIsProcessing] = useState(false);
@@ -162,12 +162,6 @@ const WatermarkStudio: React.FC = () => {
     };
     img.src = url;
     if (logoFileInput.current) logoFileInput.current.value = '';
-  };
-
-  const onBgDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragOverBg(false);
-    if (e.dataTransfer.files.length > 0) handleBgFile(e.dataTransfer.files[0]);
   };
 
   const onLogoDrop = (e: DragEvent) => {
@@ -356,25 +350,16 @@ const WatermarkStudio: React.FC = () => {
                   {resolution && <span className="font-mono bg-white border border-slate-200 px-2 py-0.5 rounded text-slate-600 shadow-sm">{resolution.w}x{resolution.h} px</span>}
               </div>
 
-              <div className="flex-1 flex items-center justify-center p-4 checkerboard-light relative overflow-hidden">
+              <div className={`flex-1 flex items-center justify-center p-4 relative overflow-hidden ${baseImgUrl ? 'checkerboard-light' : ''}`}>
                   <input type="file" ref={bgFileInput} accept="image/*,.heic,.heif" className="hidden" onChange={(e) => { if(e.target.files?.length) handleBgFile(e.target.files[0]) }} />
                   
                   {!baseImgUrl && (
-                      <div 
-                        onDragOver={(e) => { e.preventDefault(); setIsDragOverBg(true); }}
-                        onDragLeave={() => setIsDragOverBg(false)}
-                        onDrop={onBgDrop}
-                        onClick={() => bgFileInput.current?.click()}
-                        className={`flex flex-col items-center justify-center text-center p-8 max-w-md w-full border-2 border-dashed ${isDragOverBg ? 'border-blue-500 bg-blue-50' : 'border-slate-300 bg-white/60'} hover:border-blue-400 rounded-2xl cursor-pointer transition group backdrop-blur-sm shadow-sm`}
-                      >
-                          <div className="w-16 h-16 bg-slate-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-blue-100 group-hover:text-blue-600 transition text-slate-400 shadow-sm">
-                              <UploadCloud className="w-8 h-8" />
-                          </div>
-                          <h3 className="text-lg font-semibold text-slate-700 group-hover:text-blue-600 mb-2">Tải ảnh nền siêu tốc</h3>
-                          <p className="text-sm text-slate-500 mb-4">Click để chọn hoặc Kéo thả ảnh trực tiếp vào đây</p>
-                          <button className="btn btn-primary px-6 py-2.5 rounded-xl text-sm font-medium transition shadow-md">
-                              Chọn từ thiết bị
-                          </button>
+                      <div className="w-full max-w-xl mx-auto px-4">
+                          <FileUploadZone 
+                            onFileSelect={(files) => { if (files && files.length > 0) handleBgFile(files[0]) }} 
+                            accept="image/*,.heic,.heif" 
+                            hintText="Hỗ trợ các định dạng ảnh phổ biến & HEIC/HEIF" 
+                          />
                       </div>
                   )}
 
