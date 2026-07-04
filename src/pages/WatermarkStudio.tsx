@@ -301,9 +301,9 @@ const WatermarkStudio: React.FC = () => {
     ctx.restore();
 
     try {
-        const outputUrl = canvas.toDataURL('image/png');
+        const outputUrl = canvas.toDataURL('image/jpeg', 0.95);
         const downloadLink = document.createElement('a');
-        downloadLink.download = `watermark_${Date.now()}.png`;
+        downloadLink.download = `watermark_${Date.now()}.jpg`;
         downloadLink.href = outputUrl;
         document.body.appendChild(downloadLink);
         downloadLink.click();
