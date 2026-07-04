@@ -404,7 +404,7 @@ const WatermarkStudio: React.FC = () => {
               {baseImgUrl && (
                   <div className="bg-slate-50 border-t border-slate-200 px-4 py-3 flex flex-wrap gap-3 items-center justify-between">
                       <div className="flex items-center gap-2">
-                          <button onClick={() => bgFileInput.current?.click()} className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-medium transition flex items-center gap-1.5 shadow-sm">
+                          <button onClick={() => bgFileInput.current?.click()} className="btn btn-secondary px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1.5 shadow-sm">
                               <RefreshCw className="w-3.5 h-3.5" />
                               Thay ảnh nền
                           </button>
@@ -453,7 +453,10 @@ const WatermarkStudio: React.FC = () => {
                               <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
                               <span className="text-emerald-800 truncate font-mono font-medium">{logoName}</span>
                           </div>
-                          <button onClick={() => logoFileInput.current?.click()} className="text-emerald-600 hover:text-emerald-700 font-medium whitespace-nowrap ml-2 underline decoration-emerald-300 underline-offset-2">Đổi</button>
+                          <button onClick={() => logoFileInput.current?.click()} className="btn btn-secondary px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 shadow-sm ml-2 shrink-0">
+                              <RefreshCw className="w-3 h-3" />
+                              Đổi
+                          </button>
                       </div>
                   )}
               </div>
