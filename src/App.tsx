@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 
@@ -15,6 +16,12 @@ const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
 const WatermarkStudio = React.lazy(() => import('./pages/WatermarkStudio'));
 const ChromaKeyEraser = React.lazy(() => import('./pages/ChromaKeyEraser'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Admin = React.lazy(() => import('./pages/Admin'));
+const FrameCreator = React.lazy(() => import('./pages/FrameCreator'));
+const FrameViewer = React.lazy(() => import('./pages/FrameViewer'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -27,8 +34,9 @@ const FallbackLoader = () => (
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="pdf-editor" element={
@@ -64,9 +72,28 @@ function App() {
           <Route path="xoa-nen-mau" element={
             <Suspense fallback={<FallbackLoader />}><ChromaKeyEraser /></Suspense>
           } />
+          <Route path="login" element={
+            <Suspense fallback={<FallbackLoader />}><Login /></Suspense>
+          } />
+          <Route path="register" element={
+            <Suspense fallback={<FallbackLoader />}><Register /></Suspense>
+          } />
+          <Route path="dashboard" element={
+            <Suspense fallback={<FallbackLoader />}><Dashboard /></Suspense>
+          } />
+          <Route path="admin" element={
+            <Suspense fallback={<FallbackLoader />}><Admin /></Suspense>
+          } />
+          <Route path="tao-khung" element={
+            <Suspense fallback={<FallbackLoader />}><FrameCreator /></Suspense>
+          } />
+          <Route path="f/:slug" element={
+            <Suspense fallback={<FallbackLoader />}><FrameViewer /></Suspense>
+          } />
         </Route>
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
