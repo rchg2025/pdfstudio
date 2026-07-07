@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect, ChangeEvent, MouseEvent } from 'react';
+import React, { useState, useRef } from 'react';
+import type { ChangeEvent, MouseEvent } from 'react';
 import { Eraser, Upload, Sparkles, RotateCcw, Download, Image as ImageIcon, Info } from 'lucide-react';
 import './ChromaKeyEraser.css';
 
@@ -14,7 +15,7 @@ const ChromaKeyEraser: React.FC = () => {
 
     const hexToRgb = (hex: string) => {
         const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+        hex = hex.replace(shorthandRegex, (_m, r, g, b) => r + r + g + g + b + b);
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
         return result ? {
             r: parseInt(result[1], 16),
