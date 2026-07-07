@@ -162,31 +162,31 @@ const ChromaKeyEraser: React.FC = () => {
     const targetHexColor = rgbToHex(targetColor.r, targetColor.g, targetColor.b);
 
     return (
-        <div className="chroma-eraser-container animate-fade-in flex flex-col h-[calc(100vh-80px)]">
-            <header className="bg-white border-b py-4 px-6 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-3">
-                    <div className="bg-blue-500 text-white p-2 rounded-lg">
+        <div className="chroma-eraser-container animate-fade-in">
+            <header className="chroma-header">
+                <div className="chroma-title-group">
+                    <div className="chroma-icon">
                         <Eraser size={24} />
                     </div>
-                    <h1 className="text-xl font-bold text-gray-800 m-0">Xóa Nền Theo Màu</h1>
+                    <h1 className="chroma-title">Xóa Nền Theo Màu</h1>
                 </div>
                 <div>
-                     <label htmlFor="imageUpload" className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow transition duration-200 flex items-center gap-2 font-medium">
+                     <label htmlFor="imageUpload" className="btn btn-primary">
                         <Upload size={18} /> Tải Ảnh Lên
                     </label>
-                    <input type="file" id="imageUpload" accept="image/*" className="hidden" onChange={handleImageUpload} />
+                    <input type="file" id="imageUpload" accept="image/*" style={{ display: 'none' }} onChange={handleImageUpload} />
                 </div>
             </header>
 
-            <main className="flex-grow flex flex-col md:flex-row overflow-hidden bg-gray-100">
+            <main className="chroma-main">
                 
                 {/* Sidebar Controls */}
-                <aside className="w-full md:w-80 bg-white border-r border-gray-200 p-6 flex flex-col gap-6 overflow-y-auto shrink-0 z-0">
+                <aside className="chroma-sidebar">
                     
-                    <div className="space-y-2">
-                        <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider">1. Chọn Màu Cần Xóa</h2>
-                        <p className="text-xs text-gray-400 mb-2">Click vào ảnh hoặc dùng công cụ chọn màu.</p>
-                        <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <div className="chroma-control-group">
+                        <h2 className="chroma-control-title">1. Chọn Màu Cần Xóa</h2>
+                        <p className="chroma-control-desc">Click vào ảnh hoặc dùng công cụ chọn màu.</p>
+                        <div className="chroma-color-picker-wrap">
                             <input 
                                 type="color" 
                                 value={targetHexColor} 
@@ -194,25 +194,23 @@ const ChromaKeyEraser: React.FC = () => {
                                     const rgb = hexToRgb(e.target.value);
                                     if (rgb) setTargetColor(rgb);
                                 }}
-                                className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent" 
+                                className="chroma-color-picker" 
                             />
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium text-gray-700">Màu Đã Chọn</span>
-                                <span className="text-xs text-gray-500 uppercase">{targetHexColor}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>Màu Đã Chọn</span>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{targetHexColor}</span>
                             </div>
                         </div>
                     </div>
 
-                    <hr className="border-gray-100" />
-
-                    <div className="space-y-4">
-                        <h2 className="text-sm font-semibold uppercase text-gray-500 tracking-wider">2. Cài Đặt Xóa</h2>
+                    <div className="chroma-control-group">
+                        <h2 className="chroma-control-title">2. Cài Đặt Xóa</h2>
                         
                         {/* Tolerance Slider */}
-                        <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <label htmlFor="tolerance" className="text-sm font-medium text-gray-700">Độ Dung Sai (Tolerance)</label>
-                                <span className="text-sm text-blue-600 font-semibold">{tolerance}</span>
+                        <div className="chroma-slider-group">
+                            <div className="chroma-slider-header">
+                                <label htmlFor="tolerance" className="chroma-slider-label">Độ Dung Sai (Tolerance)</label>
+                                <span className="chroma-slider-value">{tolerance}</span>
                             </div>
                             <input 
                                 type="range" 
@@ -221,16 +219,16 @@ const ChromaKeyEraser: React.FC = () => {
                                 max="255" 
                                 value={tolerance} 
                                 onChange={(e) => setTolerance(parseInt(e.target.value))}
-                                className="w-full chroma-range" 
+                                className="chroma-range" 
                             />
-                            <p className="text-xs text-gray-400">Tăng lên để xóa các màu gần giống màu đã chọn.</p>
+                            <p className="chroma-control-desc" style={{ marginTop: '0.25rem' }}>Tăng lên để xóa các màu gần giống màu đã chọn.</p>
                         </div>
 
                         {/* Softness Slider */}
-                         <div className="space-y-2">
-                            <div className="flex justify-between">
-                                <label htmlFor="softness" className="text-sm font-medium text-gray-700">Làm Mờ Viền (Softness)</label>
-                                <span className="text-sm text-blue-600 font-semibold">{softness}</span>
+                         <div className="chroma-slider-group" style={{ marginBottom: 0 }}>
+                            <div className="chroma-slider-header">
+                                <label htmlFor="softness" className="chroma-slider-label">Làm Mờ Viền (Softness)</label>
+                                <span className="chroma-slider-value">{softness}</span>
                             </div>
                             <input 
                                 type="range" 
@@ -239,49 +237,47 @@ const ChromaKeyEraser: React.FC = () => {
                                 max="50" 
                                 value={softness} 
                                 onChange={(e) => setSoftness(parseInt(e.target.value))}
-                                className="w-full chroma-range" 
+                                className="chroma-range" 
                             />
-                            <p className="text-xs text-gray-400">Giúp viền ảnh mượt mà hơn, không bị răng cưa.</p>
+                            <p className="chroma-control-desc" style={{ marginTop: '0.25rem', marginBottom: 0 }}>Giúp viền ảnh mượt mà hơn, không bị răng cưa.</p>
                         </div>
                     </div>
 
-                    <hr className="border-gray-100" />
-
                     {/* Actions */}
-                    <div className="space-y-3 mt-auto pt-4">
-                        <button onClick={removeBackground} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-lg shadow transition duration-200 font-medium flex items-center justify-center gap-2 border-0 cursor-pointer">
+                    <div className="chroma-actions">
+                        <button onClick={removeBackground} disabled={!originalImage || isProcessing} className="btn btn-primary" style={{ width: '100%' }}>
                             <Sparkles size={18} /> Áp Dụng Xóa Nền
                         </button>
-                        <button onClick={handleReset} className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 py-2.5 rounded-lg transition duration-200 font-medium flex items-center justify-center gap-2 border-0 cursor-pointer">
+                        <button onClick={handleReset} disabled={!originalImage} className="btn btn-secondary" style={{ width: '100%' }}>
                             <RotateCcw size={18} /> Hoàn Tác
                         </button>
-                        <button onClick={handleDownload} className="w-full bg-white border-2 border-green-500 text-green-600 hover:bg-green-50 py-2.5 rounded-lg transition duration-200 font-medium flex items-center justify-center gap-2 mt-4 cursor-pointer">
+                        <button onClick={handleDownload} disabled={!originalImage} className="btn btn-secondary" style={{ width: '100%', borderColor: 'var(--success)', color: 'var(--success)' }}>
                             <Download size={18} /> Tải Ảnh Xuống
                         </button>
                     </div>
                 </aside>
 
                 {/* Canvas Area */}
-                <div className="flex-grow p-6 flex flex-col relative bg-gray-50">
-                    {!originalImage && (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400 z-10 pointer-events-none">
-                            <ImageIcon size={64} className="mb-4 text-gray-300" />
-                            <p className="text-lg font-medium m-0">Chưa có ảnh nào được tải lên</p>
-                            <p className="text-sm mt-1">Nhấn "Tải Ảnh Lên" ở góc trên để bắt đầu</p>
-                        </div>
-                    )}
-
-                    <div className="canvas-wrapper flex-grow shadow-sm">
+                <div className="chroma-workspace">
+                    <div className="canvas-wrapper">
+                        {!originalImage && (
+                            <div className="chroma-empty-state">
+                                <ImageIcon size={64} className="chroma-empty-icon" />
+                                <p className="chroma-empty-title">Chưa có ảnh nào được tải lên</p>
+                                <p className="chroma-empty-desc">Nhấn "Tải Ảnh Lên" ở góc trên để bắt đầu</p>
+                            </div>
+                        )}
                         {isProcessing && <div className="chroma-loader"></div>}
                         <canvas 
                             ref={canvasRef} 
                             onClick={handleCanvasClick}
-                            className={`image-canvas ${!originalImage ? 'hidden' : ''}`}
+                            className="image-canvas"
+                            style={{ display: originalImage ? 'block' : 'none' }}
                         ></canvas>
                     </div>
                     
-                    <div className="text-center mt-3 text-xs text-gray-500 flex items-center justify-center gap-1">
-                        <Info size={14} />
+                    <div className="chroma-footer-info">
+                        <Info size={16} style={{ color: 'var(--primary)' }} />
                         Click trực tiếp vào ảnh để nhanh chóng chọn màu nền cần xóa.
                     </div>
                 </div>
