@@ -10,11 +10,28 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   
   const isAllSet = Object.values(envStatus).every(val => val.includes('✅'));
 
+  let dbStatus = 'Chưa kiểm tra';
+  let dbError = null;
+
+  if (isAllSet) {
+    try {
+      const { PrismaClient } = await import('@prisma/client');
+      const prisma = new PrismaClient();
+      await prisma.user.count();
+      dbStatus = '✅ Kết nối DB thành công';
+    } catch (error: any) {
+      dbStatus = '❌ Lỗi kết nối DB';
+      dbError = error.message;
+    }
+  }
+
   res.status(200).json({
-    success: isAllSet,
+    success: isAllSet && dbStatus.includes('✅'),
     message: isAllSet 
-      ? 'Tuyệt vời! Hệ thống đã nhận đủ 3 đoạn Key của bạn.' 
+      ? 'Hệ thống đã nhận đủ 3 đoạn Key của bạn.' 
       : 'Vẫn còn biến môi trường bị thiếu, hãy kiểm tra lại trên Vercel Dashboard (tab Environment Variables).',
-    details: envStatus
+    details: envStatus,
+    dbStatus,
+    dbError
   });
 }
