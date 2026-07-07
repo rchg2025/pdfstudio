@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default function handler(req: VercelRequest, res: VercelResponse) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Chỉ kiểm tra sự tồn tại của biến môi trường, tuyệt đối không in ra giá trị để bảo mật.
   const envStatus = {
     POSTGRES_PRISMA_URL: process.env.POSTGRES_PRISMA_URL ? '✅ Đã cấu hình' : '❌ Đang thiếu',

@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/**/*": {
+      "includeFiles": "node_modules/.prisma/client/**/*"
+    }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
