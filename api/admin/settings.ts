@@ -1,10 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../lib/prisma';
 import { requireAdmin } from '../lib/auth';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     requireAdmin(req);
+    const { PrismaClient } = await import('@prisma/client');
+    const prisma = new PrismaClient();
 
     if (req.method === 'GET') {
       const settings = await prisma.setting.findMany();
@@ -33,6 +34,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     console.error('Admin Settings API Error:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error: ' + error.message });
   }
 }

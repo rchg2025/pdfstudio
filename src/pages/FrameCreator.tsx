@@ -80,89 +80,114 @@ export default function FrameCreator() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-5xl py-12">
-      <h1 className="text-3xl font-bold text-center mb-12 text-gray-800 uppercase tracking-wide">
-        TẠO MỚI SỰ KIỆN, HOẠT ĐỘNG, CHIẾN DỊCH
-      </h1>
+    <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto' }}>
+      <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
+        <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+          Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch
+        </h1>
+        <p className="text-secondary">Vui lòng tải lên khung hình dạng PNG và điền thông tin sự kiện.</p>
+      </div>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div>
-          <h2 className="text-xl font-semibold mb-4 text-[#1e293b]">Thêm hình khung</h2>
-          <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-            Định dạng bắt buộc hình khung là <strong>PNG</strong> và phải có <strong>vùng trong suốt</strong>.<br/>
-            Kích thước đề xuất là hình vuông cạnh <strong>1080px</strong>.<br/>
-            Dung lượng tối đa của hình khung là <strong>2MB</strong>.
-          </p>
+      <div className="glass-card" style={{ padding: '2.5rem' }}>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>Thêm hình khung</h2>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+              Định dạng bắt buộc hình khung là <strong>PNG</strong> và phải có <strong>vùng trong suốt</strong>.<br/>
+              Kích thước đề xuất là hình vuông cạnh <strong>1080px</strong>.<br/>
+              Dung lượng tối đa của hình khung là <strong>2MB</strong>.
+            </p>
 
-          <div className="w-full aspect-square border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center bg-[#f8fafc] relative overflow-hidden">
-            {previewBase64 ? (
-              <img src={previewBase64} alt="Preview" className="w-full h-full object-contain p-4" />
-            ) : (
-              <div className="text-center p-6">
-                <label className="bg-blue-600 text-white px-6 py-3 rounded-xl font-medium cursor-pointer hover:bg-blue-700 transition inline-block mb-4 shadow-sm">
-                  Thêm hình khung
-                  <input type="file" accept="image/png" className="hidden" onChange={handleFileChange} />
+            <div style={{ 
+              width: '100%', 
+              aspectRatio: '1/1', 
+              border: '2px dashed var(--border)', 
+              borderRadius: '1rem', 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              background: 'var(--bg-secondary)', 
+              position: 'relative', 
+              overflow: 'hidden' 
+            }}>
+              {previewBase64 ? (
+                <img src={previewBase64} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '1rem' }} />
+              ) : (
+                <div style={{ textAlign: 'center', padding: '1.5rem' }}>
+                  <label className="btn btn-primary" style={{ display: 'inline-block', cursor: 'pointer', marginBottom: '1rem', padding: '0.75rem 1.5rem', borderRadius: '2rem' }}>
+                    Thêm hình khung
+                    <input type="file" accept="image/png" style={{ display: 'none' }} onChange={handleFileChange} />
+                  </label>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>định dạng PNG, tối đa 2MB</p>
+                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>kích thước cạnh 1080px.</p>
+                </div>
+              )}
+              {previewBase64 && (
+                <label style={{ 
+                  position: 'absolute', bottom: '1rem', right: '1rem', 
+                  background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(4px)', 
+                  color: '#1e293b', padding: '0.5rem 1rem', borderRadius: '0.5rem', 
+                  fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', 
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' 
+                }}>
+                  Đổi hình khác
+                  <input type="file" accept="image/png" style={{ display: 'none' }} onChange={handleFileChange} />
                 </label>
-                <p className="text-gray-400 text-sm">định dạng PNG, tối đa 2MB</p>
-                <p className="text-gray-400 text-sm">kích thước cạnh 1080px.</p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Thông tin chung</h2>
+            
+            {error && (
+              <div style={{ background: '#fee2e2', color: '#b91c1c', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', fontSize: '0.875rem' }}>
+                {error}
               </div>
             )}
-            {previewBase64 && (
-              <label className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-sm text-gray-700 px-4 py-2 rounded-lg font-medium cursor-pointer shadow-sm text-sm border border-gray-200">
-                Đổi hình khác
-                <input type="file" accept="image/png" className="hidden" onChange={handleFileChange} />
-              </label>
-            )}
-          </div>
-        </div>
 
-        <div>
-          <h2 className="text-xl font-semibold mb-6 text-[#1e293b]">Thông tin chung</h2>
-          
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-lg mb-6 text-sm border border-red-100">
-              {error}
-            </div>
-          )}
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tiêu đề <span className="text-red-500">*</span></label>
-            <input 
-              type="text" 
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Tối thiểu 10 ký tự"
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-            />
-          </div>
-
-          <div className="mb-8">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Đường dẫn (URL) <span className="text-red-500">*</span></label>
-            <div className="flex rounded-xl overflow-hidden border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-shadow">
-              <span className="bg-gray-100 px-4 py-3 text-gray-500 text-sm border-r border-gray-200">
-                {window.location.origin}/f/
-              </span>
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Tiêu đề <span style={{ color: '#ef4444' }}>*</span></label>
               <input 
                 type="text" 
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
-                placeholder="duong-dan-khung-hinh"
-                className="flex-1 px-4 py-3 outline-none text-sm"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Tối thiểu 10 ký tự"
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-2">Đường dẫn để chia sẻ, độ dài tối đa 6 ký tự. (Chỉ cho phép chữ thường, số và dấu gạch ngang)</p>
-          </div>
 
-          <button 
-            type="submit"
-            disabled={loading}
-            className={`w-full py-4 rounded-xl font-semibold text-white uppercase tracking-wider transition-all shadow-md
-              ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            {loading ? 'Đang xử lý...' : 'Tạo Khung Hình'}
-          </button>
-        </div>
-      </form>
+            <div style={{ marginBottom: '2rem' }}>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Đường dẫn (URL) <span style={{ color: '#ef4444' }}>*</span></label>
+              <div style={{ display: 'flex', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                <span style={{ background: 'var(--bg-secondary)', padding: '0.75rem 1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', borderRight: '1px solid var(--border)', display: 'flex', alignItems: 'center' }}>
+                  {window.location.origin}/f/
+                </span>
+                <input 
+                  type="text" 
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                  placeholder="duong-dan"
+                  style={{ flex: 1, padding: '0.75rem 1rem', border: 'none', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+                />
+              </div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Đường dẫn để chia sẻ, độ dài tối đa 6 ký tự. (Chỉ cho phép chữ thường, số và dấu gạch ngang)</p>
+            </div>
+
+            <div style={{ marginTop: 'auto' }}>
+              <button 
+                type="submit"
+                disabled={loading}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '1rem', fontSize: '1rem', fontWeight: 600, textTransform: 'uppercase', borderRadius: '0.75rem', display: 'flex', justifyContent: 'center' }}
+              >
+                {loading ? 'Đang xử lý...' : 'Tạo Khung Hình'}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

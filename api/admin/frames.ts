@@ -8,18 +8,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const prisma = new PrismaClient();
 
     if (req.method === 'GET') {
-      const users = await prisma.user.findMany({
-        select: { id: true, email: true, name: true, role: true, createdAt: true },
+      const frames = await prisma.frame.findMany({
+        include: { user: { select: { name: true, email: true } } },
         orderBy: { createdAt: 'desc' }
       });
-      return res.status(200).json(users);
+      return res.status(200).json(frames);
     }
 
     if (req.method === 'DELETE') {
       const { id } = req.query;
       if (!id || typeof id !== 'string') return res.status(400).json({ message: 'Invalid ID' });
-      await prisma.user.delete({ where: { id } });
-      return res.status(200).json({ message: 'User deleted' });
+      await prisma.frame.delete({ where: { id } });
+      return res.status(200).json({ message: 'Frame deleted' });
     }
 
     return res.status(405).json({ message: 'Method not allowed' });
@@ -27,7 +27,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') {
       return res.status(403).json({ message: 'Forbidden' });
     }
-    console.error('Admin Users API Error:', error);
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
