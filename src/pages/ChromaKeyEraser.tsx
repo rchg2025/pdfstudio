@@ -87,59 +87,53 @@ const ChromaKeyEraser: React.FC = () => {
     };
 
     const removeBackground = () => {
-        if (!originalImage || !currentImageData || !canvasRef.current) return;
+        if (!originalImage || !currentImageData || !canvasRef.current || isProcessing) return;
 
         setIsProcessing(true);
 
-        setTimeout(() => {
-            const canvas = canvasRef.current;
-            if (!canvas) return;
-            const ctx = canvas.getContext('2d', { willReadFrequently: true });
-            if (!ctx) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) return;
 
-            const width = canvas.width;
-            const height = canvas.height;
-            
-            const imageData = new ImageData(
-                new Uint8ClampedArray(currentImageData.data),
+        const width = canvas.width;
+        const height = canvas.height;
+        
+        // Use a copy of the imageData so we don't mutate currentImageData unintentionally before passing
+        const imageData = new ImageData(
+            new Uint8ClampedArray(currentImageData.data),
+            width,
+            height
+        );
+
+        // Spawn web worker
+        const worker = new Worker(new URL('../workers/chromaWorker.ts', import.meta.url), { type: 'module' });
+        
+        worker.onmessage = (e) => {
+            const { processedData } = e.data;
+            // Reconstruct ImageData from the buffer returned by worker
+            const newImgData = new ImageData(
+                new Uint8ClampedArray(processedData.data),
                 width,
                 height
             );
-            const data = imageData.data;
-
-            const maxAllowedDistance = (tolerance / 255) * 441.6;
-
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                const a = data[i + 3];
-
-                if (a === 0) continue;
-
-                const distance = colorDistance(r, g, b, targetColor.r, targetColor.g, targetColor.b);
-
-                if (distance <= maxAllowedDistance) {
-                    if (softness === 0) {
-                        data[i + 3] = 0;
-                    } else {
-                        const innerThreshold = Math.max(0, maxAllowedDistance - (softness * 2)); 
-                        
-                        if (distance <= innerThreshold) {
-                            data[i + 3] = 0;
-                        } else {
-                            const range = maxAllowedDistance - innerThreshold;
-                            const distInRange = distance - innerThreshold;
-                            const ratio = distInRange / range;
-                            data[i + 3] = Math.floor(a * ratio);
-                        }
-                    }
-                }
-            }
-
-            ctx.putImageData(imageData, 0, 0);
+            ctx.putImageData(newImgData, 0, 0);
             setIsProcessing(false);
-        }, 10);
+            worker.terminate();
+        };
+
+        worker.onerror = (err) => {
+            console.error("Worker error:", err);
+            setIsProcessing(false);
+            worker.terminate();
+        };
+
+        // Pass array buffer for transfer to avoid structured clone overhead
+        worker.postMessage({
+            imageData,
+            targetColor,
+            tolerance,
+            softness
+        }, [imageData.data.buffer]);
     };
 
     const handleReset = () => {

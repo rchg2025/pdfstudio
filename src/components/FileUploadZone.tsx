@@ -53,36 +53,56 @@ export default function FileUploadZone({
       onDrop={handleDrop}
       onClick={() => fileInputRef.current?.click()}
       style={{
-        border: '2px dashed var(--border)',
-        borderRadius: 'var(--radius-lg)',
-        padding: '3.5rem 2rem',
+        border: '2px dashed',
+        borderColor: isDragging ? 'var(--primary)' : 'var(--border)',
+        borderRadius: 'var(--radius-xl)',
+        padding: '4rem 2rem',
         textAlign: 'center',
         cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        background: isDragging ? 'rgba(37, 99, 235, 0.03)' : 'transparent',
-        borderColor: isDragging ? 'var(--primary)' : 'var(--border)',
+        transition: 'all var(--transition-normal)',
+        background: isDragging 
+          ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(139, 92, 246, 0.05))' 
+          : 'var(--bg-secondary)',
+        boxShadow: isDragging ? 'inset 0 0 0 2px var(--primary-glow)' : 'var(--shadow-sm)',
         width: '100%',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'relative',
+        overflow: 'hidden'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = 'var(--primary)';
-        e.currentTarget.style.background = 'rgba(37, 99, 235, 0.02)';
+        if (!isDragging) {
+          e.currentTarget.style.borderColor = 'var(--primary)';
+          e.currentTarget.style.boxShadow = 'var(--shadow-md)';
+          e.currentTarget.style.transform = 'translateY(-2px)';
+        }
       }}
       onMouseLeave={(e) => {
         if (!isDragging) {
           e.currentTarget.style.borderColor = 'var(--border)';
-          e.currentTarget.style.background = 'transparent';
+          e.currentTarget.style.boxShadow = 'var(--shadow-sm)';
+          e.currentTarget.style.transform = 'none';
         }
       }}
     >
-      <Upload size={32} style={{ margin: '0 auto 1rem', color: '#1e293b' }} />
-      <p style={{ fontSize: '1.125rem', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
-        Kéo thả file vào đây hoặc <span style={{ color: 'var(--accent)', cursor: 'pointer' }}>nhấn để chọn file</span>
+      <div style={{
+        width: '4rem', height: '4rem', 
+        borderRadius: '50%', 
+        background: 'var(--bg-tertiary)', 
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        marginBottom: '1.25rem',
+        transition: 'transform var(--transition-normal)',
+        transform: isDragging ? 'scale(1.1) translateY(-4px)' : 'none',
+        color: 'var(--primary)'
+      }}>
+        <Upload size={32} />
+      </div>
+      <p style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
+        Kéo thả file vào đây hoặc <span style={{ color: 'var(--primary)', textDecoration: 'underline' }}>chọn file</span>
       </p>
-      <p className="text-secondary" style={{ fontSize: '0.875rem' }}>{hintText}</p>
+      <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)' }}>{hintText}</p>
       <input 
         type="file" 
         accept={accept} 

@@ -85,7 +85,7 @@ const tools = [
 
 const Home = () => {
   return (
-    <div className="animate-fade-in">
+    <div className="animate-fade-in home-container">
       <section className="home-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img 
           src="/logo.jpg" 

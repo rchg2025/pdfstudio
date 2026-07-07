@@ -2,10 +2,12 @@
   position: sticky;
   top: 0;
   z-index: 50;
-  border-bottom: 1px solid var(--border);
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-normal);
 }
 
 .navbar-content {
@@ -35,12 +37,17 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: var(--radius-sm);
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.625rem;
   background: linear-gradient(135deg, var(--primary), var(--accent));
   color: white;
-  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 12px -2px var(--primary-glow);
+  transition: transform var(--transition-normal);
+}
+
+.navbar-brand:hover .navbar-logo {
+  transform: scale(1.05) rotate(-5deg);
 }
 
 .navbar-links {
@@ -60,23 +67,45 @@
 .nav-link {
   color: var(--text-secondary);
   font-weight: 500;
-  font-size: 0.875rem;
-  transition: all 0.2s;
-  padding: 0.5rem 0.5rem;
+  font-size: 0.9rem;
+  transition: all var(--transition-normal);
+  padding: 0.5rem 0.75rem;
   border-radius: var(--radius-md);
   white-space: nowrap;
   flex-shrink: 0;
+  position: relative;
+}
+
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 2px;
+  transition: width var(--transition-normal);
 }
 
 .nav-link:hover {
   color: var(--primary);
-  background: rgba(37, 99, 235, 0.05);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.nav-link:hover::after {
+  width: 60%;
 }
 
 .nav-link.active {
   color: var(--primary);
-  background: rgba(37, 99, 235, 0.1);
+  background: rgba(59, 130, 246, 0.1);
   font-weight: 600;
+}
+
+.nav-link.active::after {
+  width: 80%;
 }
 
 .mobile-menu-btn {
