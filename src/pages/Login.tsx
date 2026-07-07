@@ -20,7 +20,14 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+      
+      let data;
+      try {
+        data = await res.json();
+      } catch (parseError) {
+        throw new Error('Lỗi máy chủ (Server Error). Có thể chưa kết nối được CSDL trên Vercel.');
+      }
+      
       if (!res.ok) throw new Error(data.message || 'Đăng nhập thất bại');
       
       login(data.token, data.user);
@@ -37,35 +44,38 @@ export default function Login() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-md py-20">
-      <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
-        <h1 className="text-2xl font-bold text-center mb-8 text-gray-800 uppercase tracking-wide">Đăng Nhập Hệ Thống</h1>
-        
+    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', alignItems: 'center', paddingTop: '3rem' }}>
+      <div className="tool-header text-center" style={{ marginBottom: '2rem' }}>
+        <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Đăng Nhập Hệ Thống</h1>
+        <p className="text-secondary">Quản trị viên và người dùng vui lòng đăng nhập để tiếp tục.</p>
+      </div>
+      
+      <div className="glass-card" style={{ padding: '2.5rem 2rem', width: '100%', maxWidth: '420px', display: 'flex', flexDirection: 'column', gap: '1.5rem', margin: '0 auto' }}>
         {error && (
-          <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 text-sm border border-red-100 font-medium">
+          <div style={{ padding: '1rem', backgroundColor: '#fee2e2', color: '#b91c1c', borderRadius: '0.5rem', fontSize: '0.875rem', fontWeight: 500 }}>
             {error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Tên tài khoản (hoặc Email)</label>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Tên tài khoản (hoặc Email)</label>
             <input 
               type="text" 
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 text-gray-800"
+              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
               required
               placeholder="VD: quantri"
             />
           </div>
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Mật khẩu</label>
+            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Mật khẩu</label>
             <input 
               type="password" 
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-5 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 text-gray-800"
+              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.75rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
               required
               placeholder="Nhập mật khẩu..."
             />
@@ -73,7 +83,8 @@ export default function Login() {
           <button 
             type="submit" 
             disabled={loading} 
-            className="w-full bg-blue-600 text-white py-3.5 rounded-xl font-bold mt-2 hover:bg-blue-700 transition-colors shadow-md disabled:bg-blue-400"
+            className="btn btn-primary"
+            style={{ width: '100%', padding: '0.875rem', marginTop: '0.5rem', fontSize: '1rem', display: 'flex', justifyContent: 'center' }}
           >
             {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
           </button>
