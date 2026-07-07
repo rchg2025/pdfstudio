@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -102,6 +103,37 @@ export default function Login() {
             {loading ? 'Đang xử lý...' : 'Đăng Nhập'}
           </button>
         </form>
+
+        <div style={{ display: 'flex', alignItems: 'center', margin: '1rem 0' }}>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+          <span style={{ padding: '0 1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>HOẶC</span>
+          <div style={{ flex: 1, height: '1px', background: 'var(--border)' }}></div>
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              try {
+                setLoading(true);
+                const res = await fetch('/api/auth/google', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ credential: credentialResponse.credential })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Lỗi đăng nhập Google');
+                login(data.token, data.user);
+                navigate(data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
+              } catch (e: any) {
+                setError(e.message);
+              } finally {
+                setLoading(false);
+              }
+            }}
+            onError={() => setError('Đăng nhập Google thất bại.')}
+            useOneTap
+          />
+        </div>
       </div>
     </div>
   );

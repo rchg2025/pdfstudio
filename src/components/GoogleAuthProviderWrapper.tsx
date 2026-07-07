@@ -1,0 +1,25 @@
+import { useEffect, useState } from 'react';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+export default function GoogleAuthProviderWrapper({ children }: { children: React.ReactNode }) {
+  const [clientId, setClientId] = useState('');
+  
+  useEffect(() => {
+    fetch('/api/config/google')
+      .then(res => res.json())
+      .then(data => {
+        if (data.clientId) {
+          setClientId(data.clientId);
+        }
+      })
+      .catch(console.error);
+  }, []);
+
+  if (!clientId) return <>{children}</>;
+
+  return (
+    <GoogleOAuthProvider clientId={clientId}>
+      {children}
+    </GoogleOAuthProvider>
+  );
+}

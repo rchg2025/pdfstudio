@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
+import GoogleAuthProviderWrapper from './components/GoogleAuthProviderWrapper';
 
 // Lazy load heavy components
 const PdfEditor = React.lazy(() => import('./pages/PdfEditor'));
@@ -34,66 +35,68 @@ const FallbackLoader = () => (
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Home />} />
-          <Route path="pdf-editor" element={
-            <Suspense fallback={<FallbackLoader />}><PdfEditor /></Suspense>
-          } />
-          <Route path="pdf-merge-split" element={
-            <Suspense fallback={<FallbackLoader />}><PdfMergeSplit /></Suspense>
-          } />
-          <Route path="pdf-to-image" element={
-            <Suspense fallback={<FallbackLoader />}><PdfToImage /></Suspense>
-          } />
-          <Route path="pdf-compare" element={
-            <Suspense fallback={<FallbackLoader />}><PdfCompare /></Suspense>
-          } />
-          <Route path="pdf-compressor" element={
-            <Suspense fallback={<FallbackLoader />}><PdfCompressor /></Suspense>
-          } />
-          <Route path="image-compressor" element={
-            <Suspense fallback={<FallbackLoader />}><ImageCompressor /></Suspense>
-          } />
-          <Route path="image-converter" element={
-            <Suspense fallback={<FallbackLoader />}><ImageConverter /></Suspense>
-          } />
-          <Route path="qr-link" element={
-            <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
-          } />
-          <Route path="bao-mat-pdf" element={
-            <Suspense fallback={<FallbackLoader />}><PdfSecurity /></Suspense>
-          } />
-          <Route path="watermark-studio" element={
-            <Suspense fallback={<FallbackLoader />}><WatermarkStudio /></Suspense>
-          } />
-          <Route path="xoa-nen-mau" element={
-            <Suspense fallback={<FallbackLoader />}><ChromaKeyEraser /></Suspense>
-          } />
-          <Route path="login" element={
-            <Suspense fallback={<FallbackLoader />}><Login /></Suspense>
-          } />
-          <Route path="register" element={
-            <Suspense fallback={<FallbackLoader />}><Register /></Suspense>
-          } />
-          <Route path="dashboard" element={
-            <Suspense fallback={<FallbackLoader />}><Dashboard /></Suspense>
-          } />
-          <Route path="admin" element={
-            <Suspense fallback={<FallbackLoader />}><Admin /></Suspense>
-          } />
-          <Route path="tao-khung" element={
-            <Suspense fallback={<FallbackLoader />}><FrameCreator /></Suspense>
-          } />
-          <Route path="f/:slug" element={
-            <Suspense fallback={<FallbackLoader />}><FrameViewer /></Suspense>
-          } />
-        </Route>
-      </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <GoogleAuthProviderWrapper>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Home />} />
+            <Route path="pdf-editor" element={
+              <Suspense fallback={<FallbackLoader />}><PdfEditor /></Suspense>
+            } />
+            <Route path="pdf-merge-split" element={
+              <Suspense fallback={<FallbackLoader />}><PdfMergeSplit /></Suspense>
+            } />
+            <Route path="pdf-to-image" element={
+              <Suspense fallback={<FallbackLoader />}><PdfToImage /></Suspense>
+            } />
+            <Route path="pdf-compare" element={
+              <Suspense fallback={<FallbackLoader />}><PdfCompare /></Suspense>
+            } />
+            <Route path="pdf-compressor" element={
+              <Suspense fallback={<FallbackLoader />}><PdfCompressor /></Suspense>
+            } />
+            <Route path="image-compressor" element={
+              <Suspense fallback={<FallbackLoader />}><ImageCompressor /></Suspense>
+            } />
+            <Route path="image-converter" element={
+              <Suspense fallback={<FallbackLoader />}><ImageConverter /></Suspense>
+            } />
+            <Route path="qr-link" element={
+              <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
+            } />
+            <Route path="bao-mat-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><PdfSecurity /></Suspense>
+            } />
+            <Route path="watermark-studio" element={
+              <Suspense fallback={<FallbackLoader />}><WatermarkStudio /></Suspense>
+            } />
+            <Route path="xoa-nen-mau" element={
+              <Suspense fallback={<FallbackLoader />}><ChromaKeyEraser /></Suspense>
+            } />
+            <Route path="login" element={
+              <Suspense fallback={<FallbackLoader />}><Login /></Suspense>
+            } />
+            <Route path="register" element={
+              <Suspense fallback={<FallbackLoader />}><Register /></Suspense>
+            } />
+            <Route path="dashboard" element={
+              <Suspense fallback={<FallbackLoader />}><Dashboard /></Suspense>
+            } />
+            <Route path="admin" element={
+              <Suspense fallback={<FallbackLoader />}><Admin /></Suspense>
+            } />
+            <Route path="tao-khung" element={
+              <Suspense fallback={<FallbackLoader />}><FrameCreator /></Suspense>
+            } />
+            <Route path="f/:slug" element={
+              <Suspense fallback={<FallbackLoader />}><FrameViewer /></Suspense>
+            } />
+          </Route>
+        </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </GoogleAuthProviderWrapper>
   );
 }
 
