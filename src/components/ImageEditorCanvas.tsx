@@ -125,9 +125,9 @@ export default function ImageEditorCanvas({ frameUrl }: Props) {
   };
 
   return (
-    <div className="flex flex-col items-center max-w-2xl mx-auto gap-6 bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+    <div className="glass-card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '42rem', margin: '0 auto', gap: '1.5rem', padding: '2rem' }}>
       <div 
-        className="w-full aspect-square bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl overflow-hidden relative cursor-move"
+        style={{ width: '100%', aspectRatio: '1/1', background: 'var(--bg-secondary)', border: '2px dashed var(--border)', borderRadius: '1rem', overflow: 'hidden', position: 'relative', cursor: 'move' }}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -138,53 +138,54 @@ export default function ImageEditorCanvas({ frameUrl }: Props) {
       >
         <canvas 
           ref={canvasRef} 
-          className="w-full h-full object-contain pointer-events-none"
+          style={{ width: '100%', height: '100%', objectFit: 'contain', pointerEvents: 'none' }}
         />
         {!userImage && (
-          <div className="absolute inset-0 flex items-center justify-center text-gray-500 font-medium">
-            Kéo thả hoặc tải ảnh lên để bắt đầu
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontWeight: 500 }}>
+            Kéo thả hoặc tải ảnh cá nhân lên để ghép
           </div>
         )}
       </div>
 
-      <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium w-16 text-gray-700">Zoom:</label>
+      <div style={{ width: '100%', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: 600, width: '4rem', color: 'var(--text-primary)' }}>Thu phóng</label>
             <input 
               type="range" min="0.1" max="3" step="0.1" value={zoom}
               onChange={(e) => setZoom(parseFloat(e.target.value))}
-              className="flex-1 accent-blue-600"
+              style={{ flex: 1, accentColor: 'var(--primary)' }}
             />
           </div>
-          <div className="flex items-center gap-4">
-            <label className="text-sm font-medium w-16 text-gray-700">Xoay:</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: 600, width: '4rem', color: 'var(--text-primary)' }}>Xoay</label>
             <input 
               type="range" min="-180" max="180" step="1" value={rotation}
               onChange={(e) => setRotation(parseFloat(e.target.value))}
-              className="flex-1 accent-blue-600"
+              style={{ flex: 1, accentColor: 'var(--primary)' }}
             />
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2 justify-end">
-          <button 
-            onClick={() => setIsFlipped(!isFlipped)}
-            className="px-5 py-2.5 bg-[#4B5563] text-white rounded-lg font-medium text-sm hover:bg-[#374151] transition-colors shadow-sm"
-          >
-            Lật ảnh
-          </button>
-          
-          <label className="px-5 py-2.5 bg-blue-600 text-white rounded-lg font-medium text-sm cursor-pointer hover:bg-blue-700 transition-colors shadow-sm">
-            Chọn hình
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', justifyContent: 'flex-end' }}>
+          <label className="btn btn-primary" style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', cursor: 'pointer' }}>
+            Chọn Hình
+            <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
           </label>
           
           <button 
-            onClick={handleDownload}
-            className="px-5 py-2.5 bg-[#10B981] text-white rounded-lg font-medium text-sm hover:bg-[#059669] transition-colors shadow-sm"
+            onClick={() => setIsFlipped(!isFlipped)}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 500 }}
           >
-            Tải về
+            Lật Ảnh
+          </button>
+          
+          <button 
+            onClick={handleDownload}
+            className="btn btn-primary"
+            style={{ padding: '0.5rem 1rem', fontSize: '0.875rem', background: '#10B981' }}
+          >
+            Tải Xuống
           </button>
         </div>
       </div>
