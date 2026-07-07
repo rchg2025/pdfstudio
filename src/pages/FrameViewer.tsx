@@ -64,47 +64,50 @@ export default function FrameViewer() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-4xl py-12">
-      <h1 className="text-3xl font-bold text-center mb-8 text-gray-800 uppercase tracking-wide">
-        {frame.title}
-      </h1>
+    <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto' }}>
+      <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
+        <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+          {frame.title}
+        </h1>
+        <p className="text-secondary">Trình tạo ảnh sự kiện với khung hình được thiết kế sẵn</p>
+      </div>
 
       <ImageEditorCanvas frameUrl={frame.imageUrl} />
 
-      <div className="mt-12 max-w-2xl mx-auto flex flex-col items-center">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xl">
-            {frame.user?.name?.charAt(0) || 'U'}
+      <div style={{ marginTop: '3rem', maxWidth: '42rem', margin: '3rem auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+          <div style={{ width: '3rem', height: '3rem', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8', fontWeight: 700, fontSize: '1.25rem' }}>
+            {frame.user?.name?.charAt(0)?.toUpperCase() || 'A'}
           </div>
-          <div className="text-center">
-            <h3 className="font-semibold text-lg text-gray-800">{frame.user?.name || 'Thành viên'}</h3>
-            <p className="text-sm text-gray-500">Tác giả khung hình</p>
+          <div style={{ textAlign: 'left' }}>
+            <h3 style={{ fontWeight: 600, fontSize: '1.125rem', color: 'var(--text-primary)' }}>{frame.user?.name || 'Admin'}</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Tác giả khung hình</p>
           </div>
         </div>
 
-        <div className="w-full border border-gray-200 rounded-xl p-6 bg-white relative">
-          <h4 className="text-gray-600 font-medium absolute -top-3 left-6 bg-white px-2">Chia sẻ</h4>
-          <p className="text-sm text-gray-500 mb-2">Nhấn để sao chép đường dẫn</p>
+        <div className="glass-card" style={{ width: '100%', padding: '2rem', position: 'relative', marginTop: '1rem' }}>
+          <h4 style={{ position: 'absolute', top: '-0.75rem', left: '1.5rem', background: 'var(--bg-primary)', padding: '0 0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Chia sẻ</h4>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Nhấn để sao chép đường dẫn</p>
           
-          <div className="flex bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+          <div style={{ display: 'flex', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
             <input 
               type="text" 
               readOnly 
               value={window.location.href}
-              className="flex-1 bg-transparent px-4 py-3 outline-none text-gray-600 font-mono text-sm"
+              style={{ flex: 1, padding: '0.75rem 1rem', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '0.875rem' }}
             />
             <button 
               onClick={handleCopyLink}
-              className="px-6 bg-white border-l border-gray-200 hover:bg-gray-50 transition-colors font-medium text-blue-600"
+              style={{ padding: '0 1.5rem', borderLeft: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
             >
               {copied ? 'Đã chép' : 'Sao chép'}
             </button>
           </div>
 
           {qrCodeUrl && (
-            <div className="mt-6 flex flex-col items-center">
-              <span className="text-sm text-gray-500 mb-2">Mã QR</span>
-              <img src={qrCodeUrl} alt="QR Code" className="border border-gray-200 rounded-lg p-1" />
+            <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Mã QR</span>
+              <img src={qrCodeUrl} alt="QR Code" style={{ padding: '0.5rem', background: '#fff', borderRadius: '1rem', border: '1px solid var(--border)', width: '150px' }} />
             </div>
           )}
         </div>
