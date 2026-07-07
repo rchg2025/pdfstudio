@@ -14,6 +14,7 @@ const QrLink = React.lazy(() => import('./pages/QrLink'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
 const WatermarkStudio = React.lazy(() => import('./pages/WatermarkStudio'));
+const ChromaKeyEraser = React.lazy(() => import('./pages/ChromaKeyEraser'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -59,6 +60,9 @@ function App() {
           } />
           <Route path="watermark-studio" element={
             <Suspense fallback={<FallbackLoader />}><WatermarkStudio /></Suspense>
+          } />
+          <Route path="xoa-nen-mau" element={
+            <Suspense fallback={<FallbackLoader />}><ChromaKeyEraser /></Suspense>
           } />
         </Route>
       </Routes>

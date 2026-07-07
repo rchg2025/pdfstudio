@@ -9,7 +9,8 @@ import {
   SplitSquareHorizontal,
   ShieldCheck,
   RefreshCw,
-  Stamp
+  Stamp,
+  Eraser
 } from 'lucide-react';
 import './Home.css';
 
@@ -73,6 +74,12 @@ const tools = [
     icon: <Stamp size={24} />,
     title: 'Công cụ chèn Logo vào ảnh',
     desc: 'Chèn logo, đóng dấu bản quyền vào ảnh của bạn một cách nhanh chóng, chất lượng cao.'
+  },
+  {
+    path: '/xoa-nen-mau',
+    icon: <Eraser size={24} />,
+    title: 'Công Cụ Xóa Nền Theo Màu',
+    desc: 'Tự động chọn và xóa phông nền theo màu sắc với công cụ Chroma Key.'
   }
 ];
 
