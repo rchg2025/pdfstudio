@@ -247,7 +247,7 @@ export default function Admin() {
                             </span>
                           </td>
                           <td style={{ padding: '1rem', textAlign: 'right' }}>
-                            {u.id !== user.id && (
+                            {u.id !== user?.id && (
                               <button onClick={() => deleteUser(u.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Xóa</button>
                             )}
                           </td>
