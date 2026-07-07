@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import { Eraser, Upload, Sparkles, RotateCcw, Download, Image as ImageIcon, Info } from 'lucide-react';
+import ChromaWorker from '../workers/chromaWorker.ts?worker';
 import './ChromaKeyEraser.css';
 
 const ChromaKeyEraser: React.FC = () => {
@@ -99,8 +100,8 @@ const ChromaKeyEraser: React.FC = () => {
             height
         );
 
-        // Spawn web worker
-        const worker = new Worker(new URL('../workers/chromaWorker.ts', import.meta.url), { type: 'module' });
+        // Spawn web worker using Vite's ?worker import
+        const worker = new ChromaWorker();
         
         worker.onmessage = (e) => {
             const { processedData } = e.data;
