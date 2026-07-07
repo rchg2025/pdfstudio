@@ -44,8 +44,8 @@ export default function FrameCreator() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !slug || !previewBase64) {
-      setError('Vui lòng điền đủ thông tin và tải lên khung hình.');
+    if (!title || !previewBase64) {
+      setError('Vui lòng điền tiêu đề và tải lên khung hình.');
       return;
     }
 
@@ -71,7 +71,7 @@ export default function FrameCreator() {
         throw new Error(data.message || 'Lỗi khi tạo khung hình');
       }
 
-      navigate(`/f/${slug}`);
+      navigate(`/f/${data.slug}`);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -159,7 +159,7 @@ export default function FrameCreator() {
             </div>
 
             <div style={{ marginBottom: '2rem' }}>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Đường dẫn (URL) <span style={{ color: '#ef4444' }}>*</span></label>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Đường dẫn (URL)</label>
               <div style={{ display: 'flex', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)' }}>
                 <span style={{ background: 'var(--bg-secondary)', padding: '0.75rem 1rem', color: 'var(--text-secondary)', fontSize: '0.875rem', borderRight: '1px solid var(--border)', display: 'flex', alignItems: 'center' }}>
                   {window.location.origin}/f/
@@ -172,7 +172,7 @@ export default function FrameCreator() {
                   style={{ flex: 1, padding: '0.75rem 1rem', border: 'none', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
                 />
               </div>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Đường dẫn để chia sẻ, độ dài tối đa 6 ký tự. (Chỉ cho phép chữ thường, số và dấu gạch ngang)</p>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.5rem' }}>Đường dẫn để chia sẻ (Chỉ cho phép chữ thường, số và dấu gạch ngang). Nếu để trống, hệ thống sẽ tạo đường dẫn ngẫu nhiên.</p>
             </div>
 
             <div style={{ marginTop: 'auto' }}>
