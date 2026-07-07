@@ -35,5 +35,5 @@ self.onmessage = function (e) {
         }
     }
 
-    self.postMessage({ processedData: imageData }, [imageData.data.buffer]);
+    postMessage({ processedData: imageData });
 };

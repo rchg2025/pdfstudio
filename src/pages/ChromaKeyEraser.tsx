@@ -28,12 +28,6 @@ const ChromaKeyEraser: React.FC = () => {
         return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
     };
 
-    const colorDistance = (r1: number, g1: number, b1: number, r2: number, g2: number, b2: number) => {
-        const rDiff = r1 - r2;
-        const gDiff = g1 - g2;
-        const bDiff = b1 - b2;
-        return Math.sqrt(rDiff * rDiff + gDiff * gDiff + bDiff * bDiff);
-    };
 
     const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
