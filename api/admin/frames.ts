@@ -22,6 +22,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ message: 'Frame deleted' });
     }
 
+    if (req.method === 'PUT') {
+      const { id, title, slug, imageUrl } = req.body;
+      if (!id) return res.status(400).json({ message: 'Invalid ID' });
+      
+      const updated = await prisma.frame.update({
+        where: { id },
+        data: { title, slug, imageUrl }
+      });
+      return res.status(200).json(updated);
+    }
+
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error: any) {
     if (error.message === 'Unauthorized' || error.message === 'Forbidden') {
