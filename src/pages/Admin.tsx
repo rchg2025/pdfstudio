@@ -328,12 +328,12 @@ export default function Admin() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
+    <div className="animate-fade-in mx-auto relative px-4 py-6 md:p-8" style={{ maxWidth: '1200px' }}>
       
       {/* MODALS */}
       {editingFrame && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-card" style={{ padding: '2rem', width: '100%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
+          <div className="glass-card" style={{ padding: '2rem', width: '90%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Sửa Khung Hình</h3>
             <form onSubmit={saveFrame} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div>
@@ -359,7 +359,7 @@ export default function Admin() {
 
       {editingUser && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-card" style={{ padding: '2rem', width: '100%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
+          <div className="glass-card" style={{ padding: '2rem', width: '90%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
             <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
               {editingUser.id ? 'Sửa Người Dùng' : 'Tạo Người Dùng Mới'}
             </h3>
@@ -393,16 +393,16 @@ export default function Admin() {
       )}
 
 
-      <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
-        <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+      <div className="tool-header text-center mb-8 md:mb-10 mt-4 md:mt-0">
+        <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
           Bảng Điều Khiển Quản Trị
         </h1>
-        <p className="text-secondary">Quản lý hệ thống RCHG Studio, người dùng và khung hình.</p>
+        <p className="text-secondary text-sm md:text-base">Quản lý hệ thống RCHG Studio, người dùng và khung hình.</p>
       </div>
 
       <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>
         {/* Tabs Header */}
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+        <div style={{ display: 'flex', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)', overflowX: 'auto', whiteSpace: 'nowrap' }}>
           {[
             { id: 'frames', label: 'Quản Lý Khung Hình' },
             { id: 'users', label: 'Quản Lý Tài Khoản' },
@@ -412,7 +412,7 @@ export default function Admin() {
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               style={{
-                flex: 1, padding: '1rem', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
+                flex: '0 0 auto', padding: '1rem 1.5rem', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer',
                 border: 'none', outline: 'none', background: 'transparent',
                 borderBottom: activeTab === tab.id ? '3px solid var(--primary)' : '3px solid transparent',
                 color: activeTab === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
@@ -425,29 +425,29 @@ export default function Admin() {
         </div>
 
         {/* Tab Content */}
-        <div style={{ padding: '2rem' }}>
+        <div className="p-4 md:p-8">
           
           {/* TAB: FRAMES */}
           {activeTab === 'frames' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Khung Hình ({filteredFrames.length})</h2>
                 <button onClick={fetchFrames} className="btn" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Tải lại</button>
               </div>
 
               {/* BỘ LỌC VÀ TÌM KIẾM */}
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <input 
                   type="text" 
-                  placeholder="Tìm kiếm tiêu đề, link, email hoặc tên người dùng..." 
+                  placeholder="Tìm kiếm tiêu đề, link, email..." 
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setFramesPage(1); }}
-                  style={{ flex: 1, minWidth: '300px', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  className="flex-1 min-w-[250px] p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                 />
                 <select 
                   value={timeFilter}
                   onChange={e => { setTimeFilter(e.target.value); setFramesPage(1); }}
-                  style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', minWidth: '180px' }}
+                  className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] min-w-[180px]"
                 >
                   <option value="all">Tất cả thời gian</option>
                   <option value="today">Hôm nay</option>
@@ -458,7 +458,7 @@ export default function Admin() {
               
               {loadingFrames ? <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Đang tải dữ liệu...</p> : (
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                     <thead>
                       <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Ảnh</th>
@@ -525,18 +525,18 @@ export default function Admin() {
               </div>
 
               {/* BỘ LỌC VÀ TÌM KIẾM TÀI KHOẢN */}
-              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <input 
                   type="text" 
                   placeholder="Tìm kiếm email, tên người dùng..." 
                   value={userSearchQuery}
                   onChange={e => { setUserSearchQuery(e.target.value); setUsersPage(1); }}
-                  style={{ flex: 1, minWidth: '300px', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  className="flex-1 min-w-[250px] p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                 />
                 <select 
                   value={userRoleFilter}
                   onChange={e => { setUserRoleFilter(e.target.value); setUsersPage(1); }}
-                  style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                 >
                   <option value="all">Tất cả vai trò</option>
                   <option value="ADMIN">Quản trị (ADMIN)</option>
@@ -545,7 +545,7 @@ export default function Admin() {
                 <select 
                   value={userTimeFilter}
                   onChange={e => { setUserTimeFilter(e.target.value); setUsersPage(1); }}
-                  style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
                 >
                   <option value="all">Tất cả thời gian</option>
                   <option value="today">Hôm nay</option>
@@ -556,7 +556,7 @@ export default function Admin() {
               
               {loadingUsers ? <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Đang tải dữ liệu...</p> : (
                 <div style={{ overflowX: 'auto' }}>
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                     <thead>
                       <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
@@ -621,7 +621,7 @@ export default function Admin() {
               <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1.5rem' }}>Cấu Hình Hệ Thống</h2>
               
               {/* Setting Sub Tabs */}
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', borderBottom: '1px solid var(--border)' }}>
+              <div className="flex gap-2 mb-8 border-b border-[var(--border)] overflow-x-auto whitespace-nowrap">
                 {[
                   { id: 'google', label: 'Đăng Nhập Google' },
                   { id: 'drive', label: 'Google Drive' },
@@ -652,7 +652,7 @@ export default function Admin() {
                   {activeSettingsTab === 'google' && (
                   <div>
                     <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem', paddingBottom: '0.5rem' }}>Đăng nhập Google (OAuth 2.0)</h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Client ID</label>
                         <input type="text" value={settings.googleClientId} onChange={e => handleSettingChange('googleClientId', e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} placeholder="GCP Client ID..." />
@@ -668,13 +668,13 @@ export default function Admin() {
                   {/* Google Drive Section */}
                   {activeSettingsTab === 'drive' && (
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                       <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)' }}>Lưu trữ Google Share Team Drive</h3>
                       <button type="button" onClick={handleTestDrive} disabled={testingDrive} className="btn" style={{ background: '#dbeafe', color: '#1d4ed8', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>
                         {testingDrive ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
                       </button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
+                    <div className="grid grid-cols-1 gap-6">
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Folder ID (ID Thư mục)</label>
                         <input type="text" value={settings.googleDriveFolderId} onChange={e => handleSettingChange('googleDriveFolderId', e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} placeholder="1A2B3C..." />
@@ -690,13 +690,13 @@ export default function Admin() {
                   {/* SMTP Section */}
                   {activeSettingsTab === 'email' && (
                   <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                       <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)' }}>Cấu hình Email (SMTP Gmail)</h3>
                       <button type="button" onClick={handleTestSmtp} disabled={testingSmtp} className="btn" style={{ background: '#dbeafe', color: '#1d4ed8', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>
                         {testingSmtp ? 'Đang gửi mail...' : 'Gửi Test Mail'}
                       </button>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Máy chủ SMTP (Host)</label>
                         <input type="text" value={settings.smtpHost} onChange={e => handleSettingChange('smtpHost', e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} placeholder="smtp.gmail.com" />

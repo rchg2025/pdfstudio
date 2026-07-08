@@ -137,15 +137,15 @@ export default function FrameCreator() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem 1rem', margin: '0 auto' }}>
-      <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
-        <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
+    <div className="animate-fade-in mx-auto">
+      <div className="tool-header text-center mb-10 px-4 mt-8">
+        <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
           {editFrame ? 'Chỉnh Sửa Sự Kiện, Khung Hình' : 'Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch'}
         </h1>
         <p className="text-secondary">{editFrame ? 'Chỉnh sửa thông tin và thêm/xóa khung hình.' : 'Vui lòng tải lên khung hình dạng PNG và điền thông tin sự kiện.'}</p>
       </div>
 
-      <div className="glass-card" style={{ padding: '2.5rem' }}>
+      <div className="glass-card p-5 md:p-10">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>Thêm hình khung</h2>
