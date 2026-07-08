@@ -8,6 +8,8 @@ interface FrameData {
   title: string;
   slug: string;
   imageUrl: string;
+  views?: number;
+  downloads?: number;
   user: {
     name: string;
   };
@@ -101,6 +103,10 @@ export default function FrameViewer() {
         <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
           {frame.title}
         </h1>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '0.5rem' }}>
+          <span title="Lượt xem">👁 {frame.views || 0}</span>
+          <span title="Lượt tải">⬇ {frame.downloads || 0}</span>
+        </div>
         <p className="text-secondary">Trình tạo ảnh sự kiện với khung hình được thiết kế sẵn</p>
       </div>
 
