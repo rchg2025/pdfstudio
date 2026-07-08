@@ -89,15 +89,18 @@ const Navbar = () => {
             
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
             
-            {user ? (
-              <>
-                {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
-                {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Dashboard</NavLink>}
-                <button onClick={logout} className="nav-link logout-btn">Đăng xuất</button>
-              </>
-            ) : (
-              <NavLink to="/login" className={({isActive}) => isActive ? "nav-link active font-medium" : "nav-link font-medium"}>Đăng nhập</NavLink>
-            )}
+            {/* Auth Links - Mobile Only */}
+            <div className="mobile-auth-links">
+              {user ? (
+                <>
+                  {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
+                  {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Dashboard</NavLink>}
+                  <button onClick={logout} className="nav-link logout-btn">Đăng xuất</button>
+                </>
+              ) : (
+                <NavLink to="/login" className={({isActive}) => isActive ? "nav-link active font-medium" : "nav-link font-medium"}>Đăng nhập</NavLink>
+              )}
+            </div>
           </nav>
 
           <button 
@@ -107,6 +110,19 @@ const Navbar = () => {
           >
             <ChevronRight size={20} />
           </button>
+        </div>
+
+        {/* Auth Links - Desktop Only */}
+        <div className="desktop-auth-links">
+          {user ? (
+            <>
+              {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
+              {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Dashboard</NavLink>}
+              <button onClick={logout} className="nav-link logout-btn" style={{ color: '#ef4444' }}>Đăng xuất</button>
+            </>
+          ) : (
+            <NavLink to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600 }}>Đăng nhập</NavLink>
+          )}
         </div>
       </div>
     </header>
