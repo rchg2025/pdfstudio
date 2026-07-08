@@ -87,7 +87,7 @@ export default function Register() {
           Đăng ký tài khoản
         </h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '2rem', fontSize: '0.875rem' }}>
-          {step === 1 ? 'Tạo tài khoản mới tại PDF Studio' : 'Vui lòng nhập mã OTP đã gửi đến email của bạn'}
+          {step === 1 ? 'Tạo tài khoản mới tại RCHG Studio' : 'Vui lòng nhập mã OTP đã gửi đến email của bạn'}
         </p>
 
         {step === 1 && (

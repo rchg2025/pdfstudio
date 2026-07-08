@@ -74,7 +74,7 @@ const Navbar = () => {
           <div className="navbar-logo">
             <Layers size={18} />
           </div>
-          PDF Studio
+          RCHG Studio
         </Link>
         <div className="navbar-scroll-container">
           <button 

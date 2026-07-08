@@ -96,7 +96,7 @@ const Home = () => {
       <section className="home-hero" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <img 
           src="/logo.jpg" 
-          alt="PDF Studio Logo" 
+          alt="RCHG Studio Logo" 
           style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1.5rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }} 
         />
         <h1 className="home-title text-gradient">Công Cụ PDF & Tiện Ích</h1>

@@ -34,15 +34,15 @@ export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | '
   let description = '';
 
   if (type === 'REGISTER') {
-    subject = 'Mã xác nhận đăng ký tài khoản - PDF Studio';
+    subject = 'Mã xác nhận đăng ký tài khoản - RCHG Studio';
     title = 'Xác nhận Đăng ký';
-    description = 'Cảm ơn bạn đã đăng ký tài khoản tại PDF Studio. Dưới đây là mã xác nhận (OTP) của bạn. Vui lòng không chia sẻ mã này cho bất kỳ ai.';
+    description = 'Cảm ơn bạn đã đăng ký tài khoản tại RCHG Studio. Dưới đây là mã xác nhận (OTP) của bạn. Vui lòng không chia sẻ mã này cho bất kỳ ai.';
   } else if (type === 'RESET_PASSWORD') {
-    subject = 'Mã xác nhận lấy lại mật khẩu - PDF Studio';
+    subject = 'Mã xác nhận lấy lại mật khẩu - RCHG Studio';
     title = 'Lấy lại Mật khẩu';
-    description = 'Bạn đã yêu cầu lấy lại mật khẩu tại PDF Studio. Dưới đây là mã xác nhận (OTP) của bạn. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.';
+    description = 'Bạn đã yêu cầu lấy lại mật khẩu tại RCHG Studio. Dưới đây là mã xác nhận (OTP) của bạn. Nếu bạn không yêu cầu, vui lòng bỏ qua email này.';
   } else if (type === 'GOOGLE_REGISTER') {
-    subject = 'Mã xác nhận đăng ký bằng Google - PDF Studio';
+    subject = 'Mã xác nhận đăng ký bằng Google - RCHG Studio';
     title = 'Xác nhận Đăng ký Google';
     description = 'Bạn đang tiến hành đăng nhập lần đầu bằng Google. Dưới đây là mã xác nhận (OTP) để hoàn tất việc đăng ký. Vui lòng không chia sẻ mã này.';
   }
@@ -68,7 +68,7 @@ export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | '
 <body>
   <div class="container">
     <div class="header">
-      <h1>PDF Studio</h1>
+      <h1>RCHG Studio</h1>
     </div>
     <div class="content">
       <h2 style="color: #1e293b; font-size: 20px; margin-top: 0; margin-bottom: 24px;">${title}</h2>
@@ -82,7 +82,7 @@ export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | '
       <p style="font-size: 14px; color: #64748b; text-align: center; margin-bottom: 0;">Mã này sẽ hết hạn trong vòng 10 phút.</p>
     </div>
     <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} PDF Studio. All rights reserved.</p>
+      <p>&copy; ${new Date().getFullYear()} RCHG Studio. All rights reserved.</p>
     </div>
   </div>
 </body>
@@ -90,7 +90,7 @@ export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | '
   `;
 
   await transporter.sendMail({
-    from: \`"PDF Studio" <\${user}>\`,
+    from: \`"RCHG Studio" <\${user}>\`,
     to,
     subject,
     html

@@ -397,7 +397,7 @@ export default function Admin() {
         <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
           Bảng Điều Khiển Quản Trị
         </h1>
-        <p className="text-secondary">Quản lý hệ thống PDF Studio, người dùng và khung hình.</p>
+        <p className="text-secondary">Quản lý hệ thống RCHG Studio, người dùng và khung hình.</p>
       </div>
 
       <div className="glass-card" style={{ padding: '0', overflow: 'hidden' }}>

@@ -153,10 +153,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       try {
         await transporter.verify();
         await transporter.sendMail({
-          from: `"PDF Studio Admin" <${smtpUser}>`,
+          from: `"RCHG Studio Admin" <${smtpUser}>`,
           to: smtpUser,
-          subject: "Kiểm tra kết nối SMTP PDF Studio",
-          text: "Xin chúc mừng! Kết nối SMTP của hệ thống PDF Studio hoạt động bình thường.",
+          subject: "Kiểm tra kết nối SMTP RCHG Studio",
+          text: "Xin chúc mừng! Kết nối SMTP của hệ thống RCHG Studio hoạt động bình thường.",
           html: "<p>Xin chúc mừng! Kết nối <b>SMTP</b> của hệ thống hoạt động bình thường.</p>"
         });
         return res.status(200).json({ message: 'Kết nối thành công! Đã gửi một email kiểm tra.' });
