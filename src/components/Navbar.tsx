@@ -100,7 +100,6 @@ const Navbar = () => {
             <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>
             <NavLink to="/xoa-nen-mau" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Nền Màu</NavLink>
             <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>
-            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Tạo Ảnh Thẻ</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
             
             <div className="nav-divider"></div>

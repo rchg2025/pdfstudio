@@ -11,8 +11,7 @@ import {
   RefreshCw,
   Stamp,
   Eraser,
-  ImagePlus,
-  UserSquare
+  ImagePlus
 } from 'lucide-react';
 import './Home.css';
 
@@ -88,12 +87,6 @@ const tools = [
     icon: <Eraser size={24} />,
     title: 'Công Cụ Xóa Nền Theo Màu',
     desc: 'Tự động chọn và xóa phông nền theo màu sắc với công cụ Chroma Key.'
-  },
-  {
-    path: '/tao-anh-the',
-    icon: <UserSquare size={24} />,
-    title: 'Tạo Ảnh Thẻ',
-    desc: 'Tự động tạo ảnh thẻ chuyên nghiệp phông xanh, trắng bằng AI.'
   }
 ];
 
