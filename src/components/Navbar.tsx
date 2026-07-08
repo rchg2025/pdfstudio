@@ -109,7 +109,7 @@ const Navbar = () => {
               {user ? (
                 <>
                   {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
-                  {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản Lý Khung Ảnh</NavLink>}
+                  {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảng điều khiển</NavLink>}
                   <button onClick={logout} className="nav-link logout-btn">Đăng xuất</button>
                 </>
               ) : (
@@ -132,7 +132,7 @@ const Navbar = () => {
           {user ? (
             <>
               {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
-              {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản Lý Khung Ảnh</NavLink>}
+              {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảng điều khiển</NavLink>}
               <button onClick={logout} className="nav-link logout-btn" style={{ color: '#ef4444' }}>Đăng xuất</button>
             </>
           ) : (
