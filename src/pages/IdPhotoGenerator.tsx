@@ -266,24 +266,25 @@ export default function IdPhotoGenerator() {
           <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
             <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>2. Chọn giới tính</h2>
             <div className="flex space-x-4">
-              <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)]'}`}>
-                  <input type="radio" name="gender" value="male" style={{ display: 'none' }} checked={gender === 'male'} onChange={() => { setGender('male'); setClothing('original'); }} />
-                  <div className="w-full flex items-center justify-center">
-                      <span className={`w-4 h-4 inline-block mr-3 border rounded-full flex-shrink-0 flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
-                        {gender === 'male' && <span className="w-2 h-2 rounded-full bg-[var(--primary)] block"></span>}
-                      </span>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">Nam</span>
-                  </div>
-              </label>
-              <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)]'}`}>
-                  <input type="radio" name="gender" value="female" style={{ display: 'none' }} checked={gender === 'female'} onChange={() => { setGender('female'); setClothing('original'); }} />
-                  <div className="w-full flex items-center justify-center">
-                      <span className={`w-4 h-4 inline-block mr-3 border rounded-full flex-shrink-0 flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
-                        {gender === 'female' && <span className="w-2 h-2 rounded-full bg-[var(--primary)] block"></span>}
-                      </span>
-                      <span className="text-sm font-medium text-[var(--text-primary)]">Nữ</span>
-                  </div>
-              </label>
+              <div 
+                onClick={() => { setGender('male'); setClothing('original'); }}
+                className={`flex-1 flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white'}`}
+              >
+                <div className={`w-4 h-4 mr-2 border rounded-full flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
+                  {gender === 'male' && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
+                </div>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Nam</span>
+              </div>
+              
+              <div 
+                onClick={() => { setGender('female'); setClothing('original'); }}
+                className={`flex-1 flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white'}`}
+              >
+                <div className={`w-4 h-4 mr-2 border rounded-full flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
+                  {gender === 'female' && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
+                </div>
+                <span className="text-sm font-medium text-[var(--text-primary)]">Nữ</span>
+              </div>
             </div>
           </div>
 
@@ -297,15 +298,16 @@ export default function IdPhotoGenerator() {
                 { value: 'a formal ao dai', label: 'Áo dài', for: 'female' },
                 { value: 'a white collared shirt', label: 'Áo sơ mi trắng', for: 'both' },
               ].filter(c => c.for === 'both' || c.for === gender).map(option => (
-                <label key={option.value} className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)]'}`}>
-                    <input type="radio" name="clothing" value={option.value} style={{ display: 'none' }} checked={clothing === option.value} onChange={() => setClothing(option.value)} />
-                    <div className="w-full flex items-center">
-                        <span className={`w-4 h-4 inline-block mr-3 border rounded-full flex-shrink-0 flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
-                          {clothing === option.value && <span className="w-2 h-2 rounded-full bg-[var(--primary)] block"></span>}
-                        </span>
-                        <span className="text-sm font-medium text-[var(--text-primary)]">{option.label}</span>
-                    </div>
-                </label>
+                <div 
+                  key={option.value} 
+                  onClick={() => setClothing(option.value)}
+                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white'}`}
+                >
+                  <div className={`w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
+                    {clothing === option.value && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
+                  </div>
+                  <span className="text-sm font-medium text-[var(--text-primary)]">{option.label}</span>
+                </div>
               ))}
             </div>
           </div>
