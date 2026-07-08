@@ -46,6 +46,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json(newFrame);
     }
 
+    if (req.method === 'DELETE') {
+      const { id } = req.query;
+      if (!id || typeof id !== 'string') return res.status(400).json({ message: 'Invalid ID' });
+      
+      // Ensure the frame belongs to the user
+      const existing = await prisma.frame.findUnique({ where: { id } });
+      if (!existing || existing.userId !== user.userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      await prisma.frame.delete({ where: { id } });
+      return res.status(200).json({ message: 'Frame deleted' });
+    }
+
     return res.status(405).json({ message: 'Method not allowed' });
   } catch (error: any) {
     if (error.message === 'Unauthorized') return res.status(401).json({ message: 'Unauthorized' });
