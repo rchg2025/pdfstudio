@@ -25,6 +25,7 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const FrameCreator = React.lazy(() => import('./pages/FrameCreator'));
 const FrameViewer = React.lazy(() => import('./pages/FrameViewer'));
+const IdPhotoGenerator = React.lazy(() => import('./pages/IdPhotoGenerator'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -94,6 +95,9 @@ function App() {
             } />
             <Route path="tao-khung" element={
               <Suspense fallback={<FallbackLoader />}><FrameCreator /></Suspense>
+            } />
+            <Route path="tao-anh-the" element={
+              <Suspense fallback={<FallbackLoader />}><IdPhotoGenerator /></Suspense>
             } />
             <Route path="f/:slug" element={
               <Suspense fallback={<FallbackLoader />}><FrameViewer /></Suspense>

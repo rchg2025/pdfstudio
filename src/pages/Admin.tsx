@@ -425,7 +425,7 @@ export default function Admin() {
         </div>
 
         {/* Tab Content */}
-        <div className="p-4 md:p-8">
+        <div style={{ padding: '1.5rem 2rem' }}>
           
           {/* TAB: FRAMES */}
           {activeTab === 'frames' && (
