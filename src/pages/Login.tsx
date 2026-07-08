@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
@@ -156,7 +156,6 @@ export default function Login() {
             onError={() => setError('Đăng nhập Google thất bại.')}
             useOneTap
           />
-        </div>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: '1rem' }}>
