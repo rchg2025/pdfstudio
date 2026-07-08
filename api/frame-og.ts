@@ -24,7 +24,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (slug) {
-      const prismaModule = await import('../_lib/prisma.js');
+      const prismaModule = await import('./_lib/prisma.js');
       const prisma = prismaModule.prisma;
       
       const frame = await prisma.frame.findUnique({
