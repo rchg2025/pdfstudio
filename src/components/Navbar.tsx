@@ -55,11 +55,6 @@ const Navbar = () => {
           </div>
           PDF Studio
         </Link>
-        
-        <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
-          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-        </button>
-
         <div className="navbar-scroll-container">
           <button 
             className={`scroll-btn left ${canScrollLeft ? 'visible' : ''}`}
@@ -124,6 +119,10 @@ const Navbar = () => {
             <NavLink to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600 }}>Đăng nhập</NavLink>
           )}
         </div>
+
+        <button className="mobile-menu-btn" onClick={toggleMobileMenu}>
+          {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
     </header>
   );
