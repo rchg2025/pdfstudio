@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { UploadCloud } from 'lucide-react';
 
 export default function IdPhotoGenerator() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -242,20 +243,18 @@ export default function IdPhotoGenerator() {
               <input 
                 type="file" 
                 ref={fileInputRef}
-                className="hidden" 
+                style={{ display: 'none' }}
                 accept="image/png, image/jpeg" 
                 onChange={handleFileChange}
               />
               
               {!previewUrl ? (
-                <div>
-                  <svg className="mx-auto h-12 w-12 text-[var(--text-secondary)]" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
-                      <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4V12a4 4 0 014-4h12l4-4h12a4 4 0 014 4v4m-8-4l-4 4m0 0l-4-4m4 4v12" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <p className="mt-2 text-sm text-[var(--text-primary)]">
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                  <UploadCloud size={48} className="text-[var(--text-secondary)] mb-2" />
+                  <p className="text-sm text-[var(--text-primary)]">
                       <span className="font-semibold text-[var(--primary)]">Nhấn để tải ảnh lên</span> hoặc kéo thả
                   </p>
-                  <p className="text-xs text-[var(--text-secondary)] mt-1">PNG, JPG (tối đa 5MB)</p>
+                  <p className="text-xs text-[var(--text-secondary)]">PNG, JPG (tối đa 5MB)</p>
                 </div>
               ) : (
                 <img src={previewUrl} className="max-h-48 mx-auto rounded-lg object-contain" alt="Xem trước" />
@@ -268,7 +267,7 @@ export default function IdPhotoGenerator() {
             <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>2. Chọn giới tính</h2>
             <div className="flex space-x-4">
               <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)]'}`}>
-                  <input type="radio" name="gender" value="male" className="hidden" checked={gender === 'male'} onChange={() => { setGender('male'); setClothing('original'); }} />
+                  <input type="radio" name="gender" value="male" style={{ display: 'none' }} checked={gender === 'male'} onChange={() => { setGender('male'); setClothing('original'); }} />
                   <div className="w-full flex items-center justify-center">
                       <span className={`w-4 h-4 inline-block mr-3 border rounded-full flex-shrink-0 flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
                         {gender === 'male' && <span className="w-2 h-2 rounded-full bg-[var(--primary)] block"></span>}
@@ -277,7 +276,7 @@ export default function IdPhotoGenerator() {
                   </div>
               </label>
               <label className={`flex-1 flex items-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)]'}`}>
-                  <input type="radio" name="gender" value="female" className="hidden" checked={gender === 'female'} onChange={() => { setGender('female'); setClothing('original'); }} />
+                  <input type="radio" name="gender" value="female" style={{ display: 'none' }} checked={gender === 'female'} onChange={() => { setGender('female'); setClothing('original'); }} />
                   <div className="w-full flex items-center justify-center">
                       <span className={`w-4 h-4 inline-block mr-3 border rounded-full flex-shrink-0 flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
                         {gender === 'female' && <span className="w-2 h-2 rounded-full bg-[var(--primary)] block"></span>}
@@ -299,7 +298,7 @@ export default function IdPhotoGenerator() {
                 { value: 'a white collared shirt', label: 'Áo sơ mi trắng', for: 'both' },
               ].filter(c => c.for === 'both' || c.for === gender).map(option => (
                 <label key={option.value} className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)]'}`}>
-                    <input type="radio" name="clothing" value={option.value} className="hidden" checked={clothing === option.value} onChange={() => setClothing(option.value)} />
+                    <input type="radio" name="clothing" value={option.value} style={{ display: 'none' }} checked={clothing === option.value} onChange={() => setClothing(option.value)} />
                     <div className="w-full flex items-center">
                         <span className={`w-4 h-4 inline-block mr-3 border rounded-full flex-shrink-0 flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
                           {clothing === option.value && <span className="w-2 h-2 rounded-full bg-[var(--primary)] block"></span>}
