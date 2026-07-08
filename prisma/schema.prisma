@@ -52,3 +52,9 @@ model VerificationToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model Visit {
+  id        String   @id
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
