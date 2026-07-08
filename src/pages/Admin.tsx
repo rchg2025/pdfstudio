@@ -27,6 +27,8 @@ export default function Admin() {
   });
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
+  const [testingDrive, setTestingDrive] = useState(false);
+  const [testingSmtp, setTestingSmtp] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('google');
 
   const itemsPerPage = 10;
@@ -175,6 +177,50 @@ export default function Admin() {
       alert('Lưu thất bại!');
     } finally {
       setSavingSettings(false);
+    }
+  };
+
+  const handleTestDrive = async () => {
+    setTestingDrive(true);
+    try {
+      const res = await fetch('/api/admin/test-drive', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ 
+          googleDriveFolderId: settings.googleDriveFolderId, 
+          googleDriveServiceJson: settings.googleDriveServiceJson 
+        })
+      });
+      const data = await res.json();
+      if (res.ok) alert(`Thành công: ${data.message}\nThư mục: ${data.folderName}`);
+      else alert(`Lỗi: ${data.message}\n${data.error || ''}`);
+    } catch (err) {
+      alert('Lỗi kết nối API');
+    } finally {
+      setTestingDrive(false);
+    }
+  };
+
+  const handleTestSmtp = async () => {
+    setTestingSmtp(true);
+    try {
+      const res = await fetch('/api/admin/test-smtp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ 
+          smtpHost: settings.smtpHost, 
+          smtpPort: settings.smtpPort,
+          smtpUser: settings.smtpUser,
+          smtpPass: settings.smtpPass
+        })
+      });
+      const data = await res.json();
+      if (res.ok) alert(`Thành công: ${data.message}`);
+      else alert(`Lỗi: ${data.message}\n${data.error || ''}`);
+    } catch (err) {
+      alert('Lỗi kết nối API');
+    } finally {
+      setTestingSmtp(false);
     }
   };
 
@@ -478,7 +524,12 @@ export default function Admin() {
                   {/* Google Drive Section */}
                   {activeSettingsTab === 'drive' && (
                   <div>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem', paddingBottom: '0.5rem' }}>Lưu trữ Google Share Team Drive</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem' }}>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)' }}>Lưu trữ Google Share Team Drive</h3>
+                      <button type="button" onClick={handleTestDrive} disabled={testingDrive} className="btn" style={{ background: '#dbeafe', color: '#1d4ed8', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>
+                        {testingDrive ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
+                      </button>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Folder ID (ID Thư mục)</label>
@@ -495,7 +546,12 @@ export default function Admin() {
                   {/* SMTP Section */}
                   {activeSettingsTab === 'email' && (
                   <div>
-                    <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem', paddingBottom: '0.5rem' }}>Cấu hình Email (SMTP Gmail)</h3>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem' }}>
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)' }}>Cấu hình Email (SMTP Gmail)</h3>
+                      <button type="button" onClick={handleTestSmtp} disabled={testingSmtp} className="btn" style={{ background: '#dbeafe', color: '#1d4ed8', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}>
+                        {testingSmtp ? 'Đang gửi mail...' : 'Gửi Test Mail'}
+                      </button>
+                    </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Máy chủ SMTP (Host)</label>
