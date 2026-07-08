@@ -1,6 +1,7 @@
 .home-container {
   position: relative;
   overflow: hidden;
+  padding: 2.5rem 2rem;
 }
 
 .home-container::before {
