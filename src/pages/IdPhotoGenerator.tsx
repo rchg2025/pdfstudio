@@ -265,12 +265,12 @@ export default function IdPhotoGenerator() {
           {/* Step 2 */}
           <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
             <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>2. Chọn giới tính</h2>
-            <div className="flex space-x-4">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div 
                 onClick={() => { setGender('male'); setClothing('original'); }}
-                className={`flex-1 flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white'}`}
+                className={`flex items-center justify-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white hover:border-gray-300'}`}
               >
-                <div className={`w-4 h-4 mr-2 border rounded-full flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
+                <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
                   {gender === 'male' && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
                 </div>
                 <span className="text-sm font-medium text-[var(--text-primary)]">Nam</span>
@@ -278,9 +278,9 @@ export default function IdPhotoGenerator() {
               
               <div 
                 onClick={() => { setGender('female'); setClothing('original'); }}
-                className={`flex-1 flex items-center justify-center p-3 border rounded-lg cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white'}`}
+                className={`flex items-center justify-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white hover:border-gray-300'}`}
               >
-                <div className={`w-4 h-4 mr-2 border rounded-full flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
+                <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
                   {gender === 'female' && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
                 </div>
                 <span className="text-sm font-medium text-[var(--text-primary)]">Nữ</span>
@@ -291,7 +291,7 @@ export default function IdPhotoGenerator() {
           {/* Step 3 */}
           <div className="glass-card" style={{ padding: '1.5rem', borderRadius: '1rem' }}>
             <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>3. Chọn trang phục</h2>
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               {[
                 { value: 'original', label: 'Giữ nguyên trang phục', for: 'both' },
                 { value: 'a business suit', label: 'Áo vest', for: 'both' },
@@ -301,9 +301,9 @@ export default function IdPhotoGenerator() {
                 <div 
                   key={option.value} 
                   onClick={() => setClothing(option.value)}
-                  className={`flex items-center p-3 border rounded-lg cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white'}`}
+                  className={`flex items-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white hover:border-gray-300'}`}
                 >
-                  <div className={`w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
+                  <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
                     {clothing === option.value && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
                   </div>
                   <span className="text-sm font-medium text-[var(--text-primary)]">{option.label}</span>
