@@ -256,7 +256,7 @@ export default function PdfCompare() {
               {isProcessing && <RefreshCw size={18} className="text-primary" style={{ animation: 'spin 1s linear infinite' }} />}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div className="viewer-toolbar-controls" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <button 
                 className="icon-btn" 
                 onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
@@ -264,7 +264,7 @@ export default function PdfCompare() {
               >
                 <ChevronLeft size={20} />
               </button>
-              <span style={{ fontWeight: 500 }}>Trang {currentPage} / {totalPages}</span>
+              <span style={{ fontWeight: 500, whiteSpace: 'nowrap', fontSize: '0.9rem' }}>Trang {currentPage} / {totalPages}</span>
               <button 
                 className="icon-btn" 
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
@@ -273,8 +273,8 @@ export default function PdfCompare() {
                 <ChevronRight size={20} />
               </button>
               
-              <div style={{ width: '1px', height: '1.5rem', background: 'var(--border)', margin: '0 0.5rem' }}></div>
-              <button className="btn btn-secondary" onClick={() => { removeFile(1); removeFile(2); }}>Đổi file</button>
+              <div style={{ width: '1px', height: '1.5rem', background: 'var(--border)', margin: '0 0.25rem' }}></div>
+              <button className="btn btn-secondary" onClick={() => { removeFile(1); removeFile(2); }} style={{ whiteSpace: 'nowrap', fontSize: '0.9rem', padding: '0.5rem 0.75rem' }}>Đổi file</button>
             </div>
           </div>
 
