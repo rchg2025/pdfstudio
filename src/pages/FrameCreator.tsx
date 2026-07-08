@@ -194,9 +194,13 @@ export default function FrameCreator() {
         </div>
       )}
 
-      {/* SLIDERS TỔNG HỢP */}
-      {renderFrameSlider('🔥 Top 10 Khung Hình Tải Nhiều Nhất', publicFrames.topDownloaded)}
-      {renderFrameSlider('✨ Top 10 Khung Hình Mới Nhất', publicFrames.newest)}
+      {/* SLIDERS TỔNG HỢP - CHỈ HIỆN KHI CHƯA ĐĂNG NHẬP */}
+      {!user && (
+        <>
+          {renderFrameSlider('🔥 Top 10 Khung Hình Tải Nhiều Nhất', publicFrames.topDownloaded)}
+          {renderFrameSlider('✨ Top 10 Khung Hình Mới Nhất', publicFrames.newest)}
+        </>
+      )}
 
       {/* FORM TẠO/SỬA KHUNG CHỈ HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP */}
       {user ? (
