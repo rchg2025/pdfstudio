@@ -88,10 +88,8 @@ export default function IdPhotoGenerator() {
 
       const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
 
-      const [whiteBgResult, blueBgResult] = await Promise.all([
-          callGenerativeApi(API_URL, promptWhiteBg, originalBase64),
-          callGenerativeApi(API_URL, promptBlueBg, originalBase64)
-      ]);
+      const whiteBgResult = await callGenerativeApi(API_URL, promptWhiteBg, originalBase64);
+      const blueBgResult = await callGenerativeApi(API_URL, promptBlueBg, originalBase64);
 
       const whiteBgData = extractImageData(whiteBgResult);
       const blueBgData = extractImageData(blueBgResult);
