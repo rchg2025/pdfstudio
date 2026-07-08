@@ -132,7 +132,7 @@ export default function FrameViewer() {
         </div>
       )}
 
-      <div style={{ marginTop: '3rem', maxWidth: '42rem', margin: '3rem auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ marginTop: '3rem', maxWidth: '48rem', margin: '3rem auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
           <div style={{ width: '3rem', height: '3rem', borderRadius: '50%', background: '#dbeafe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8', fontWeight: 700, fontSize: '1.25rem' }}>
             {frame.user?.name?.charAt(0)?.toUpperCase() || 'A'}
