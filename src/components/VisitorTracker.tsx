@@ -48,10 +48,7 @@ export default function VisitorTracker() {
       display: 'flex', 
       flexWrap: 'wrap', 
       justifyContent: 'center', 
-      gap: '1.5rem', 
-      marginTop: '1.5rem',
-      paddingTop: '1.5rem',
-      borderTop: '1px solid var(--border)'
+      gap: '1.5rem'
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#10b981' }}>
         <Activity size={18} />
