@@ -1,8 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../_lib/prisma.js';
-import { sendOtpEmail } from '../_lib/email.js';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-do-not-use-in-production';
 
@@ -22,6 +19,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Bước 1: Gửi OTP đăng ký
     // -------------------------------------------------------------
     if (action === 'SEND_OTP') {
+      const prismaModule = await import('../_lib/prisma.js');
+      const prisma = prismaModule.prisma || prismaModule.default?.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
         return res.status(400).json({ message: 'Email đã tồn tại trong hệ thống' });
@@ -43,6 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      const emailModule = await import('../_lib/email.js');
+      const sendOtpEmail = emailModule.sendOtpEmail;
       await sendOtpEmail(email, generatedOtp, 'REGISTER');
       return res.status(200).json({ message: 'Mã xác nhận đã được gửi đến email của bạn' });
     }
@@ -55,6 +56,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ message: 'Vui lòng điền mã OTP và mật khẩu' });
       }
 
+      const prismaModule = await import('../_lib/prisma.js');
+      const prisma = prismaModule.prisma || prismaModule.default?.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
         return res.status(400).json({ message: 'Email đã tồn tại trong hệ thống' });
@@ -76,6 +79,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Hợp lệ -> Xóa mã OTP và Tạo tài khoản
       await prisma.verificationToken.deleteMany({ where: { email, type: 'REGISTER' } });
 
+      const bcryptModule = await import('bcryptjs');
+      const bcrypt = bcryptModule.default || bcryptModule;
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
         data: {
@@ -87,6 +92,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
 
       // Tạo token
+      const jwtModule = await import('jsonwebtoken');
+      const jwt = jwtModule.default || jwtModule;
       const token = jwt.sign(
         { userId: user.id, email: user.email, role: user.role },
         JWT_SECRET,

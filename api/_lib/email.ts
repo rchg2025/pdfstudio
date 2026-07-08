@@ -1,7 +1,8 @@
-import nodemailer from 'nodemailer';
-import { prisma } from './prisma.js';
 
 export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | 'RESET_PASSWORD' | 'GOOGLE_REGISTER') {
+  const prismaModule = await import('./prisma.js');
+  const prisma = prismaModule.prisma || prismaModule.default?.prisma;
+
   // Fetch SMTP settings
   const settings = await prisma.setting.findMany({
     where: { key: { in: ['smtpHost', 'smtpPort', 'smtpUser', 'smtpPass'] } }
@@ -17,6 +18,9 @@ export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | '
   if (!host || !user || !pass) {
     throw new Error('Hệ thống chưa cấu hình Email (SMTP). Vui lòng liên hệ Admin.');
   }
+
+  const nodemailerModule = await import('nodemailer');
+  const nodemailer = nodemailerModule.default || nodemailerModule;
 
   const transporter = nodemailer.createTransport({
     host,

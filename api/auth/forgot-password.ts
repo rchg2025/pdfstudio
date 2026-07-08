@@ -1,7 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { prisma } from '../_lib/prisma.js';
-import { sendOtpEmail } from '../_lib/email.js';
-import bcrypt from 'bcryptjs';
+
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -19,6 +17,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Bước 1: Gửi OTP quên mật khẩu
     // -------------------------------------------------------------
     if (action === 'SEND_OTP') {
+      const prismaModule = await import('../_lib/prisma.js');
+      const prisma = prismaModule.prisma || prismaModule.default?.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (!existingUser) {
         return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
@@ -40,6 +40,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      const emailModule = await import('../_lib/email.js');
+      const sendOtpEmail = emailModule.sendOtpEmail;
       await sendOtpEmail(email, generatedOtp, 'RESET_PASSWORD');
       return res.status(200).json({ message: 'Mã xác nhận đã được gửi đến email của bạn' });
     }
@@ -52,6 +54,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ message: 'Vui lòng điền mã OTP và mật khẩu mới' });
       }
 
+      const prismaModule = await import('../_lib/prisma.js');
+      const prisma = prismaModule.prisma || prismaModule.default?.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (!existingUser) {
         return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
@@ -73,6 +77,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Hợp lệ -> Xóa mã OTP và Đổi mật khẩu
       await prisma.verificationToken.deleteMany({ where: { email, type: 'RESET_PASSWORD' } });
 
+      const bcryptModule = await import('bcryptjs');
+      const bcrypt = bcryptModule.default || bcryptModule;
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await prisma.user.update({
         where: { email },

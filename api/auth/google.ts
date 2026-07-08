@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { OAuth2Client } from 'google-auth-library';
-import { sendOtpEmail } from '../_lib/email.js';
+
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
@@ -60,6 +59,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     if (!credential) return res.status(400).json({ message: 'Credential required' });
 
+    const googleAuthModule = await import('google-auth-library');
+    const OAuth2Client = googleAuthModule.OAuth2Client;
     const client = new OAuth2Client(clientId);
     const ticket = await client.verifyIdToken({
       idToken: credential,
@@ -111,6 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      const emailModule = await import('../_lib/email.js');
+      const sendOtpEmail = emailModule.sendOtpEmail;
       await sendOtpEmail(email, generatedOtp, 'GOOGLE_REGISTER');
       
       return res.status(202).json({ 
