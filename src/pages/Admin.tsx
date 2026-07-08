@@ -442,12 +442,12 @@ export default function Admin() {
                   placeholder="Tìm kiếm tiêu đề, link, email..." 
                   value={searchQuery}
                   onChange={e => { setSearchQuery(e.target.value); setFramesPage(1); }}
-                  className="flex-1 min-w-[250px] p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                  className="input flex-1 min-w-[250px]"
                 />
                 <select 
                   value={timeFilter}
                   onChange={e => { setTimeFilter(e.target.value); setFramesPage(1); }}
-                  className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)] min-w-[180px]"
+                  className="input min-w-[180px]"
                 >
                   <option value="all">Tất cả thời gian</option>
                   <option value="today">Hôm nay</option>
@@ -531,12 +531,12 @@ export default function Admin() {
                   placeholder="Tìm kiếm email, tên người dùng..." 
                   value={userSearchQuery}
                   onChange={e => { setUserSearchQuery(e.target.value); setUsersPage(1); }}
-                  className="flex-1 min-w-[250px] p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                  className="input flex-1 min-w-[250px]"
                 />
                 <select 
                   value={userRoleFilter}
                   onChange={e => { setUserRoleFilter(e.target.value); setUsersPage(1); }}
-                  className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                  className="input"
                 >
                   <option value="all">Tất cả vai trò</option>
                   <option value="ADMIN">Quản trị (ADMIN)</option>
@@ -545,7 +545,7 @@ export default function Admin() {
                 <select 
                   value={userTimeFilter}
                   onChange={e => { setUserTimeFilter(e.target.value); setUsersPage(1); }}
-                  className="p-3 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-[var(--text-primary)]"
+                  className="input"
                 >
                   <option value="all">Tất cả thời gian</option>
                   <option value="today">Hôm nay</option>
