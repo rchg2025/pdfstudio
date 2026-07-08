@@ -14,9 +14,11 @@ export default function FrameCreator() {
 
   if (!user) {
     return (
-      <div className="container mx-auto p-8 text-center mt-12">
-        <h2 className="text-xl font-medium text-gray-600">Vui lòng đăng nhập để tạo khung hình</h2>
-        <button onClick={() => navigate('/login')} className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg">Đăng nhập</button>
+      <div className="container mx-auto p-8 text-center mt-12" style={{ padding: '4rem 1rem' }}>
+        <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 600 }}>Vui lòng đăng nhập để tạo khung hình</h2>
+        <button onClick={() => navigate('/login', { state: { returnUrl: '/tao-khung' } })} className="btn btn-primary">
+          Đăng nhập
+        </button>
       </div>
     );
   }

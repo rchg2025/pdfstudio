@@ -15,10 +15,8 @@ export default function GoogleAuthProviderWrapper({ children }: { children: Reac
       .catch(console.error);
   }, []);
 
-  if (!clientId) return <>{children}</>;
-
   return (
-    <GoogleOAuthProvider clientId={clientId}>
+    <GoogleOAuthProvider clientId={clientId || "no-client-id-configured"}>
       {children}
     </GoogleOAuthProvider>
   );

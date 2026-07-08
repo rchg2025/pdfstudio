@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
@@ -12,6 +12,8 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const returnUrl = location.state?.returnUrl;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +41,7 @@ export default function Login() {
       if (data.user.role === 'ADMIN') {
         navigate('/admin');
       } else {
-        navigate('/dashboard');
+        navigate(returnUrl || '/dashboard');
       }
     } catch (err: any) {
       setError(err.message);
@@ -123,7 +125,7 @@ export default function Login() {
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.message || 'Lỗi đăng nhập Google');
                 login(data.token, data.user);
-                navigate(data.user.role === 'ADMIN' ? '/admin' : '/dashboard');
+                navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/dashboard'));
               } catch (e: any) {
                 setError(e.message);
               } finally {
