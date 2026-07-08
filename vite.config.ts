@@ -6,6 +6,19 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [tailwindcss(), react()],
   build: {
-    chunkSizeWarningLimit: 1500, // Tăng giới hạn cảnh báo lên 1.5MB để tránh báo vàng trên Vercel
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('pdfjs-dist')) return 'vendor-pdfjs';
+            if (id.includes('@imgly')) return 'vendor-imgly';
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor-react';
+            if (id.includes('pdf-lib') || id.includes('jspdf')) return 'vendor-pdf';
+            return 'vendor';
+          }
+        }
+      }
+    }
   },
 })
