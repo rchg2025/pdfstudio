@@ -117,8 +117,8 @@ export default function FrameViewer() {
           </div>
         </div>
 
-        <div className="glass-card" style={{ width: '100%', padding: '2rem', position: 'relative', marginTop: '1rem' }}>
-          <h4 style={{ position: 'absolute', top: '-0.75rem', left: '1.5rem', background: 'var(--bg-primary)', padding: '0 0.5rem', fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Chia sẻ</h4>
+        <div className="glass-card" style={{ width: '100%', padding: '2rem', marginTop: '1rem', display: 'flex', flexDirection: 'column' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', textAlign: 'left' }}>Chia sẻ</h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Nhấn để sao chép đường dẫn</p>
           
           <div style={{ display: 'flex', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>

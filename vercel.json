@@ -13,6 +13,12 @@
     { "source": "/pdf-to-image", "destination": "/index.html" },
     { "source": "/image-compressor", "destination": "/index.html" },
     { "source": "/qr-link", "destination": "/index.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/tao-khung", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/register", "destination": "/index.html" },
+    { "source": "/f/(.*)", "destination": "/index.html" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/:alias", "destination": "/api/redirect?alias=:alias" }
   ]
