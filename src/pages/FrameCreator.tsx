@@ -8,7 +8,7 @@ export default function FrameCreator() {
   
   const [title, setTitle] = useState('');
   const [slug, setSlug] = useState('');
-  const [previewBase64, setPreviewBase64] = useState('');
+  const [previewBase64s, setPreviewBase64s] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -24,30 +24,39 @@ export default function FrameCreator() {
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type !== 'image/png') {
-        setError('Định dạng bắt buộc là PNG.');
-        return;
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Dung lượng tối đa là 2MB.');
-        return;
-      }
-      setError('');
-      
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    if (previewBase64s.length + files.length > 10) {
+      setError('Bạn chỉ có thể tải lên tối đa 10 khung hình.');
+      return;
+    }
+
+    const validFiles = files.filter(f => f.type === 'image/png' && f.size <= 2 * 1024 * 1024);
+    if (validFiles.length !== files.length) {
+      setError('Một số file bị bỏ qua vì không phải định dạng PNG hoặc vượt quá 2MB.');
+    }
+
+    validFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setPreviewBase64(ev.target?.result as string);
+        setPreviewBase64s(prev => {
+          if (prev.length < 10) return [...prev, ev.target?.result as string];
+          return prev;
+        });
       };
       reader.readAsDataURL(file);
-    }
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setPreviewBase64s(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !previewBase64) {
-      setError('Vui lòng điền tiêu đề và tải lên khung hình.');
+    if (!title || previewBase64s.length === 0) {
+      setError('Vui lòng điền tiêu đề và tải lên ít nhất một khung hình.');
       return;
     }
 
@@ -64,7 +73,7 @@ export default function FrameCreator() {
         body: JSON.stringify({
           title,
           slug,
-          imageUrl: previewBase64
+          imageUrls: previewBase64s
         })
       });
 
@@ -100,44 +109,40 @@ export default function FrameCreator() {
               Dung lượng tối đa của hình khung là <strong>2MB</strong>.
             </p>
 
-            <div style={{ 
-              width: '100%', 
-              aspectRatio: '1/1', 
-              border: '2px dashed var(--border)', 
-              borderRadius: '1rem', 
-              display: 'flex', 
-              flexDirection: 'column', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              background: 'var(--bg-secondary)', 
-              position: 'relative', 
-              overflow: 'hidden' 
-            }}>
-              {previewBase64 ? (
-                <img src={previewBase64} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '1rem' }} />
-              ) : (
-                <div style={{ textAlign: 'center', padding: '1.5rem' }}>
-                  <label className="btn btn-primary" style={{ display: 'inline-block', cursor: 'pointer', marginBottom: '1rem', padding: '0.75rem 1.5rem', borderRadius: '2rem' }}>
-                    Thêm hình khung
-                    <input type="file" accept="image/png" style={{ display: 'none' }} onChange={handleFileChange} />
-                  </label>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>định dạng PNG, tối đa 2MB</p>
-                  <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>kích thước cạnh 1080px.</p>
-                </div>
-              )}
-              {previewBase64 && (
-                <label style={{ 
-                  position: 'absolute', bottom: '1rem', right: '1rem', 
-                  background: 'rgba(255, 255, 255, 0.9)', backdropFilter: 'blur(4px)', 
-                  color: '#1e293b', padding: '0.5rem 1rem', borderRadius: '0.5rem', 
-                  fontSize: '0.875rem', fontWeight: 500, cursor: 'pointer', 
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.05)', border: '1px solid #e2e8f0' 
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem' }}>
+              {previewBase64s.map((src, idx) => (
+                <div key={idx} style={{ 
+                  position: 'relative', aspectRatio: '1/1', border: '1px solid var(--border)', 
+                  borderRadius: '0.75rem', overflow: 'hidden', background: '#f8fafc' 
                 }}>
-                  Đổi hình khác
-                  <input type="file" accept="image/png" style={{ display: 'none' }} onChange={handleFileChange} />
+                  <img src={src} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <button type="button" onClick={() => removeImage(idx)} style={{ 
+                    position: 'absolute', top: '0.25rem', right: '0.25rem', background: '#ef4444', 
+                    color: 'white', border: 'none', borderRadius: '50%', width: '1.5rem', height: '1.5rem', 
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                    fontSize: '0.75rem', fontWeight: 'bold'
+                  }}>
+                    ✕
+                  </button>
+                </div>
+              ))}
+              
+              {previewBase64s.length < 10 && (
+                <label style={{ 
+                  aspectRatio: '1/1', border: '2px dashed var(--border)', borderRadius: '0.75rem', 
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', 
+                  cursor: 'pointer', background: 'var(--bg-secondary)', color: 'var(--text-secondary)'
+                }}>
+                  <span style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>+</span>
+                  <span style={{ fontSize: '0.75rem', fontWeight: 600 }}>Thêm khung</span>
+                  <input type="file" multiple accept="image/png" style={{ display: 'none' }} onChange={handleFileChange} />
                 </label>
               )}
             </div>
+            
+            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '1rem', textAlign: 'right' }}>
+              {previewBase64s.length}/10 khung hình
+            </p>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column' }}>

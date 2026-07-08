@@ -10,11 +10,18 @@ import {
   ShieldCheck,
   RefreshCw,
   Stamp,
-  Eraser
+  Eraser,
+  ImagePlus
 } from 'lucide-react';
 import './Home.css';
 
 const tools = [
+  {
+    path: '/dashboard',
+    icon: <ImagePlus size={24} />,
+    title: 'Công Cụ Tạo Khung Ảnh',
+    desc: 'Tạo và quản lý các khung ảnh sự kiện, chiến dịch truyền thông của riêng bạn.'
+  },
   {
     path: '/pdf-editor',
     icon: <FileEdit size={24} />,
@@ -107,10 +114,13 @@ const Home = () => {
       <section className="tools-grid">
         {tools.map((tool, index) => (
           <Link to={tool.path} key={index} className="tool-card">
+            <div className="tool-card-bg-icon">
+              {tool.icon}
+            </div>
             <div className="tool-icon">
               {tool.icon}
             </div>
-            <div>
+            <div style={{ position: 'relative', zIndex: 1 }}>
               <h3 className="tool-title">{tool.title}</h3>
               <p className="tool-desc">{tool.desc}</p>
             </div>

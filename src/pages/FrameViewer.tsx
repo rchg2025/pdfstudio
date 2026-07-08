@@ -16,6 +16,8 @@ interface FrameData {
 export default function FrameViewer() {
   const { slug } = useParams<{ slug: string }>();
   const [frame, setFrame] = useState<FrameData | null>(null);
+  const [frameUrls, setFrameUrls] = useState<string[]>([]);
+  const [selectedFrameIndex, setSelectedFrameIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [qrCodeUrl, setQrCodeUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -26,6 +28,16 @@ export default function FrameViewer() {
       .then(data => {
         if (data && data.id) {
           setFrame(data);
+          try {
+            const parsed = JSON.parse(data.imageUrl);
+            if (Array.isArray(parsed)) {
+              setFrameUrls(parsed);
+            } else {
+              setFrameUrls([data.imageUrl]);
+            }
+          } catch (e) {
+            setFrameUrls([data.imageUrl]);
+          }
           // Generate QR code
           QRCode.toDataURL(window.location.href, { width: 150 })
             .then(url => setQrCodeUrl(url))
@@ -72,7 +84,27 @@ export default function FrameViewer() {
         <p className="text-secondary">Trình tạo ảnh sự kiện với khung hình được thiết kế sẵn</p>
       </div>
 
-      <ImageEditorCanvas frameUrl={frame.imageUrl} />
+      <ImageEditorCanvas frameUrl={frameUrls[selectedFrameIndex] || ''} />
+
+      {frameUrls.length > 1 && (
+        <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--text-primary)' }}>Chọn khung hình khác</h3>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', justifyContent: 'center' }}>
+            {frameUrls.map((url, idx) => (
+              <button 
+                key={idx} 
+                onClick={() => setSelectedFrameIndex(idx)}
+                style={{ 
+                  width: '80px', height: '80px', borderRadius: '0.5rem', border: idx === selectedFrameIndex ? '3px solid var(--primary)' : '1px solid var(--border)',
+                  overflow: 'hidden', padding: '4px', background: '#f8fafc', cursor: 'pointer', transition: 'all 0.2s'
+                }}
+              >
+                <img src={url} alt={`Frame ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: '3rem', maxWidth: '42rem', margin: '3rem auto 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>

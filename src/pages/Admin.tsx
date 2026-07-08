@@ -235,6 +235,16 @@ export default function Admin() {
   const paginatedUsers = users.slice((usersPage - 1) * itemsPerPage, usersPage * itemsPerPage);
   const totalUserPages = Math.ceil(users.length / itemsPerPage);
 
+  const getThumbnailUrl = (imageUrlStr: string) => {
+    try {
+      const parsed = JSON.parse(imageUrlStr);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      return imageUrlStr;
+    } catch {
+      return imageUrlStr;
+    }
+  };
+
   return (
     <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '1200px', margin: '0 auto', position: 'relative' }}>
       
@@ -360,7 +370,7 @@ export default function Admin() {
                         <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Chưa có khung hình nào.</td></tr>
                       ) : paginatedFrames.map((frame: any) => (
                         <tr key={frame.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '0.75rem 1rem' }}><img src={frame.imageUrl} alt={frame.title} style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '0.5rem', background: '#f1f5f9' }} /></td>
+                          <td style={{ padding: '0.75rem 1rem' }}><img src={getThumbnailUrl(frame.imageUrl)} alt={frame.title} style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '0.5rem', background: '#f1f5f9' }} /></td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-primary)', fontWeight: 500 }}>{frame.title}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>/f/{frame.slug}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.user?.name || frame.user?.email || 'N/A'}</td>

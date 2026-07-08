@@ -57,6 +57,16 @@ export default function Dashboard() {
     }
   };
 
+  const getThumbnailUrl = (imageUrlStr: string) => {
+    try {
+      const parsed = JSON.parse(imageUrlStr);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
+      return imageUrlStr;
+    } catch {
+      return imageUrlStr;
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto p-8 text-center mt-12">
@@ -107,7 +117,7 @@ export default function Dashboard() {
                 
                 {/* Ảnh cover (Vuông) */}
                 <div style={{ width: '100%', aspectRatio: '1/1', background: '#f1f5f9', position: 'relative' }}>
-                  <img src={frame.imageUrl} alt={frame.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                  <img src={getThumbnailUrl(frame.imageUrl)} alt={frame.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                   
                   {/* Overlay hành động */}
                   <div style={{ position: 'absolute', top: '0.75rem', right: '0.75rem', display: 'flex', gap: '0.5rem' }}>

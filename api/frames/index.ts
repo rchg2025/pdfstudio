@@ -18,9 +18,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'POST') {
-      let { title, slug, imageUrl } = req.body;
-      if (!title || !imageUrl) {
-        return res.status(400).json({ message: 'Title and imageUrl are required' });
+      let { title, slug, imageUrls } = req.body;
+      if (!title || (!imageUrls || imageUrls.length === 0)) {
+        return res.status(400).json({ message: 'Title and imageUrls are required' });
       }
 
       if (!slug) {
@@ -37,85 +37,102 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      let finalImageUrl = imageUrl;
+      let finalImageUrl = '[]';
+      let uploadedUrls: string[] = [];
 
-      // Handle Base64 upload to Google Drive
-      if (imageUrl.startsWith('data:image')) {
-        const settings = await prisma.setting.findMany({
-          where: { key: { in: ['googleDriveFolderId', 'googleDriveServiceJson'] } }
-        });
-        const folderIdSetting = settings.find((s: any) => s.key === 'googleDriveFolderId');
-        const serviceJsonSetting = settings.find((s: any) => s.key === 'googleDriveServiceJson');
-
-        if (!folderIdSetting?.value || !serviceJsonSetting?.value) {
-          return res.status(500).json({ message: 'Lỗi hệ thống: Chưa cấu hình Google Drive trong Admin.' });
-        }
-
-        const base64Data = imageUrl.replace(/^data:image\/\w+;base64,/, "");
-        const buffer = Buffer.from(base64Data, 'base64');
-        const stream = new Readable();
-        stream.push(buffer);
-        stream.push(null);
-
-        try {
-          const credentials = JSON.parse(serviceJsonSetting.value);
-          const auth = new google.auth.GoogleAuth({
-            credentials,
-            scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'],
+      // Check if we need to upload to Google Drive
+      if (Array.isArray(imageUrls) && imageUrls.length > 0) {
+        const hasBase64 = imageUrls.some(url => url.startsWith('data:image'));
+        
+        if (hasBase64) {
+          const settings = await prisma.setting.findMany({
+            where: { key: { in: ['googleDriveFolderId', 'googleDriveServiceJson'] } }
           });
-          const drive = google.drive({ version: 'v3', auth });
+          const folderIdSetting = settings.find((s: any) => s.key === 'googleDriveFolderId');
+          const serviceJsonSetting = settings.find((s: any) => s.key === 'googleDriveServiceJson');
 
-          const now = new Date();
-          const yearStr = now.getFullYear().toString();
-          const monthStr = (now.getMonth() + 1).toString().padStart(2, '0');
+          if (!folderIdSetting?.value || !serviceJsonSetting?.value) {
+            return res.status(500).json({ message: 'Lỗi hệ thống: Chưa cấu hình Google Drive trong Admin.' });
+          }
 
-          // Helper to find or create folder
-          const getOrCreateFolder = async (name: string, parentId: string) => {
-            const query = `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-            const search = await drive.files.list({ q: query, spaces: 'drive', supportsAllDrives: true, includeItemsFromAllDrives: true });
-            if (search.data.files && search.data.files.length > 0) {
-              return search.data.files[0].id!;
-            }
-            const created = await drive.files.create({
-              requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
-              supportsAllDrives: true,
+          try {
+            const credentials = JSON.parse(serviceJsonSetting.value);
+            const auth = new google.auth.GoogleAuth({
+              credentials,
+              scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'],
             });
-            return created.data.id!;
-          };
+            const drive = google.drive({ version: 'v3', auth });
 
-          const yearFolderId = await getOrCreateFolder(yearStr, folderIdSetting.value);
-          const monthFolderId = await getOrCreateFolder(monthStr, yearFolderId);
+            const now = new Date();
+            const yearStr = now.getFullYear().toString();
+            const monthStr = (now.getMonth() + 1).toString().padStart(2, '0');
 
-          const fileMetadata = {
-            name: `${slug}-${Date.now()}.png`,
-            parents: [monthFolderId],
-          };
+            // Helper to find or create folder
+            const getOrCreateFolder = async (name: string, parentId: string) => {
+              const query = `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+              const search = await drive.files.list({ q: query, spaces: 'drive', supportsAllDrives: true, includeItemsFromAllDrives: true });
+              if (search.data.files && search.data.files.length > 0) {
+                return search.data.files[0].id!;
+              }
+              const created = await drive.files.create({
+                requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
+                supportsAllDrives: true,
+              });
+              return created.data.id!;
+            };
 
-          const media = {
-            mimeType: 'image/png',
-            body: stream,
-          };
+            const yearFolderId = await getOrCreateFolder(yearStr, folderIdSetting.value);
+            const monthFolderId = await getOrCreateFolder(monthStr, yearFolderId);
 
-          const uploadedFile = await drive.files.create({
-            requestBody: fileMetadata,
-            media: media,
-            fields: 'id',
-            supportsAllDrives: true,
-          });
+            // Upload all base64 images sequentially
+            for (let i = 0; i < imageUrls.length; i++) {
+              const url = imageUrls[i];
+              if (url.startsWith('data:image')) {
+                const base64Data = url.replace(/^data:image\/\w+;base64,/, "");
+                const buffer = Buffer.from(base64Data, 'base64');
+                const stream = new Readable();
+                stream.push(buffer);
+                stream.push(null);
 
-          const fileId = uploadedFile.data.id!;
+                const fileMetadata = {
+                  name: `${slug}-${Date.now()}-${i}.png`,
+                  parents: [monthFolderId],
+                };
 
-          // Set public permission
-          await drive.permissions.create({
-            fileId: fileId,
-            requestBody: { role: 'reader', type: 'anyone' },
-            supportsAllDrives: true,
-          });
+                const media = {
+                  mimeType: 'image/png',
+                  body: stream,
+                };
 
-          finalImageUrl = `https://drive.google.com/uc?id=${fileId}`;
-        } catch (err: any) {
-          console.error("Google Drive Upload Error:", err);
-          return res.status(500).json({ message: 'Lỗi khi upload ảnh lên Google Drive: ' + err.message });
+                const uploadedFile = await drive.files.create({
+                  requestBody: fileMetadata,
+                  media: media,
+                  fields: 'id',
+                  supportsAllDrives: true,
+                });
+
+                const fileId = uploadedFile.data.id!;
+
+                // Set public permission
+                await drive.permissions.create({
+                  fileId: fileId,
+                  requestBody: { role: 'reader', type: 'anyone' },
+                  supportsAllDrives: true,
+                });
+
+                uploadedUrls.push(`https://drive.google.com/uc?id=${fileId}`);
+              } else {
+                uploadedUrls.push(url);
+              }
+            }
+            finalImageUrl = JSON.stringify(uploadedUrls);
+          } catch (err: any) {
+            console.error("Google Drive Upload Error:", err);
+            return res.status(500).json({ message: 'Lỗi khi upload ảnh lên Google Drive: ' + err.message });
+          }
+        } else {
+          // No base64, all URLs are regular URLs (e.g. from an edit form that didn't change them)
+          finalImageUrl = JSON.stringify(imageUrls);
         }
       }
 

@@ -124,3 +124,24 @@
   color: var(--text-secondary);
   line-height: 1.6;
 }
+
+.tool-card-bg-icon {
+  position: absolute;
+  right: -1rem;
+  bottom: -1rem;
+  opacity: 0.05;
+  color: var(--primary);
+  z-index: 0;
+  transition: all var(--transition-normal);
+  pointer-events: none;
+}
+
+.tool-card-bg-icon svg {
+  width: 120px;
+  height: 120px;
+}
+
+.tool-card:hover .tool-card-bg-icon {
+  transform: scale(1.1) rotate(-10deg);
+  opacity: 0.1;
+}
