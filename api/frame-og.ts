@@ -1,6 +1,4 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import fs from 'fs';
-import path from 'path';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -9,14 +7,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let html = '';
     
     try {
-      html = fs.readFileSync(path.join(process.cwd(), 'dist', 'index.html'), 'utf-8');
-    } catch (e) {
-      try {
-        html = fs.readFileSync(path.join(process.cwd(), 'index.html'), 'utf-8');
-      } catch (err) {
-        console.error("Could not find index.html in dist or root");
-        return res.status(500).send('Could not find index.html');
+      // Use https in production, fallback to http in dev
+      const protocol = req.headers['x-forwarded-proto'] || (req.headers.host?.includes('localhost') ? 'http' : 'https');
+      const host = req.headers['x-forwarded-host'] || req.headers.host;
+      const baseUrl = `${protocol}://${host}`;
+      
+      const response = await fetch(`${baseUrl}/index.html`);
+      if (response.ok) {
+        html = await response.text();
+      } else {
+        throw new Error(`Failed to fetch index.html: ${response.status}`);
       }
+    } catch (e: any) {
+      console.error("Could not fetch index.html", e);
+      return res.status(500).send('Could not fetch base HTML: ' + e.message);
     }
 
     if (slug) {
