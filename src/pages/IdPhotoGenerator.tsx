@@ -268,20 +268,20 @@ export default function IdPhotoGenerator() {
             <div className="grid grid-cols-2 gap-3 sm:gap-4">
               <div 
                 onClick={() => { setGender('male'); setClothing('original'); }}
-                className={`flex items-center justify-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white hover:border-gray-300'}`}
+                className={`flex items-center justify-center py-2.5 px-4 sm:py-3 sm:px-5 border rounded-full cursor-pointer transition-all ${gender === 'male' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.08)]' : 'border-gray-200 bg-white hover:border-gray-300'}`}
               >
-                <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
-                  {gender === 'male' && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
+                <div className={`flex-shrink-0 w-4 h-4 mr-2.5 border rounded-full flex items-center justify-center ${gender === 'male' ? 'border-[var(--primary)]' : 'border-gray-300'}`}>
+                  {gender === 'male' && <div className="w-2.5 h-2.5 rounded-full bg-[var(--primary)]"></div>}
                 </div>
                 <span className="text-sm font-medium text-[var(--text-primary)]">Nam</span>
               </div>
               
               <div 
                 onClick={() => { setGender('female'); setClothing('original'); }}
-                className={`flex items-center justify-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white hover:border-gray-300'}`}
+                className={`flex items-center justify-center py-2.5 px-4 sm:py-3 sm:px-5 border rounded-full cursor-pointer transition-all ${gender === 'female' ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.08)]' : 'border-gray-200 bg-white hover:border-gray-300'}`}
               >
-                <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
-                  {gender === 'female' && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
+                <div className={`flex-shrink-0 w-4 h-4 mr-2.5 border rounded-full flex items-center justify-center ${gender === 'female' ? 'border-[var(--primary)]' : 'border-gray-300'}`}>
+                  {gender === 'female' && <div className="w-2.5 h-2.5 rounded-full bg-[var(--primary)]"></div>}
                 </div>
                 <span className="text-sm font-medium text-[var(--text-primary)]">Nữ</span>
               </div>
@@ -301,10 +301,10 @@ export default function IdPhotoGenerator() {
                 <div 
                   key={option.value} 
                   onClick={() => setClothing(option.value)}
-                  className={`flex items-center p-3 sm:p-4 border rounded-lg cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.1)]' : 'border-[var(--border)] bg-white hover:border-gray-300'}`}
+                  className={`flex items-center py-2.5 px-4 sm:py-3 sm:px-5 border rounded-full cursor-pointer transition-all ${clothing === option.value ? 'border-[var(--primary)] bg-[rgba(59,130,246,0.08)]' : 'border-gray-200 bg-white hover:border-gray-300'}`}
                 >
-                  <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-400'}`}>
-                    {clothing === option.value && <div className="w-2 h-2 rounded-full bg-[var(--primary)]"></div>}
+                  <div className={`flex-shrink-0 w-4 h-4 mr-3 border rounded-full flex items-center justify-center ${clothing === option.value ? 'border-[var(--primary)]' : 'border-gray-300'}`}>
+                    {clothing === option.value && <div className="w-2.5 h-2.5 rounded-full bg-[var(--primary)]"></div>}
                   </div>
                   <span className="text-sm font-medium text-[var(--text-primary)]">{option.label}</span>
                 </div>
