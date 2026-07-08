@@ -143,20 +143,20 @@ export default function FrameViewer() {
           </div>
         </div>
 
-        <div className="glass-card" style={{ width: '100%', padding: '2rem', marginTop: '1rem', display: 'flex', flexDirection: 'column' }}>
+        <div className="glass-card p-4 md:p-8" style={{ width: '100%', marginTop: '1rem', display: 'flex', flexDirection: 'column' }}>
           <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', textAlign: 'left' }}>Chia sẻ</h3>
           <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>Nhấn để sao chép đường dẫn</p>
           
-          <div style={{ display: 'flex', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+          <div style={{ display: 'flex', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--bg-secondary)', width: '100%' }}>
             <input 
               type="text" 
               readOnly 
               value={window.location.href}
-              style={{ flex: 1, padding: '0.75rem 1rem', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+              style={{ flex: 1, minWidth: 0, padding: '0.75rem 1rem', background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontSize: '0.875rem' }}
             />
             <button 
               onClick={handleCopyLink}
-              style={{ padding: '0 1.5rem', borderLeft: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
+              style={{ flexShrink: 0, padding: '0 1rem', borderLeft: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--primary)', fontWeight: 600, fontSize: '0.875rem', cursor: 'pointer' }}
             >
               {copied ? 'Đã chép' : 'Sao chép'}
             </button>
