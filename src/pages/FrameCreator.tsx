@@ -32,9 +32,9 @@ export default function FrameCreator() {
       return;
     }
 
-    const validFiles = files.filter(f => f.type === 'image/png' && f.size <= 2 * 1024 * 1024);
+    const validFiles = files.filter(f => f.type === 'image/png');
     if (validFiles.length !== files.length) {
-      setError('Một số file bị bỏ qua vì không phải định dạng PNG hoặc vượt quá 2MB.');
+      setError('Một số file bị bỏ qua vì không phải định dạng PNG.');
     }
 
     validFiles.forEach(file => {
@@ -133,8 +133,7 @@ export default function FrameCreator() {
             <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>Thêm hình khung</h2>
             <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
               Định dạng bắt buộc hình khung là <strong>PNG</strong> và phải có <strong>vùng trong suốt</strong>.<br/>
-              Kích thước đề xuất là hình vuông cạnh <strong>1080px</strong>.<br/>
-              Dung lượng tối đa của hình khung là <strong>2MB</strong>.
+              Kích thước đề xuất là hình vuông cạnh <strong>1080px</strong>.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', gap: '1rem' }}>
