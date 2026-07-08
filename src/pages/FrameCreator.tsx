@@ -64,6 +64,34 @@ export default function FrameCreator() {
     setError('');
 
     try {
+      // 1. Upload images sequentially to avoid Vercel 4.5MB payload limit
+      const uploadedUrls: string[] = [];
+      const tempSlug = slug || Math.random().toString(36).substring(2, 8) + Math.random().toString(36).substring(2, 6);
+
+      for (let i = 0; i < previewBase64s.length; i++) {
+        const base64 = previewBase64s[i];
+        if (base64.startsWith('data:image')) {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              imageBase64: base64,
+              filename: `${tempSlug}-${Date.now()}-${i}.png`
+            })
+          });
+
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Lỗi khi upload ảnh');
+          uploadedUrls.push(data.url);
+        } else {
+          uploadedUrls.push(base64);
+        }
+      }
+
+      // 2. Submit the frame data
       const res = await fetch('/api/frames', {
         method: 'POST',
         headers: {
@@ -72,8 +100,8 @@ export default function FrameCreator() {
         },
         body: JSON.stringify({
           title,
-          slug,
-          imageUrls: previewBase64s
+          slug: tempSlug,
+          imageUrls: uploadedUrls
         })
       });
 
