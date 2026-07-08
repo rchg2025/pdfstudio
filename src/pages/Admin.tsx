@@ -464,18 +464,22 @@ export default function Admin() {
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Ảnh</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Tiêu đề</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Đường dẫn</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Lượt xem</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Lượt tải</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Người tạo</th>
                         <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)' }}>Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
                       {frames.length === 0 ? (
-                        <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Chưa có khung hình nào.</td></tr>
+                        <tr><td colSpan={7} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Chưa có khung hình nào.</td></tr>
                       ) : paginatedFrames.map((frame: any) => (
                         <tr key={frame.id} style={{ borderBottom: '1px solid var(--border)' }}>
                           <td style={{ padding: '0.75rem 1rem' }}><img src={getThumbnailUrl(frame.imageUrl)} alt={frame.title} style={{ width: '50px', height: '50px', objectFit: 'contain', borderRadius: '0.5rem', background: '#f1f5f9' }} /></td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-primary)', fontWeight: 500 }}>{frame.title}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>/f/{frame.slug}</td>
+                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.views || 0}</td>
+                          <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.downloads || 0}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.user?.name || frame.user?.email || 'N/A'}</td>
                           <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                             <a href={`/f/${frame.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', textDecoration: 'none' }}>Xem</a>

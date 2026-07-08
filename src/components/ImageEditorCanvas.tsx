@@ -2,9 +2,10 @@ import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 interface Props {
   frameUrl: string;
+  onDownload?: () => void;
 }
 
-export default function ImageEditorCanvas({ frameUrl }: Props) {
+export default function ImageEditorCanvas({ frameUrl, onDownload }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [userImage, setUserImage] = useState<HTMLImageElement | null>(null);
   const [frameImg, setFrameImg] = useState<HTMLImageElement | null>(null);
@@ -122,6 +123,7 @@ export default function ImageEditorCanvas({ frameUrl }: Props) {
       link.download = 'avatar-frame.png';
       link.href = canvas.toDataURL('image/png');
       link.click();
+      if (onDownload) onDownload();
     }
   };
 

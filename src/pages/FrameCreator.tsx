@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 
 export default function FrameCreator() {
   const { token, user } = useAuth();
@@ -25,16 +25,54 @@ export default function FrameCreator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  if (!user) {
+  const [publicFrames, setPublicFrames] = useState<{ newest: any[], topDownloaded: any[] }>({ newest: [], topDownloaded: [] });
+
+  useEffect(() => {
+    fetch('/api/frames/public')
+      .then(res => res.json())
+      .then(data => {
+        if (data.newest) setPublicFrames(data);
+      })
+      .catch(e => console.error(e));
+  }, []);
+
+  const getThumbnailUrl = (imageUrlStr: string) => {
+    try {
+      const parsed = JSON.parse(imageUrlStr);
+      let url = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : imageUrlStr;
+      if (url.includes('/uc?id=')) url = url.replace('/uc?id=', '/thumbnail?id=') + '&sz=w500';
+      return url;
+    } catch {
+      let url = imageUrlStr;
+      if (url.includes('/uc?id=')) url = url.replace('/uc?id=', '/thumbnail?id=') + '&sz=w500';
+      return url;
+    }
+  };
+
+  const renderFrameSlider = (title: string, frames: any[]) => {
+    if (!frames.length) return null;
     return (
-      <div className="container mx-auto p-8 text-center mt-12" style={{ padding: '4rem 1rem' }}>
-        <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 600 }}>Vui lòng đăng nhập để tạo hoặc chỉnh sửa khung hình</h2>
-        <button onClick={() => navigate('/login', { state: { returnUrl: '/tao-khung' } })} className="btn btn-primary">
-          Đăng nhập
-        </button>
+      <div style={{ marginTop: '3rem' }}>
+        <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem', borderLeft: '4px solid var(--primary)', paddingLeft: '0.75rem' }}>{title}</h3>
+        <div style={{ display: 'flex', overflowX: 'auto', gap: '1rem', paddingBottom: '1rem', padding: '0.5rem', scrollSnapType: 'x mandatory' }}>
+          {frames.map(f => (
+            <Link to={`/f/${f.slug}`} key={f.id} style={{ textDecoration: 'none', minWidth: '200px', flex: '0 0 auto', scrollSnapAlign: 'start', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column' }}>
+              <div style={{ aspectRatio: '1/1', background: '#f1f5f9', position: 'relative' }}>
+                <img src={getThumbnailUrl(f.imageUrl)} alt={f.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+              </div>
+              <div style={{ padding: '0.75rem' }}>
+                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.title}</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  <span title="Lượt xem">👁 {f.views || 0}</span>
+                  <span title="Lượt tải">⬇ {f.downloads || 0}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     );
-  }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -137,13 +175,33 @@ export default function FrameCreator() {
   };
 
   return (
-    <div className="animate-fade-in mx-auto">
-      <div className="tool-header text-center mb-10 px-4 mt-8">
-        <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
-          {editFrame ? 'Chỉnh Sửa Sự Kiện, Khung Hình' : 'Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch'}
-        </h1>
-        <p className="text-secondary">{editFrame ? 'Chỉnh sửa thông tin và thêm/xóa khung hình.' : 'Vui lòng tải lên khung hình dạng PNG và điền thông tin sự kiện.'}</p>
-      </div>
+    <div className="animate-fade-in mx-auto px-4" style={{ maxWidth: '1200px' }}>
+      {/* BANNER CHO NGƯỜI CHƯA ĐĂNG NHẬP */}
+      {!user && (
+        <div className="glass-card mt-8 text-center" style={{ padding: '3rem 2rem', background: 'linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(147,51,234,0.05) 100%)', border: '1px solid rgba(37,99,235,0.2)' }}>
+          <h2 className="text-gradient" style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '1rem' }}>Tạo Khung Ảnh Sự Kiện Độc Đáo</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem', fontSize: '1.125rem', maxWidth: '600px', margin: '0 auto 2rem' }}>
+            Thiết kế và chia sẻ các khung hình, chiến dịch truyền thông của riêng bạn một cách dễ dàng.
+          </p>
+          <button onClick={() => navigate('/login', { state: { returnUrl: '/tao-khung' } })} className="btn btn-primary" style={{ padding: '0.75rem 2.5rem', fontSize: '1.125rem', borderRadius: '2rem' }}>
+            Tạo ảnh ngay
+          </button>
+        </div>
+      )}
+
+      {/* SLIDERS TỔNG HỢP */}
+      {renderFrameSlider('🔥 Top 10 Khung Hình Tải Nhiều Nhất', publicFrames.topDownloaded)}
+      {renderFrameSlider('✨ Top 10 Khung Hình Mới Nhất', publicFrames.newest)}
+
+      {/* FORM TẠO/SỬA KHUNG CHỈ HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP */}
+      {user ? (
+        <>
+          <div className="tool-header text-center mb-10 mt-12">
+            <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
+              {editFrame ? 'Chỉnh Sửa Sự Kiện, Khung Hình' : 'Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch'}
+            </h1>
+            <p className="text-secondary">{editFrame ? 'Chỉnh sửa thông tin và thêm/xóa khung hình.' : 'Vui lòng tải lên khung hình dạng PNG và điền thông tin sự kiện.'}</p>
+          </div>
 
       <div className="glass-card p-5 md:p-10">
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
@@ -240,6 +298,10 @@ export default function FrameCreator() {
           </div>
         </form>
       </div>
+        </>
+      ) : (
+        <div style={{ paddingBottom: '4rem' }}></div>
+      )}
     </div>
   );
 }

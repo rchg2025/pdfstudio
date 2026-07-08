@@ -28,6 +28,14 @@ export default function FrameViewer() {
       .then(data => {
         if (data && data.id) {
           setFrame(data);
+          
+          // Track view
+          fetch('/api/frames/track', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: data.id, action: 'view' })
+          }).catch(err => console.error('Error tracking view:', err));
+
           try {
             const parsed = JSON.parse(data.imageUrl);
             let urls = Array.isArray(parsed) ? parsed : [data.imageUrl];
@@ -78,6 +86,15 @@ export default function FrameViewer() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleDownload = () => {
+    if (!frame) return;
+    fetch('/api/frames/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: frame.id, action: 'download' })
+    }).catch(err => console.error('Error tracking download:', err));
+  };
+
   return (
     <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto' }}>
       <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
@@ -87,7 +104,7 @@ export default function FrameViewer() {
         <p className="text-secondary">Trình tạo ảnh sự kiện với khung hình được thiết kế sẵn</p>
       </div>
 
-      <ImageEditorCanvas frameUrl={frameUrls[selectedFrameIndex] || ''} />
+      <ImageEditorCanvas frameUrl={frameUrls[selectedFrameIndex] || ''} onDownload={handleDownload} />
 
       {frameUrls.length > 1 && (
         <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
