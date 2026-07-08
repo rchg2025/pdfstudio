@@ -10,6 +10,8 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [frames, setFrames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9;
 
   useEffect(() => {
     if (!user) {
@@ -48,6 +50,12 @@ export default function Dashboard() {
         });
         if (res.ok) {
           fetchFrames();
+          
+          // Kiểm tra nếu trang hiện tại bị trống sau khi xóa thì lùi lại trang trước
+          if (currentPage > 1 && frames.length % itemsPerPage === 1) {
+            setCurrentPage(currentPage - 1);
+          }
+          
           showToast('Xóa khung hình thành công', 'success');
         } else {
           const data = await res.json();
@@ -117,9 +125,10 @@ export default function Dashboard() {
             </button>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            {frames.map((frame: any) => (
-              <div key={frame.id} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--border)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+              {frames.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map((frame: any) => (
+                <div key={frame.id} style={{ display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', borderRadius: '1rem', overflow: 'hidden', border: '1px solid var(--border)', transition: 'transform 0.2s, box-shadow 0.2s' }}>
                 
                 {/* Ảnh cover (Vuông) */}
                 <div style={{ width: '100%', aspectRatio: '1/1', background: '#f1f5f9', position: 'relative' }}>
@@ -159,8 +168,49 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+              </div>
             ))}
-          </div>
+            </div>
+
+            {/* Pagination Controls */}
+            {Math.ceil(frames.length / itemsPerPage) > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem', marginTop: '2.5rem' }}>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    background: currentPage === 1 ? 'var(--bg-secondary)' : 'var(--primary)',
+                    color: currentPage === 1 ? 'var(--text-secondary)' : '#fff',
+                    border: 'none',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === 1 ? 0.5 : 1
+                  }}
+                >
+                  Trang trước
+                </button>
+                <span style={{ margin: '0 0.5rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                  Trang {currentPage} / {Math.ceil(frames.length / itemsPerPage)}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(frames.length / itemsPerPage)))}
+                  disabled={currentPage === Math.ceil(frames.length / itemsPerPage)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.5rem',
+                    background: currentPage === Math.ceil(frames.length / itemsPerPage) ? 'var(--bg-secondary)' : 'var(--primary)',
+                    color: currentPage === Math.ceil(frames.length / itemsPerPage) ? 'var(--text-secondary)' : '#fff',
+                    border: 'none',
+                    cursor: currentPage === Math.ceil(frames.length / itemsPerPage) ? 'not-allowed' : 'pointer',
+                    opacity: currentPage === Math.ceil(frames.length / itemsPerPage) ? 0.5 : 1
+                  }}
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
