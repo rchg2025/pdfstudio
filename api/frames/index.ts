@@ -70,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Helper to find or create folder
             const getOrCreateFolder = async (name: string, parentId: string) => {
               const query = `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
-              const search = await drive.files.list({ q: query, spaces: 'drive', supportsAllDrives: true, includeItemsFromAllDrives: true });
+              const search = await drive.files.list({ q: query, spaces: 'drive', supportsAllDrives: true, includeItemsFromAllDrives: true, corpora: 'allDrives' });
               if (search.data.files && search.data.files.length > 0) {
                 return search.data.files[0].id!;
               }
