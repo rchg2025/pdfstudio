@@ -12,12 +12,17 @@ export default function Admin() {
   const [loadingFrames, setLoadingFrames] = useState(false);
   const [framesPage, setFramesPage] = useState(1);
   const [editingFrame, setEditingFrame] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [timeFilter, setTimeFilter] = useState('all');
 
   // States cho Người dùng
   const [users, setUsers] = useState<any[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [usersPage, setUsersPage] = useState(1);
   const [editingUser, setEditingUser] = useState<any>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState('all');
+  const [userTimeFilter, setUserTimeFilter] = useState('all');
 
   // States cho Cấu hình
   const [settings, setSettings] = useState({
@@ -228,12 +233,68 @@ export default function Admin() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
-  // Pagination Logic
-  const paginatedFrames = frames.slice((framesPage - 1) * itemsPerPage, framesPage * itemsPerPage);
-  const totalFramePages = Math.ceil(frames.length / itemsPerPage);
+  // Pagination & Filtering Logic
+  const filteredFrames = frames.filter((frame: any) => {
+    // 1. Search Query
+    const query = searchQuery.toLowerCase();
+    const matchSearch = !query || 
+      frame.title?.toLowerCase().includes(query) || 
+      frame.slug?.toLowerCase().includes(query) || 
+      frame.user?.name?.toLowerCase().includes(query) || 
+      frame.user?.email?.toLowerCase().includes(query);
 
-  const paginatedUsers = users.slice((usersPage - 1) * itemsPerPage, usersPage * itemsPerPage);
-  const totalUserPages = Math.ceil(users.length / itemsPerPage);
+    // 2. Time Filter
+    let matchTime = true;
+    if (timeFilter !== 'all' && frame.createdAt) {
+      const createdDate = new Date(frame.createdAt);
+      const now = new Date();
+      if (timeFilter === 'today') {
+        matchTime = createdDate.toDateString() === now.toDateString();
+      } else if (timeFilter === 'week') {
+        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        matchTime = diffDays <= 7;
+      } else if (timeFilter === 'month') {
+        matchTime = createdDate.getMonth() === now.getMonth() && createdDate.getFullYear() === now.getFullYear();
+      }
+    }
+    return matchSearch && matchTime;
+  });
+
+  const paginatedFrames = filteredFrames.slice((framesPage - 1) * itemsPerPage, framesPage * itemsPerPage);
+  const totalFramePages = Math.ceil(filteredFrames.length / itemsPerPage);
+
+  const filteredUsers = users.filter((u: any) => {
+    // Search
+    const query = userSearchQuery.toLowerCase();
+    const matchSearch = !query || 
+      u.email?.toLowerCase().includes(query) || 
+      u.name?.toLowerCase().includes(query);
+
+    // Role Filter
+    const matchRole = userRoleFilter === 'all' || u.role === userRoleFilter;
+
+    // Time Filter
+    let matchTime = true;
+    if (userTimeFilter !== 'all' && u.createdAt) {
+      const createdDate = new Date(u.createdAt);
+      const now = new Date();
+      if (userTimeFilter === 'today') {
+        matchTime = createdDate.toDateString() === now.toDateString();
+      } else if (userTimeFilter === 'week') {
+        const diffTime = Math.abs(now.getTime() - createdDate.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        matchTime = diffDays <= 7;
+      } else if (userTimeFilter === 'month') {
+        matchTime = createdDate.getMonth() === now.getMonth() && createdDate.getFullYear() === now.getFullYear();
+      }
+    }
+    
+    return matchSearch && matchRole && matchTime;
+  });
+
+  const paginatedUsers = filteredUsers.slice((usersPage - 1) * itemsPerPage, usersPage * itemsPerPage);
+  const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   const getThumbnailUrl = (imageUrlStr: string) => {
     try {
@@ -349,8 +410,29 @@ export default function Admin() {
           {activeTab === 'frames' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Khung Hình</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Khung Hình ({filteredFrames.length})</h2>
                 <button onClick={fetchFrames} className="btn" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Tải lại</button>
+              </div>
+
+              {/* BỘ LỌC VÀ TÌM KIẾM */}
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <input 
+                  type="text" 
+                  placeholder="Tìm kiếm tiêu đề, link, email hoặc tên người dùng..." 
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setFramesPage(1); }}
+                  style={{ flex: 1, minWidth: '300px', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                />
+                <select 
+                  value={timeFilter}
+                  onChange={e => { setTimeFilter(e.target.value); setFramesPage(1); }}
+                  style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', minWidth: '180px' }}
+                >
+                  <option value="all">Tất cả thời gian</option>
+                  <option value="today">Hôm nay</option>
+                  <option value="week">Trong 7 ngày qua</option>
+                  <option value="month">Trong tháng này</option>
+                </select>
               </div>
               
               {loadingFrames ? <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Đang tải dữ liệu...</p> : (
@@ -413,11 +495,41 @@ export default function Admin() {
           {activeTab === 'users' && (
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Người Dùng</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Người Dùng ({filteredUsers.length})</h2>
                 <div style={{ display: 'flex', gap: '1rem' }}>
                   <button onClick={() => setEditingUser({ role: 'USER' })} className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>+ Tạo mới</button>
                   <button onClick={fetchUsers} className="btn" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Tải lại</button>
                 </div>
+              </div>
+
+              {/* BỘ LỌC VÀ TÌM KIẾM TÀI KHOẢN */}
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                <input 
+                  type="text" 
+                  placeholder="Tìm kiếm email, tên người dùng..." 
+                  value={userSearchQuery}
+                  onChange={e => { setUserSearchQuery(e.target.value); setUsersPage(1); }}
+                  style={{ flex: 1, minWidth: '300px', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                />
+                <select 
+                  value={userRoleFilter}
+                  onChange={e => { setUserRoleFilter(e.target.value); setUsersPage(1); }}
+                  style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                >
+                  <option value="all">Tất cả vai trò</option>
+                  <option value="ADMIN">Quản trị (ADMIN)</option>
+                  <option value="USER">Người dùng (USER)</option>
+                </select>
+                <select 
+                  value={userTimeFilter}
+                  onChange={e => { setUserTimeFilter(e.target.value); setUsersPage(1); }}
+                  style={{ padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                >
+                  <option value="all">Tất cả thời gian</option>
+                  <option value="today">Hôm nay</option>
+                  <option value="week">Trong 7 ngày qua</option>
+                  <option value="month">Trong tháng này</option>
+                </select>
               </div>
               
               {loadingUsers ? <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Đang tải dữ liệu...</p> : (
