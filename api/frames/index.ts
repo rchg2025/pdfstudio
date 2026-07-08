@@ -6,8 +6,8 @@ import { Readable } from 'stream';
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const user = requireAuth(req);
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const prismaModule = await import('../_lib/prisma.js');
+    const prisma = prismaModule.prisma;
 
     if (req.method === 'GET') {
       const frames = await prisma.frame.findMany({
