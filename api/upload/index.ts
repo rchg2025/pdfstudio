@@ -88,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           supportsAllDrives: true,
         });
 
-        return res.status(200).json({ url: `https://drive.google.com/uc?id=${fileId}` });
+        return res.status(200).json({ url: `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000` });
       } catch (err: any) {
         console.error("Google Drive Upload Error:", err);
         return res.status(500).json({ message: 'Lỗi khi upload ảnh lên Google Drive: ' + err.message });

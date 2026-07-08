@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../contexts/NotificationContext';
 
 export default function Admin() {
   const { user, token } = useAuth();
+  const { showToast, showConfirm } = useNotification();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('frames');
   
@@ -61,17 +63,24 @@ export default function Admin() {
     }
   };
 
-  const deleteFrame = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa khung hình này?')) return;
-    try {
-      const res = await fetch(`/api/admin/frames?id=${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) fetchFrames();
-    } catch (e) {
-      console.error(e);
-    }
+  const deleteFrame = (id: string) => {
+    showConfirm('Bạn có chắc chắn muốn xóa khung hình này?', async () => {
+      try {
+        const res = await fetch(`/api/admin/frames?id=${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          fetchFrames();
+          showToast('Xóa khung hình thành công', 'success');
+        } else {
+          showToast('Xóa khung hình thất bại', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Lỗi khi xóa khung hình', 'error');
+      }
+    });
   };
 
   const saveFrame = async (e: React.FormEvent) => {
@@ -85,9 +94,10 @@ export default function Admin() {
       if (res.ok) {
         setEditingFrame(null);
         fetchFrames();
+        showToast('Lưu khung hình thành công', 'success');
       } else {
         const d = await res.json();
-        alert(d.message || 'Lỗi khi lưu khung hình');
+        showToast(d.message || 'Lỗi khi lưu khung hình', 'error');
       }
     } catch (e) { console.error(e); }
   };
@@ -104,17 +114,24 @@ export default function Admin() {
     }
   };
 
-  const deleteUser = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) return;
-    try {
-      const res = await fetch(`/api/admin/users?id=${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) fetchUsers();
-    } catch (e) {
-      console.error(e);
-    }
+  const deleteUser = (id: string) => {
+    showConfirm('Bạn có chắc chắn muốn xóa tài khoản này?', async () => {
+      try {
+        const res = await fetch(`/api/admin/users?id=${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          fetchUsers();
+          showToast('Xóa tài khoản thành công', 'success');
+        } else {
+          showToast('Xóa tài khoản thất bại', 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast('Lỗi khi xóa tài khoản', 'error');
+      }
+    });
   };
 
   const saveUser = async (e: React.FormEvent) => {
@@ -129,9 +146,10 @@ export default function Admin() {
       if (res.ok) {
         setEditingUser(null);
         fetchUsers();
+        showToast('Lưu người dùng thành công', 'success');
       } else {
         const d = await res.json();
-        alert(d.message || 'Lỗi khi lưu người dùng');
+        showToast(d.message || 'Lỗi khi lưu người dùng', 'error');
       }
     } catch (e) { console.error(e); }
   };
@@ -173,13 +191,13 @@ export default function Admin() {
       });
       
       if (res.ok) {
-        alert('Lưu cấu hình thành công!');
+        showToast('Lưu cấu hình thành công!', 'success');
       } else {
-        alert('Lưu thất bại!');
+        showToast('Lưu thất bại!', 'error');
       }
     } catch (err) {
       console.error(err);
-      alert('Lưu thất bại!');
+      showToast('Lưu thất bại!', 'error');
     } finally {
       setSavingSettings(false);
     }
@@ -197,10 +215,10 @@ export default function Admin() {
         })
       });
       const data = await res.json();
-      if (res.ok) alert(`Thành công: ${data.message}\nThư mục: ${data.folderName}`);
-      else alert(`Lỗi: ${data.message}\n${data.error || ''}`);
+      if (res.ok) showToast(`Thành công: ${data.message}\nThư mục: ${data.folderName}`, 'success');
+      else showToast(`Lỗi: ${data.message}\n${data.error || ''}`, 'error');
     } catch (err) {
-      alert('Lỗi kết nối API');
+      showToast('Lỗi kết nối API', 'error');
     } finally {
       setTestingDrive(false);
     }
@@ -220,10 +238,10 @@ export default function Admin() {
         })
       });
       const data = await res.json();
-      if (res.ok) alert(`Thành công: ${data.message}`);
-      else alert(`Lỗi: ${data.message}\n${data.error || ''}`);
+      if (res.ok) showToast(`Thành công: ${data.message}`, 'success');
+      else showToast(`Lỗi: ${data.message}\n${data.error || ''}`, 'error');
     } catch (err) {
-      alert('Lỗi kết nối API');
+      showToast('Lỗi kết nối API', 'error');
     } finally {
       setTestingSmtp(false);
     }
@@ -299,10 +317,13 @@ export default function Admin() {
   const getThumbnailUrl = (imageUrlStr: string) => {
     try {
       const parsed = JSON.parse(imageUrlStr);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-      return imageUrlStr;
+      let url = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : imageUrlStr;
+      if (url.includes('/uc?id=')) url = url.replace('/uc?id=', '/thumbnail?id=') + '&sz=w500';
+      return url;
     } catch {
-      return imageUrlStr;
+      let url = imageUrlStr;
+      if (url.includes('/uc?id=')) url = url.replace('/uc?id=', '/thumbnail?id=') + '&sz=w500';
+      return url;
     }
   };
 

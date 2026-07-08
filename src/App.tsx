@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import GoogleAuthProviderWrapper from './components/GoogleAuthProviderWrapper';
@@ -36,8 +37,9 @@ const FallbackLoader = () => (
 function App() {
   return (
     <GoogleAuthProviderWrapper>
-      <AuthProvider>
-        <BrowserRouter>
+      <NotificationProvider>
+        <AuthProvider>
+          <BrowserRouter>
           <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
@@ -93,9 +95,10 @@ function App() {
               <Suspense fallback={<FallbackLoader />}><FrameViewer /></Suspense>
             } />
           </Route>
-        </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+          </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </NotificationProvider>
     </GoogleAuthProviderWrapper>
   );
 }

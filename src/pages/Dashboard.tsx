@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { PlusCircle, Trash2, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { useNotification } from '../contexts/NotificationContext';
 
 export default function Dashboard() {
   const { user, token } = useAuth();
+  const { showToast, showConfirm } = useNotification();
   const navigate = useNavigate();
   const [frames, setFrames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -35,35 +37,39 @@ export default function Dashboard() {
     }
   };
 
-  const deleteFrame = async (id: string) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa khung hình này? Khách hàng sẽ không thể truy cập vào link khung hình này nữa.')) return;
-    
-    try {
-      const res = await fetch(`/api/frames?id=${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
+  const deleteFrame = (id: string) => {
+    showConfirm('Bạn có chắc chắn muốn xóa khung hình này? Khách hàng sẽ không thể truy cập vào link khung hình này nữa.', async () => {
+      try {
+        const res = await fetch(`/api/frames?id=${id}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          fetchFrames();
+          showToast('Xóa khung hình thành công', 'success');
+        } else {
+          const data = await res.json();
+          showToast(data.message || 'Lỗi khi xóa khung hình', 'error');
         }
-      });
-      if (res.ok) {
-        fetchFrames();
-      } else {
-        const data = await res.json();
-        alert(data.message || 'Lỗi khi xóa khung hình');
+      } catch (e) {
+        console.error(e);
+        showToast('Lỗi khi xóa khung hình', 'error');
       }
-    } catch (e) {
-      console.error(e);
-      alert('Lỗi khi xóa khung hình');
-    }
+    });
   };
 
   const getThumbnailUrl = (imageUrlStr: string) => {
     try {
       const parsed = JSON.parse(imageUrlStr);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed[0];
-      return imageUrlStr;
+      let url = Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : imageUrlStr;
+      if (url.includes('/uc?id=')) url = url.replace('/uc?id=', '/thumbnail?id=') + '&sz=w500';
+      return url;
     } catch {
-      return imageUrlStr;
+      let url = imageUrlStr;
+      if (url.includes('/uc?id=')) url = url.replace('/uc?id=', '/thumbnail?id=') + '&sz=w500';
+      return url;
     }
   };
 

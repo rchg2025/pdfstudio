@@ -2,9 +2,11 @@ import React, { useState, useRef } from 'react';
 import type { ChangeEvent, MouseEvent } from 'react';
 import { Eraser, Upload, Sparkles, RotateCcw, Download, Image as ImageIcon, Info } from 'lucide-react';
 import ChromaWorker from '../workers/chromaWorker.ts?worker';
+import { useNotification } from '../contexts/NotificationContext';
 import './ChromaKeyEraser.css';
 
 const ChromaKeyEraser: React.FC = () => {
+    const { showToast } = useNotification();
     const [originalImage, setOriginalImage] = useState<HTMLImageElement | null>(null);
     const [currentImageData, setCurrentImageData] = useState<ImageData | null>(null);
     const [targetColor, setTargetColor] = useState({ r: 255, g: 255, b: 255 });
@@ -142,7 +144,7 @@ const ChromaKeyEraser: React.FC = () => {
 
     const handleDownload = () => {
         if (!originalImage || !canvasRef.current) {
-             alert("Chưa có ảnh để tải xuống.");
+             showToast("Chưa có ảnh để tải xuống.", "warning");
              return;
         }
         

@@ -30,13 +30,13 @@ export default function FrameViewer() {
           setFrame(data);
           try {
             const parsed = JSON.parse(data.imageUrl);
-            if (Array.isArray(parsed)) {
-              setFrameUrls(parsed);
-            } else {
-              setFrameUrls([data.imageUrl]);
-            }
+            let urls = Array.isArray(parsed) ? parsed : [data.imageUrl];
+            urls = urls.map((u: string) => u.includes('/uc?id=') ? u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000' : u);
+            setFrameUrls(urls);
           } catch (e) {
-            setFrameUrls([data.imageUrl]);
+            let u = data.imageUrl;
+            if (u.includes('/uc?id=')) u = u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000';
+            setFrameUrls([u]);
           }
           // Generate QR code
           QRCode.toDataURL(window.location.href, { width: 150 })
