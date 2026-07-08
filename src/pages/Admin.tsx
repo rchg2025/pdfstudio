@@ -430,7 +430,7 @@ export default function Admin() {
           {/* TAB: FRAMES */}
           {activeTab === 'frames' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 flex-wrap gap-4">
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Khung Hình ({filteredFrames.length})</h2>
                 <button onClick={fetchFrames} className="btn" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Tải lại</button>
               </div>
@@ -516,9 +516,9 @@ export default function Admin() {
           {/* TAB: USERS */}
           {activeTab === 'users' && (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>Danh sách Người Dùng ({filteredUsers.length})</h2>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '1rem', width: '100%', justifyContent: 'flex-start' }} className="md:w-auto md:justify-end">
                   <button onClick={() => setEditingUser({ role: 'USER' })} className="btn btn-primary" style={{ padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>+ Tạo mới</button>
                   <button onClick={fetchUsers} className="btn" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Tải lại</button>
                 </div>
