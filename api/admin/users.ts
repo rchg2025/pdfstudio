@@ -32,7 +32,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await prisma.user.create({
-        data: { email, password: hashedPassword, name, role: role || 'USER' },
+        data: { email, passwordHash: hashedPassword, name, role: role || 'USER' },
         select: { id: true, email: true, name: true, role: true, createdAt: true }
       });
       return res.status(201).json(user);
@@ -44,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const dataToUpdate: any = { email, name, role };
       if (password) {
-        dataToUpdate.password = await bcrypt.hash(password, 10);
+        dataToUpdate.passwordHash = await bcrypt.hash(password, 10);
       }
       
       const user = await prisma.user.update({
