@@ -205,7 +205,7 @@ export default function FrameCreator() {
       {/* FORM TẠO/SỬA KHUNG CHỈ HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP */}
       {user ? (
         <>
-          <div className="tool-header text-center mb-10 mt-12">
+          <div className="tool-header text-center mb-12 mt-12">
             <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
               {editFrame ? 'Chỉnh Sửa Sự Kiện, Khung Hình' : 'Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch'}
             </h1>
