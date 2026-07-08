@@ -49,7 +49,7 @@ export default function Login() {
       if (data.user.role === 'ADMIN') {
         navigate('/admin');
       } else {
-        navigate(returnUrl || '/dashboard');
+        navigate(returnUrl || '/tao-khung');
       }
     } catch (err: any) {
       setError(err.message);
@@ -146,7 +146,7 @@ export default function Login() {
                 if (!res.ok) throw new Error(data.message || 'Lỗi đăng nhập Google');
                 
                 login(data.token, data.user);
-                navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/dashboard'));
+                navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/tao-khung'));
               } catch (e: any) {
                 setError(e.message);
               } finally {
@@ -204,7 +204,7 @@ export default function Login() {
                     if (res.ok) {
                       showToast(data.message, 'success');
                       login(data.token, data.user);
-                      navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/dashboard'));
+                      navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/tao-khung'));
                     } else {
                       showToast(data.message || 'OTP không đúng', 'error');
                     }

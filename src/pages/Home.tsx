@@ -17,7 +17,7 @@ import './Home.css';
 
 const tools = [
   {
-    path: '/dashboard',
+    path: '/tao-khung',
     icon: <ImagePlus size={24} />,
     title: 'Công Cụ Tạo Khung Ảnh',
     desc: 'Tạo và quản lý các khung ảnh sự kiện, chiến dịch truyền thông của riêng bạn.'
