@@ -1,21 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function FrameCreator() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const editFrame = location.state?.frame;
+  const isAdminEdit = location.state?.isAdminEdit;
   
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [previewBase64s, setPreviewBase64s] = useState<string[]>([]);
+  const [title, setTitle] = useState(editFrame?.title || '');
+  const [slug, setSlug] = useState(editFrame?.slug || '');
+  const [previewBase64s, setPreviewBase64s] = useState<string[]>(() => {
+    if (editFrame?.imageUrl) {
+      try {
+        const parsed = JSON.parse(editFrame.imageUrl);
+        return Array.isArray(parsed) ? parsed : [editFrame.imageUrl];
+      } catch {
+        return [editFrame.imageUrl];
+      }
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
   if (!user) {
     return (
       <div className="container mx-auto p-8 text-center mt-12" style={{ padding: '4rem 1rem' }}>
-        <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 600 }}>Vui lòng đăng nhập để tạo khung hình</h2>
+        <h2 className="text-gradient" style={{ fontSize: '1.5rem', marginBottom: '1rem', fontWeight: 600 }}>Vui lòng đăng nhập để tạo hoặc chỉnh sửa khung hình</h2>
         <button onClick={() => navigate('/login', { state: { returnUrl: '/tao-khung' } })} className="btn btn-primary">
           Đăng nhập
         </button>
@@ -92,25 +105,30 @@ export default function FrameCreator() {
       }
 
       // 2. Submit the frame data
-      const res = await fetch('/api/frames', {
-        method: 'POST',
+      const url = isAdminEdit ? '/api/admin/frames' : '/api/frames';
+      const method = editFrame ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
+          id: editFrame?.id,
           title,
           slug: tempSlug,
-          imageUrls: uploadedUrls
+          imageUrls: uploadedUrls,
+          imageUrl: JSON.stringify(uploadedUrls)
         })
       });
 
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.message || 'Lỗi khi tạo khung hình');
+        throw new Error(data.message || 'Lỗi khi lưu khung hình');
       }
 
-      navigate(`/f/${data.slug}`);
+      navigate(`/f/${data.slug || tempSlug}`);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -122,9 +140,9 @@ export default function FrameCreator() {
     <div className="animate-fade-in" style={{ padding: '2rem 1rem', margin: '0 auto' }}>
       <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
         <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-          Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch
+          {editFrame ? 'Chỉnh Sửa Sự Kiện, Khung Hình' : 'Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch'}
         </h1>
-        <p className="text-secondary">Vui lòng tải lên khung hình dạng PNG và điền thông tin sự kiện.</p>
+        <p className="text-secondary">{editFrame ? 'Chỉnh sửa thông tin và thêm/xóa khung hình.' : 'Vui lòng tải lên khung hình dạng PNG và điền thông tin sự kiện.'}</p>
       </div>
 
       <div className="glass-card" style={{ padding: '2.5rem' }}>
@@ -216,7 +234,7 @@ export default function FrameCreator() {
                 className="btn btn-primary"
                 style={{ width: '100%', padding: '1rem', fontSize: '1rem', fontWeight: 600, textTransform: 'uppercase', borderRadius: '0.75rem', display: 'flex', justifyContent: 'center' }}
               >
-                {loading ? 'Đang xử lý...' : 'Tạo Khung Hình'}
+                {loading ? 'Đang xử lý...' : (editFrame ? 'Lưu Thay Đổi' : 'Tạo Khung Hình')}
               </button>
             </div>
           </div>

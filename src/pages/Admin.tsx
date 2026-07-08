@@ -479,7 +479,7 @@ export default function Admin() {
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.user?.name || frame.user?.email || 'N/A'}</td>
                           <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
                             <a href={`/f/${frame.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', textDecoration: 'none' }}>Xem</a>
-                            <button onClick={() => setEditingFrame(frame)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem' }}>Sửa</button>
+                            <button onClick={() => navigate('/tao-khung', { state: { frame, isAdminEdit: true } })} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem' }}>Sửa</button>
                             <button onClick={() => deleteFrame(frame.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Xóa</button>
                           </td>
                         </tr>

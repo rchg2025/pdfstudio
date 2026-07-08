@@ -54,6 +54,36 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json(newFrame);
     }
 
+    if (req.method === 'PUT') {
+      const { id, title, slug, imageUrls } = req.body;
+      if (!id || !title || !imageUrls || imageUrls.length === 0) {
+        return res.status(400).json({ message: 'Thiếu thông tin bắt buộc' });
+      }
+      
+      const existing = await prisma.frame.findUnique({ where: { id } });
+      if (!existing || existing.userId !== user.userId) {
+        return res.status(403).json({ message: 'Forbidden' });
+      }
+
+      if (slug && slug !== existing.slug) {
+        const slugExists = await prisma.frame.findUnique({ where: { slug } });
+        if (slugExists) {
+           return res.status(400).json({ message: 'Đường dẫn (slug) này đã được sử dụng. Vui lòng chọn đường dẫn khác.' });
+        }
+      }
+
+      let finalImageUrl = '[]';
+      if (Array.isArray(imageUrls)) {
+        finalImageUrl = JSON.stringify(imageUrls);
+      }
+
+      const updated = await prisma.frame.update({
+        where: { id },
+        data: { title, slug: slug || existing.slug, imageUrl: finalImageUrl }
+      });
+      return res.status(200).json(updated);
+    }
+
     if (req.method === 'DELETE') {
       const { id } = req.query;
       if (!id || typeof id !== 'string') return res.status(400).json({ message: 'Invalid ID' });
