@@ -1,7 +1,7 @@
 {
   "functions": {
     "api/**/*": {
-      "includeFiles": "node_modules/.prisma/client/**/*",
+      "includeFiles": "{node_modules/.prisma/client/**/*,dist/index.html,index.html}",
       "memory": 1024,
       "maxDuration": 10,
       "regions": ["sin1"]
@@ -41,7 +41,7 @@
     { "source": "/tao-khung", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },
     { "source": "/register", "destination": "/index.html" },
-    { "source": "/f/(.*)", "destination": "/index.html" },
+    { "source": "/f/(.*)", "destination": "/api/frame-og?slug=$1" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/:alias", "destination": "/api/redirect?alias=:alias" }
   ]
