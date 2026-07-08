@@ -17,6 +17,7 @@ export default function ImageCompressor() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
   const [warning, setWarning] = useState('');
+  const [outputFormat, setOutputFormat] = useState('auto');
 
   const formatBytes = (bytes: number, decimals = 2) => {
     if (!+bytes) return '0 Byte';
@@ -85,6 +86,9 @@ export default function ImageCompressor() {
       const multiplier = targetUnit === 'MB' ? 1024 * 1024 : 1024;
       const targetBytes = parseFloat(targetSize) * multiplier;
       
+      const mimeType = outputFormat === 'auto' ? file.type : `image/${outputFormat}`;
+      const isPng = mimeType === 'image/png';
+      
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error("Canvas context not available");
@@ -100,30 +104,34 @@ export default function ImageCompressor() {
           canvas.height = Math.round(img.height * currentScale);
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          if (!isPng) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
-          const maxBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), 'image/jpeg', 1.0));
+          const maxBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), mimeType, 1.0));
           
           if (maxBlob.size >= targetBytes) {
             let minQ = 0.7; 
             let maxQ = 1.0;
             let localBest = maxBlob;
             
-            for(let i=0; i<6; i++) {
-              let midQ = (minQ + maxQ) / 2;
-              let midBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), 'image/jpeg', midQ));
-              
-              if (midBlob.size >= targetBytes * 0.95) {
-                localBest = midBlob;
-                if (midBlob.size > targetBytes) {
-                  maxQ = midQ; 
+            if (!isPng) {
+              for(let i=0; i<6; i++) {
+                let midQ = (minQ + maxQ) / 2;
+                let midBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), mimeType, midQ));
+                
+                if (midBlob.size >= targetBytes * 0.95) {
+                  localBest = midBlob;
+                  if (midBlob.size > targetBytes) {
+                    maxQ = midQ; 
+                  } else {
+                    minQ = midQ; 
+                  }
                 } else {
                   minQ = midQ; 
                 }
-              } else {
-                minQ = midQ; 
               }
             }
             bestBlob = localBest;
@@ -146,26 +154,30 @@ export default function ImageCompressor() {
           canvas.height = Math.round(img.height * currentScale);
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          if (!isPng) {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          }
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
           let minQ = 0.6;
           let maxQ = 1.0;
           let localBestBlob: Blob | null = null;
           
-          const minBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), 'image/jpeg', minQ));
+          const minBlob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), mimeType, isPng ? undefined : minQ));
           
           if (minBlob.size <= targetBytes) {
-            for (let i = 0; i < 8; i++) {
-              const midQ = (minQ + maxQ) / 2;
-              const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), 'image/jpeg', midQ));
-              
-              if (blob.size <= targetBytes) {
-                localBestBlob = blob;
-                minQ = midQ; 
-              } else {
-                maxQ = midQ; 
+            if (!isPng) {
+              for (let i = 0; i < 8; i++) {
+                const midQ = (minQ + maxQ) / 2;
+                const blob = await new Promise<Blob>((res, rej) => canvas.toBlob(b => b ? res(b) : rej(), mimeType, midQ));
+                
+                if (blob.size <= targetBytes) {
+                  localBestBlob = blob;
+                  minQ = midQ; 
+                } else {
+                  maxQ = midQ; 
+                }
               }
             }
             bestBlob = localBestBlob || minBlob;
@@ -194,7 +206,7 @@ export default function ImageCompressor() {
             size: bestBlob!.size,
             width: imgProcessed.width,
             height: imgProcessed.height,
-            type: 'image/jpeg'
+            type: mimeType
           });
         };
         imgProcessed.src = URL.createObjectURL(bestBlob);
@@ -209,10 +221,17 @@ export default function ImageCompressor() {
   };
 
   const handleDownload = () => {
-    if (!processedUrl || !file) return;
+    if (!processedUrl || !file || !processedStats) return;
     const link = document.createElement('a');
     link.href = processedUrl;
-    link.download = `da_toi_uu_${file.name.split('.')[0]}.jpg`;
+    
+    // Determine extension based on processedStats.type
+    let ext = 'jpg';
+    if (processedStats.type === 'image/png') ext = 'png';
+    else if (processedStats.type === 'image/webp') ext = 'webp';
+    else if (processedStats.type === 'image/jpeg') ext = 'jpg';
+    
+    link.download = `da_toi_uu_${file.name.split('.')[0]}.${ext}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -297,6 +316,23 @@ export default function ImageCompressor() {
                     Gốc: <span style={{ fontWeight: 500, color: 'var(--text-primary)' }}>{formatBytes(originalStats.size)}</span>
                   </p>
                 )}
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem' }}>
+                  Định dạng ảnh xuất
+                </label>
+                <select
+                  value={outputFormat}
+                  onChange={(e) => setOutputFormat(e.target.value)}
+                  className="select"
+                  style={{ width: '100%' }}
+                >
+                  <option value="auto">Giữ nguyên gốc</option>
+                  <option value="jpeg">JPG</option>
+                  <option value="png">PNG</option>
+                  <option value="webp">WEBP</option>
+                </select>
               </div>
 
               <button
