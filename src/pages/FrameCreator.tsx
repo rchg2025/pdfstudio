@@ -55,14 +55,19 @@ export default function FrameCreator() {
       <div style={{ marginTop: '3rem' }}>
         <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem', borderLeft: '4px solid var(--primary)', paddingLeft: '0.75rem' }}>{title}</h3>
         <div style={{ display: 'flex', overflowX: 'auto', gap: '1rem', paddingBottom: '1rem', padding: '0.5rem', scrollSnapType: 'x mandatory' }}>
-          {frames.map(f => (
-            <Link to={`/f/${f.slug}`} key={f.id} style={{ textDecoration: 'none', minWidth: '200px', flex: '0 0 auto', scrollSnapAlign: 'start', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column' }}>
+          {frames.map((f, idx) => (
+            <Link to={`/f/${f.slug}`} key={f.id} style={{ textDecoration: 'none', minWidth: '265px', width: '265px', flex: '0 0 auto', scrollSnapAlign: 'start', background: 'var(--bg-secondary)', borderRadius: '0.75rem', overflow: 'hidden', border: '1px solid var(--border)', transition: 'transform 0.2s', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+              
+              <div style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', background: 'var(--primary)', color: 'white', width: '2rem', height: '2rem', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.125rem', zIndex: 10, boxShadow: '0 2px 4px rgba(0,0,0,0.2)' }}>
+                {idx + 1}
+              </div>
+
               <div style={{ aspectRatio: '1/1', background: '#f1f5f9', position: 'relative' }}>
                 <img src={getThumbnailUrl(f.imageUrl)} alt={f.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               </div>
               <div style={{ padding: '0.75rem' }}>
-                <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.title}</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{f.title}</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                   <span title="Lượt xem">👁 {f.views || 0}</span>
                   <span title="Lượt tải">⬇ {f.downloads || 0}</span>
                 </div>

@@ -467,7 +467,7 @@ export default function Admin() {
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Lượt xem</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Lượt tải</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Người tạo</th>
-                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)' }}>Hành động</th>
+                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)', position: 'sticky', right: 0, background: 'var(--bg-secondary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -481,7 +481,7 @@ export default function Admin() {
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.views || 0}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.downloads || 0}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.user?.name || frame.user?.email || 'N/A'}</td>
-                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                          <td style={{ padding: '0.75rem 1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
                             <a href={`/f/${frame.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', textDecoration: 'none' }}>Xem</a>
                             <button onClick={() => navigate('/tao-khung', { state: { frame, isAdminEdit: true } })} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem' }}>Sửa</button>
                             <button onClick={() => deleteFrame(frame.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Xóa</button>
@@ -566,7 +566,7 @@ export default function Admin() {
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Tên</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Vai trò</th>
-                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)' }}>Hành động</th>
+                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)', position: 'sticky', right: 0, background: 'var(--bg-secondary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -581,7 +581,7 @@ export default function Admin() {
                               {u.role}
                             </span>
                           </td>
-                          <td style={{ padding: '1rem', textAlign: 'right' }}>
+                          <td style={{ padding: '1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
                             <button onClick={() => setEditingUser(u)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem' }}>Sửa</button>
                             {u.id !== user?.id && (
                               <button onClick={() => deleteUser(u.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Xóa</button>
