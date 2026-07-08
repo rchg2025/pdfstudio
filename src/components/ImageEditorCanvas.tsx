@@ -128,7 +128,7 @@ export default function ImageEditorCanvas({ frameUrl, onDownload }: Props) {
   };
 
   return (
-    <div className="glass-card p-4 md:p-6" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', maxWidth: '48rem', margin: '0 auto', gap: '1.5rem' }}>
+    <div className="glass-card p-4 md:p-6" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', margin: '0 auto', gap: '1.5rem' }}>
       <div 
         style={{ width: '100%', aspectRatio: '1/1', background: 'var(--bg-secondary)', border: '2px dashed var(--border)', borderRadius: '1rem', overflow: 'hidden', position: 'relative', cursor: 'move' }}
         onMouseDown={handleMouseDown}
