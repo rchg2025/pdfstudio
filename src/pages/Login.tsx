@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
+import { useNotification } from '../contexts/NotificationContext';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -10,7 +11,14 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  
+  // States cho Google OTP
+  const [showGoogleOtp, setShowGoogleOtp] = useState(false);
+  const [googleOtp, setGoogleOtp] = useState('');
+  const [googleTempData, setGoogleTempData] = useState<any>(null);
+
   const { login } = useAuth();
+  const { showToast } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
   const returnUrl = location.state?.returnUrl;
@@ -95,6 +103,9 @@ export default function Login() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.25rem' }}>
+              <Link to="/forgot-password" style={{ fontSize: '0.875rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 500 }}>Quên mật khẩu?</Link>
+            </div>
           </div>
           <button 
             type="submit" 
@@ -123,7 +134,17 @@ export default function Login() {
                   body: JSON.stringify({ credential: credentialResponse.credential })
                 });
                 const data = await res.json();
+                
+                if (res.status === 202 && data.requireOtp) {
+                  setGoogleTempData(data.tempData);
+                  setShowGoogleOtp(true);
+                  showToast(data.message, 'success');
+                  setLoading(false);
+                  return;
+                }
+
                 if (!res.ok) throw new Error(data.message || 'Lỗi đăng nhập Google');
+                
                 login(data.token, data.user);
                 navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/dashboard'));
               } catch (e: any) {
@@ -136,7 +157,71 @@ export default function Login() {
             useOneTap
           />
         </div>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
+          <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Chưa có tài khoản? </span>
+          <Link to="/register" style={{ fontSize: '0.875rem', color: 'var(--primary)', textDecoration: 'none', fontWeight: 600 }}>Đăng ký ngay</Link>
+        </div>
+
       </div>
+
+      {showGoogleOtp && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div className="glass-card" style={{ padding: '2rem', width: '100%', maxWidth: '400px', background: 'var(--bg-primary)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)', textAlign: 'center' }}>Xác nhận OTP Google</h3>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', textAlign: 'center' }}>
+              Vui lòng kiểm tra email Google của bạn và nhập mã OTP.
+            </p>
+            <input 
+              type="text" 
+              value={googleOtp}
+              onChange={e => setGoogleOtp(e.target.value)}
+              placeholder="Nhập 6 số mã OTP"
+              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '4px', fontWeight: 'bold', marginBottom: '1.5rem' }}
+              maxLength={6}
+            />
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button onClick={() => setShowGoogleOtp(false)} className="btn" style={{ flex: 1, background: 'transparent', color: 'var(--text-secondary)' }}>Hủy</button>
+              <button 
+                className="btn btn-primary" 
+                style={{ flex: 1 }}
+                disabled={loading || !googleOtp}
+                onClick={async () => {
+                  setLoading(true);
+                  try {
+                    const res = await fetch('/api/auth/google', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ 
+                        action: 'VERIFY_OTP', 
+                        otp: googleOtp,
+                        email: googleTempData.email,
+                        name: googleTempData.name,
+                        googleId: googleTempData.googleId
+                      })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                      showToast(data.message, 'success');
+                      login(data.token, data.user);
+                      navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/dashboard'));
+                    } else {
+                      showToast(data.message || 'OTP không đúng', 'error');
+                    }
+                  } catch (e: any) {
+                    showToast('Lỗi máy chủ', 'error');
+                  } finally {
+                    setLoading(false);
+                  }
+                }}
+              >
+                {loading ? 'Đang xử lý...' : 'Xác nhận'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

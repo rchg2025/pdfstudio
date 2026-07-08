@@ -1,34 +1,31 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { ArrowLeft } from 'lucide-react';
 
-export default function Register() {
+export default function ForgotPassword() {
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
-  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !name) {
-      showToast('Vui lòng điền đầy đủ thông tin', 'error');
+    if (!email) {
+      showToast('Vui lòng điền email', 'error');
       return;
     }
     
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'SEND_OTP', email, name, password })
+        body: JSON.stringify({ action: 'SEND_OTP', email })
       });
       const data = await res.json();
       if (res.ok) {
@@ -46,23 +43,22 @@ export default function Register() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!otp) {
-      showToast('Vui lòng nhập mã OTP', 'error');
+    if (!otp || !newPassword) {
+      showToast('Vui lòng nhập đầy đủ thông tin', 'error');
       return;
     }
 
     setLoading(true);
     try {
-      const res = await fetch('/api/auth/register', {
+      const res = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'VERIFY_OTP', email, name, password, otp })
+        body: JSON.stringify({ action: 'VERIFY_OTP', email, otp, newPassword })
       });
       const data = await res.json();
       if (res.ok) {
-        showToast('Đăng ký thành công', 'success');
-        login(data.token, data.user);
-        navigate('/');
+        showToast(data.message, 'success');
+        navigate('/login');
       } else {
         showToast(data.message || 'Mã OTP không đúng', 'error');
       }
@@ -84,25 +80,14 @@ export default function Register() {
         </div>
 
         <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', textAlign: 'center' }}>
-          Đăng ký tài khoản
+          Lấy lại mật khẩu
         </h2>
         <p style={{ color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '2rem', fontSize: '0.875rem' }}>
-          {step === 1 ? 'Tạo tài khoản mới tại PDF Studio' : 'Vui lòng nhập mã OTP đã gửi đến email của bạn'}
+          {step === 1 ? 'Nhập email tài khoản của bạn để nhận mã khôi phục' : 'Vui lòng nhập mã OTP và mật khẩu mới'}
         </p>
 
         {step === 1 && (
           <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Họ và tên</label>
-              <input 
-                type="text" 
-                value={name}
-                onChange={e => setName(e.target.value)}
-                placeholder="Nguyễn Văn A"
-                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                required 
-              />
-            </div>
             <div>
               <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Email</label>
               <input 
@@ -114,20 +99,9 @@ export default function Register() {
                 required 
               />
             </div>
-            <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Mật khẩu</label>
-              <input 
-                type="password" 
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="Mật khẩu của bạn"
-                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
-                required 
-              />
-            </div>
             
             <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.875rem', marginTop: '0.5rem' }} disabled={loading}>
-              {loading ? 'Đang gửi...' : 'Đăng ký'}
+              {loading ? 'Đang gửi...' : 'Gửi mã OTP'}
             </button>
           </form>
         )}
@@ -147,12 +121,24 @@ export default function Register() {
               />
             </div>
             
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Mật khẩu mới</label>
+              <input 
+                type="password" 
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                placeholder="Nhập mật khẩu mới"
+                style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}
+                required 
+              />
+            </div>
+            
             <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '0.875rem', marginTop: '0.5rem' }} disabled={loading}>
-              {loading ? 'Đang xác nhận...' : 'Xác nhận và Hoàn tất'}
+              {loading ? 'Đang xác nhận...' : 'Đổi mật khẩu'}
             </button>
 
             <button type="button" onClick={() => setStep(1)} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.875rem', marginTop: '1rem', fontWeight: 500 }}>
-              Thay đổi thông tin
+              Quay lại nhập Email
             </button>
           </form>
         )}

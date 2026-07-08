@@ -20,6 +20,7 @@ const WatermarkStudio = React.lazy(() => import('./pages/WatermarkStudio'));
 const ChromaKeyEraser = React.lazy(() => import('./pages/ChromaKeyEraser'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
+const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const FrameCreator = React.lazy(() => import('./pages/FrameCreator'));
@@ -81,6 +82,9 @@ function App() {
             } />
             <Route path="register" element={
               <Suspense fallback={<FallbackLoader />}><Register /></Suspense>
+            } />
+            <Route path="forgot-password" element={
+              <Suspense fallback={<FallbackLoader />}><ForgotPassword /></Suspense>
             } />
             <Route path="dashboard" element={
               <Suspense fallback={<FallbackLoader />}><Dashboard /></Suspense>
