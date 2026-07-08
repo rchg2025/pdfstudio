@@ -86,7 +86,7 @@ export default function IdPhotoGenerator() {
         throw new Error("Thiếu API Key cho Gemini (VITE_GEMINI_API_KEY). Vui lòng cấu hình trên Vercel hoặc file .env");
       }
 
-      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${apiKey}`;
+      const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`;
 
       const [whiteBgResult, blueBgResult] = await Promise.all([
           callGenerativeApi(API_URL, promptWhiteBg, originalBase64),
