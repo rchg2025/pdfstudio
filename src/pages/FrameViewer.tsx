@@ -31,12 +31,15 @@ export default function FrameViewer() {
           try {
             const parsed = JSON.parse(data.imageUrl);
             let urls = Array.isArray(parsed) ? parsed : [data.imageUrl];
-            urls = urls.map((u: string) => u.includes('/uc?id=') ? u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000' : u);
+            urls = urls.map((u: string) => {
+              let directUrl = u.includes('/uc?id=') ? u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000' : u;
+              return `/api/proxy-image?url=${encodeURIComponent(directUrl)}`;
+            });
             setFrameUrls(urls);
           } catch (e) {
             let u = data.imageUrl;
             if (u.includes('/uc?id=')) u = u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000';
-            setFrameUrls([u]);
+            setFrameUrls([`/api/proxy-image?url=${encodeURIComponent(u)}`]);
           }
           // Generate QR code
           QRCode.toDataURL(window.location.href, { width: 150 })
