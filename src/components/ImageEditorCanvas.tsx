@@ -19,10 +19,11 @@ export default function ImageEditorCanvas({ frameUrl }: Props) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
+    if (!frameUrl) return;
     const img = new Image();
     img.crossOrigin = 'anonymous';
-    img.src = frameUrl;
     img.onload = () => setFrameImg(img);
+    img.src = frameUrl;
   }, [frameUrl]);
 
   const draw = useCallback(() => {

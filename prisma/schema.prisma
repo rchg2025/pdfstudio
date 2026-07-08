@@ -43,3 +43,12 @@ model Setting {
   value     String
   updatedAt DateTime @updatedAt
 }
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String
+  type      String   // "REGISTER" | "RESET_PASSWORD" | "GOOGLE_REGISTER"
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

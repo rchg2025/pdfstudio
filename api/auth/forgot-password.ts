@@ -2,16 +2,13 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { prisma } from '../_lib/prisma.js';
 import { sendOtpEmail } from '../_lib/email.js';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-key-do-not-use-in-production';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { action, email, password, name, otp } = req.body;
+  const { action, email, otp, newPassword } = req.body;
 
   if (!email) {
     return res.status(400).json({ message: 'Email là bắt buộc' });
@@ -19,17 +16,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // -------------------------------------------------------------
-    // Bước 1: Gửi OTP đăng ký
+    // Bước 1: Gửi OTP quên mật khẩu
     // -------------------------------------------------------------
     if (action === 'SEND_OTP') {
       const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email đã tồn tại trong hệ thống' });
+      if (!existingUser) {
+        return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
       }
 
       // Xóa các mã OTP cũ
       await prisma.verificationToken.deleteMany({
-        where: { email, type: 'REGISTER' }
+        where: { email, type: 'RESET_PASSWORD' }
       });
 
       // Tạo OTP mới
@@ -38,30 +35,30 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         data: {
           email,
           token: generatedOtp,
-          type: 'REGISTER',
+          type: 'RESET_PASSWORD',
           expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 phút
         }
       });
 
-      await sendOtpEmail(email, generatedOtp, 'REGISTER');
+      await sendOtpEmail(email, generatedOtp, 'RESET_PASSWORD');
       return res.status(200).json({ message: 'Mã xác nhận đã được gửi đến email của bạn' });
     }
 
     // -------------------------------------------------------------
-    // Bước 2: Xác nhận OTP và tạo tài khoản
+    // Bước 2: Xác nhận OTP và đặt lại mật khẩu
     // -------------------------------------------------------------
     if (action === 'VERIFY_OTP') {
-      if (!otp || !password) {
-        return res.status(400).json({ message: 'Vui lòng điền mã OTP và mật khẩu' });
+      if (!otp || !newPassword) {
+        return res.status(400).json({ message: 'Vui lòng điền mã OTP và mật khẩu mới' });
       }
 
       const existingUser = await prisma.user.findUnique({ where: { email } });
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email đã tồn tại trong hệ thống' });
+      if (!existingUser) {
+        return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
       }
 
       const otpRecord = await prisma.verificationToken.findFirst({
-        where: { email, type: 'REGISTER', token: otp },
+        where: { email, type: 'RESET_PASSWORD', token: otp },
         orderBy: { createdAt: 'desc' }
       });
 
@@ -73,37 +70,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ message: 'Mã xác nhận đã hết hạn' });
       }
 
-      // Hợp lệ -> Xóa mã OTP và Tạo tài khoản
-      await prisma.verificationToken.deleteMany({ where: { email, type: 'REGISTER' } });
+      // Hợp lệ -> Xóa mã OTP và Đổi mật khẩu
+      await prisma.verificationToken.deleteMany({ where: { email, type: 'RESET_PASSWORD' } });
 
-      const hashedPassword = await bcrypt.hash(password, 10);
-      const user = await prisma.user.create({
-        data: {
-          email,
-          passwordHash: hashedPassword,
-          name: name || email.split('@')[0],
-          role: 'USER'
-        }
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      await prisma.user.update({
+        where: { email },
+        data: { passwordHash: hashedPassword }
       });
 
-      // Tạo token
-      const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '30d' }
-      );
-
-      return res.status(201).json({
-        message: 'Đăng ký thành công',
-        token,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role }
-      });
+      return res.status(200).json({ message: 'Đổi mật khẩu thành công. Vui lòng đăng nhập lại.' });
     }
 
     return res.status(400).json({ message: 'Action không hợp lệ' });
 
   } catch (error: any) {
-    console.error('Register API Error:', error);
+    console.error('Forgot Password API Error:', error);
     return res.status(500).json({ message: error.message || 'Lỗi máy chủ' });
   }
 }
