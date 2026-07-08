@@ -20,6 +20,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (req.method === 'GET') {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       // Calculate start of today (in Vietnam timezone GMT+7 roughly, or UTC is fine for simple stats)
       // Let's use UTC+7 for start of today
       const now = new Date();

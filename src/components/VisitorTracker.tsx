@@ -22,7 +22,7 @@ export default function VisitorTracker() {
         });
 
         // Get stats
-        const res = await fetch('/api/utils/stats');
+        const res = await fetch('/api/utils/stats', { cache: 'no-store' });
         if (res.ok) {
           const data = await res.json();
           setStats(data);
