@@ -5,7 +5,7 @@ export default function GoogleAuthProviderWrapper({ children }: { children: Reac
   const [clientId, setClientId] = useState('');
   
   useEffect(() => {
-    fetch('/api/config/google')
+    fetch('/api/utils/google')
       .then(res => res.json())
       .then(data => {
         if (data.clientId) {

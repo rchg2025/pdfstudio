@@ -64,7 +64,7 @@ export default function QrLink() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/shorten', {
+      const response = await fetch('/api/utils/shorten', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

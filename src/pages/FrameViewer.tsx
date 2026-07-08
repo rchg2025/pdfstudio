@@ -33,13 +33,13 @@ export default function FrameViewer() {
             let urls = Array.isArray(parsed) ? parsed : [data.imageUrl];
             urls = urls.map((u: string) => {
               let directUrl = u.includes('/uc?id=') ? u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000' : u;
-              return `/api/proxy-image?url=${encodeURIComponent(directUrl)}`;
+              return `/api/utils/proxy-image?url=${encodeURIComponent(directUrl)}`;
             });
             setFrameUrls(urls);
           } catch (e) {
             let u = data.imageUrl;
             if (u.includes('/uc?id=')) u = u.replace('/uc?id=', '/thumbnail?id=') + '&sz=w2000';
-            setFrameUrls([`/api/proxy-image?url=${encodeURIComponent(u)}`]);
+            setFrameUrls([`/api/utils/proxy-image?url=${encodeURIComponent(u)}`]);
           }
           // Generate QR code
           QRCode.toDataURL(window.location.href, { width: 150 })

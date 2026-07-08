@@ -15,14 +15,14 @@ export default function VisitorTracker() {
     const fetchStats = async () => {
       try {
         // Ping visit
-        await fetch('/api/stats', {
+        await fetch('/api/utils/stats', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ visitorId })
         });
 
         // Get stats
-        const res = await fetch('/api/stats');
+        const res = await fetch('/api/utils/stats');
         if (res.ok) {
           const data = await res.json();
           setStats(data);
