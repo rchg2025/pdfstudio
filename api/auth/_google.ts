@@ -5,7 +5,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
   
   const { credential, action, otp, email: tempEmail, name: tempName, googleId: tempGoogleId } = req.body;
-  if (!credential) return res.status(400).json({ message: 'Credential required' });
 
   try {
     const { PrismaClient } = await import('@prisma/client');
