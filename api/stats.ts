@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const prismaModule = await import('./_lib/prisma.js');
-    const prisma = prismaModule.prisma || prismaModule.default?.prisma;
+    const prisma = prismaModule.prisma;
 
     if (req.method === 'POST') {
       const { visitorId } = req.body;

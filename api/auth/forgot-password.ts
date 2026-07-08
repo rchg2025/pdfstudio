@@ -18,7 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // -------------------------------------------------------------
     if (action === 'SEND_OTP') {
       const prismaModule = await import('../_lib/prisma.js');
-      const prisma = prismaModule.prisma || prismaModule.default?.prisma;
+      const prisma = prismaModule.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (!existingUser) {
         return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
@@ -55,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       const prismaModule = await import('../_lib/prisma.js');
-      const prisma = prismaModule.prisma || prismaModule.default?.prisma;
+      const prisma = prismaModule.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (!existingUser) {
         return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });

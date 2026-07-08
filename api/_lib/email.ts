@@ -1,7 +1,7 @@
 
 export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | 'RESET_PASSWORD' | 'GOOGLE_REGISTER') {
   const prismaModule = await import('./prisma.js');
-  const prisma = prismaModule.prisma || prismaModule.default?.prisma;
+  const prisma = prismaModule.prisma;
 
   // Fetch SMTP settings
   const settings = await prisma.setting.findMany({
@@ -90,7 +90,7 @@ export async function sendOtpEmail(to: string, otp: string, type: 'REGISTER' | '
   `;
 
   await transporter.sendMail({
-    from: \`"RCHG Studio" <\${user}>\`,
+    from: `"RCHG Studio" <${user}>`,
     to,
     subject,
     html
