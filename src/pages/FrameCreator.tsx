@@ -119,7 +119,7 @@ export default function FrameCreator() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem 1rem', maxWidth: '1000px', margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ padding: '2rem 1rem', margin: '0 auto' }}>
       <div className="tool-header text-center" style={{ marginBottom: '2.5rem' }}>
         <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
           Tạo Mới Sự Kiện, Hoạt Động, Chiến Dịch
