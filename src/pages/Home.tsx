@@ -156,7 +156,7 @@ const Home = () => {
       </section>
 
       <section style={{ marginTop: '4rem' }}>
-        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', paddingBottom: '20px' }}>
           <FileEdit size={28} /> Công cụ PDF
         </h2>
         <div className="tools-grid">
@@ -178,7 +178,7 @@ const Home = () => {
       </section>
 
       <section style={{ marginTop: '5rem' }}>
-        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', paddingBottom: '20px' }}>
           <ImageIcon size={28} /> Công cụ Ảnh
         </h2>
         <div className="tools-grid">
@@ -200,7 +200,7 @@ const Home = () => {
       </section>
 
       <section style={{ marginTop: '5rem', marginBottom: '4rem' }}>
-        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', paddingBottom: '20px' }}>
           <LinkIcon size={28} /> Tiện ích Khác
         </h2>
         <div className="tools-grid">
