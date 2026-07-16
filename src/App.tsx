@@ -13,10 +13,13 @@ const PdfToImage = React.lazy(() => import('./pages/PdfToImage'));
 const PdfCompressor = React.lazy(() => import('./pages/PdfCompressor'));
 const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
 const ImageConverter = React.lazy(() => import('./pages/ImageConverter'));
+const ImageResize = React.lazy(() => import('./pages/ImageResize'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
+const JpgToPdf = React.lazy(() => import('./pages/JpgToPdf'));
 const WatermarkStudio = React.lazy(() => import('./pages/WatermarkStudio'));
+const PdfWatermark = React.lazy(() => import('./pages/PdfWatermark'));
 const ChromaKeyEraser = React.lazy(() => import('./pages/ChromaKeyEraser'));
 const Login = React.lazy(() => import('./pages/Login'));
 const Register = React.lazy(() => import('./pages/Register'));
@@ -65,6 +68,9 @@ function App() {
             <Route path="image-converter" element={
               <Suspense fallback={<FallbackLoader />}><ImageConverter /></Suspense>
             } />
+            <Route path="resize-anh" element={
+              <Suspense fallback={<FallbackLoader />}><ImageResize /></Suspense>
+            } />
             <Route path="qr-link" element={
               <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
             } />
@@ -73,6 +79,12 @@ function App() {
             } />
             <Route path="watermark-studio" element={
               <Suspense fallback={<FallbackLoader />}><WatermarkStudio /></Suspense>
+            } />
+            <Route path="dong-dau-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><PdfWatermark /></Suspense>
+            } />
+            <Route path="jpg-sang-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><JpgToPdf /></Suspense>
             } />
             <Route path="xoa-nen-mau" element={
               <Suspense fallback={<FallbackLoader />}><ChromaKeyEraser /></Suspense>
