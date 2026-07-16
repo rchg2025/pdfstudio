@@ -101,6 +101,7 @@ const Navbar = () => {
             <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
             <NavLink to="/image-converter" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đổi Đuôi Ảnh</NavLink>
             <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>
+            <NavLink to="/crop-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Crop ảnh</NavLink>
             <NavLink to="/resize-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Resize ảnh</NavLink>
             <NavLink to="/xoa-nen-mau" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Nền Màu</NavLink>
             <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>

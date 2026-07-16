@@ -13,6 +13,7 @@ const PdfToImage = React.lazy(() => import('./pages/PdfToImage'));
 const PdfCompressor = React.lazy(() => import('./pages/PdfCompressor'));
 const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
 const ImageConverter = React.lazy(() => import('./pages/ImageConverter'));
+const ImageCrop = React.lazy(() => import('./pages/ImageCrop'));
 const ImageResize = React.lazy(() => import('./pages/ImageResize'));
 const DeletePdfPages = React.lazy(() => import('./pages/DeletePdfPages'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
@@ -71,6 +72,9 @@ function App() {
             } />
             <Route path="image-converter" element={
               <Suspense fallback={<FallbackLoader />}><ImageConverter /></Suspense>
+            } />
+            <Route path="crop-anh" element={
+              <Suspense fallback={<FallbackLoader />}><ImageCrop /></Suspense>
             } />
             <Route path="resize-anh" element={
               <Suspense fallback={<FallbackLoader />}><ImageResize /></Suspense>

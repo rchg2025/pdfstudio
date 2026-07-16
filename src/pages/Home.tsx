@@ -15,17 +15,12 @@ import {
   PenTool,
   Images,
   Maximize,
-  FileMinus
+  FileMinus,
+  Crop
 } from 'lucide-react';
 import './Home.css';
 
-const tools = [
-  {
-    path: '/tao-khung',
-    icon: <ImagePlus size={24} />,
-    title: 'Công Cụ Tạo Khung Ảnh',
-    desc: 'Tạo và quản lý các khung ảnh sự kiện, chiến dịch truyền thông của riêng bạn.'
-  },
+const pdfTools = [
   {
     path: '/pdf-editor',
     icon: <FileEdit size={24} />,
@@ -45,12 +40,6 @@ const tools = [
     desc: 'Phát hiện mọi sự khác biệt về văn bản và bố cục giữa hai tài liệu một cách trực quan.'
   },
   {
-    path: '/image-compressor',
-    icon: <ImageMinus size={24} />,
-    title: 'Công cụ nén ảnh theo dung lượng',
-    desc: 'Giảm kích thước file ảnh nhanh chóng mà vẫn giữ nguyên chất lượng cao nhất.'
-  },
-  {
     path: '/pdf-compressor',
     icon: <FileArchive size={24} />,
     title: 'Công cụ nén file PDF',
@@ -61,36 +50,6 @@ const tools = [
     icon: <ImageIcon size={24} />,
     title: 'Công Cụ Chuyển PDF Thành Ảnh',
     desc: 'Chuyển đổi từng trang của file PDF thành các định dạng ảnh phổ biến như JPG, PNG.'
-  },
-  {
-    path: '/qr-link',
-    icon: <LinkIcon size={24} />,
-    title: 'Công cụ rút gọn link và tạo QR',
-    desc: 'Rút gọn các đường dẫn URL dài và tự động tạo mã QR để dễ dàng quét bằng điện thoại.'
-  },
-  {
-    path: '/image-converter',
-    icon: <RefreshCw size={24} />,
-    title: 'Chuyển Đổi Định Dạng Ảnh',
-    desc: 'Chuyển đổi ảnh giữa các định dạng HEIC, JPG, PNG, WEBP một cách nhanh chóng.'
-  },
-  {
-    path: '/bao-mat-pdf',
-    icon: <ShieldCheck size={24} />,
-    title: 'Công Cụ Bảo Mật PDF',
-    desc: 'Đặt mật khẩu bảo vệ hoặc gỡ bỏ lớp bảo mật cho file PDF một cách dễ dàng và an toàn.'
-  },
-  {
-    path: '/watermark-studio',
-    icon: <Stamp size={24} />,
-    title: 'Công cụ chèn Logo vào ảnh',
-    desc: 'Chèn logo, đóng dấu bản quyền vào ảnh của bạn một cách nhanh chóng, chất lượng cao.'
-  },
-  {
-    path: '/xoa-nen-mau',
-    icon: <Eraser size={24} />,
-    title: 'Công Cụ Xóa Nền Theo Màu',
-    desc: 'Tự động chọn và xóa phông nền theo màu sắc với công cụ Chroma Key.'
   },
   {
     path: '/dong-dau-pdf',
@@ -105,16 +64,70 @@ const tools = [
     desc: 'Gộp nhiều ảnh (JPG, PNG, WEBP...) thành một file PDF duy nhất dễ dàng.'
   },
   {
-    path: '/resize-anh',
-    icon: <Maximize size={24} />,
-    title: 'Resize ảnh',
-    desc: 'Đổi kích thước ảnh theo pixel hoặc phần trăm cực nhanh ngay trên trình duyệt.'
+    path: '/bao-mat-pdf',
+    icon: <ShieldCheck size={24} />,
+    title: 'Công Cụ Bảo Mật PDF',
+    desc: 'Đặt mật khẩu bảo vệ hoặc gỡ bỏ lớp bảo mật cho file PDF một cách dễ dàng và an toàn.'
   },
   {
     path: '/xoa-trang-pdf',
     icon: <FileMinus size={24} />,
     title: 'Xóa trang PDF',
     desc: 'Loại bỏ các trang không cần thiết khỏi file PDF dễ dàng qua giao diện trực quan.'
+  }
+];
+
+const imageTools = [
+  {
+    path: '/tao-khung',
+    icon: <ImagePlus size={24} />,
+    title: 'Công Cụ Tạo Khung Ảnh',
+    desc: 'Tạo và quản lý các khung ảnh sự kiện, chiến dịch truyền thông của riêng bạn.'
+  },
+  {
+    path: '/image-compressor',
+    icon: <ImageMinus size={24} />,
+    title: 'Công cụ nén ảnh theo dung lượng',
+    desc: 'Giảm kích thước file ảnh nhanh chóng mà vẫn giữ nguyên chất lượng cao nhất.'
+  },
+  {
+    path: '/image-converter',
+    icon: <RefreshCw size={24} />,
+    title: 'Chuyển Đổi Định Dạng Ảnh',
+    desc: 'Chuyển đổi ảnh giữa các định dạng HEIC, JPG, PNG, WEBP một cách nhanh chóng.'
+  },
+  {
+    path: '/resize-anh',
+    icon: <Maximize size={24} />,
+    title: 'Resize ảnh',
+    desc: 'Đổi kích thước ảnh theo pixel hoặc phần trăm cực nhanh ngay trên trình duyệt.'
+  },
+  {
+    path: '/crop-anh',
+    icon: <Crop size={24} />,
+    title: 'Crop ảnh',
+    desc: 'Cắt ảnh trực quan theo tỉ lệ 1:1, 16:9, 4:3 hoặc chọn vùng bất kỳ.'
+  },
+  {
+    path: '/watermark-studio',
+    icon: <Stamp size={24} />,
+    title: 'Công cụ chèn Logo vào ảnh',
+    desc: 'Chèn logo, đóng dấu bản quyền vào ảnh của bạn một cách nhanh chóng, chất lượng cao.'
+  },
+  {
+    path: '/xoa-nen-mau',
+    icon: <Eraser size={24} />,
+    title: 'Công Cụ Xóa Nền Theo Màu',
+    desc: 'Tự động chọn và xóa phông nền theo màu sắc với công cụ Chroma Key.'
+  }
+];
+
+const otherTools = [
+  {
+    path: '/qr-link',
+    icon: <LinkIcon size={24} />,
+    title: 'Công cụ rút gọn link và tạo QR',
+    desc: 'Rút gọn các đường dẫn URL dài và tự động tạo mã QR để dễ dàng quét bằng điện thoại.'
   }
 ];
 
@@ -142,21 +155,64 @@ const Home = () => {
         </ul>
       </section>
 
-      <section className="tools-grid">
-        {tools.map((tool, index) => (
-          <Link to={tool.path} key={index} className="tool-card">
-            <div className="tool-card-bg-icon">
-              {tool.icon}
-            </div>
-            <div className="tool-icon">
-              {tool.icon}
-            </div>
-            <div style={{ position: 'relative', zIndex: 1 }}>
+      <section style={{ marginTop: '3rem' }}>
+        <h2 className="text-2xl font-bold mb-6 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+          <FileEdit size={28} /> Công cụ PDF
+        </h2>
+        <div className="tools-grid">
+          {pdfTools.map((tool, index) => (
+            <Link to={tool.path} key={index} className="tool-card">
+              <div className="tool-card-bg-icon">
+                {tool.icon}
+              </div>
+              <div className="tool-icon">
+                {tool.icon}
+              </div>
               <h3 className="tool-title">{tool.title}</h3>
               <p className="tool-desc">{tool.desc}</p>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ marginTop: '4rem' }}>
+        <h2 className="text-2xl font-bold mb-6 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+          <ImageIcon size={28} /> Công cụ Ảnh
+        </h2>
+        <div className="tools-grid">
+          {imageTools.map((tool, index) => (
+            <Link to={tool.path} key={index} className="tool-card">
+              <div className="tool-card-bg-icon">
+                {tool.icon}
+              </div>
+              <div className="tool-icon">
+                {tool.icon}
+              </div>
+              <h3 className="tool-title">{tool.title}</h3>
+              <p className="tool-desc">{tool.desc}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ marginTop: '4rem' }}>
+        <h2 className="text-2xl font-bold mb-6 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+          <LinkIcon size={28} /> Tiện ích Khác
+        </h2>
+        <div className="tools-grid">
+          {otherTools.map((tool, index) => (
+            <Link to={tool.path} key={index} className="tool-card">
+              <div className="tool-card-bg-icon">
+                {tool.icon}
+              </div>
+              <div className="tool-icon">
+                {tool.icon}
+              </div>
+              <h3 className="tool-title">{tool.title}</h3>
+              <p className="tool-desc">{tool.desc}</p>
+            </Link>
+          ))}
+        </div>
       </section>
     </div>
   );
