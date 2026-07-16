@@ -11,7 +11,10 @@ import {
   RefreshCw,
   Stamp,
   Eraser,
-  ImagePlus
+  ImagePlus,
+  PenTool,
+  Images,
+  Maximize
 } from 'lucide-react';
 import './Home.css';
 
@@ -87,6 +90,24 @@ const tools = [
     icon: <Eraser size={24} />,
     title: 'Công Cụ Xóa Nền Theo Màu',
     desc: 'Tự động chọn và xóa phông nền theo màu sắc với công cụ Chroma Key.'
+  },
+  {
+    path: '/dong-dau-pdf',
+    icon: <PenTool size={24} />,
+    title: 'Đóng Dấu PDF',
+    desc: 'Chèn chữ, logo watermark vào tài liệu PDF của bạn một cách nhanh chóng và an toàn.'
+  },
+  {
+    path: '/jpg-sang-pdf',
+    icon: <Images size={24} />,
+    title: 'JPG sang PDF',
+    desc: 'Gộp nhiều ảnh (JPG, PNG, WEBP...) thành một file PDF duy nhất dễ dàng.'
+  },
+  {
+    path: '/resize-anh',
+    icon: <Maximize size={24} />,
+    title: 'Resize ảnh',
+    desc: 'Đổi kích thước ảnh theo pixel hoặc phần trăm cực nhanh ngay trên trình duyệt.'
   }
 ];
 
