@@ -1,0 +1,282 @@
+.delete-pdf-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.delete-pdf-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.delete-pdf-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+}
+
+.workspace-panels {
+  display: flex;
+  gap: 1.5rem;
+  height: 600px;
+}
+
+.sidebar-panel {
+  flex: 0 0 250px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.sidebar-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-tertiary);
+}
+
+.thumbnails-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.thumbnail-wrapper {
+  position: relative;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  background: var(--bg-tertiary);
+}
+
+.thumbnail-wrapper.selected {
+  border-color: var(--primary);
+}
+
+.thumbnail-wrapper.deleted {
+  opacity: 0.4;
+}
+
+.thumbnail-wrapper img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: calc(var(--radius-sm) - 2px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnail-wrapper .page-number {
+  position: absolute;
+  bottom: -0.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  color: var(--text-primary);
+  z-index: 2;
+}
+
+.thumbnail-wrapper .delete-btn {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.25rem;
+  background: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ef4444;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 3;
+}
+
+.thumbnail-wrapper .delete-btn:hover {
+  background: #fee2e2;
+  transform: scale(1.1);
+}
+
+.thumbnail-wrapper.deleted .delete-btn {
+  color: #10b981;
+  background: white;
+}
+
+.thumbnail-wrapper.deleted .delete-btn:hover {
+  background: #d1fae5;
+}
+
+.thumbnail-wrapper.deleted::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(239, 68, 68, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.thumbnail-wrapper.deleted::before {
+  content: 'Đã xóa';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: #ef4444;
+  border: 3px solid #ef4444;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  z-index: 4;
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.8);
+}
+
+
+.preview-panel {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.preview-header {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  background: var(--bg-tertiary);
+  display: flex;
+  justify-content: space-between;
+}
+
+.preview-content {
+  flex: 1;
+  background: #222;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  padding: 2rem;
+  position: relative;
+}
+
+.preview-content img {
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  background: white;
+}
+
+.preview-content.deleted-preview img {
+  opacity: 0.3;
+}
+.preview-content.deleted-preview::after {
+  content: 'Trang này sẽ bị xóa khỏi file PDF';
+  position: absolute;
+  color: #ef4444;
+  font-size: 1.25rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 1rem 2rem;
+  border-radius: var(--radius-md);
+  border: 2px solid #ef4444;
+}
+
+
+.workspace-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.status-text {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.status-text .highlight {
+  color: var(--primary);
+  font-weight: 700;
+}
+.status-text .highlight-danger {
+  color: #ef4444;
+  font-weight: 700;
+}
+
+.btn-process {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #0056b3;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-process:hover:not(:disabled) {
+  background: #004494;
+}
+.btn-process:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .workspace-panels {
+    flex-direction: column;
+    height: auto;
+  }
+  .sidebar-panel {
+    height: 250px;
+  }
+  .thumbnails-list {
+    flex-direction: row;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .thumbnail-wrapper {
+    flex: 0 0 120px;
+  }
+  .preview-panel {
+    height: 400px;
+  }
+}

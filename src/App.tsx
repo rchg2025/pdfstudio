@@ -14,6 +14,7 @@ const PdfCompressor = React.lazy(() => import('./pages/PdfCompressor'));
 const ImageCompressor = React.lazy(() => import('./pages/ImageCompressor'));
 const ImageConverter = React.lazy(() => import('./pages/ImageConverter'));
 const ImageResize = React.lazy(() => import('./pages/ImageResize'));
+const DeletePdfPages = React.lazy(() => import('./pages/DeletePdfPages'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
@@ -52,6 +53,9 @@ function App() {
             } />
             <Route path="pdf-merge-split" element={
               <Suspense fallback={<FallbackLoader />}><PdfMergeSplit /></Suspense>
+            } />
+            <Route path="xoa-trang-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><DeletePdfPages /></Suspense>
             } />
             <Route path="pdf-to-image" element={
               <Suspense fallback={<FallbackLoader />}><PdfToImage /></Suspense>

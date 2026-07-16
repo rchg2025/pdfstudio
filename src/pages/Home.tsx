@@ -14,7 +14,8 @@ import {
   ImagePlus,
   PenTool,
   Images,
-  Maximize
+  Maximize,
+  FileMinus
 } from 'lucide-react';
 import './Home.css';
 
@@ -108,6 +109,12 @@ const tools = [
     icon: <Maximize size={24} />,
     title: 'Resize ảnh',
     desc: 'Đổi kích thước ảnh theo pixel hoặc phần trăm cực nhanh ngay trên trình duyệt.'
+  },
+  {
+    path: '/xoa-trang-pdf',
+    icon: <FileMinus size={24} />,
+    title: 'Xóa trang PDF',
+    desc: 'Loại bỏ các trang không cần thiết khỏi file PDF dễ dàng qua giao diện trực quan.'
   }
 ];
 
