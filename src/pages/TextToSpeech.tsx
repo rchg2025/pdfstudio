@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Volume2, Play, Square, Lock, Pause, FileText } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
+import VoiceSelector from '../components/VoiceSelector';
 import './TextToSpeech.css';
 
 export default function TextToSpeech() {
@@ -167,21 +168,11 @@ export default function TextToSpeech() {
         <div className="audio-controls">
           <div className="audio-input-group">
             <label>Giọng đọc</label>
-            <select 
-              className="audio-select"
-              value={selectedVoiceIndex}
-              onChange={(e) => setSelectedVoiceIndex(Number(e.target.value))}
-            >
-              {voices.length === 0 ? (
-                <option value={0}>Đang tải giọng đọc...</option>
-              ) : (
-                voices.map((voice, index) => (
-                  <option key={voice.name} value={index}>
-                    {voice.name} ({voice.lang}) {voice.default ? ' - Mặc định' : ''}
-                  </option>
-                ))
-              )}
-            </select>
+            <VoiceSelector 
+              voices={voices}
+              selectedVoiceIndex={selectedVoiceIndex}
+              onSelect={setSelectedVoiceIndex}
+            />
           </div>
 
           <div className="audio-input-group">
