@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Volume2, Play, Square, Lock, Pause, FileText } from 'lucide-react';
+import { Volume2, Play, Square, Lock, Pause, FileText, Download } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import VoiceSelector from '../components/VoiceSelector';
 import './TextToSpeech.css';
@@ -223,6 +223,13 @@ export default function TextToSpeech() {
           <button className="btn-audio" onClick={handleStop} disabled={!isPlaying && !isPaused}>
             <Square size={20} />
             Dừng
+          </button>
+          <button 
+            className="btn-audio" 
+            onClick={() => showAlert('Do công cụ hoạt động 100% offline trên trình duyệt để đảm bảo bảo mật tuyệt đối, trình duyệt hiện tại chưa hỗ trợ trích xuất luồng giọng đọc thành file âm thanh. Bạn vui lòng sử dụng phần mềm ghi âm của máy tính/điện thoại để lưu lại đoạn hội thoại nhé!', 'Giới hạn kỹ thuật')}
+          >
+            <Download size={20} />
+            Tải MP3
           </button>
         </div>
       </div>
