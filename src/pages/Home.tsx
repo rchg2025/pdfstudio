@@ -16,7 +16,8 @@ import {
   Images,
   Maximize,
   FileMinus,
-  Crop
+  Crop,
+  Wand2
 } from 'lucide-react';
 import './Home.css';
 
@@ -107,6 +108,12 @@ const imageTools = [
     icon: <Crop size={24} />,
     title: 'Crop ảnh',
     desc: 'Cắt ảnh trực quan theo tỉ lệ 1:1, 16:9, 4:3 hoặc chọn vùng bất kỳ.'
+  },
+  {
+    path: '/tang-do-net-anh',
+    icon: <Wand2 size={24} />,
+    title: 'Tăng độ nét ảnh',
+    desc: 'Cải thiện chất lượng hình ảnh, độ sáng, độ tương phản ngay trên trình duyệt.'
   },
   {
     path: '/watermark-studio',
