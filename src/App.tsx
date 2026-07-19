@@ -18,8 +18,6 @@ const ImageResize = React.lazy(() => import('./pages/ImageResize'));
 const ImageEnhance = React.lazy(() => import('./pages/ImageEnhance'));
 const DeletePdfPages = React.lazy(() => import('./pages/DeletePdfPages'));
 const QrLink = React.lazy(() => import('./pages/QrLink'));
-const TextToSpeech = React.lazy(() => import('./pages/TextToSpeech'));
-const SpeechToText = React.lazy(() => import('./pages/SpeechToText'));
 const PdfCompare = React.lazy(() => import('./pages/PdfCompare'));
 const PdfSecurity = React.lazy(() => import('./pages/PdfSecurity'));
 const JpgToPdf = React.lazy(() => import('./pages/JpgToPdf'));
@@ -87,12 +85,6 @@ function App() {
             } />
             <Route path="qr-link" element={
               <Suspense fallback={<FallbackLoader />}><QrLink /></Suspense>
-            } />
-            <Route path="van-ban-thanh-am-thanh" element={
-              <Suspense fallback={<FallbackLoader />}><TextToSpeech /></Suspense>
-            } />
-            <Route path="am-thanh-thanh-van-ban" element={
-              <Suspense fallback={<FallbackLoader />}><SpeechToText /></Suspense>
             } />
             <Route path="bao-mat-pdf" element={
               <Suspense fallback={<FallbackLoader />}><PdfSecurity /></Suspense>
