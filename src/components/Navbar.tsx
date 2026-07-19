@@ -105,6 +105,8 @@ const Navbar = () => {
             <NavLink to="/resize-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Resize ảnh</NavLink>
             <NavLink to="/tang-do-net-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Tăng độ nét</NavLink>
             <NavLink to="/xoa-nen-mau" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Nền Màu</NavLink>
+            <NavLink to="/van-ban-thanh-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>VB &gt; Âm Thanh</NavLink>
+            <NavLink to="/am-thanh-thanh-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Âm Thanh &gt; VB</NavLink>
             <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
             

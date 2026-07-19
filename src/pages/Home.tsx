@@ -17,7 +17,10 @@ import {
   Maximize,
   FileMinus,
   Crop,
-  Wand2
+  Wand2,
+  Mic,
+  Volume2,
+  Headphones
 } from 'lucide-react';
 import './Home.css';
 
@@ -138,6 +141,21 @@ const otherTools = [
   }
 ];
 
+const audioTools = [
+  {
+    path: '/van-ban-thanh-am-thanh',
+    icon: <Volume2 size={24} />,
+    title: 'Văn Bản -> Âm Thanh',
+    desc: 'Chuyển đổi văn bản thành giọng nói dễ dàng ngay trên trình duyệt.'
+  },
+  {
+    path: '/am-thanh-thanh-van-ban',
+    icon: <Mic size={24} />,
+    title: 'Âm Thanh -> Văn Bản',
+    desc: 'Nhận diện giọng nói và chuyển đổi thành văn bản theo thời gian thực.'
+  }
+];
+
 const Home = () => {
   return (
     <div className="animate-fade-in home-container">
@@ -190,6 +208,28 @@ const Home = () => {
         </h2>
         <div className="tools-grid">
           {imageTools.map((tool, index) => (
+            <Link to={tool.path} key={index} className="tool-card">
+              <div className="tool-card-bg-icon">
+                {tool.icon}
+              </div>
+              <div className="tool-icon">
+                {tool.icon}
+              </div>
+              <div className="tool-content">
+                <h3 className="tool-title">{tool.title}</h3>
+                <p className="tool-desc">{tool.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ marginTop: '5rem' }}>
+        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', paddingBottom: '20px' }}>
+          <Headphones size={28} /> Công cụ Âm thanh
+        </h2>
+        <div className="tools-grid">
+          {audioTools.map((tool, index) => (
             <Link to={tool.path} key={index} className="tool-card">
               <div className="tool-card-bg-icon">
                 {tool.icon}
