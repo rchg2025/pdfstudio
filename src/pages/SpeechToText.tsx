@@ -154,15 +154,17 @@ export default function SpeechToText() {
 
   return (
     <div className="audio-tool-container">
-      <div className="audio-header">
-        <h1 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
-          <Mic className="text-primary" />
-          Âm Thanh thành Văn Bản
-        </h1>
-        <p className="text-secondary">Nhận diện giọng nói và chuyển đổi thành văn bản (Speech-to-Text) theo thời gian thực.</p>
+      <div className="glass-card" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ padding: '0.75rem', background: 'var(--primary)', borderRadius: 'var(--radius-md)', color: 'white' }}>
+          <Mic size={24} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Âm Thanh thành Văn Bản</h1>
+          <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Nhận diện giọng nói và chuyển đổi thành văn bản theo thời gian thực</p>
+        </div>
       </div>
 
-      <div className="audio-tool-card">
+      <div className="glass-card" style={{ padding: '1.5rem' }}>
         <div className="local-processing-notice">
           <Lock size={16} />
           Xử lý trực tiếp trên trình duyệt của bạn — Giọng nói không được lưu trữ hay gửi đi đâu khác.

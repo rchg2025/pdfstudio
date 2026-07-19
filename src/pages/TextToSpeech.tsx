@@ -128,15 +128,17 @@ export default function TextToSpeech() {
 
   return (
     <div className="audio-tool-container">
-      <div className="audio-header">
-        <h1 className="text-2xl font-bold mb-2 flex items-center justify-center gap-2">
-          <Volume2 className="text-primary" />
-          Văn Bản thành Âm Thanh
-        </h1>
-        <p className="text-secondary">Chuyển đổi văn bản thành giọng nói (Text-to-Speech) dễ dàng trực tiếp trên trình duyệt.</p>
+      <div className="glass-card" style={{ padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ padding: '0.75rem', background: 'var(--primary)', borderRadius: 'var(--radius-md)', color: 'white' }}>
+          <Volume2 size={24} />
+        </div>
+        <div>
+          <h1 style={{ fontSize: '1.5rem', fontWeight: 600 }}>Văn Bản thành Âm Thanh</h1>
+          <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Chuyển đổi văn bản thành giọng nói dễ dàng trực tiếp trên trình duyệt</p>
+        </div>
       </div>
 
-      <div className="audio-tool-card">
+      <div className="glass-card" style={{ padding: '1.5rem' }}>
         <div className="local-processing-notice">
           <Lock size={16} />
           Xử lý ngay trên thiết bị của bạn — Không giới hạn ký tự và hoàn toàn bảo mật.
