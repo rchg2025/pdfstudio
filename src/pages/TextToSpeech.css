@@ -149,7 +149,7 @@
 }
 
 .btn-audio.primary:hover:not(:disabled) {
-  background: var(--primary-dark);
+  background: var(--primary-hover);
 }
 
 .btn-audio:disabled {

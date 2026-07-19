@@ -14,7 +14,7 @@ export default function TextToSpeech() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   
-  const { showAlert } = useDialogs();
+  const { showAlert, DialogsComponent } = useDialogs();
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -238,6 +238,7 @@ export default function TextToSpeech() {
           </button>
         </div>
       </div>
+      <DialogsComponent />
     </div>
   );
 }

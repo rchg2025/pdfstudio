@@ -20,7 +20,7 @@ export default function SpeechToText() {
   const [isSupported, setIsSupported] = useState(true);
   
   const recognitionRef = useRef<any>(null);
-  const { showAlert } = useDialogs();
+  const { showAlert, DialogsComponent } = useDialogs();
 
   useEffect(() => {
     // Check for browser support
@@ -238,6 +238,7 @@ export default function SpeechToText() {
           </div>
         </div>
       </div>
+      <DialogsComponent />
     </div>
   );
 }
