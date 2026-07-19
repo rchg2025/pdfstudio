@@ -44,16 +44,21 @@ export default function TextToSpeech() {
   useEffect(() => {
     const loadVoices = () => {
       const availableVoices = window.speechSynthesis.getVoices();
-      setVoices(availableVoices);
       
-      // Try to find a Vietnamese voice by default, or just use the first one
-      if (availableVoices.length > 0) {
-        const viIndex = availableVoices.findIndex(v => v.lang.includes('vi'));
-        if (viIndex !== -1) {
-          setSelectedVoiceIndex(viIndex);
-        } else {
-          setSelectedVoiceIndex(0);
-        }
+      // Sort voices: Vietnamese first, then alphabetical by name
+      const sortedVoices = [...availableVoices].sort((a, b) => {
+        const aIsVi = a.lang.toLowerCase().includes('vi');
+        const bIsVi = b.lang.toLowerCase().includes('vi');
+        if (aIsVi && !bIsVi) return -1;
+        if (!aIsVi && bIsVi) return 1;
+        return a.name.localeCompare(b.name);
+      });
+      
+      setVoices(sortedVoices);
+      
+      // Select the first Vietnamese voice (which will now be at the top if it exists)
+      if (sortedVoices.length > 0) {
+        setSelectedVoiceIndex(0);
       }
     };
 
