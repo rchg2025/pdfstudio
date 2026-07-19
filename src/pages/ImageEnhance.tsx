@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Download, X, Lock, FileImage, Loader2, Wand2 } from 'lucide-react';
 import FileUploadZone from '../components/FileUploadZone';
 import { useDialogs } from '../components/CustomDialogs';
+import ImageCompareSlider from '../components/ImageCompareSlider';
 import './ImageEnhance.css';
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -25,6 +26,7 @@ export default function ImageEnhance() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   // Real-time preview URL
+  const [originalImageUrl, setOriginalImageUrl] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const originalImageRef = useRef<HTMLImageElement | null>(null);
 
@@ -36,8 +38,9 @@ export default function ImageEnhance() {
     return () => {
       if (processedFile) URL.revokeObjectURL(processedFile.url);
       if (previewUrl && !previewUrl.startsWith('data:')) URL.revokeObjectURL(previewUrl);
+      if (originalImageUrl) URL.revokeObjectURL(originalImageUrl);
     };
-  }, [processedFile, previewUrl]);
+  }, [processedFile, previewUrl, originalImageUrl]);
 
   const handleFileSelect = (files: FileList | null) => {
     const selectedFile = files?.[0];
@@ -47,6 +50,7 @@ export default function ImageEnhance() {
       setProcessedFile(null);
       
       const objectUrl = URL.createObjectURL(selectedFile);
+      setOriginalImageUrl(objectUrl);
       const img = new Image();
       img.onload = () => {
         setOriginalDim({ w: img.width, h: img.height });
@@ -158,6 +162,7 @@ export default function ImageEnhance() {
     setOriginalDim(null);
     setProcessedFile(null);
     setPreviewUrl(null);
+    setOriginalImageUrl(null);
     setBrightness(100);
     setContrast(100);
     setSaturation(100);
@@ -255,10 +260,13 @@ export default function ImageEnhance() {
               </div>
             </div>
 
-            {previewUrl && !processedFile && (
+            {previewUrl && originalImageUrl && !processedFile && (
               <div className="preview-section">
-                <p className="text-secondary mb-4 text-center">Xem trước trực tiếp</p>
-                <img src={previewUrl} alt="Preview" className="preview-image" />
+                <p className="text-secondary mb-4 text-center">Xem trước trực tiếp (Kéo thanh trượt để so sánh)</p>
+                <ImageCompareSlider 
+                  beforeImage={originalImageUrl} 
+                  afterImage={previewUrl} 
+                />
               </div>
             )}
 
