@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Volume2, Play, Square, Lock, Pause } from 'lucide-react';
+import { Volume2, Play, Square, Lock, Pause, FileText } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import './TextToSpeech.css';
 
@@ -14,6 +14,31 @@ export default function TextToSpeech() {
   const [isPaused, setIsPaused] = useState(false);
   
   const { showAlert } = useDialogs();
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'text/plain' && !file.name.endsWith('.txt')) {
+      showAlert('Vui lòng chọn file văn bản (.txt)', 'Lỗi định dạng');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result;
+      if (typeof content === 'string') {
+        setText(content);
+      }
+    };
+    reader.onerror = () => {
+      showAlert('Không thể đọc file. Vui lòng thử lại.', 'Lỗi đọc file');
+    };
+    reader.readAsText(file);
+    
+    // Reset input so the same file can be selected again
+    e.target.value = '';
+  };
 
   useEffect(() => {
     const loadVoices = () => {
@@ -115,6 +140,19 @@ export default function TextToSpeech() {
         <div className="local-processing-notice">
           <Lock size={16} />
           Xử lý ngay trên thiết bị của bạn — Không giới hạn ký tự và hoàn toàn bảo mật.
+        </div>
+
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
+          <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontSize: '0.9rem', fontWeight: 500 }}>
+            <FileText size={16} />
+            Tải lên file .txt
+            <input 
+              type="file" 
+              accept=".txt,text/plain" 
+              onChange={handleFileUpload} 
+              style={{ display: 'none' }} 
+            />
+          </label>
         </div>
 
         <textarea
