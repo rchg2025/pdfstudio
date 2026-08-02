@@ -36,8 +36,9 @@ export default function RemoveAccents() {
     }
 
     const noAccent = removeVietnameseTones(nameWithoutExt).trim();
-    // Return formatted name based on time and version
-    return `${time}_${noAccent}-Phien ban so ${version}${ext}`;
+    // Create the full name and replace any remaining spaces with underscores
+    const rawFullName = `${time}_${noAccent}_Phien_ban_so_${version}${ext}`;
+    return rawFullName.replace(/\s+/g, '_');
   };
 
   const handleFileSelect = (selectedFiles: FileList | null) => {
