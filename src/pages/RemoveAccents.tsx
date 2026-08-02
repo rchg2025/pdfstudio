@@ -187,14 +187,24 @@ export default function RemoveAccents() {
                         <span className="file-name-new" title={newName}>{newName}</span>
                       </div>
                     </div>
-                    <button 
-                      onClick={() => removeFile(index)}
-                      className="icon-btn"
-                      style={{ color: 'var(--error)' }}
-                      title="Xóa file này"
-                    >
-                      <X size={20} />
-                    </button>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <button 
+                        onClick={() => downloadFile(file, newName)}
+                        className="icon-btn"
+                        style={{ color: 'var(--primary)' }}
+                        title="Tải xuống file này"
+                      >
+                        <Download size={20} />
+                      </button>
+                      <button 
+                        onClick={() => removeFile(index)}
+                        className="icon-btn"
+                        style={{ color: 'var(--error)' }}
+                        title="Xóa file này"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
                   </div>
                 );
               })}
