@@ -31,6 +31,7 @@ const Dashboard = React.lazy(() => import('./pages/Dashboard'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const FrameCreator = React.lazy(() => import('./pages/FrameCreator'));
 const FrameViewer = React.lazy(() => import('./pages/FrameViewer'));
+const RemoveAccents = React.lazy(() => import('./pages/RemoveAccents'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -109,6 +110,9 @@ function App() {
             } />
             <Route path="forgot-password" element={
               <Suspense fallback={<FallbackLoader />}><ForgotPassword /></Suspense>
+            } />
+            <Route path="xoa-dau-tieng-viet" element={
+              <Suspense fallback={<FallbackLoader />}><RemoveAccents /></Suspense>
             } />
             <Route path="dashboard" element={
               <Suspense fallback={<FallbackLoader />}><Dashboard /></Suspense>

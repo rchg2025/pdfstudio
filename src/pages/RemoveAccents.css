@@ -1,0 +1,7 @@
+/* Custom styles for RemoveAccents if needed, mainly relying on tailwind and existing global styles */
+.text-gradient {
+  background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

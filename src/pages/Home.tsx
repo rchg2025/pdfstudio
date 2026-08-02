@@ -17,7 +17,8 @@ import {
   Maximize,
   FileMinus,
   Crop,
-  Wand2
+  Wand2,
+  Type
 } from 'lucide-react';
 import './Home.css';
 
@@ -135,6 +136,12 @@ const otherTools = [
     icon: <LinkIcon size={24} />,
     title: 'Công cụ rút gọn link và tạo QR',
     desc: 'Rút gọn các đường dẫn URL dài và tự động tạo mã QR để dễ dàng quét bằng điện thoại.'
+  },
+  {
+    path: '/xoa-dau-tieng-viet',
+    icon: <Type size={24} />,
+    title: 'Xóa Dấu Tên File',
+    desc: 'Chuyển đổi tên file có dấu thành không dấu chuẩn định dạng khoa học để tránh lỗi hiển thị khi upload.'
   }
 ];
 
