@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Copy, Check, Type, FileText, Calendar, Hash } from 'lucide-react';
+import { Download, RefreshCw, FileBox, Calendar, Hash, X, Archive } from 'lucide-react';
+import JSZip from 'jszip';
+import FileUploadZone from '../components/FileUploadZone';
 import './RemoveAccents.css';
 
 export default function RemoveAccents() {
+  const [files, setFiles] = useState<File[]>([]);
   const [time, setTime] = useState('');
   const [version, setVersion] = useState('1');
-  const [input, setInput] = useState('');
-  const [output, setOutput] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     const date = new Date();
@@ -17,122 +18,222 @@ export default function RemoveAccents() {
   }, []);
 
   const removeVietnameseTones = (str: string) => {
-    str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
-    str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
-    str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
-    str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
-    str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
-    str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
-    str = str.replace(/đ/g, "d");
-    str = str.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
-    str = str.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
-    str = str.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
-    str = str.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
-    str = str.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
-    str = str.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
-    str = str.replace(/Đ/g, "D");
-    str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
-    str = str.replace(/\u02C6|\u0306|\u031B/g, "");
-    return str;
+    let newStr = str;
+    newStr = newStr.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+    newStr = newStr.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+    newStr = newStr.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+    newStr = newStr.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+    newStr = newStr.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+    newStr = newStr.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+    newStr = newStr.replace(/đ/g, "d");
+    newStr = newStr.replace(/À|Á|Ạ|Ả|Ã|Â|Ầ|Ấ|Ậ|Ẩ|Ẫ|Ă|Ằ|Ắ|Ặ|Ẳ|Ẵ/g, "A");
+    newStr = newStr.replace(/È|É|Ẹ|Ẻ|Ẽ|Ê|Ề|Ế|Ệ|Ể|Ễ/g, "E");
+    newStr = newStr.replace(/Ì|Í|Ị|Ỉ|Ĩ/g, "I");
+    newStr = newStr.replace(/Ò|Ó|Ọ|Ỏ|Õ|Ô|Ồ|Ố|Ộ|Ổ|Ỗ|Ơ|Ờ|Ớ|Ợ|Ở|Ỡ/g, "O");
+    newStr = newStr.replace(/Ù|Ú|Ụ|Ủ|Ũ|Ư|Ừ|Ứ|Ự|Ử|Ữ/g, "U");
+    newStr = newStr.replace(/Ỳ|Ý|Ỵ|Ỷ|Ỹ/g, "Y");
+    newStr = newStr.replace(/Đ/g, "D");
+    newStr = newStr.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, ""); // ̀ ́ ̃ ̉ ̣
+    newStr = newStr.replace(/\u02C6|\u0306|\u031B/g, ""); // ˆ ̆ ̛
+    return newStr;
   };
 
-  const handleProcess = () => {
-    const lines = input.split('\n');
-    const processedLines = lines.map(line => {
-      if (!line.trim()) return '';
-      const noAccent = removeVietnameseTones(line).trim();
-      return `${time}_${noAccent}-Phien ban so ${version}`;
-    });
-    setOutput(processedLines.join('\n'));
+  const getNewFileName = (originalName: string) => {
+    const lastDotIndex = originalName.lastIndexOf('.');
+    let nameWithoutExt = originalName;
+    let ext = '';
+    
+    if (lastDotIndex !== -1) {
+      nameWithoutExt = originalName.substring(0, lastDotIndex);
+      ext = originalName.substring(lastDotIndex);
+    }
+
+    const noAccent = removeVietnameseTones(nameWithoutExt).trim();
+    // Return formatted name based on time and version
+    return `${time}_${noAccent}-Phien ban so ${version}${ext}`;
   };
 
-  const copyToClipboard = () => {
-    if (!output) return;
-    navigator.clipboard.writeText(output);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleFileSelect = (selectedFiles: FileList | null) => {
+    if (selectedFiles && selectedFiles.length > 0) {
+      const newFiles = Array.from(selectedFiles);
+      setFiles(prev => [...prev, ...newFiles]);
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const startOver = () => {
+    setFiles([]);
+  };
+
+  const downloadFile = (file: File, newName: string) => {
+    const url = URL.createObjectURL(file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = newName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const downloadAll = async () => {
+    if (files.length === 0) return;
+    
+    if (files.length === 1) {
+      downloadFile(files[0], getNewFileName(files[0].name));
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const zip = new JSZip();
+      
+      files.forEach(file => {
+        const newName = getNewFileName(file.name);
+        zip.file(newName, file);
+      });
+
+      const content = await zip.generateAsync({ type: 'blob' });
+      const url = URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Renamed_Files_${time}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error zipping files:', error);
+      alert('Có lỗi xảy ra khi nén file.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
-    <div className="animate-fade-in container" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem 1rem' }}>
-      <div className="text-center mb-8">
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
-          <div style={{ background: 'var(--primary-light)', color: 'var(--primary)', padding: '1rem', borderRadius: '50%' }}>
-            <Type size={32} />
-          </div>
-        </div>
-        <h1 className="text-3xl font-bold mb-4 text-gradient">Công Cụ Đổi Tên File Chuẩn</h1>
-        <p className="text-secondary" style={{ maxWidth: '600px', margin: '0 auto' }}>
-          Xóa dấu tiếng Việt và tạo tên file chuẩn theo định dạng khoa học để tránh lỗi hiển thị khi upload.
-        </p>
+    <div className="remove-accents-container animate-fade-in">
+      <div className="ra-header">
+        <h1 className="text-gradient" style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>Đổi Tên File Chuẩn Khoa Học</h1>
+        <p className="text-secondary">Xóa dấu Tiếng Việt tự động và đổi tên hàng loạt file để tránh lỗi tải lên</p>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+      <div className="glass-card">
+        <div className="settings-grid">
+          <div className="setting-group">
+            <label className="setting-label">
               <Calendar size={16} /> Thời gian
             </label>
             <input 
               type="text" 
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="setting-input"
               placeholder="VD: 08-2026"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <div className="setting-group">
+            <label className="setting-label">
               <Hash size={16} /> Phiên bản số
             </label>
             <input 
               type="text" 
               value={version}
               onChange={(e) => setVersion(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="setting-input"
               placeholder="VD: 1"
             />
           </div>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <FileText size={16} /> Tên file / Tiêu đề gốc (Mỗi dòng 1 tên)
-          </label>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
-            rows={4}
-            placeholder="Kế hoạch Khảo sát Workshop chuyên đề AI đợt 1/2026"
-          ></textarea>
-        </div>
-
-        <button 
-          onClick={handleProcess}
-          className="w-full btn btn-primary flex justify-center items-center py-3 rounded-lg font-medium text-lg mb-6"
-        >
-          Tạo Tên File Chuẩn
-        </button>
-
-        {output && (
+        {files.length === 0 ? (
+          <FileUploadZone 
+            onFileSelect={handleFileSelect} 
+            accept="*/*" 
+            hintText="Hỗ trợ mọi định dạng file (PDF, Word, Excel, Ảnh...)"
+            multiple={true}
+          />
+        ) : (
           <div>
-            <div className="flex justify-between items-center mb-1">
-              <label className="block text-sm font-medium text-gray-700">Kết quả</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Danh sách File ({files.length})</h3>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  onClick={() => document.getElementById('add-more-files')?.click()}
+                  className="btn btn-secondary"
+                  style={{ padding: '0.5rem 1rem' }}
+                >
+                  Thêm file
+                </button>
+                <input 
+                  id="add-more-files"
+                  type="file" 
+                  multiple 
+                  className="hidden" 
+                  onChange={(e) => handleFileSelect(e.target.files)}
+                  style={{ display: 'none' }}
+                />
+                <button 
+                  onClick={startOver}
+                  className="icon-btn"
+                  title="Xóa tất cả"
+                >
+                  <RefreshCw size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="file-list-container">
+              {files.map((file, index) => {
+                const newName = getNewFileName(file.name);
+                return (
+                  <div key={index} className="file-item">
+                    <div className="file-info">
+                      <div className="file-icon">
+                        <FileBox size={24} />
+                      </div>
+                      <div className="file-names">
+                        <span className="file-name-old">{file.name}</span>
+                        <span className="file-name-new" title={newName}>{newName}</span>
+                      </div>
+                    </div>
+                    <button 
+                      onClick={() => removeFile(index)}
+                      className="icon-btn"
+                      style={{ color: 'var(--error)' }}
+                      title="Xóa file này"
+                    >
+                      <X size={20} />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ marginTop: '2rem' }}>
               <button 
-                onClick={copyToClipboard}
-                className="text-sm flex items-center gap-1 text-primary hover:text-primary-dark transition-colors"
+                onClick={downloadAll}
+                className="btn btn-primary"
+                style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
+                disabled={isProcessing}
               >
-                {copied ? <Check size={16} /> : <Copy size={16} />}
-                {copied ? 'Đã copy!' : 'Copy'}
+                {isProcessing ? (
+                  <RefreshCw size={20} className="animate-spin" />
+                ) : files.length > 1 ? (
+                  <Archive size={20} />
+                ) : (
+                  <Download size={20} />
+                )}
+                {isProcessing 
+                  ? 'Đang nén file...' 
+                  : files.length > 1 
+                    ? 'Tải Xuống Tất Cả (.zip)' 
+                    : 'Tải Xuống File'
+                }
               </button>
             </div>
-            <textarea
-              readOnly
-              value={output}
-              className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none"
-              rows={4}
-            ></textarea>
           </div>
         )}
       </div>
