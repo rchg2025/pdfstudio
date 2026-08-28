@@ -110,7 +110,7 @@ export default function WordToPdf() {
           backgroundColor: '#ffffff'
         });
 
-        // Convert canvas to PDF
+        // Convert canvas to multi-page PDF
         const imgData = canvas.toDataURL('image/jpeg', 0.98);
         const pdf = new jsPDF({
           orientation: 'portrait',
@@ -119,9 +119,27 @@ export default function WordToPdf() {
         });
 
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        const pdfHeight = pdf.internal.pageSize.getHeight();
         
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+        // Calculate dimensions
+        const imgProps = pdf.getImageProperties(imgData);
+        const ratio = pdfWidth / imgProps.width;
+        const totalPdfHeight = imgProps.height * ratio;
+        
+        let heightLeft = totalPdfHeight;
+        let position = 0;
+
+        // Add first page
+        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
+        heightLeft -= pdfHeight;
+
+        // Add subsequent pages if the content is taller than one page
+        while (heightLeft > 0) {
+          position = position - pdfHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
+          heightLeft -= pdfHeight;
+        }
 
         const pdfBlob = pdf.output('blob');
         

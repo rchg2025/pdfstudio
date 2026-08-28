@@ -176,3 +176,13 @@
   z-index: -100;
   overflow: visible;
 }
+
+.docx-render-container .docx-wrapper {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.docx-render-container .docx-wrapper > section.docx {
+  margin-bottom: 0 !important;
+  box-shadow: none !important;
+}
