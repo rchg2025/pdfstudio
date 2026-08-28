@@ -4,8 +4,6 @@ import FileUploadZone from '../components/FileUploadZone';
 import { useDialogs } from '../components/CustomDialogs';
 import * as docx from 'docx-preview';
 import html2pdf from 'html2pdf.js';
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 import './WordToPdf.css';
 
@@ -106,7 +104,7 @@ export default function WordToPdf() {
 
         // Use html2pdf for proper page breaks
         const opt = {
-          margin:       [10, 0, 10, 0], // top, right, bottom, left margins
+          margin:       [10, 0, 10, 0] as [number, number, number, number],
           filename:     'temp.pdf',
           image:        { type: 'jpeg' as const, quality: 0.98 },
           html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
