@@ -3,6 +3,7 @@ import { Download, FileText, Loader2, FileArchive, Trash2, CheckCircle2 } from '
 import FileUploadZone from '../components/FileUploadZone';
 import { useDialogs } from '../components/CustomDialogs';
 import * as docx from 'docx-preview';
+import html2pdf from 'html2pdf.js';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import JSZip from 'jszip';
@@ -103,45 +104,17 @@ export default function WordToPdf() {
         // Wait a tick for fonts/images to render
         await new Promise(r => setTimeout(r, 500));
 
-        // Canvas from the rendered DOM
-        const canvas = await html2canvas(renderRef.current, {
-          scale: 2,
-          useCORS: true,
-          backgroundColor: '#ffffff'
-        });
+        // Use html2pdf for proper page breaks
+        const opt = {
+          margin:       [10, 0, 10, 0], // top, right, bottom, left margins
+          filename:     'temp.pdf',
+          image:        { type: 'jpeg' as const, quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+          jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const },
+          pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr', 'img', 'p', 'h1', 'h2', 'h3', 'h4', 'h5'] }
+        };
 
-        // Convert canvas to multi-page PDF
-        const imgData = canvas.toDataURL('image/jpeg', 0.98);
-        const pdf = new jsPDF({
-          orientation: 'portrait',
-          unit: 'mm',
-          format: 'a4'
-        });
-
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        
-        // Calculate dimensions
-        const imgProps = pdf.getImageProperties(imgData);
-        const ratio = pdfWidth / imgProps.width;
-        const totalPdfHeight = imgProps.height * ratio;
-        
-        let heightLeft = totalPdfHeight;
-        let position = 0;
-
-        // Add first page
-        pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
-        heightLeft -= pdfHeight;
-
-        // Add subsequent pages if the content is taller than one page
-        while (heightLeft > 0) {
-          position = position - pdfHeight;
-          pdf.addPage();
-          pdf.addImage(imgData, 'JPEG', 0, position, pdfWidth, totalPdfHeight);
-          heightLeft -= pdfHeight;
-        }
-
-        const pdfBlob = pdf.output('blob');
+        const pdfBlob = await html2pdf().set(opt).from(renderRef.current).output('blob');
         
         // Cleanup
         renderRef.current.innerHTML = '';

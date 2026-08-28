@@ -168,13 +168,13 @@
 
 .docx-render-container {
   position: absolute;
-  top: -10000px;
-  left: -10000px;
+  top: 0;
+  left: 0;
   width: 800px;
-  min-height: 1130px;
   background: white;
   z-index: -100;
-  overflow: visible;
+  opacity: 0.01;
+  pointer-events: none;
 }
 
 .docx-render-container .docx-wrapper {
