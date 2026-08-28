@@ -32,6 +32,7 @@ const Admin = React.lazy(() => import('./pages/Admin'));
 const FrameCreator = React.lazy(() => import('./pages/FrameCreator'));
 const FrameViewer = React.lazy(() => import('./pages/FrameViewer'));
 const RemoveAccents = React.lazy(() => import('./pages/RemoveAccents'));
+const WordToPdf = React.lazy(() => import('./pages/WordToPdf'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -95,6 +96,9 @@ function App() {
             } />
             <Route path="dong-dau-pdf" element={
               <Suspense fallback={<FallbackLoader />}><PdfWatermark /></Suspense>
+            } />
+            <Route path="word-sang-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><WordToPdf /></Suspense>
             } />
             <Route path="jpg-sang-pdf" element={
               <Suspense fallback={<FallbackLoader />}><JpgToPdf /></Suspense>
