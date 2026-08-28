@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, FileText, Loader2, FileArchive, Trash2, CheckCircle2 } from 'lucide-react';
 import FileUploadZone from '../components/FileUploadZone';
 import { useDialogs } from '../components/CustomDialogs';
@@ -27,7 +27,6 @@ const formatBytes = (bytes: number, decimals = 2) => {
 export default function WordToPdf() {
   const [files, setFiles] = useState<WordFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const previewRef = useRef<HTMLDivElement>(null);
   
   const { showAlert } = useDialogs();
 
@@ -82,25 +81,21 @@ export default function WordToPdf() {
         const result = await mammoth.convertToHtml({ arrayBuffer });
         const html = result.value;
 
-        if (!previewRef.current) throw new Error("Preview container not found");
-        
-        // Wrap in a div with some basic styling to look like a document
-        previewRef.current.innerHTML = `
-          <div style="padding: 40px; font-family: Arial, sans-serif; line-height: 1.6; color: #000;">
-            ${html}
+        const htmlContent = `
+          <div style="padding: 20px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5; color: #000; width: 800px; max-width: 800px; margin: 0 auto; background: white;">
+            ${html || '<i>Tài liệu trống hoặc không thể đọc nội dung chữ.</i>'}
           </div>
         `;
 
         const opt = {
-          margin:       0,
+          margin:       10,
           filename:     'temp.pdf',
           image:        { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
           jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
         };
 
-        const pdfBlob = await html2pdf().set(opt).from(previewRef.current).output('blob');
-        previewRef.current.innerHTML = '';
+        const pdfBlob = await html2pdf().set(opt).from(htmlContent).output('blob');
         resolve(pdfBlob);
       } catch (err) {
         reject(err);
@@ -284,9 +279,6 @@ export default function WordToPdf() {
 
         </div>
       </div>
-
-      {/* Hidden container to render HTML for PDF conversion */}
-      <div ref={previewRef} className="hidden-preview"></div>
     </div>
   );
 }
