@@ -167,5 +167,10 @@
 }
 
 .hidden-preview {
-  display: none;
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  width: 800px;
+  background: white;
+  z-index: -10;
 }
