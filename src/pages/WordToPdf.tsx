@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Download, FileText, Loader2, FileArchive, Trash2, CheckCircle2 } from 'lucide-react';
 import FileUploadZone from '../components/FileUploadZone';
 import { useDialogs } from '../components/CustomDialogs';
-import * as mammoth from 'mammoth';
-import html2pdf from 'html2pdf.js';
+import * as docx from 'docx-preview';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 import './WordToPdf.css';
 
@@ -27,6 +28,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
 export default function WordToPdf() {
   const [files, setFiles] = useState<WordFile[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const renderRef = useRef<HTMLDivElement>(null);
   
   const { showAlert } = useDialogs();
 
@@ -77,25 +79,54 @@ export default function WordToPdf() {
   const convertFile = async (wordFile: WordFile): Promise<Blob> => {
     return new Promise(async (resolve, reject) => {
       try {
+        if (!renderRef.current) throw new Error("Render container missing");
+        
+        // Clear previous render
+        renderRef.current.innerHTML = '';
+        
         const arrayBuffer = await wordFile.file.arrayBuffer();
-        const result = await mammoth.convertToHtml({ arrayBuffer });
-        const html = result.value;
+        
+        // Render DOCX to DOM
+        await docx.renderAsync(arrayBuffer, renderRef.current, renderRef.current, {
+          className: "docx",
+          inWrapper: true,
+          ignoreWidth: false,
+          ignoreHeight: false,
+          ignoreFonts: false,
+          breakPages: true,
+          ignoreLastRenderedPageBreak: true,
+          experimental: true,
+          trimXmlDeclaration: true,
+          debug: false
+        });
 
-        const htmlContent = `
-          <div style="padding: 20px; font-family: 'Times New Roman', Times, serif; font-size: 14pt; line-height: 1.5; color: #000; width: 800px; max-width: 800px; margin: 0 auto; background: white;">
-            ${html || '<i>Tài liệu trống hoặc không thể đọc nội dung chữ.</i>'}
-          </div>
-        `;
+        // Wait a tick for fonts/images to render
+        await new Promise(r => setTimeout(r, 500));
 
-        const opt = {
-          margin:       10,
-          filename:     'temp.pdf',
-          image:        { type: 'jpeg' as const, quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false },
-          jsPDF:        { unit: 'mm' as const, format: 'a4' as const, orientation: 'portrait' as const }
-        };
+        // Canvas from the rendered DOM
+        const canvas = await html2canvas(renderRef.current, {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff'
+        });
 
-        const pdfBlob = await html2pdf().set(opt).from(htmlContent).output('blob');
+        // Convert canvas to PDF
+        const imgData = canvas.toDataURL('image/jpeg', 0.98);
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4'
+        });
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        
+        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+
+        const pdfBlob = pdf.output('blob');
+        
+        // Cleanup
+        renderRef.current.innerHTML = '';
         resolve(pdfBlob);
       } catch (err) {
         reject(err);
@@ -279,6 +310,9 @@ export default function WordToPdf() {
 
         </div>
       </div>
+      
+      {/* Hidden container for rendering docx before capturing to canvas */}
+      <div ref={renderRef} className="docx-render-container"></div>
     </div>
   );
 }

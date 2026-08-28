@@ -166,11 +166,13 @@
   background: #059669;
 }
 
-.hidden-preview {
+.docx-render-container {
   position: absolute;
-  left: -9999px;
-  top: -9999px;
+  top: -10000px;
+  left: -10000px;
   width: 800px;
+  min-height: 1130px;
   background: white;
-  z-index: -10;
+  z-index: -100;
+  overflow: visible;
 }
