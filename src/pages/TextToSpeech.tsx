@@ -254,7 +254,7 @@ export default function TextToSpeech() {
             <div className="tts-input-group">
               <label><FileAudio size={18} /> Nhập văn bản cần đọc</label>
               <textarea 
-                className="tts-textarea"
+                className="tts-textarea p-4"
                 placeholder="Ví dụ: Xin chào, tôi đang sử dụng phần mềm đọc văn bản tự động..."
                 value={text}
                 onChange={e => setText(e.target.value)}
@@ -264,7 +264,7 @@ export default function TextToSpeech() {
             {mode === 'browser' ? (
               <div className="flex gap-2">
                 <button 
-                  className="btn-primary flex items-center justify-center flex-1 py-3"
+                  className="btn btn-primary flex items-center justify-center flex-1 py-3 px-6"
                   onClick={handlePlayBrowser}
                   disabled={isPlaying}
                 >
@@ -282,7 +282,7 @@ export default function TextToSpeech() {
               </div>
             ) : (
               <button 
-                className="btn-primary flex items-center justify-center w-full py-3"
+                className="btn btn-primary flex items-center justify-center w-full py-3 px-6"
                 onClick={handleGenerateEdge}
                 disabled={isProcessingCloud}
               >
@@ -343,7 +343,7 @@ export default function TextToSpeech() {
                   <audio src={cloudAudioUrl} controls autoPlay className="w-full rounded-full" />
 
                   <button 
-                    className="btn flex items-center justify-center w-full gap-2 text-white bg-green-500 hover:bg-green-600 py-3 rounded-xl shadow-lg shadow-green-200 transition-transform hover:-translate-y-1"
+                    className="btn btn-primary flex items-center justify-center w-full py-3 px-6 gap-2 rounded-xl shadow-lg transition-transform hover:-translate-y-1"
                     onClick={downloadCloudAudio}
                   >
                     <Download size={20} /> Tải file MP3 về máy
