@@ -110,6 +110,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // -------------------------------------------------------------
+    // URLS (QR Links)
+    // -------------------------------------------------------------
+    if (action === 'urls') {
+      if (req.method === 'GET') {
+        const urls = await prisma.urls.findMany({
+          orderBy: { created_at: 'desc' }
+        });
+        return res.status(200).json(urls);
+      }
+      if (req.method === 'DELETE') {
+        const { id } = req.query;
+        if (!id || typeof id !== 'string') return res.status(400).json({ message: 'Invalid ID' });
+        await prisma.urls.delete({ where: { id: parseInt(id) } });
+        return res.status(200).json({ message: 'URL deleted' });
+      }
+      if (req.method === 'PUT') {
+        const { id, original_url, alias } = req.body;
+        if (!id) return res.status(400).json({ message: 'Invalid ID' });
+        const updated = await prisma.urls.update({
+          where: { id: parseInt(id) },
+          data: { original_url, alias }
+        });
+        return res.status(200).json(updated);
+      }
+    }
+
+    // -------------------------------------------------------------
     // TEST DRIVE
     // -------------------------------------------------------------
     if (action === 'test-drive') {

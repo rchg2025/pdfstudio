@@ -9,6 +9,13 @@ export default function Admin() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('frames');
   
+  // States cho Link Rút gọn
+  const [urls, setUrls] = useState<any[]>([]);
+  const [loadingUrls, setLoadingUrls] = useState(false);
+  const [urlsPage, setUrlsPage] = useState(1);
+  const [editingUrl, setEditingUrl] = useState<any>(null);
+  const [urlSearchQuery, setUrlSearchQuery] = useState('');
+  
   // States cho Khung hình
   const [frames, setFrames] = useState<any[]>([]);
   const [loadingFrames, setLoadingFrames] = useState(false);
@@ -49,7 +56,60 @@ export default function Admin() {
     if (activeTab === 'frames') fetchFrames();
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'settings') fetchSettings();
+    if (activeTab === 'urls') fetchUrls();
   }, [activeTab]);
+
+  const fetchUrls = async () => {
+    setLoadingUrls(true);
+    try {
+      const res = await fetch('/api/admin/urls', { headers: { 'Authorization': `Bearer ${token}` } });
+      if (res.ok) setUrls(await res.json());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingUrls(false);
+    }
+  };
+
+  const deleteUrl = (id: number) => {
+    showConfirm('Bạn có chắc chắn muốn xóa link này?', async () => {
+      try {
+        const res = await fetch(`/api/admin/urls?id=${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          fetchUrls();
+          showToast('Xóa link thành công', 'success');
+        } else {
+          showToast('Xóa link thất bại', 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi khi xóa link', 'error');
+      }
+    });
+  };
+
+  const saveUrl = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/admin/urls', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(editingUrl)
+      });
+      if (res.ok) {
+        setEditingUrl(null);
+        fetchUrls();
+        showToast('Lưu link thành công', 'success');
+      } else {
+        const d = await res.json();
+        showToast(d.message || 'Lỗi khi lưu link', 'error');
+      }
+    } catch (e) {
+      showToast('Lỗi hệ thống', 'error');
+    }
+  };
 
   const fetchFrames = async () => {
     setLoadingFrames(true);
@@ -314,6 +374,16 @@ export default function Admin() {
   const paginatedUsers = filteredUsers.slice((usersPage - 1) * itemsPerPage, usersPage * itemsPerPage);
   const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
+  const filteredUrls = urls.filter((u: any) => {
+    const query = urlSearchQuery.toLowerCase();
+    return !query || 
+      u.original_url?.toLowerCase().includes(query) || 
+      u.alias?.toLowerCase().includes(query);
+  });
+  
+  const paginatedUrls = filteredUrls.slice((urlsPage - 1) * itemsPerPage, urlsPage * itemsPerPage);
+  const totalUrlPages = Math.ceil(filteredUrls.length / itemsPerPage);
+
   const getThumbnailUrl = (imageUrlStr: string) => {
     try {
       const parsed = JSON.parse(imageUrlStr);
@@ -393,6 +463,28 @@ export default function Admin() {
       )}
 
 
+      {editingUrl && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-card" style={{ padding: '2rem', width: '90%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>Sửa Link Rút Gọn</h3>
+            <form onSubmit={saveUrl} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Link nguồn (URL ban đầu)</label>
+                <input type="text" value={editingUrl.original_url || ''} onChange={e => setEditingUrl({...editingUrl, original_url: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} required />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Tên rút gọn (Alias)</label>
+                <input type="text" value={editingUrl.alias || ''} onChange={e => setEditingUrl({...editingUrl, alias: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} required />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setEditingUrl(null)} className="btn" style={{ background: 'transparent', color: 'var(--text-secondary)' }}>Hủy</button>
+                <button type="submit" className="btn btn-primary">Lưu</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="tool-header text-center mb-8 md:mb-10 mt-4 md:mt-0">
         <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
           Bảng Điều Khiển Quản Trị
@@ -406,6 +498,7 @@ export default function Admin() {
           {[
             { id: 'frames', label: 'Quản Lý Khung Hình' },
             { id: 'users', label: 'Quản Lý Tài Khoản' },
+            { id: 'urls', label: 'Quản Lý Link Rút Gọn' },
             { id: 'settings', label: 'Cấu Hình Hệ Thống' }
           ].map(tab => (
             <button
@@ -616,6 +709,78 @@ export default function Admin() {
                     </div>
                   )}
 
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: URLS */}
+          {activeTab === 'urls' && (
+            <div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', flex: 1 }}>
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm link..."
+                    value={urlSearchQuery}
+                    onChange={(e) => { setUrlSearchQuery(e.target.value); setUrlsPage(1); }}
+                    style={{ flex: 1, minWidth: '200px', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  />
+                </div>
+              </div>
+
+              {loadingUrls ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Đang tải dữ liệu...</div>
+              ) : paginatedUrls.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Không tìm thấy link nào</div>
+              ) : (
+                <div style={{ overflowX: 'auto', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                  <table style={{ width: '100%', minWidth: '800px', borderCollapse: 'collapse', textAlign: 'left' }}>
+                    <thead style={{ background: 'var(--bg-secondary)' }}>
+                      <tr>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>ID</th>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Link nguồn</th>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Rút gọn (Alias)</th>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Ngày tạo</th>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedUrls.map((u: any) => (
+                        <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                          <td style={{ padding: '1rem' }}>{u.id}</td>
+                          <td style={{ padding: '1rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.original_url}>{u.original_url}</td>
+                          <td style={{ padding: '1rem', fontWeight: 'bold' }}>{u.alias}</td>
+                          <td style={{ padding: '1rem' }}>{u.created_at ? new Date(u.created_at).toLocaleString('vi-VN') : '-'}</td>
+                          <td style={{ padding: '1rem' }}>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <button onClick={() => setEditingUrl(u)} className="btn" style={{ padding: '0.5rem', background: '#3b82f6', color: 'white', borderRadius: '0.375rem' }}>Sửa</button>
+                              <button onClick={() => deleteUrl(u.id)} className="btn" style={{ padding: '0.5rem', background: '#ef4444', color: 'white', borderRadius: '0.375rem' }}>Xóa</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {totalUrlPages > 1 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', padding: '1rem', background: 'var(--bg-secondary)', borderRadius: '0.5rem' }}>
+                  <button 
+                    onClick={() => setUrlsPage(p => Math.max(1, p - 1))} 
+                    disabled={urlsPage === 1}
+                    className="btn" style={{ background: 'var(--bg-primary)', opacity: urlsPage === 1 ? 0.5 : 1 }}
+                  >Trước</button>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-primary)' }}>
+                    Trang {urlsPage} / {totalUrlPages}
+                  </span>
+                  <button 
+                    onClick={() => setUrlsPage(p => Math.min(totalUrlPages, p + 1))} 
+                    disabled={urlsPage === totalUrlPages}
+                    className="btn" style={{ background: 'var(--bg-primary)', opacity: urlsPage === totalUrlPages ? 0.5 : 1 }}
+                  >Sau</button>
                 </div>
               )}
             </div>
