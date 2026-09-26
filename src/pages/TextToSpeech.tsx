@@ -26,6 +26,7 @@ export default function TextToSpeech() {
   const [edgeSpeed, setEdgeSpeed] = useState(0); // -100% đến +100%
   const [edgePitch, setEdgePitch] = useState(0); // -100Hz đến +100Hz
   const [isProcessingCloud, setIsProcessingCloud] = useState(false);
+  const [cloudProgress, setCloudProgress] = useState('');
   const [cloudAudioUrl, setCloudAudioUrl] = useState<string | null>(null);
 
   const [showSettings, setShowSettings] = useState(false);
@@ -98,31 +99,57 @@ export default function TextToSpeech() {
       const rateStr = edgeSpeed >= 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`;
       const pitchStr = edgePitch >= 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`;
 
-      const response = await fetch('/api/edge-tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text,
-          voice: selectedEdgeVoice,
-          rate: rateStr,
-          pitch: pitchStr
-        })
-      });
+      // Split text on the client to avoid 60s Vercel limits and 504 Timeouts
+      // Limit each chunk to ~800 characters by splitting at sentences
+      const sentences = text.split(/(?<=[.\n!?;])\s+/).filter(s => s.trim().length > 0);
+      const chunks = [];
+      let currentChunk = '';
 
-      if (!response.ok) {
-        throw new Error('Lỗi kết nối tới Microsoft AI');
+      for (const sentence of sentences) {
+        if (currentChunk.length + sentence.length > 800) {
+          if (currentChunk) chunks.push(currentChunk);
+          currentChunk = sentence;
+        } else {
+          currentChunk += (currentChunk ? ' ' : '') + sentence;
+        }
+      }
+      if (currentChunk) chunks.push(currentChunk);
+
+      const audioBlobs = [];
+      setCloudProgress(`Đang xử lý (0/${chunks.length})...`);
+
+      for (let i = 0; i < chunks.length; i++) {
+        const chunkText = chunks[i];
+        const response = await fetch('/api/edge-tts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: chunkText,
+            voice: selectedEdgeVoice,
+            rate: rateStr,
+            pitch: pitchStr
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Lỗi kết nối tới Microsoft AI ở đoạn ' + (i + 1) + '/' + chunks.length);
+        }
+
+        const blob = await response.blob();
+        audioBlobs.push(blob);
+        setCloudProgress(`Đang xử lý (${i + 1}/${chunks.length})...`);
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      setCloudProgress('Đang gộp file âm thanh...');
+      const finalBlob = new Blob(audioBlobs, { type: 'audio/mpeg' });
+      const url = window.URL.createObjectURL(finalBlob);
       setCloudAudioUrl(url);
     } catch (err: any) {
       console.error(err);
       showAlert(`Lỗi khi tạo giọng đọc: ${err.message}.`, 'Lỗi API');
     } finally {
       setIsProcessingCloud(false);
+      setCloudProgress('');
     }
   };
 
@@ -287,7 +314,7 @@ export default function TextToSpeech() {
                 disabled={isProcessingCloud}
               >
                 {isProcessingCloud ? (
-                  <><Loader2 className="animate-spin mr-2" size={20} /> Đang kết nối AI...</>
+                  <><Loader2 className="animate-spin mr-2" size={20} /> {cloudProgress || 'Đang kết nối AI...'}</>
                 ) : (
                   <><Cloud className="mr-2" size={20} /> Tạo file Âm Thanh MP3</>
                 )}
