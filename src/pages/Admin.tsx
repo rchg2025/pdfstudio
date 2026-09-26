@@ -754,6 +754,7 @@ export default function Admin() {
                           <td style={{ padding: '1rem' }}>{u.created_at ? new Date(u.created_at).toLocaleString('vi-VN') : '-'}</td>
                           <td style={{ padding: '1rem' }}>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
+                              <a href={`/${u.alias}`} target="_blank" rel="noopener noreferrer" className="btn" style={{ padding: '0.5rem', background: '#10b981', color: 'white', borderRadius: '0.375rem', textDecoration: 'none' }}>Truy cập</a>
                               <button onClick={() => setEditingUrl(u)} className="btn" style={{ padding: '0.5rem', background: '#3b82f6', color: 'white', borderRadius: '0.375rem' }}>Sửa</button>
                               <button onClick={() => deleteUrl(u.id)} className="btn" style={{ padding: '0.5rem', background: '#ef4444', color: 'white', borderRadius: '0.375rem' }}>Xóa</button>
                             </div>
