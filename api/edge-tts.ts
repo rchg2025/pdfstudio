@@ -13,18 +13,21 @@ export default async function handler(req, res) {
     }
 
     const communicate = new Communicate(text, { voice, rate, pitch });
+    let chunks = [];
     
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
-
     for await (const chunk of communicate.stream()) {
       if (chunk.type === 'audio') {
-        res.write(chunk.data);
+        chunks.push(chunk.data);
       }
     }
+
+    const audioBuffer = Buffer.concat(chunks);
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', audioBuffer.length);
+    res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
     
-    res.end();
-    return;
+    return res.status(200).send(audioBuffer);
 
   } catch (error) {
     console.error('Edge TTS Error:', error);

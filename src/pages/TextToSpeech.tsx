@@ -175,13 +175,13 @@ export default function TextToSpeech() {
             
             {mode === 'edge' && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Chọn Giọng Tiếng Việt:</label>
+                    <label className="block text-sm font-semibold text-blue-900 mb-2">Chọn Giọng Tiếng Việt:</label>
                     <select 
                       value={selectedEdgeVoice} 
                       onChange={(e) => setSelectedEdgeVoice(e.target.value)}
-                      className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
+                      className="w-full p-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 shadow-sm transition-all"
                     >
                       {EDGE_VOICES.map((v) => (
                         <option key={v.id} value={v.id}>{v.name}</option>
@@ -189,7 +189,7 @@ export default function TextToSpeech() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-blue-900 mb-2">
                       Tốc độ đọc: {edgeSpeed > 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`}
                     </label>
                     <input 
@@ -197,11 +197,11 @@ export default function TextToSpeech() {
                       min="-50" max="50" step="5" 
                       value={edgeSpeed} 
                       onChange={(e) => setEdgeSpeed(parseInt(e.target.value))}
-                      className="w-full mt-2"
+                      className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-blue-900 mb-2">
                       Độ thanh trầm: {edgePitch > 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`}
                     </label>
                     <input 
@@ -209,7 +209,7 @@ export default function TextToSpeech() {
                       min="-50" max="50" step="5" 
                       value={edgePitch} 
                       onChange={(e) => setEdgePitch(parseInt(e.target.value))}
-                      className="w-full mt-2"
+                      className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
                     />
                   </div>
                 </div>
