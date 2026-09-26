@@ -332,7 +332,7 @@ export default function AudioEditor() {
                 className="btn-primary" 
                 onClick={activeTab === 'cut' ? handleCut : handleMerge}
                 disabled={isProcessing}
-                style={{ width: '100%', maxWidth: '300px', display: 'flex', justifyContent: 'center' }}
+                style={{ width: '100%', display: 'flex', justifyContent: 'center' }}
               >
                 {isProcessing ? (
                   <><Loader2 className="animate-spin" /> Đang xử lý {progress}%</>
