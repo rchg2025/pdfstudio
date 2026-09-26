@@ -33,7 +33,7 @@ function DriveCopyContent() {
     onError: () => {
       showAlert('Đăng nhập thất bại. Vui lòng thử lại!', 'Lỗi đăng nhập');
     },
-    scope: 'https://www.googleapis.com/auth/drive.file'
+    scope: 'https://www.googleapis.com/auth/drive'
   });
 
   const getFiles = async (folderId: string, token: string) => {
@@ -45,7 +45,9 @@ function DriveCopyContent() {
     });
 
     if (!response.ok) {
-      throw new Error('Không thể quét thư mục nguồn. Hãy chắc chắn link đã được bật "Bất kỳ ai có liên kết đều có thể xem".');
+      const errData = await response.json().catch(() => ({}));
+      console.error("Drive API Error:", errData);
+      throw new Error(`Không thể quét thư mục nguồn (Lỗi ${response.status}). Hãy chắc chắn link đã được bật "Bất kỳ ai có liên kết đều có thể xem".`);
     }
     
     const data = await response.json();
