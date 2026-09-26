@@ -19,7 +19,6 @@ import {
   Crop,
   Wand2,
   Type,
-  FileText,
   HardDrive,
   Music,
   Mic
