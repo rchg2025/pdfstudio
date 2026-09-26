@@ -238,29 +238,7 @@ function DriveCopyContent() {
 }
 
 export default function DriveCopy() {
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '123456789-placeholder.apps.googleusercontent.com';
-
-  if (!import.meta.env.VITE_GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID_HERE') {
-    return (
-      <div className="drive-copy-container">
-        <div className="drive-copy-header">
-          <h1 className="text-2xl font-bold mb-2">Sao Chép Google Drive</h1>
-        </div>
-        <div className="drive-copy-card">
-          <div className="p-4 bg-red-100 text-red-700 rounded-lg border border-red-200">
-            <h3 className="font-bold flex items-center gap-2 mb-2"><AlertTriangle size={20}/> Thiếu Cấu Hình API</h3>
-            <p className="mb-2">Tính năng này yêu cầu phải thiết lập <strong>Google OAuth Client ID</strong> để hoạt động. Vui lòng thực hiện các bước sau:</p>
-            <ul className="list-disc pl-5 space-y-1">
-              <li>Truy cập Google Cloud Console và tạo dự án mới.</li>
-              <li>Bật thư viện <strong>Google Drive API</strong>.</li>
-              <li>Tạo thông tin xác thực <strong>OAuth 2.0 Client ID</strong> (Loại: Ứng dụng web).</li>
-              <li>Mở file <code>.env</code> trong thư mục gốc của dự án và cập nhật biến <code>VITE_GOOGLE_CLIENT_ID</code>.</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '788727332950-8tqr7tngu2ojp5pedgv54qu6pep07atv.apps.googleusercontent.com';
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
