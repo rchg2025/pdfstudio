@@ -171,7 +171,7 @@ export default function TextToSpeech() {
 
         {/* SETTINGS PANEL */}
         {showSettings && (
-          <div className="mb-6 p-5 bg-blue-50/50 rounded-xl border border-blue-100 flex flex-col gap-4">
+          <div className="mb-6 p-6 bg-blue-50 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-4">
             
             {mode === 'edge' && (
               <>

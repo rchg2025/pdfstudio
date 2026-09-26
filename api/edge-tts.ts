@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    const communicate = new Communicate(text, voice, { rate, pitch });
+    const communicate = new Communicate(text, { voice, rate, pitch });
     
     res.setHeader('Content-Type', 'audio/mpeg');
     res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
