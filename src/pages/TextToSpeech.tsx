@@ -1,106 +1,89 @@
-import { useState } from 'react';
-import { Mic, FileAudio, Play, Download, Loader2, Wand2, Settings2, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Play, Square, Settings2, Mic, Volume2 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
-import FileUploadZone from '../components/FileUploadZone';
 import './TextToSpeech.css';
 
 export default function TextToSpeech() {
   const [text, setText] = useState('');
-  const [referenceAudio, setReferenceAudio] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [resultAudioUrl, setResultAudioUrl] = useState<string | null>(null);
-  
-  // API URL của máy chủ OmniVoice (Sẽ do người dùng tự host backend python và điền vào)
-  const [apiUrl, setApiUrl] = useState('http://localhost:8000/api/tts');
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoice, setSelectedVoice] = useState<string>('');
+  const [rate, setRate] = useState(1);
+  const [pitch, setPitch] = useState(1);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
   const { showAlert } = useDialogs();
 
-  const handleFileUpload = (files: FileList | null) => {
-    if (!files) return;
-    const fileArray = Array.from(files);
-    const audioFiles = fileArray.filter(f => f.type.startsWith('audio/') || f.name.match(/\.(mp3|wav|m4a|ogg|aac)$/i));
-    if (audioFiles.length === 0) {
-      showAlert('Vui lòng tải lên file âm thanh hợp lệ để làm giọng mẫu (Reference Voice).', 'Lỗi định dạng');
-      return;
-    }
-    setReferenceAudio(audioFiles[0]);
-    // Reset kết quả cũ nếu đổi giọng mẫu
-    setResultAudioUrl(null);
-  };
+  // Load danh sách giọng đọc từ trình duyệt
+  useEffect(() => {
+    const loadVoices = () => {
+      let availableVoices = window.speechSynthesis.getVoices();
+      
+      // Sắp xếp: Ưu tiên giọng tiếng Việt (vi-VN) lên đầu
+      availableVoices.sort((a, b) => {
+        if (a.lang.includes('vi') && !b.lang.includes('vi')) return -1;
+        if (!a.lang.includes('vi') && b.lang.includes('vi')) return 1;
+        return 0;
+      });
 
-  const generateSpeech = async () => {
+      setVoices(availableVoices);
+
+      // Mặc định chọn giọng tiếng Việt nếu có
+      if (availableVoices.length > 0 && !selectedVoice) {
+        const viVoice = availableVoices.find(v => v.lang.includes('vi'));
+        setSelectedVoice(viVoice ? viVoice.name : availableVoices[0].name);
+      }
+    };
+
+    loadVoices();
+    // Chrome cần sự kiện này để load danh sách voice asynchronously
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+  }, [selectedVoice]);
+
+  const handlePlay = () => {
     if (!text.trim()) {
       showAlert('Vui lòng nhập văn bản cần đọc.', 'Thiếu thông tin');
       return;
     }
-    if (!referenceAudio) {
-      showAlert('Vui lòng tải lên 1 đoạn âm thanh mẫu (giọng cá nhân) để hệ thống Clone Voice.', 'Thiếu giọng mẫu');
-      return;
+
+    // Dừng âm thanh đang phát (nếu có)
+    window.speechSynthesis.cancel();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voiceToUse = voices.find(v => v.name === selectedVoice);
+    if (voiceToUse) {
+      utterance.voice = voiceToUse;
     }
+    
+    utterance.rate = rate;
+    utterance.pitch = pitch;
 
-    setIsProcessing(true);
-    setResultAudioUrl(null);
+    utterance.onstart = () => setIsPlaying(true);
+    utterance.onend = () => setIsPlaying(false);
+    utterance.onerror = () => setIsPlaying(false);
 
-    try {
-      // ---------------------------------------------------------------------------------
-      // MÔ PHỎNG GỌI API ĐẾN BACKEND OMNIVOICE (HOẶC API BẤT KỲ)
-      // Do Vercel không có GPU để chạy OmniVoice, code thực tế sẽ call sang 1 backend Python
-      // ---------------------------------------------------------------------------------
-      
-      const formData = new FormData();
-      formData.append('text', text);
-      formData.append('reference_audio', referenceAudio);
-
-      /* 
-      // CODE GỌI API THỰC TẾ (Đã bị comment lại để tránh lỗi khi bạn chưa có server)
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        throw new Error('API xử lý thất bại: ' + response.statusText);
-      }
-
-      const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      setResultAudioUrl(audioUrl);
-      */
-
-      // -- MÔ PHỎNG LOGIC --
-      // Giả lập thời gian server xử lý AI Voice Cloning
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // Thông báo cho người dùng biết cần kết nối Backend
-      showAlert('Hiện tại giao diện đã hoàn thiện, nhưng để chạy được mô hình OmniVoice (Voice Cloning), bạn cần có một Server Backend bằng Python/PyTorch hỗ trợ GPU. Hãy trỏ API URL trong mục Cài đặt tới server của bạn.', 'Yêu cầu Backend OmniVoice');
-      
-      // Tạo một âm thanh rỗng hoặc demo tạm để hiển thị player
-      // Ở đây ta không tạo âm thanh thật mà chỉ dừng lại
-      
-    } catch (error: any) {
-      console.error(error);
-      showAlert('Lỗi khi tạo giọng nói: ' + error.message, 'Lỗi Server');
-    } finally {
-      setIsProcessing(false);
-    }
+    window.speechSynthesis.speak(utterance);
   };
 
-  const downloadResult = () => {
-    if (!resultAudioUrl) return;
-    const a = document.createElement('a');
-    a.href = resultAudioUrl;
-    a.download = `omni_voice_cloned_${Date.now()}.wav`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  const handleStop = () => {
+    window.speechSynthesis.cancel();
+    setIsPlaying(false);
   };
+
+  // Hủy âm thanh khi rời khỏi trang
+  useEffect(() => {
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
   return (
     <div className="tts-container">
       <div className="tool-header text-center mb-8">
-        <h1 className="text-gradient text-3xl mb-2">Đọc Văn Bản (Voice Cloning)</h1>
-        <p className="text-secondary">Sử dụng công nghệ AI (OmniVoice) để nhân bản giọng nói cá nhân của bạn và đọc bất kỳ văn bản nào.</p>
+        <h1 className="text-gradient text-3xl mb-2">Đọc Văn Bản (Web Speech)</h1>
+        <p className="text-secondary">Chuyển đổi văn bản thành giọng nói trực tiếp bằng bộ máy của trình duyệt, không cần server.</p>
       </div>
 
       <div className="glass-card">
@@ -109,23 +92,53 @@ export default function TextToSpeech() {
             onClick={() => setShowSettings(!showSettings)}
             className="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-500 transition-colors"
           >
-            <Settings2 size={16} /> Cấu hình API Backend
+            <Settings2 size={16} /> Tùy chỉnh giọng đọc
           </button>
         </div>
 
         {showSettings && (
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">OmniVoice API Endpoint URL:</label>
-            <input 
-              type="text" 
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
-              placeholder="Ví dụ: http://127.0.0.1:8000/api/tts"
-            />
-            <p className="text-xs text-gray-500 mt-2">
-              (Mô hình OmniVoice yêu cầu GPU. Bạn cần tải source k2-fsa/OmniVoice về server riêng, bọc FastAPI và điền link API vào đây).
-            </p>
+          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-100 flex flex-col gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">Chọn giọng đọc (System Voices):</label>
+              <select 
+                value={selectedVoice} 
+                onChange={(e) => setSelectedVoice(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:border-blue-500"
+              >
+                {voices.map((v) => (
+                  <option key={v.name} value={v.name}>
+                    {v.name} ({v.lang}) {v.default ? ' - Mặc định' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Tốc độ đọc: {rate}x
+                </label>
+                <input 
+                  type="range" 
+                  min="0.5" max="2" step="0.1" 
+                  value={rate} 
+                  onChange={(e) => setRate(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Độ thanh/trầm (Pitch): {pitch}
+                </label>
+                <input 
+                  type="range" 
+                  min="0" max="2" step="0.1" 
+                  value={pitch} 
+                  onChange={(e) => setPitch(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </div>
+            </div>
           </div>
         )}
 
@@ -133,85 +146,68 @@ export default function TextToSpeech() {
           {/* CỘT TRÁI: NHẬP LIỆU */}
           <div className="tts-section">
             <div className="tts-input-group">
-              <label><FileAudio size={18} /> 1. Tải lên giọng mẫu (Reference Voice)</label>
-              {!referenceAudio ? (
-                <FileUploadZone 
-                  onFileSelect={handleFileUpload} 
-                  accept="audio/*" 
-                  hintText="Kéo thả 1 đoạn file âm thanh ngắn (3-10 giây) giọng của bạn vào đây."
-                />
-              ) : (
-                <div className="tts-reference-card">
-                  <div className="tts-reference-info">
-                    <Mic className="text-blue-500" />
-                    <div>
-                      <div className="font-semibold text-sm">{referenceAudio.name}</div>
-                      <div className="text-xs text-gray-500">Đã sẵn sàng để nhân bản (Clone)</div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => { setReferenceAudio(null); setResultAudioUrl(null); }}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-md transition-colors"
-                    title="Xóa giọng mẫu"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="tts-input-group">
-              <label><Wand2 size={18} /> 2. Nhập văn bản cần đọc</label>
+              <label><Mic size={18} /> Nhập văn bản cần đọc</label>
               <textarea 
                 className="tts-textarea"
-                placeholder="Ví dụ: Chào mọi người, tôi là phiên bản AI được nhân bản từ giọng gốc của bạn..."
+                placeholder="Ví dụ: Xin chào, đây là tính năng đọc văn bản tích hợp sẵn trên trình duyệt..."
                 value={text}
                 onChange={e => setText(e.target.value)}
               ></textarea>
             </div>
 
-            <button 
-              className="btn-primary flex items-center justify-center w-full py-3"
-              onClick={generateSpeech}
-              disabled={isProcessing}
-            >
-              {isProcessing ? (
-                <><Loader2 className="animate-spin mr-2" /> Đang tạo giọng nói AI...</>
-              ) : (
-                <><Play className="mr-2" /> Bắt Đầu Đọc (Tạo Giọng)</>
-              )}
-            </button>
+            <div className="flex gap-2">
+              <button 
+                className="btn-primary flex items-center justify-center flex-1 py-3"
+                onClick={handlePlay}
+                disabled={isPlaying}
+              >
+                <Play className="mr-2" size={20} /> Phát Âm Thanh
+              </button>
+              
+              <button 
+                className="btn flex items-center justify-center py-3 px-6 text-white"
+                style={{ background: '#ef4444', opacity: isPlaying ? 1 : 0.5, cursor: isPlaying ? 'pointer' : 'not-allowed' }}
+                onClick={handleStop}
+                disabled={!isPlaying}
+              >
+                <Square className="mr-2" size={20} /> Dừng
+              </button>
+            </div>
+            
+            <p className="text-xs text-gray-500 text-center mt-2">
+              * Tính năng sử dụng Web Speech API của trình duyệt. Không hỗ trợ tải file âm thanh (.wav) về máy.
+            </p>
           </div>
 
-          {/* CỘT PHẢI: KẾT QUẢ */}
+          {/* CỘT PHẢI: KẾT QUẢ / TRẠNG THÁI */}
           <div className="tts-section">
-            <div className={`tts-result ${resultAudioUrl ? 'has-audio' : ''}`}>
-              {!resultAudioUrl ? (
+            <div className={`tts-result ${isPlaying ? 'has-audio' : ''}`}>
+              {!isPlaying ? (
                 <div className="text-center text-gray-400 flex flex-col items-center gap-3">
-                  <FileAudio size={48} className="opacity-50" />
-                  <p>Bấm "Bắt Đầu Đọc" để hệ thống nhân bản giọng nói của bạn.</p>
+                  <Volume2 size={48} className="opacity-50" />
+                  <p>Sẵn sàng đọc văn bản.</p>
                 </div>
               ) : (
                 <div className="w-full flex flex-col items-center gap-6">
-                  <div className="text-green-500 font-bold text-lg flex items-center gap-2">
-                    <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                    Tạo giọng nói thành công!
+                  <div className="text-blue-500 font-bold text-lg flex items-center gap-2">
+                    <div className="w-4 h-4 bg-blue-500 rounded-full animate-pulse"></div>
+                    Đang phát âm thanh...
                   </div>
                   
-                  <audio 
-                    src={resultAudioUrl} 
-                    controls 
-                    autoPlay
-                    className="tts-audio-player"
-                  />
-
-                  <button 
-                    className="btn flex items-center justify-center w-full gap-2"
-                    style={{ background: '#10b981', color: 'white' }}
-                    onClick={downloadResult}
-                  >
-                    <Download size={20} /> Tải file âm thanh về máy (.wav)
-                  </button>
+                  {/* Visualizer giả lập cho đẹp */}
+                  <div className="flex gap-1 items-end h-16">
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(i => (
+                      <div 
+                        key={i} 
+                        className="w-2 bg-blue-500 rounded-t-sm"
+                        style={{
+                          height: `${Math.max(10, Math.random() * 100)}%`,
+                          animation: 'pulse 0.5s infinite alternate',
+                          animationDelay: `${i * 0.1}s`
+                        }}
+                      ></div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

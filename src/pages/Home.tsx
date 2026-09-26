@@ -168,8 +168,8 @@ const otherTools = [
   {
     path: '/doc-van-ban',
     icon: <Mic size={24} />,
-    title: 'Đọc Văn Bản (Voice Cloning)',
-    desc: 'Sử dụng công nghệ AI để nhân bản giọng nói cá nhân của bạn và đọc bất kỳ văn bản nào.'
+    title: 'Đọc Văn Bản (Trình Duyệt)',
+    desc: 'Chuyển đổi văn bản thành giọng nói bằng bộ máy của trình duyệt, không cần tải server.'
   }
 ];
 

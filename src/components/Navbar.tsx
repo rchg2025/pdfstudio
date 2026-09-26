@@ -110,7 +110,7 @@ const Navbar = () => {
             <NavLink to="/xoa-dau-tieng-viet" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Dấu File</NavLink>
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
             <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
-            <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Voice Cloning</NavLink>
+            <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
             
             <div className="nav-divider"></div>
