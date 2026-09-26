@@ -3,21 +3,15 @@ import { Play, Square, Settings2, Mic, Volume2, Cloud, Download, Loader2, FileAu
 import { useDialogs } from '../components/CustomDialogs';
 import './TextToSpeech.css';
 
-type Mode = 'browser' | 'cloud';
+type Mode = 'browser' | 'edge';
 
-const FPT_VOICES = [
-  { id: 'banmai', name: 'Ban Mai (Nữ - Miền Bắc)' },
-  { id: 'thuminh', name: 'Thu Minh (Nữ - Miền Bắc)' },
-  { id: 'leminh', name: 'Lê Minh (Nam - Miền Bắc)' },
-  { id: 'myan', name: 'Mỹ An (Nữ - Miền Trung)' },
-  { id: 'giahuy', name: 'Gia Huy (Nam - Miền Trung)' },
-  { id: 'ngoclam', name: 'Ngọc Lam (Nữ - Huế)' },
-  { id: 'lannhi', name: 'Lan Nhi (Nữ - Miền Nam)' },
-  { id: 'minhquang', name: 'Minh Quang (Nam - Miền Nam)' }
+const EDGE_VOICES = [
+  { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Microsoft AI)' },
+  { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Microsoft AI)' }
 ];
 
 export default function TextToSpeech() {
-  const [mode, setMode] = useState<Mode>('cloud');
+  const [mode, setMode] = useState<Mode>('edge');
   const [text, setText] = useState('');
   
   // Trạng thái Web Speech API
@@ -27,14 +21,14 @@ export default function TextToSpeech() {
   const [pitch, setPitch] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   
-  // Trạng thái FPT AI (Cloud)
-  const [fptApiKey, setFptApiKey] = useState(localStorage.getItem('fpt_api_key') || '');
-  const [selectedFptVoice, setSelectedFptVoice] = useState('banmai');
-  const [fptSpeed, setFptSpeed] = useState(0); // -3 đến 3
+  // Trạng thái Edge TTS (Microsoft AI)
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('vi-VN-HoaiMyNeural');
+  const [edgeSpeed, setEdgeSpeed] = useState(0); // -100% đến +100%
+  const [edgePitch, setEdgePitch] = useState(0); // -100Hz đến +100Hz
   const [isProcessingCloud, setIsProcessingCloud] = useState(false);
   const [cloudAudioUrl, setCloudAudioUrl] = useState<string | null>(null);
 
-  const [showSettings, setShowSettings] = useState(true); // Hiển thị sẵn cài đặt nếu chưa có key
+  const [showSettings, setShowSettings] = useState(false);
 
   const { showAlert } = useDialogs();
 
@@ -59,13 +53,6 @@ export default function TextToSpeech() {
       window.speechSynthesis.onvoiceschanged = loadVoices;
     }
   }, [selectedBrowserVoice]);
-
-  // Lưu FPT Key vào localStorage
-  useEffect(() => {
-    if (fptApiKey) {
-      localStorage.setItem('fpt_api_key', fptApiKey);
-    }
-  }, [fptApiKey]);
 
   // Hủy âm thanh khi rời khỏi trang
   useEffect(() => {
@@ -98,14 +85,9 @@ export default function TextToSpeech() {
     setIsPlaying(false);
   };
 
-  const handleGenerateCloud = async () => {
+  const handleGenerateEdge = async () => {
     if (!text.trim()) {
       showAlert('Vui lòng nhập văn bản cần đọc.', 'Thiếu thông tin');
-      return;
-    }
-    if (!fptApiKey.trim()) {
-      showAlert('Vui lòng nhập API Key của FPT AI trong phần Cài đặt để sử dụng tính năng này.', 'Thiếu API Key');
-      setShowSettings(true);
       return;
     }
 
@@ -113,32 +95,32 @@ export default function TextToSpeech() {
     setCloudAudioUrl(null);
 
     try {
-      const response = await fetch('https://api.fpt.ai/hmi/tts/v5', {
+      const rateStr = edgeSpeed >= 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`;
+      const pitchStr = edgePitch >= 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`;
+
+      const response = await fetch('/api/edge-tts', {
         method: 'POST',
         headers: {
-          'api-key': fptApiKey,
-          'voice': selectedFptVoice,
-          'speed': fptSpeed.toString(),
-          'format': 'mp3'
+          'Content-Type': 'application/json'
         },
-        body: text
+        body: JSON.stringify({
+          text,
+          voice: selectedEdgeVoice,
+          rate: rateStr,
+          pitch: pitchStr
+        })
       });
 
-      const data = await response.json();
-      
-      if (data.error) {
-        throw new Error(data.message || 'Lỗi từ máy chủ FPT AI');
+      if (!response.ok) {
+        throw new Error('Lỗi kết nối tới Microsoft AI');
       }
 
-      if (data.async) {
-         showAlert('Đoạn văn quá dài đang được xử lý ngầm (Async). Hãy dùng văn bản ngắn hơn để nhận file ngay.', 'Thông báo');
-      } else {
-         // FPT AI trả về link trong async = false
-         setCloudAudioUrl(data.audiourl);
-      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      setCloudAudioUrl(url);
     } catch (err: any) {
       console.error(err);
-      showAlert(`Lỗi khi tạo giọng đọc: ${err.message}. Kiểm tra lại API Key hoặc kết nối mạng.`, 'Lỗi API');
+      showAlert(`Lỗi khi tạo giọng đọc: ${err.message}.`, 'Lỗi API');
     } finally {
       setIsProcessingCloud(false);
     }
@@ -146,44 +128,35 @@ export default function TextToSpeech() {
 
   const downloadCloudAudio = async () => {
     if (!cloudAudioUrl) return;
-    try {
-      const res = await fetch(cloudAudioUrl);
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `voice_${selectedFptVoice}_${Date.now()}.mp3`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      // Fallback open in new tab if CORS prevents blob download
-      window.open(cloudAudioUrl, '_blank');
-    }
+    const a = document.createElement('a');
+    a.href = cloudAudioUrl;
+    a.download = `voice_microsoft_${Date.now()}.mp3`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (
     <div className="tts-container">
       <div className="tool-header text-center mb-8">
         <h1 className="text-gradient text-3xl mb-2">Đọc Văn Bản (Text To Speech)</h1>
-        <p className="text-secondary">Hỗ trợ đọc văn bản bằng trình duyệt (Offline) hoặc tạo file MP3 giọng Nam/Nữ cực chuẩn bằng Cloud API.</p>
+        <p className="text-secondary">Sử dụng Microsoft Edge AI để tạo file MP3 giọng Nam/Nữ chuẩn xác nhất, hoàn toàn miễn phí.</p>
       </div>
 
       <div className="glass-card">
         {/* TAB NAVIGATION */}
         <div className="flex gap-4 mb-6 border-b border-gray-200 pb-2">
           <button 
-            className={`flex items-center gap-2 pb-2 px-4 border-b-2 font-semibold transition-colors ${mode === 'cloud' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setMode('cloud')}
+            className={`flex items-center gap-2 pb-2 px-4 border-b-2 font-semibold transition-colors ${mode === 'edge' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+            onClick={() => setMode('edge')}
           >
-            <Cloud size={18} /> Chế Độ Cloud API (Tải MP3)
+            <Cloud size={18} /> Microsoft Edge AI (Tải MP3)
           </button>
           <button 
             className={`flex items-center gap-2 pb-2 px-4 border-b-2 font-semibold transition-colors ${mode === 'browser' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
             onClick={() => setMode('browser')}
           >
-            <Mic size={18} /> Chế Độ Trình Duyệt (Offline)
+            <Mic size={18} /> Trình Duyệt Offline
           </button>
         </div>
 
@@ -200,44 +173,42 @@ export default function TextToSpeech() {
         {showSettings && (
           <div className="mb-6 p-5 bg-blue-50/50 rounded-xl border border-blue-100 flex flex-col gap-4">
             
-            {mode === 'cloud' && (
+            {mode === 'edge' && (
               <>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">FPT.AI API Key (Bắt buộc):</label>
-                  <input 
-                    type="text" 
-                    value={fptApiKey} 
-                    onChange={(e) => setFptApiKey(e.target.value)}
-                    placeholder="Nhập API Key lấy từ console.fpt.ai..."
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Lấy key miễn phí (100.000 ký tự/tháng) tại <a href="https://console.fpt.ai" target="_blank" className="text-blue-500 hover:underline">console.fpt.ai</a>
-                  </p>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">Chọn Giọng Tiếng Việt:</label>
                     <select 
-                      value={selectedFptVoice} 
-                      onChange={(e) => setSelectedFptVoice(e.target.value)}
+                      value={selectedEdgeVoice} 
+                      onChange={(e) => setSelectedEdgeVoice(e.target.value)}
                       className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
                     >
-                      {FPT_VOICES.map((v) => (
+                      {EDGE_VOICES.map((v) => (
                         <option key={v.id} value={v.id}>{v.name}</option>
                       ))}
                     </select>
                   </div>
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Tốc độ đọc: {fptSpeed > 0 ? `+${fptSpeed}` : fptSpeed} (Mặc định 0)
+                      Tốc độ đọc: {edgeSpeed > 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`}
                     </label>
                     <input 
                       type="range" 
-                      min="-3" max="3" step="0.5" 
-                      value={fptSpeed} 
-                      onChange={(e) => setFptSpeed(parseFloat(e.target.value))}
+                      min="-50" max="50" step="5" 
+                      value={edgeSpeed} 
+                      onChange={(e) => setEdgeSpeed(parseInt(e.target.value))}
+                      className="w-full mt-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Độ thanh trầm: {edgePitch > 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`}
+                    </label>
+                    <input 
+                      type="range" 
+                      min="-50" max="50" step="5" 
+                      value={edgePitch} 
+                      onChange={(e) => setEdgePitch(parseInt(e.target.value))}
                       className="w-full mt-2"
                     />
                   </div>
@@ -312,7 +283,7 @@ export default function TextToSpeech() {
             ) : (
               <button 
                 className="btn-primary flex items-center justify-center w-full py-3"
-                onClick={handleGenerateCloud}
+                onClick={handleGenerateEdge}
                 disabled={isProcessingCloud}
               >
                 {isProcessingCloud ? (
@@ -332,7 +303,7 @@ export default function TextToSpeech() {
 
           {/* CỘT PHẢI: KẾT QUẢ / TRẠNG THÁI */}
           <div className="tts-section">
-            <div className={`tts-result ${(mode === 'browser' && isPlaying) || (mode === 'cloud' && cloudAudioUrl) ? 'has-audio' : ''}`}>
+            <div className={`tts-result ${(mode === 'browser' && isPlaying) || (mode === 'edge' && cloudAudioUrl) ? 'has-audio' : ''}`}>
               
               {mode === 'browser' && !isPlaying && (
                 <div className="text-center text-gray-400 flex flex-col items-center gap-3">
@@ -355,14 +326,14 @@ export default function TextToSpeech() {
                 </div>
               )}
 
-              {mode === 'cloud' && !cloudAudioUrl && (
+              {mode === 'edge' && !cloudAudioUrl && (
                 <div className="text-center text-gray-400 flex flex-col items-center gap-3">
                   <Cloud size={48} className="opacity-50" />
-                  <p>Điền API Key FPT và nhấn "Tạo file Âm Thanh MP3".</p>
+                  <p>Chọn giọng Nam/Nữ và nhấn "Tạo file Âm Thanh MP3".</p>
                 </div>
               )}
 
-              {mode === 'cloud' && cloudAudioUrl && (
+              {mode === 'edge' && cloudAudioUrl && (
                 <div className="w-full flex flex-col items-center gap-6">
                   <div className="text-green-500 font-bold text-lg flex items-center gap-2">
                     <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
