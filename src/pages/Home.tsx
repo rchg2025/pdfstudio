@@ -20,7 +20,8 @@ import {
   Wand2,
   Type,
   FileText,
-  HardDrive
+  HardDrive,
+  Music
 } from 'lucide-react';
 import './Home.css';
 
@@ -156,6 +157,12 @@ const otherTools = [
     icon: <HardDrive size={24} />,
     title: 'Sao Chép Google Drive',
     desc: 'Chuyển toàn bộ dữ liệu từ Drive A sang Drive B siêu tốc mà không tốn mạng.'
+  },
+  {
+    path: '/cat-ghep-am-thanh',
+    icon: <Music size={24} />,
+    title: 'Cắt Ghép Âm Thanh',
+    desc: 'Cắt, chia nhỏ hoặc ghép nối nhiều file âm thanh lại với nhau trực tiếp trên trình duyệt.'
   }
 ];
 
