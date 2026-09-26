@@ -19,7 +19,8 @@ import {
   Crop,
   Wand2,
   Type,
-  FileText
+  FileText,
+  HardDrive
 } from 'lucide-react';
 import './Home.css';
 
@@ -149,6 +150,12 @@ const otherTools = [
     icon: <Type size={24} />,
     title: 'Xóa Dấu Tên File',
     desc: 'Chuyển đổi tên file có dấu thành không dấu chuẩn định dạng khoa học để tránh lỗi hiển thị khi upload.'
+  },
+  {
+    path: '/sao-chep-drive',
+    icon: <HardDrive size={24} />,
+    title: 'Sao Chép Google Drive',
+    desc: 'Chuyển toàn bộ dữ liệu từ Drive A sang Drive B siêu tốc mà không tốn mạng.'
   }
 ];
 

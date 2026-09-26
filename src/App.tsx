@@ -33,6 +33,7 @@ const FrameCreator = React.lazy(() => import('./pages/FrameCreator'));
 const FrameViewer = React.lazy(() => import('./pages/FrameViewer'));
 const RemoveAccents = React.lazy(() => import('./pages/RemoveAccents'));
 const WordToPdf = React.lazy(() => import('./pages/WordToPdf'));
+const DriveCopy = React.lazy(() => import('./pages/DriveCopy'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -129,6 +130,9 @@ function App() {
             } />
             <Route path="f/:slug" element={
               <Suspense fallback={<FallbackLoader />}><FrameViewer /></Suspense>
+            } />
+            <Route path="sao-chep-drive" element={
+              <Suspense fallback={<FallbackLoader />}><DriveCopy /></Suspense>
             } />
           </Route>
           </Routes>
