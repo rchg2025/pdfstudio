@@ -43,6 +43,7 @@
     { "source": "/register", "destination": "/index.html" },
     { "source": "/sao-chep-drive", "destination": "/index.html" },
     { "source": "/cat-ghep-am-thanh", "destination": "/index.html" },
+    { "source": "/doc-van-ban", "destination": "/index.html" },
     { "source": "/f/(.*)", "destination": "/api/frame-og?slug=$1" },
     { "source": "/", "destination": "/index.html" },
     { "source": "/:alias", "destination": "/api/redirect?alias=:alias" }

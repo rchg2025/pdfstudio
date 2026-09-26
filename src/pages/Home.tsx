@@ -21,7 +21,8 @@ import {
   Type,
   FileText,
   HardDrive,
-  Music
+  Music,
+  Mic
 } from 'lucide-react';
 import './Home.css';
 
@@ -163,6 +164,12 @@ const otherTools = [
     icon: <Music size={24} />,
     title: 'Cắt Ghép Âm Thanh',
     desc: 'Cắt, chia nhỏ hoặc ghép nối nhiều file âm thanh lại với nhau trực tiếp trên trình duyệt.'
+  },
+  {
+    path: '/doc-van-ban',
+    icon: <Mic size={24} />,
+    title: 'Đọc Văn Bản (Voice Cloning)',
+    desc: 'Sử dụng công nghệ AI để nhân bản giọng nói cá nhân của bạn và đọc bất kỳ văn bản nào.'
   }
 ];
 

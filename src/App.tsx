@@ -35,6 +35,7 @@ const RemoveAccents = React.lazy(() => import('./pages/RemoveAccents'));
 const WordToPdf = React.lazy(() => import('./pages/WordToPdf'));
 const DriveCopy = React.lazy(() => import('./pages/DriveCopy'));
 const AudioEditor = React.lazy(() => import('./pages/AudioEditor'));
+const TextToSpeech = React.lazy(() => import('./pages/TextToSpeech'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -137,6 +138,9 @@ function App() {
             } />
             <Route path="cat-ghep-am-thanh" element={
               <Suspense fallback={<FallbackLoader />}><AudioEditor /></Suspense>
+            } />
+            <Route path="doc-van-ban" element={
+              <Suspense fallback={<FallbackLoader />}><TextToSpeech /></Suspense>
             } />
           </Route>
           </Routes>
