@@ -12,25 +12,36 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    const communicate = new Communicate(text, { voice, rate, pitch });
-    let chunks = [];
-    
-    for await (const chunk of communicate.stream()) {
-      if (chunk.type === 'audio') {
-        chunks.push(chunk.data);
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Transfer-Encoding', 'chunked');
+    res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
+    res.flushHeaders();
+
+    // Split text by newlines or periods to prevent MS TTS Payload Too Large errors
+    const segments = text.split(/(?<=[.\n!?;])\s+/).filter(s => s.trim().length > 0);
+
+    for (const segment of segments) {
+      try {
+        const communicate = new Communicate(segment, { voice, rate, pitch });
+        for await (const chunk of communicate.stream()) {
+          if (chunk.type === 'audio') {
+            res.write(chunk.data);
+          }
+        }
+      } catch (segmentError) {
+        console.error('Segment TTS Error:', segmentError);
+        // Continue with the next segment even if one fails
       }
     }
-
-    const audioBuffer = Buffer.concat(chunks);
-
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Content-Length', audioBuffer.length);
-    res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
     
-    return res.status(200).send(audioBuffer);
+    res.end();
+    return;
 
   } catch (error) {
     console.error('Edge TTS Error:', error);
-    return res.status(500).json({ error: error.message });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: error.message });
+    }
+    res.end();
   }
 }
