@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Scissors, Merge, Music, Trash2, GripVertical, Play, Download, Loader2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Scissors, Merge, Music, Trash2, GripVertical, Download, Loader2 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import FileUploadZone from '../components/FileUploadZone';
 import './AudioEditor.css';
@@ -76,8 +76,10 @@ export default function AudioEditor() {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
-  const handleFileUpload = (uploadedFiles: File[]) => {
-    const audioFiles = uploadedFiles.filter(f => f.type.startsWith('audio/') || f.name.match(/\.(mp3|wav|m4a|ogg|aac)$/i));
+  const handleFileUpload = (uploadedFiles: FileList | null) => {
+    if (!uploadedFiles) return;
+    const fileArray = Array.from(uploadedFiles);
+    const audioFiles = fileArray.filter(f => f.type.startsWith('audio/') || f.name.match(/\.(mp3|wav|m4a|ogg|aac)$/i));
     if (audioFiles.length === 0) {
       showAlert('Vui lòng chọn file âm thanh (MP3, WAV, ...)', 'Lỗi định dạng');
       return;
@@ -103,7 +105,7 @@ export default function AudioEditor() {
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
@@ -258,10 +260,10 @@ export default function AudioEditor() {
         </div>
 
         <FileUploadZone 
-          onFilesSelected={handleFileUpload} 
+          onFileSelect={handleFileUpload} 
           accept="audio/*"
           multiple={activeTab === 'merge'}
-          title={activeTab === 'merge' ? "Kéo thả các file âm thanh vào đây" : "Kéo thả 1 file âm thanh vào đây"}
+          hintText={activeTab === 'merge' ? "Kéo thả các file âm thanh vào đây" : "Kéo thả 1 file âm thanh vào đây"}
         />
 
         {files.length > 0 && (
@@ -275,7 +277,7 @@ export default function AudioEditor() {
                     className={`audio-item ${draggedIdx === idx ? 'dragging' : ''}`}
                     draggable
                     onDragStart={(e) => handleDragStart(e, idx)}
-                    onDragOver={(e) => handleDragOver(e, idx)}
+                    onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, idx)}
                   >
                     <GripVertical className="audio-item-icon" />
