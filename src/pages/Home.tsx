@@ -81,12 +81,7 @@ const pdfTools = [
     title: 'Xóa trang PDF',
     desc: 'Loại bỏ các trang không cần thiết khỏi file PDF dễ dàng qua giao diện trực quan.'
   },
-  {
-    path: '/word-sang-pdf',
-    icon: <FileText size={24} />,
-    title: 'Word sang PDF',
-    desc: 'Chuyển đổi file văn bản (Word) sang PDF hoàn toàn trên trình duyệt.'
-  }
+
 ];
 
 const imageTools = [
