@@ -14,6 +14,7 @@ export default function TextToSpeech() {
   const [mode, setMode] = useState<Mode>('edge');
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [interimText, setInterimText] = useState('');
   const recognitionRef = useRef<any>(null);
   const textRef = useRef(text);
   
@@ -43,23 +44,28 @@ export default function TextToSpeech() {
     recognitionRef.current = recognition;
 
     recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
+    recognition.onend = () => { setIsListening(false); setInterimText(''); };
     recognition.onerror = (event: any) => {
       console.error(event.error);
       setIsListening(false);
+      setInterimText('');
     };
 
     recognition.onresult = (event: any) => {
       let finalTranscript = '';
+      let interim = '';
       for (let i = event.resultIndex; i < event.results.length; ++i) {
         if (event.results[i].isFinal) {
           finalTranscript += event.results[i][0].transcript;
+        } else {
+          interim += event.results[i][0].transcript;
         }
       }
       if (finalTranscript) {
         const currentText = textRef.current;
         setText(currentText + (currentText && !currentText.endsWith(' ') ? ' ' : '') + finalTranscript);
       }
+      setInterimText(interim);
     };
     recognition.start();
   };
@@ -339,18 +345,24 @@ export default function TextToSpeech() {
                   onChange={e => setText(e.target.value)}
                   style={{ width: '100%', minHeight: '150px', paddingBottom: '3rem' }}
                 ></textarea>
+                {isListening && (
+                  <div className="absolute bottom-16 left-4 right-4 bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-lg text-sm italic shadow-sm flex items-center gap-2">
+                    <span className="w-2 h-2 bg-blue-600 rounded-full animate-ping"></span>
+                    {interimText || 'Đang nghe... Hãy nói gì đó (Tự động ngắt khi bạn dừng)'}
+                  </div>
+                )}
                 <button
                   type="button"
                   onClick={toggleListening}
-                  className={`absolute bottom-4 right-4 flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                  className={`absolute bottom-4 right-4 flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all ${
                     isListening 
-                      ? 'bg-red-500 text-white animate-pulse shadow-md hover:bg-red-600' 
-                      : 'bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 border border-gray-200'
+                      ? 'bg-red-500 text-white shadow-md hover:bg-red-600' 
+                      : 'bg-white text-gray-600 hover:bg-blue-50 hover:text-blue-600 border border-gray-300 shadow-sm'
                   }`}
                   title="Nhập bằng giọng nói"
                 >
-                  <Mic size={16} />
-                  {isListening ? 'Đang nghe...' : 'Nói'}
+                  <Mic size={16} className={isListening ? 'animate-pulse' : ''} />
+                  {isListening ? 'Dừng ghi âm' : 'Nhập bằng giọng nói'}
                 </button>
               </div>
             </div>
