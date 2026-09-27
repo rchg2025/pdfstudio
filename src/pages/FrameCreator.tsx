@@ -180,7 +180,7 @@ export default function FrameCreator() {
   };
 
   return (
-    <div className="animate-fade-in mx-auto px-4" style={{ maxWidth: '1200px' }}>
+    <div className="animate-fade-in mx-auto px-4" style={{ width: '100%' }}>
       {/* BANNER CHO NGƯỜI CHƯA ĐĂNG NHẬP */}
       {!user && (
         <div className="glass-card mt-8 text-center" style={{ padding: '3rem 2rem', background: 'linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(147,51,234,0.05) 100%)', border: '1px solid rgba(37,99,235,0.2)' }}>

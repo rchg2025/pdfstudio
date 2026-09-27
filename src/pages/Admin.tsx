@@ -398,7 +398,7 @@ export default function Admin() {
   };
 
   return (
-    <div className="animate-fade-in mx-auto relative px-4 py-6 md:p-8" style={{ maxWidth: '1200px' }}>
+    <div className="animate-fade-in mx-auto relative px-4 py-6 md:p-8" style={{ width: '100%' }}>
       
       {/* MODALS */}
       {editingFrame && (

@@ -248,7 +248,7 @@ export default function PdfEditor() {
         {/* PDF VIEWER/EDITOR */}
         <div style={{ flex: '1 1 100%', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {!file && (
-            <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', maxWidth: '800px', margin: '0 auto', width: '100%', flex: 'none' }}>
+            <div className="glass-card" style={{ padding: '3rem 2rem', textAlign: 'center', margin: '0 auto', width: '100%', flex: 'none' }}>
               <FileUploadZone onFileSelect={handleFileSelect} accept="application/pdf" hintText="Chỉ hỗ trợ file .pdf" />
             </div>
           )}
