@@ -279,7 +279,12 @@ export default function TextToSpeech() {
           {/* CỘT TRÁI: NHẬP LIỆU */}
           <div className="tts-section">
             <div className="tts-input-group">
-              <label><FileAudio size={18} /> Nhập văn bản cần đọc</label>
+              <label style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+                <span><FileAudio size={18} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'text-bottom' }} /> Nhập văn bản cần đọc</span>
+                <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>
+                  {text.trim() ? text.trim().split(/\s+/).length : 0} từ
+                </span>
+              </label>
               <textarea 
                 className="tts-textarea p-4"
                 placeholder="Ví dụ: Xin chào, tôi đang sử dụng phần mềm đọc văn bản tự động..."
