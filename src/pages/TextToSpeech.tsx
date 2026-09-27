@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Play, Square, Settings2, Mic, Volume2, Cloud, Download, Loader2, FileAudio } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import './TextToSpeech.css';
@@ -13,6 +13,57 @@ const EDGE_VOICES = [
 export default function TextToSpeech() {
   const [mode, setMode] = useState<Mode>('edge');
   const [text, setText] = useState('');
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const textRef = useRef(text);
+  
+  useEffect(() => {
+    textRef.current = text;
+  }, [text]);
+
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Trình duyệt của bạn không hỗ trợ nhận diện giọng nói (Vui lòng dùng Chrome/Edge).");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'vi-VN';
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognitionRef.current = recognition;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = (event: any) => {
+      console.error(event.error);
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript;
+        }
+      }
+      if (finalTranscript) {
+        const currentText = textRef.current;
+        setText(currentText + (currentText && !currentText.endsWith(' ') ? ' ' : '') + finalTranscript);
+      }
+    };
+    recognition.start();
+  };
+
   
   // Trạng thái Web Speech API
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
@@ -179,12 +230,7 @@ export default function TextToSpeech() {
           >
             <Cloud size={18} /> Microsoft Edge AI (Tải MP3)
           </button>
-          <button 
-            className={`flex items-center gap-2 pb-2 px-4 border-b-2 font-semibold transition-colors ${mode === 'browser' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            onClick={() => setMode('browser')}
-          >
-            <Mic size={18} /> Trình Duyệt Offline
-          </button>
+
         </div>
 
         <div className="flex justify-end mb-4">
@@ -285,12 +331,28 @@ export default function TextToSpeech() {
                   {text.trim() ? text.trim().split(/\s+/).length : 0} từ
                 </span>
               </label>
-              <textarea 
-                className="tts-textarea p-4"
-                placeholder="Ví dụ: Xin chào, tôi đang sử dụng phần mềm đọc văn bản tự động..."
-                value={text}
-                onChange={e => setText(e.target.value)}
-              ></textarea>
+              <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                <textarea 
+                  className="tts-textarea p-4"
+                  placeholder="Ví dụ: Xin chào, tôi đang sử dụng phần mềm đọc văn bản tự động..."
+                  value={text}
+                  onChange={e => setText(e.target.value)}
+                  style={{ width: '100%', minHeight: '150px', paddingBottom: '3rem' }}
+                ></textarea>
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  className={`absolute bottom-4 right-4 flex items-center justify-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                    isListening 
+                      ? 'bg-red-500 text-white animate-pulse shadow-md hover:bg-red-600' 
+                      : 'bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-600 border border-gray-200'
+                  }`}
+                  title="Nhập bằng giọng nói"
+                >
+                  <Mic size={16} />
+                  {isListening ? 'Đang nghe...' : 'Nói'}
+                </button>
+              </div>
             </div>
 
             {mode === 'browser' ? (
