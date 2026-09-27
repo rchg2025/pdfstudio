@@ -151,13 +151,13 @@ export default function TextToSpeech() {
       const pitchStr = edgePitch >= 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`;
 
       // Split text on the client to avoid 60s Vercel limits and 504 Timeouts
-      // Limit each chunk to ~3000 characters to minimize Vercel Edge requests
+      // Limit each chunk to ~400 characters to prevent Vercel 10s timeout on hobby tier
       const sentences = text.split(/(?<=[.\n!?;])\s+/).filter(s => s.trim().length > 0);
       const chunks = [];
       let currentChunk = '';
 
       for (const sentence of sentences) {
-        if (currentChunk.length + sentence.length > 3000) {
+        if (currentChunk.length + sentence.length > 400) {
           if (currentChunk) chunks.push(currentChunk);
           currentChunk = sentence;
         } else {
