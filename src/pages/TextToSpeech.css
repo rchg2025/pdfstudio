@@ -1,8 +1,14 @@
 .tts-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 1rem 0.5rem;
   animation: fadeIn 0.4s ease-out;
+}
+
+@media (min-width: 768px) {
+  .tts-container {
+    padding: 2rem 1rem;
+  }
 }
 
 .tts-layout {
@@ -78,11 +84,18 @@
   gap: 1.5rem;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 1.5rem 1rem;
   background: var(--bg-secondary);
   border-radius: 1rem;
   border: 1px dashed var(--border);
-  min-height: 300px;
+  min-height: 250px;
+}
+
+@media (min-width: 768px) {
+  .tts-result {
+    padding: 2rem;
+    min-height: 300px;
+  }
 }
 
 .tts-result.has-audio {

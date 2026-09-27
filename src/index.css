@@ -113,7 +113,7 @@ button {
 
 @media (max-width: 768px) {
   .container {
-    padding: 0 1rem;
+    padding: 0 0.5rem;
   }
   .footer-layout {
     flex-direction: column;
@@ -147,11 +147,17 @@ button {
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: var(--radius-xl);
-  padding: 2rem;
+  padding: 1.25rem;
   transition: all var(--transition-normal);
   box-shadow: var(--shadow-md);
   position: relative;
   overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .glass-card {
+    padding: 2rem;
+  }
 }
 
 .glass-card::before {
