@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
+import { Eye, Edit, Trash2, ExternalLink } from "lucide-react";
+
 
 export default function Admin() {
   const { user, token } = useAuth();
@@ -577,9 +579,9 @@ export default function Admin() {
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.downloads || 0}</td>
                           <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{frame.user?.name || frame.user?.email || 'N/A'}</td>
                           <td style={{ padding: '0.75rem 1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
-                            <a href={`/f/${frame.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', textDecoration: 'none' }}>Xem</a>
-                            <button onClick={() => navigate('/tao-khung', { state: { frame, isAdminEdit: true } })} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem' }}>Sửa</button>
-                            <button onClick={() => deleteFrame(frame.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Xóa</button>
+                            <a href={`/f/${frame.slug}`} target="_blank" rel="noopener noreferrer" style={{ color: '#10b981', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Eye size={16} /><span className="action-text">Xem</span></a>
+                            <button onClick={() => navigate('/tao-khung', { state: { frame, isAdminEdit: true } })} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Edit size={16} /><span className="action-text">Sửa</span></button>
+                            <button onClick={() => deleteFrame(frame.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Trash2 size={16} /><span className="action-text">Xóa</span></button>
                           </td>
                         </tr>
                       ))}
@@ -677,9 +679,9 @@ export default function Admin() {
                             </span>
                           </td>
                           <td style={{ padding: '1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
-                            <button onClick={() => setEditingUser(u)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem' }}>Sửa</button>
+                            <button onClick={() => setEditingUser(u)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Edit size={16} /><span className="action-text">Sửa</span></button>
                             {u.id !== user?.id && (
-                              <button onClick={() => deleteUser(u.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem' }}>Xóa</button>
+                              <button onClick={() => deleteUser(u.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Trash2 size={16} /><span className="action-text">Xóa</span></button>
                             )}
                           </td>
                         </tr>
@@ -742,7 +744,8 @@ export default function Admin() {
                         <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Link nguồn</th>
                         <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Rút gọn (Alias)</th>
                         <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Ngày tạo</th>
-                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Hành động</th>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)' }}>Lượt click</th>
+                        <th style={{ padding: '1rem', borderBottom: '1px solid var(--border)', fontWeight: 600, color: 'var(--text-secondary)', position: 'sticky', right: 0, background: 'var(--bg-secondary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -752,11 +755,12 @@ export default function Admin() {
                           <td style={{ padding: '1rem', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={u.original_url}>{u.original_url}</td>
                           <td style={{ padding: '1rem', fontWeight: 'bold' }}>{u.alias}</td>
                           <td style={{ padding: '1rem' }}>{u.created_at ? new Date(u.created_at).toLocaleString('vi-VN') : '-'}</td>
-                          <td style={{ padding: '1rem' }}>
+                          <td style={{ padding: '1rem', fontWeight: 600, color: 'var(--primary)' }}>{u.clicks || 0}</td>
+                          <td style={{ padding: '1rem', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
                             <div style={{ display: 'flex', gap: '0.5rem' }}>
-                              <a href={`/${u.alias}`} target="_blank" rel="noopener noreferrer" className="btn" style={{ padding: '0.5rem', background: '#10b981', color: 'white', borderRadius: '0.375rem', textDecoration: 'none' }}>Truy cập</a>
-                              <button onClick={() => setEditingUrl(u)} className="btn" style={{ padding: '0.5rem', background: '#3b82f6', color: 'white', borderRadius: '0.375rem' }}>Sửa</button>
-                              <button onClick={() => deleteUrl(u.id)} className="btn" style={{ padding: '0.5rem', background: '#ef4444', color: 'white', borderRadius: '0.375rem' }}>Xóa</button>
+                              <a href={`/${u.alias}`} target="_blank" rel="noopener noreferrer" className="btn" style={{ padding: '0.5rem', background: '#10b981', color: 'white', borderRadius: '0.375rem', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><ExternalLink size={16} /><span className="action-text">Truy cập</span></a>
+                              <button onClick={() => setEditingUrl(u)} className="btn" style={{ padding: '0.5rem', background: '#3b82f6', color: 'white', borderRadius: '0.375rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Edit size={16} /><span className="action-text">Sửa</span></button>
+                              <button onClick={() => deleteUrl(u.id)} className="btn" style={{ padding: '0.5rem', background: '#ef4444', color: 'white', borderRadius: '0.375rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Trash2 size={16} /><span className="action-text">Xóa</span></button>
                             </div>
                           </td>
                         </tr>

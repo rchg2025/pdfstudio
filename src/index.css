@@ -112,6 +112,9 @@ button {
 }
 
 @media (max-width: 768px) {
+  .action-text {
+    display: none;
+  }
   .container {
     padding: 0;
   }

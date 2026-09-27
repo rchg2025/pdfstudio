@@ -21,11 +21,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   try {
-    // Sử dụng ILIKE để không phân biệt chữ hoa chữ thường
-    const queryResult = await pool.query('SELECT original_url FROM urls WHERE alias ILIKE $1', [alias]);
+    const queryResult = await pool.query('SELECT id, original_url FROM urls WHERE alias ILIKE $1', [alias]);
 
     if (queryResult.rows.length > 0) {
-      const { original_url } = queryResult.rows[0];
+      const { id, original_url } = queryResult.rows[0];
+      
+      try {
+        await pool.query('UPDATE urls SET clicks = clicks + 1 WHERE id = $1', [id]);
+      } catch (err) {
+        console.error('Error updating clicks:', err);
+      }
+
       // Perform a 301 Permanent Redirect to the original URL
       return res.redirect(301, original_url);
     } else {
