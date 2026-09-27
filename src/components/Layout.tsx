@@ -1,15 +1,12 @@
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
 import Navbar from './Navbar';
 import VisitorTracker from './VisitorTracker';
 
 const Layout = () => {
-  const location = useLocation();
-  const isHomePage = location.pathname === '/';
-
   return (
     <>
       <Navbar />
-      <main className={isHomePage ? "" : "container"} style={{ padding: isHomePage ? '0' : '2.5rem 1.5rem', flex: 1, position: 'relative', zIndex: 1, width: '100%' }}>
+      <main style={{ flex: 1, position: 'relative', zIndex: 1, width: '100%' }}>
         <Outlet />
       </main>
       <footer className="container footer-layout" style={{ borderTop: '1px solid var(--border)' }}>
