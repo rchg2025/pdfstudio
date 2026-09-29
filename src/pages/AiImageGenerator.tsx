@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2, KeyRound, Settings2, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2, Info } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import './AiImageGenerator.css';
 
 const RATIOS = [
-  { id: '1:1', name: 'Vuông (1:1)', width: 1024, height: 1024, icon: Square, aspect: '1:1' },
-  { id: '16:9', name: 'Ngang (16:9)', width: 1024, height: 576, icon: RectangleHorizontal, aspect: '16:9' },
-  { id: '9:16', name: 'Dọc (9:16)', width: 576, height: 1024, icon: RectangleVertical, aspect: '9:16' },
+  { id: '1:1', name: 'Vuông (1:1)', width: 1024, height: 1024, icon: Square },
+  { id: '16:9', name: 'Ngang (16:9)', width: 1024, height: 576, icon: RectangleHorizontal },
+  { id: '9:16', name: 'Dọc (9:16)', width: 576, height: 1024, icon: RectangleVertical },
 ];
 
 export default function AiImageGenerator() {
@@ -15,78 +15,21 @@ export default function AiImageGenerator() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   
-  // API Key State
-  const [geminiKey, setGeminiKey] = useState('');
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [isKeySaved, setIsKeySaved] = useState(false);
-  
   const { showAlert } = useDialogs();
 
-  useEffect(() => {
-    const savedGemini = localStorage.getItem('gemini_api_key');
-    if (savedGemini) {
-      setGeminiKey(savedGemini);
-      setIsKeySaved(true);
-    } else {
-      setShowKeyInput(true);
-    }
-  }, []);
-
-  const saveGeminiKey = () => {
-    if (!geminiKey.trim()) {
-      showAlert('Vui lòng nhập API Key trước khi lưu.', 'Lỗi');
-      return;
-    }
-    localStorage.setItem('gemini_api_key', geminiKey.trim());
-    setIsKeySaved(true);
-    setShowKeyInput(false);
-    showAlert('Đã lưu Google Gemini API Key thành công vào trình duyệt!', 'Thành công');
-  };
-
-  const generateWithGemini = async (finalPrompt: string) => {
-    if (!geminiKey.trim()) {
-      setShowKeyInput(true);
-      throw new Error('Bạn chưa nhập API Key của Google Gemini!');
-    }
-    
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'x-goog-api-key': geminiKey.trim(),
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        instances: [
-          { prompt: finalPrompt }
-        ],
-        parameters: {
-          sampleCount: 1,
-          aspectRatio: ratio.aspect
-        }
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      if (response.status === 403) {
-        throw new Error('Google từ chối quyền truy cập (Lỗi 403). Tài khoản Google AI Studio của bạn chưa được cấp quyền dùng Imagen 3, hoặc Google yêu cầu tài khoản phải bật Thanh toán (Billing) cho dự án này.');
+  // Dịch câu lệnh Tiếng Việt sang Tiếng Anh để AI hiểu tốt nhất
+  const translateToEnglish = async (text: string): Promise<string> => {
+    try {
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data[0]) {
+        return data[0].map((item: any) => item[0]).join('');
       }
-      if (response.status === 400) {
-        throw new Error(errorData?.error?.message || 'Lỗi dữ liệu gửi lên. Hoặc API Key không hợp lệ.');
-      }
-      throw new Error('Lỗi từ máy chủ Google: ' + (errorData?.error?.message || response.statusText));
+    } catch (err) {
+      console.error("Translation error:", err);
     }
-
-    const data = await response.json();
-    if (data.predictions && data.predictions.length > 0) {
-      const base64Img = data.predictions[0].bytesBase64Encoded || data.predictions[0];
-      if (typeof base64Img === 'string') {
-        const prefix = base64Img.startsWith('iVBORw') ? 'image/png' : 'image/jpeg';
-        return `data:${prefix};base64,${base64Img}`;
-      }
-    }
-    throw new Error('Không nhận được ảnh trả về từ Google.');
+    return text;
   };
 
   const handleGenerate = async () => {
@@ -99,8 +42,26 @@ export default function AiImageGenerator() {
     setImageUrl(null);
 
     try {
-      const resultUrl = await generateWithGemini(prompt.trim());
-      setImageUrl(resultUrl);
+      // 1. Dịch Prompt sang Tiếng Anh
+      const englishPrompt = await translateToEnglish(prompt.trim());
+      
+      // 2. Thêm hậu tố tối ưu cho Flux model
+      const finalPrompt = `${englishPrompt}, highly detailed, masterpiece, 8k resolution, photorealistic`;
+
+      // 3. Gọi API miễn phí (Pollinations dùng model FLUX)
+      const seed = Math.floor(Math.random() * 1000000);
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(finalPrompt)}?width=${ratio.width}&height=${ratio.height}&seed=${seed}&nologo=true`;
+
+      // Tải trước ảnh để hiển thị loading mượt mà
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Máy chủ đang quá tải, vui lòng thử lại sau vài giây.');
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      setImageUrl(objectUrl);
+
     } catch (err: any) {
       console.error(err);
       showAlert(`Lỗi tạo ảnh: ${err.message}`, 'Lỗi hệ thống');
@@ -113,7 +74,7 @@ export default function AiImageGenerator() {
     if (!imageUrl) return;
     const a = document.createElement('a');
     a.href = imageUrl;
-    a.download = `gemini_image_${Date.now()}.jpg`;
+    a.download = `ai_image_${Date.now()}.jpg`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -122,54 +83,14 @@ export default function AiImageGenerator() {
   return (
     <div className="ai-image-container">
       <div className="tool-header text-center mb-8">
-        <h1 className="text-gradient text-3xl mb-2">Tạo Ảnh AI (Google Gemini)</h1>
-        <p className="text-secondary">Sử dụng mô hình Imagen 3 chính chủ từ Google để tạo ra các bức ảnh chân thực nhất.</p>
+        <h1 className="text-gradient text-3xl mb-2">Tạo Ảnh AI (FLUX Pro)</h1>
+        <p className="text-secondary">Sử dụng mô hình FLUX siêu nét, miễn phí 100% không cần cài đặt API Key.</p>
       </div>
 
-      <div className="glass-card mb-6">
-        <div className="p-4 bg-white/50 rounded-xl">
-          <div className="flex justify-between items-center">
-            <h3 className="font-semibold flex items-center gap-2">
-              <KeyRound size={18} className="text-primary" />
-              Cấu hình API Key (Bắt buộc)
-            </h3>
-            <button 
-              className="text-sm text-primary hover:underline flex items-center gap-1"
-              onClick={() => setShowKeyInput(!showKeyInput)}
-            >
-              <Settings2 size={16} />
-              {showKeyInput ? 'Thu gọn' : 'Thiết lập'}
-            </button>
-          </div>
-          
-          {showKeyInput && (
-            <div className="animate-fade-in mt-4 text-sm text-gray-700">
-              <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg max-w-2xl mx-auto">
-                <h4 className="font-semibold text-blue-800 mb-2">Google Gemini API Key</h4>
-                <p className="text-xs text-gray-600 mb-3">Lấy tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline font-bold">Google AI Studio</a>. Yêu cầu dự án đã được cấp quyền truy cập Imagen 3.</p>
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    className="ai-textarea bg-white flex-1"
-                    style={{ minHeight: '42px', padding: '0.5rem 0.75rem' }}
-                    placeholder="Nhập API Key bắt đầu bằng AIzaSy..."
-                    value={geminiKey}
-                    onChange={(e) => {
-                      setGeminiKey(e.target.value);
-                      setIsKeySaved(false);
-                    }}
-                  />
-                  <button 
-                    className={`btn px-6 flex items-center gap-2 ${isKeySaved ? 'bg-green-500 hover:bg-green-600 text-white' : 'btn-primary'}`}
-                    onClick={saveGeminiKey}
-                  >
-                    {isKeySaved ? <><Check size={18} /> Đã Lưu</> : 'Lưu Key'}
-                  </button>
-                </div>
-              </div>
-              <p className="text-xs text-gray-400 italic text-center mt-3">* Key được lưu trữ an toàn ngay trên trình duyệt của bạn và không bao giờ gửi đi nơi khác.</p>
-            </div>
-          )}
+      <div className="glass-card mb-6 bg-green-50/50 border-green-100 p-4 rounded-xl flex gap-3 text-sm text-green-800">
+        <Info className="shrink-0 mt-0.5" size={20} />
+        <div>
+          <strong>Đã loại bỏ API Key:</strong> Trải nghiệm tạo ảnh giờ đây là tự động hoàn toàn. Bất kỳ ai truy cập website của bạn cũng có thể gõ Tiếng Việt và tạo ảnh ngay lập tức mà không bao giờ gặp lỗi 403 Forbidden!
         </div>
       </div>
 
@@ -183,7 +104,8 @@ export default function AiImageGenerator() {
               <label><Sparkles size={18} className="text-primary" /> Ý tưởng của bạn (Prompt):</label>
               <textarea 
                 className="ai-textarea"
-                placeholder="Mô tả bức ảnh bạn muốn vẽ bằng Tiếng Việt (Ví dụ: Một chú chó pug đội nón phi hành gia...)"
+                style={{ minHeight: '120px' }}
+                placeholder="Mô tả bức ảnh bạn muốn vẽ bằng Tiếng Việt. Ví dụ: Tạo ảnh bìa fanpage Facebook, chủ đề công nghệ tương lai..."
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
@@ -214,9 +136,9 @@ export default function AiImageGenerator() {
               disabled={isGenerating}
             >
               {isGenerating ? (
-                <><Loader2 className="animate-spin mr-2" size={20} /> Đang vẽ ảnh...</>
+                <><Loader2 className="animate-spin mr-2" size={20} /> Đang vẽ ảnh (Mất khoảng 10 giây)...</>
               ) : (
-                <><ImageIcon className="mr-2" size={20} /> Tạo Ảnh Bằng Gemini</>
+                <><ImageIcon className="mr-2" size={20} /> Tạo Ảnh AI Ngay</>
               )}
             </button>
           </div>
@@ -235,7 +157,7 @@ export default function AiImageGenerator() {
                 <div className="w-full flex flex-col items-center gap-6 p-4">
                   <div className="text-primary font-bold text-lg flex items-center gap-2">
                     <Loader2 className="animate-spin" size={24} />
-                    Gemini đang sáng tác...
+                    AI đang phân tích và vẽ...
                   </div>
                   <div className="w-full max-w-[200px] h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div className="h-full bg-primary animate-pulse" style={{ width: '100%' }}></div>
