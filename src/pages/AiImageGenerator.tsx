@@ -17,6 +17,22 @@ export default function AiImageGenerator() {
   
   const { showAlert } = useDialogs();
 
+  const translateToEnglish = async (text: string): Promise<string> => {
+    try {
+      // Very basic heuristic: if it contains a lot of typical English words, maybe skip, 
+      // but translating won't hurt much. To be safe, just translate vi -> en.
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      if (data && data[0]) {
+        return data[0].map((item: any) => item[0]).join('');
+      }
+    } catch (err) {
+      console.error("Translation error:", err);
+    }
+    return text;
+  };
+
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       showAlert('Vui lòng nhập ý tưởng (prompt) để tạo ảnh.', 'Thiếu thông tin');
@@ -27,7 +43,10 @@ export default function AiImageGenerator() {
     setImageUrl(null);
 
     try {
-      const encodedPrompt = encodeURIComponent(prompt.trim());
+      // Automatically translate Vietnamese prompt to English for better AI understanding
+      const englishPrompt = await translateToEnglish(prompt.trim());
+      
+      const encodedPrompt = encodeURIComponent(englishPrompt);
       const seed = Math.floor(Math.random() * 1000000);
       const targetUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${ratio.width}&height=${ratio.height}&seed=${seed}&nologo=true`;
 
@@ -80,7 +99,7 @@ export default function AiImageGenerator() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
-              <p className="text-xs text-gray-500">* Khuyên dùng tiếng Anh để AI hiểu chính xác và cho ra kết quả đẹp nhất.</p>
+              <p className="text-xs text-gray-500">* Hệ thống sẽ tự động dịch câu lệnh của bạn sang tiếng Anh để AI hiểu chính xác nhất. (Lưu ý: AI không giỏi viết văn bản/chữ dài vào trong hình).</p>
             </div>
 
             <div className="ai-input-group mt-2">
