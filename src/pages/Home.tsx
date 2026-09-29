@@ -21,7 +21,8 @@ import {
   Type,
   HardDrive,
   Music,
-  Mic
+  Mic,
+  Sparkles
 } from 'lucide-react';
 import './Home.css';
 
@@ -84,6 +85,12 @@ const pdfTools = [
 ];
 
 const imageTools = [
+  {
+    path: '/tao-anh-ai',
+    icon: <Sparkles size={24} />,
+    title: 'Công Cụ Tạo Ảnh AI',
+    desc: 'Biến ý tưởng của bạn thành hình ảnh tuyệt đẹp bằng công nghệ AI tiên tiến, hoàn toàn miễn phí.'
+  },
   {
     path: '/tao-khung',
     icon: <ImagePlus size={24} />,

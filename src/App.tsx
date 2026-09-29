@@ -35,6 +35,7 @@ const RemoveAccents = React.lazy(() => import('./pages/RemoveAccents'));
 const DriveCopy = React.lazy(() => import('./pages/DriveCopy'));
 const AudioEditor = React.lazy(() => import('./pages/AudioEditor'));
 const TextToSpeech = React.lazy(() => import('./pages/TextToSpeech'));
+const AiImageGenerator = React.lazy(() => import('./pages/AiImageGenerator'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -138,6 +139,9 @@ function App() {
             } />
             <Route path="doc-van-ban" element={
               <Suspense fallback={<FallbackLoader />}><TextToSpeech /></Suspense>
+            } />
+            <Route path="tao-anh-ai" element={
+              <Suspense fallback={<FallbackLoader />}><AiImageGenerator /></Suspense>
             } />
           </Route>
           </Routes>
