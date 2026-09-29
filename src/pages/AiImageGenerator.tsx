@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2, KeyRound, Info, Settings2 } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2, KeyRound, Settings2 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import './AiImageGenerator.css';
 
