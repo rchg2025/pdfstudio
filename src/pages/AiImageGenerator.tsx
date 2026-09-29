@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2 } from 'lucide-react';
-import { useDialogs } from '../contexts/DialogContext';
+import { useDialogs } from '../components/CustomDialogs';
 import './AiImageGenerator.css';
 
 const RATIOS = [
