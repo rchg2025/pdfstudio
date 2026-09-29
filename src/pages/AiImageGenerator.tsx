@@ -9,9 +9,18 @@ const RATIOS = [
   { id: '9:16', name: 'Dọc (9:16)', width: 576, height: 1024, icon: RectangleVertical },
 ];
 
+const MODELS = [
+  { id: 'flux', name: 'Flux (Mặc định - Cân bằng)' },
+  { id: 'flux-realism', name: 'Flux Realism (Tả thực)' },
+  { id: 'flux-3d', name: 'Flux 3D (Đồ họa 3D)' },
+  { id: 'flux-anime', name: 'Flux Anime (Hoạt hình)' },
+  { id: 'turbo', name: 'Turbo (Tốc độ cao)' }
+];
+
 export default function AiImageGenerator() {
   const [prompt, setPrompt] = useState('');
   const [ratio, setRatio] = useState(RATIOS[0]);
+  const [model, setModel] = useState(MODELS[0]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   
@@ -48,7 +57,7 @@ export default function AiImageGenerator() {
       
       const encodedPrompt = encodeURIComponent(englishPrompt);
       const seed = Math.floor(Math.random() * 1000000);
-      const targetUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${ratio.width}&height=${ratio.height}&seed=${seed}&nologo=true`;
+      const targetUrl = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=${ratio.width}&height=${ratio.height}&seed=${seed}&nologo=true&model=${model.id}`;
 
       // Fetch the image as a blob to show loading state properly and allow downloading
       const response = await fetch(targetUrl);
@@ -119,6 +128,20 @@ export default function AiImageGenerator() {
                   );
                 })}
               </div>
+            </div>
+
+            <div className="ai-input-group mt-2">
+              <label>Mô hình AI (Kiểu vẽ):</label>
+              <select 
+                className="ai-textarea" 
+                style={{ minHeight: 'auto', padding: '0.75rem', cursor: 'pointer' }}
+                value={model.id}
+                onChange={(e) => setModel(MODELS.find(m => m.id === e.target.value) || MODELS[0])}
+              >
+                {MODELS.map(m => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
             </div>
 
             <button 
