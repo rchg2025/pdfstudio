@@ -1,44 +1,51 @@
 import { useState, useEffect } from 'react';
-import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2, KeyRound, Info } from 'lucide-react';
+import { Image as ImageIcon, Sparkles, Download, Square, RectangleHorizontal, RectangleVertical, Loader2, KeyRound, Info, Settings2 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import './AiImageGenerator.css';
 
 const RATIOS = [
-  { id: '1:1', name: 'Vuông (1:1)', width: 1024, height: 1024, icon: Square },
-  { id: '16:9', name: 'Ngang (16:9)', width: 1024, height: 576, icon: RectangleHorizontal },
-  { id: '9:16', name: 'Dọc (9:16)', width: 576, height: 1024, icon: RectangleVertical },
+  { id: '1:1', name: 'Vuông (1:1)', width: 1024, height: 1024, icon: Square, aspect: '1:1' },
+  { id: '16:9', name: 'Ngang (16:9)', width: 1024, height: 576, icon: RectangleHorizontal, aspect: '16:9' },
+  { id: '9:16', name: 'Dọc (9:16)', width: 576, height: 1024, icon: RectangleVertical, aspect: '9:16' },
 ];
 
-const MODELS = [
-  { id: 'black-forest-labs/FLUX.1-schnell', name: 'FLUX.1 Schnell (Nhanh, Siêu nét)' },
-  { id: 'stabilityai/stable-diffusion-xl-base-1.0', name: 'Stable Diffusion XL (Nghệ thuật)' },
-  { id: 'prompthero/openjourney', name: 'OpenJourney (Phong cách Midjourney)' }
+const PROVIDERS = [
+  { id: 'gemini', name: 'Google Gemini (Imagen 3)', desc: 'Mô hình tạo ảnh chính chủ từ Google, hỗ trợ xuất ảnh chân thực và chữ siêu việt.' },
+  { id: 'huggingface', name: 'Hugging Face (FLUX.1)', desc: 'Nền tảng mã nguồn mở, dùng FLUX.1 mạnh mẽ và hoàn toàn miễn phí.' }
 ];
 
 export default function AiImageGenerator() {
   const [prompt, setPrompt] = useState('');
   const [ratio, setRatio] = useState(RATIOS[0]);
-  const [model, setModel] = useState(MODELS[0]);
+  const [provider, setProvider] = useState(PROVIDERS[0].id);
   const [isGenerating, setIsGenerating] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   
   // API Key State
-  const [apiKey, setApiKey] = useState('');
+  const [geminiKey, setGeminiKey] = useState('');
+  const [hfKey, setHfKey] = useState('');
   const [showKeyInput, setShowKeyInput] = useState(false);
   
   const { showAlert } = useDialogs();
 
   useEffect(() => {
-    const savedKey = localStorage.getItem('hf_api_key');
-    if (savedKey) {
-      setApiKey(savedKey);
-    } else {
+    const savedGemini = localStorage.getItem('gemini_api_key');
+    const savedHf = localStorage.getItem('hf_api_key');
+    if (savedGemini) setGeminiKey(savedGemini);
+    if (savedHf) setHfKey(savedHf);
+    
+    if (!savedGemini && !savedHf) {
       setShowKeyInput(true);
     }
   }, []);
 
-  const saveKey = (key: string) => {
-    setApiKey(key);
+  const saveGeminiKey = (key: string) => {
+    setGeminiKey(key);
+    localStorage.setItem('gemini_api_key', key);
+  };
+
+  const saveHfKey = (key: string) => {
+    setHfKey(key);
     localStorage.setItem('hf_api_key', key);
   };
 
@@ -53,16 +60,84 @@ export default function AiImageGenerator() {
     } catch (err) {
       console.error("Translation error:", err);
     }
-    return text; // Fallback
+    return text;
+  };
+
+  const generateWithGemini = async (finalPrompt: string) => {
+    if (!geminiKey.trim()) {
+      setShowKeyInput(true);
+      throw new Error('Bạn chưa nhập API Key của Google Gemini!');
+    }
+    
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'x-goog-api-key': geminiKey.trim(),
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        instances: [
+          { prompt: finalPrompt }
+        ],
+        parameters: {
+          sampleCount: 1,
+          aspectRatio: ratio.aspect
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => null);
+      if (response.status === 400 || response.status === 403) {
+        throw new Error(errorData?.error?.message || 'API Key không hợp lệ, hoặc tài khoản của bạn không được cấp quyền dùng Imagen 3.');
+      }
+      throw new Error('Lỗi từ máy chủ Google: ' + (errorData?.error?.message || response.statusText));
+    }
+
+    const data = await response.json();
+    if (data.predictions && data.predictions.length > 0) {
+      const base64Img = data.predictions[0].bytesBase64Encoded || data.predictions[0];
+      if (typeof base64Img === 'string') {
+        const prefix = base64Img.startsWith('iVBORw') ? 'image/png' : 'image/jpeg';
+        return `data:${prefix};base64,${base64Img}`;
+      }
+    }
+    throw new Error('Không nhận được ảnh trả về từ Google.');
+  };
+
+  const generateWithHuggingFace = async (finalPrompt: string) => {
+    if (!hfKey.trim()) {
+      setShowKeyInput(true);
+      throw new Error('Bạn chưa nhập Access Token của Hugging Face!');
+    }
+
+    const response = await fetch(`https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${hfKey.trim()}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: finalPrompt,
+        parameters: {
+          width: ratio.width,
+          height: ratio.height
+        }
+      }),
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) throw new Error('Token Hugging Face không hợp lệ.');
+      if (response.status === 503) throw new Error('Mô hình đang khởi động, vui lòng thử lại sau 30 giây.');
+      throw new Error('Lỗi từ máy chủ Hugging Face.');
+    }
+
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
   };
 
   const handleGenerate = async () => {
-    if (!apiKey.trim()) {
-      showAlert('Vui lòng nhập Hugging Face Access Token để sử dụng tính năng này.', 'Thiếu API Key');
-      setShowKeyInput(true);
-      return;
-    }
-
     if (!prompt.trim()) {
       showAlert('Vui lòng nhập ý tưởng (prompt) để tạo ảnh.', 'Thiếu thông tin');
       return;
@@ -72,37 +147,19 @@ export default function AiImageGenerator() {
     setImageUrl(null);
 
     try {
-      // Dịch sang Tiếng Anh để model hiểu tốt nhất
-      const englishPrompt = await translateToEnglish(prompt.trim());
+      let resultUrl = '';
       
-      const response = await fetch(`https://api-inference.huggingface.co/models/${model.id}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey.trim()}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: englishPrompt,
-          parameters: {
-            width: ratio.width,
-            height: ratio.height
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('API Key không hợp lệ. Vui lòng kiểm tra lại Token của bạn.');
-        } else if (response.status === 503) {
-          throw new Error('Mô hình AI đang khởi động, vui lòng thử lại sau 30 giây.');
-        }
-        throw new Error('Lỗi từ máy chủ AI. Vui lòng thử lại sau.');
+      if (provider === 'gemini') {
+        // Gemini Imagen 3 hiểu rất tốt tiếng Việt, nhưng dịch ra tiếng Anh vẫn tốt hơn nếu từ vựng quá khó.
+        // Tuy nhiên để chân thật theo yêu cầu của bạn, sẽ dùng thẳng prompt người dùng nhập.
+        resultUrl = await generateWithGemini(prompt.trim());
+      } else {
+        // Hugging Face Models (FLUX) cần tiếng Anh
+        const englishPrompt = await translateToEnglish(prompt.trim());
+        resultUrl = await generateWithHuggingFace(englishPrompt);
       }
-
-      const blob = await response.blob();
-      const localUrl = URL.createObjectURL(blob);
-      setImageUrl(localUrl);
-
+      
+      setImageUrl(resultUrl);
     } catch (err: any) {
       console.error(err);
       showAlert(`Lỗi khi tạo ảnh: ${err.message}`, 'Lỗi hệ thống');
@@ -124,8 +181,8 @@ export default function AiImageGenerator() {
   return (
     <div className="ai-image-container">
       <div className="tool-header text-center mb-8">
-        <h1 className="text-gradient text-3xl mb-2">Tạo Ảnh AI (Hugging Face)</h1>
-        <p className="text-secondary">Sử dụng các mô hình AI mã nguồn mở tốt nhất thế giới như FLUX.1 và Stable Diffusion XL.</p>
+        <h1 className="text-gradient text-3xl mb-2">Tạo Ảnh AI Chuyên Nghiệp</h1>
+        <p className="text-secondary">Tích hợp trực tiếp 2 siêu trí tuệ nhân tạo: Google Gemini (Imagen 3) và Hugging Face (FLUX.1)</p>
       </div>
 
       <div className="glass-card mb-6">
@@ -136,35 +193,48 @@ export default function AiImageGenerator() {
               Cấu hình API Key (Bắt buộc)
             </h3>
             <button 
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-primary hover:underline flex items-center gap-1"
               onClick={() => setShowKeyInput(!showKeyInput)}
             >
-              {showKeyInput ? 'Ẩn cấu hình' : 'Hiện cấu hình'}
+              <Settings2 size={16} />
+              {showKeyInput ? 'Thu gọn' : 'Thiết lập'}
             </button>
           </div>
           
           {showKeyInput && (
-            <div className="animate-fade-in space-y-3 text-sm text-gray-600">
-              <div className="p-3 bg-blue-50 text-blue-800 rounded-lg flex gap-3">
-                <Info className="shrink-0 mt-0.5" size={18} />
-                <p>
-                  API của <strong>Google Gemini (bản miễn phí) hiện tại CHƯA hỗ trợ xuất ra hình ảnh</strong>.
-                  Giải pháp mạnh mẽ nhất hiện nay là dùng API của <strong>Hugging Face</strong>. Nó hoàn toàn miễn phí và cho phép bạn dùng mô hình FLUX.1.
-                </p>
+            <div className="animate-fade-in space-y-4 text-sm text-gray-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                
+                {/* GEMINI KEY */}
+                <div className="p-4 bg-blue-50/50 border border-blue-100 rounded-lg">
+                  <h4 className="font-semibold text-blue-800 mb-2">1. Google Gemini API Key</h4>
+                  <p className="text-xs text-gray-600 mb-3">Lấy tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">Google AI Studio</a>. (Sử dụng model Imagen 3 mới nhất).</p>
+                  <input
+                    type="password"
+                    className="ai-textarea bg-white"
+                    style={{ minHeight: '40px', padding: '0.5rem' }}
+                    placeholder="Nhập API Key bắt đầu bằng AIzaSy..."
+                    value={geminiKey}
+                    onChange={(e) => saveGeminiKey(e.target.value)}
+                  />
+                </div>
+
+                {/* HUGGING FACE KEY */}
+                <div className="p-4 bg-yellow-50/50 border border-yellow-100 rounded-lg">
+                  <h4 className="font-semibold text-yellow-800 mb-2">2. Hugging Face Access Token</h4>
+                  <p className="text-xs text-gray-600 mb-3">Lấy tại <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="text-yellow-600 hover:underline">Hugging Face Settings</a>. (Sử dụng model FLUX.1).</p>
+                  <input
+                    type="password"
+                    className="ai-textarea bg-white"
+                    style={{ minHeight: '40px', padding: '0.5rem' }}
+                    placeholder="Nhập Token bắt đầu bằng hf_..."
+                    value={hfKey}
+                    onChange={(e) => saveHfKey(e.target.value)}
+                  />
+                </div>
+
               </div>
-              <ol className="list-decimal list-inside space-y-1 ml-2">
-                <li>Truy cập <a href="https://huggingface.co/settings/tokens" target="_blank" rel="noreferrer" className="text-primary font-medium hover:underline">Hugging Face Tokens</a> (Tạo tài khoản nếu chưa có).</li>
-                <li>Tạo một <strong>Access Token</strong> mới (loại Read).</li>
-                <li>Dán Token vào ô bên dưới. Chìa khóa sẽ được lưu an toàn trên trình duyệt của bạn.</li>
-              </ol>
-              <input
-                type="password"
-                className="ai-textarea mt-2"
-                style={{ minHeight: '40px', padding: '0.75rem' }}
-                placeholder="Ví dụ: hf_xxxx..."
-                value={apiKey}
-                onChange={(e) => saveKey(e.target.value)}
-              />
+              <p className="text-xs text-gray-400 italic text-center">* Các API Key được lưu trữ an toàn ngay trên trình duyệt của bạn và không bao giờ gửi đi nơi khác (trừ khi gọi đến chính API của AI).</p>
             </div>
           )}
         </div>
@@ -175,15 +245,37 @@ export default function AiImageGenerator() {
           
           {/* CỘT TRÁI: NHẬP LIỆU */}
           <div className="ai-image-section">
+            
             <div className="ai-input-group">
-              <label><Sparkles size={18} className="text-primary" /> Ý tưởng của bạn (Prompt Tiếng Việt):</label>
+              <label>Công cụ AI:</label>
+              <div className="flex flex-col gap-2">
+                {PROVIDERS.map(p => (
+                  <label key={p.id} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${provider === p.id ? 'bg-primary/5 border-primary' : 'hover:bg-gray-50 border-gray-200'}`}>
+                    <input 
+                      type="radio" 
+                      name="provider" 
+                      value={p.id}
+                      checked={provider === p.id}
+                      onChange={(e) => setProvider(e.target.value)}
+                      className="mt-1"
+                    />
+                    <div>
+                      <div className="font-medium">{p.name}</div>
+                      <div className="text-xs text-gray-500">{p.desc}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="ai-input-group mt-4">
+              <label><Sparkles size={18} className="text-primary" /> Ý tưởng của bạn (Prompt):</label>
               <textarea 
                 className="ai-textarea"
-                placeholder="Ví dụ: Một thành phố tương lai rực rỡ ánh đèn neon dưới trời mưa..."
+                placeholder={provider === 'gemini' ? "Mô tả bức ảnh bạn muốn vẽ bằng Tiếng Việt (Ví dụ: Một chú chó pug đội nón phi hành gia...)" : "Ví dụ: Một thành phố tương lai rực rỡ ánh đèn neon dưới trời mưa..."}
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
               />
-              <p className="text-xs text-gray-500">* Lời khuyên: AI chuyên vẽ phong cảnh, đồ vật, con người... Hãy dùng phần mềm ghép chữ sau khi đã có ảnh thay vì ép AI viết chữ.</p>
             </div>
 
             <div className="ai-input-group mt-2">
@@ -205,22 +297,8 @@ export default function AiImageGenerator() {
               </div>
             </div>
 
-            <div className="ai-input-group mt-2">
-              <label>Mô hình AI (Kiểu vẽ):</label>
-              <select 
-                className="ai-textarea" 
-                style={{ minHeight: 'auto', padding: '0.75rem', cursor: 'pointer' }}
-                value={model.id}
-                onChange={(e) => setModel(MODELS.find(m => m.id === e.target.value) || MODELS[0])}
-              >
-                {MODELS.map(m => (
-                  <option key={m.id} value={m.id}>{m.name}</option>
-                ))}
-              </select>
-            </div>
-
             <button 
-              className="btn btn-primary flex items-center justify-center w-full py-3 px-6 mt-4 shadow-lg"
+              className="btn btn-primary flex items-center justify-center w-full py-3 px-6 mt-6 shadow-lg"
               onClick={handleGenerate}
               disabled={isGenerating}
             >
@@ -236,14 +314,14 @@ export default function AiImageGenerator() {
           <div className="ai-image-section">
             <div className={`ai-result ${imageUrl ? 'has-image' : ''}`}>
               {!imageUrl && !isGenerating && (
-                <div className="text-center text-gray-400 flex flex-col items-center gap-3">
+                <div className="text-center text-gray-400 flex flex-col items-center gap-3 p-4">
                   <ImageIcon size={48} className="opacity-50" />
                   <p>Bức tranh của bạn sẽ xuất hiện ở đây.</p>
                 </div>
               )}
 
               {isGenerating && (
-                <div className="w-full flex flex-col items-center gap-6">
+                <div className="w-full flex flex-col items-center gap-6 p-4">
                   <div className="text-primary font-bold text-lg flex items-center gap-2">
                     <Loader2 className="animate-spin" size={24} />
                     AI đang sáng tác...
@@ -255,7 +333,7 @@ export default function AiImageGenerator() {
               )}
 
               {imageUrl && !isGenerating && (
-                <div className="flex flex-col items-center gap-4 w-full animate-fade-in">
+                <div className="flex flex-col items-center gap-4 w-full animate-fade-in p-2">
                   <img src={imageUrl} alt="AI Generated" className="ai-generated-image" />
                   <button 
                     className="btn btn-secondary flex items-center gap-2"
