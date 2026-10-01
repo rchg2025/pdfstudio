@@ -362,16 +362,19 @@ export default function TextToSpeech() {
                 <button
                   type="button"
                   onClick={() => handleSelectRegion('north')}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                    region === 'north'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
-                      : 'bg-white text-gray-800 border-blue-200 hover:bg-blue-100/60'
-                  }`}
+                  className={`tts-region-btn ${region === 'north' ? 'active' : ''}`}
+                  style={{
+                    backgroundColor: region === 'north' ? '#2563eb' : '#ffffff',
+                    color: region === 'north' ? '#ffffff' : '#1e293b',
+                    borderColor: region === 'north' ? '#1d4ed8' : '#bfdbfe'
+                  }}
                 >
                   <span className="text-2xl">🏛️</span>
                   <div>
-                    <div className="font-bold text-sm">Miền Bắc (Hà Nội)</div>
-                    <div className={`text-xs mt-0.5 ${region === 'north' ? 'text-blue-100' : 'text-gray-500'}`}>
+                    <div className="region-title" style={{ color: region === 'north' ? '#ffffff' : '#1e293b' }}>
+                      Miền Bắc (Hà Nội)
+                    </div>
+                    <div className="region-desc" style={{ color: region === 'north' ? '#dbeafe' : '#64748b' }}>
                       Tần số 0Hz • Chuẩn mực, rõ ràng, thanh thoát
                     </div>
                   </div>
@@ -380,16 +383,19 @@ export default function TextToSpeech() {
                 <button
                   type="button"
                   onClick={() => handleSelectRegion('south')}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                    region === 'south'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
-                      : 'bg-white text-gray-800 border-blue-200 hover:bg-blue-100/60'
-                  }`}
+                  className={`tts-region-btn ${region === 'south' ? 'active' : ''}`}
+                  style={{
+                    backgroundColor: region === 'south' ? '#2563eb' : '#ffffff',
+                    color: region === 'south' ? '#ffffff' : '#1e293b',
+                    borderColor: region === 'south' ? '#1d4ed8' : '#bfdbfe'
+                  }}
                 >
                   <span className="text-2xl">🌴</span>
                   <div>
-                    <div className="font-bold text-sm">Miền Nam (Sài Gòn)</div>
-                    <div className={`text-xs mt-0.5 ${region === 'south' ? 'text-blue-100' : 'text-gray-500'}`}>
+                    <div className="region-title" style={{ color: region === 'south' ? '#ffffff' : '#1e293b' }}>
+                      Miền Nam (Sài Gòn)
+                    </div>
+                    <div className="region-desc" style={{ color: region === 'south' ? '#dbeafe' : '#64748b' }}>
                       Tần số -8Hz • Trầm ấm, mềm mại, ngọt ngào (+8% tốc độ)
                     </div>
                   </div>
@@ -398,16 +404,19 @@ export default function TextToSpeech() {
                 <button
                   type="button"
                   onClick={() => handleSelectRegion('central')}
-                  className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
-                    region === 'central'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
-                      : 'bg-white text-gray-800 border-blue-200 hover:bg-blue-100/60'
-                  }`}
+                  className={`tts-region-btn ${region === 'central' ? 'active' : ''}`}
+                  style={{
+                    backgroundColor: region === 'central' ? '#2563eb' : '#ffffff',
+                    color: region === 'central' ? '#ffffff' : '#1e293b',
+                    borderColor: region === 'central' ? '#1d4ed8' : '#bfdbfe'
+                  }}
                 >
                   <span className="text-2xl">🌊</span>
                   <div>
-                    <div className="font-bold text-sm">Miền Trung (Huế / Đà Nẵng)</div>
-                    <div className={`text-xs mt-0.5 ${region === 'central' ? 'text-blue-100' : 'text-gray-500'}`}>
+                    <div className="region-title" style={{ color: region === 'central' ? '#ffffff' : '#1e293b' }}>
+                      Miền Trung (Huế / Đà Nẵng)
+                    </div>
+                    <div className="region-desc" style={{ color: region === 'central' ? '#dbeafe' : '#64748b' }}>
                       Tần số -16Hz • Trầm sâu, dứt khoát, mộc mạc lắng đọng
                     </div>
                   </div>
