@@ -64,7 +64,7 @@ function hasEnglishWords(text: string): boolean {
   return false;
 }
 
-function splitTextIntoChunks(text: string, maxLen: number = 130): string[] {
+function splitTextIntoChunks(text: string, maxLen: number = 280): string[] {
   const cleanText = text.replace(/\r\n/g, '\n').trim();
   if (!cleanText) return [];
 
@@ -286,16 +286,17 @@ export default function TextToSpeech() {
       const rateStr = edgeSpeed >= 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`;
       const pitchStr = edgePitch >= 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`;
 
-      // Tách văn bản thành các đoạn nhỏ tự nhiên (tối đa ~130 ký tự) để mỗi request chỉ mất 3-5s
-      // Hoàn toàn tránh được giới hạn timeout 10s của Vercel Serverless
-      const chunks = splitTextIntoChunks(text, 130);
+      // Tối ưu độ dài mỗi đoạn (~280 ký tự, tương đương 40-50 từ / 1-2 câu trọn vẹn)
+      // Vừa giữ ngữ điệu liền mạch, vừa hoàn thành nhanh chóng và an toàn tuyệt đối
+      const chunks = splitTextIntoChunks(text, 280);
       if (chunks.length === 0) return;
 
-      const audioBlobs: Blob[] = [];
+      const audioBlobs: Blob[] = new Array(chunks.length);
+      let completedCount = 0;
       setCloudProgress(`Đang xử lý (0/${chunks.length})...`);
 
-      for (let i = 0; i < chunks.length; i++) {
-        let chunkText = chunks[i];
+      const processSingleChunk = async (index: number) => {
+        let chunkText = chunks[index];
 
         // Chuẩn hóa một số từ viết tắt tiếng Anh thông dụng để giọng đọc thuần Việt phát âm chuẩn và rõ ràng
         chunkText = chunkText
@@ -340,16 +341,27 @@ export default function TextToSpeech() {
         }
 
         if (!response || !response.ok) {
-          throw new Error(`Đoạn ${i + 1}/${chunks.length} không phản hồi (${lastErrorMsg || 'Lỗi kết nối Microsoft'})`);
+          throw new Error(`Đoạn ${index + 1}/${chunks.length} không phản hồi (${lastErrorMsg || 'Lỗi kết nối Microsoft'})`);
         }
 
         const blob = await response.blob();
         if (blob.size < 50) {
-          throw new Error(`Đoạn ${i + 1}/${chunks.length} dữ liệu âm thanh bị rỗng`);
+          throw new Error(`Đoạn ${index + 1}/${chunks.length} dữ liệu âm thanh bị rỗng`);
         }
 
-        audioBlobs.push(blob);
-        setCloudProgress(`Đang xử lý (${i + 1}/${chunks.length})...`);
+        audioBlobs[index] = blob;
+        completedCount++;
+        setCloudProgress(`Đang xử lý (${completedCount}/${chunks.length})...`);
+      };
+
+      // Xử lý song song 2 đoạn cùng lúc để tăng tốc độ gấp đôi mà vẫn an toàn
+      const CONCURRENCY = 2;
+      for (let i = 0; i < chunks.length; i += CONCURRENCY) {
+        const batch = [];
+        for (let j = i; j < Math.min(i + CONCURRENCY, chunks.length); j++) {
+          batch.push(processSingleChunk(j));
+        }
+        await Promise.all(batch);
       }
 
       setCloudProgress('Đang gộp file âm thanh...');
