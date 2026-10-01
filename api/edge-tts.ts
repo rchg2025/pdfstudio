@@ -8,34 +8,34 @@ export default async function handler(req, res) {
   try {
     const { text, voice = 'vi-VN-HoaiMyNeural', rate = '+0%', pitch = '+0Hz' } = req.body;
     
-    if (!text) {
+    if (!text || !text.trim()) {
       return res.status(400).json({ error: 'Text is required' });
     }
 
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Transfer-Encoding', 'chunked');
-    res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
-    res.flushHeaders();
-
-    try {
-      const communicate = new Communicate(text, { voice, rate, pitch });
-      for await (const chunk of communicate.stream()) {
-        if (chunk.type === 'audio') {
-          res.write(chunk.data);
-        }
-      }
-    } catch (ttsError) {
-      console.error('TTS Generation Error:', ttsError);
-      // We don't crash, just log and end stream so audio plays up to failure point
-    }
+    const audioChunks: Buffer[] = [];
+    const communicate = new Communicate(text, { voice, rate, pitch });
     
-    res.end();
-    return;
+    for await (const chunk of communicate.stream()) {
+      if (chunk.type === 'audio' && chunk.data) {
+        audioChunks.push(chunk.data);
+      }
+    }
 
-  } catch (error) {
+    if (audioChunks.length === 0) {
+      return res.status(500).json({ error: 'Không nhận được dữ liệu âm thanh từ Microsoft AI' });
+    }
+
+    const finalBuffer = Buffer.concat(audioChunks);
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Content-Length', finalBuffer.length);
+    res.setHeader('Content-Disposition', `attachment; filename="edge_tts_${Date.now()}.mp3"`);
+    
+    return res.status(200).send(finalBuffer);
+
+  } catch (error: any) {
     console.error('Edge TTS Error:', error);
     if (!res.headersSent) {
-      return res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message || 'Lỗi xử lý âm thanh' });
     }
     res.end();
   }

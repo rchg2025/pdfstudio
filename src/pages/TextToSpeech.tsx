@@ -64,6 +64,57 @@ function hasEnglishWords(text: string): boolean {
   return false;
 }
 
+function splitTextIntoChunks(text: string, maxLen: number = 130): string[] {
+  const cleanText = text.replace(/\r\n/g, '\n').trim();
+  if (!cleanText) return [];
+
+  // Tách theo dấu câu chính (. ! ? \n ;)
+  const rawSegments = cleanText.split(/(?<=[.!?;\n])\s+/).filter(s => s.trim().length > 0);
+  
+  const fineSegments: string[] = [];
+  for (const seg of rawSegments) {
+    if (seg.length <= maxLen) {
+      fineSegments.push(seg);
+    } else {
+      // Nếu câu dài hơn maxLen, tách tiếp theo dấu phẩy, hai chấm, gạch ngang, ngoặc
+      const subParts = seg.split(/(?<=[,:\-\–\—\(\)])\s+/).filter(s => s.trim().length > 0);
+      for (const sub of subParts) {
+        if (sub.length <= maxLen) {
+          fineSegments.push(sub);
+        } else {
+          // Nếu một vế vẫn dài, ngắt từng từ an toàn
+          const words = sub.split(/\s+/);
+          let temp = '';
+          for (const w of words) {
+            if (temp.length + w.length + 1 > maxLen) {
+              if (temp) fineSegments.push(temp.trim());
+              temp = w;
+            } else {
+              temp += (temp ? ' ' : '') + w;
+            }
+          }
+          if (temp) fineSegments.push(temp.trim());
+        }
+      }
+    }
+  }
+
+  // Gộp các đoạn ngắn liền kề để không tạo ra quá nhiều request nhỏ lắt nhắt
+  const result: string[] = [];
+  let current = '';
+  for (const seg of fineSegments) {
+    if (current && (current.length + seg.length + 1 > maxLen)) {
+      result.push(current.trim());
+      current = seg;
+    } else {
+      current += (current ? ' ' : '') + seg;
+    }
+  }
+  if (current) result.push(current.trim());
+
+  return result;
+}
+
 const EDGE_VOICES: EdgeVoice[] = [
   { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Giọng chuẩn Thuần Việt tự nhiên ⭐)', badge: 'Thuần Việt', isBilingual: false, gender: 'female' },
   { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Giọng chuẩn Thuần Việt tự nhiên ⭐)', badge: 'Thuần Việt', isBilingual: false, gender: 'male' },
@@ -235,23 +286,12 @@ export default function TextToSpeech() {
       const rateStr = edgeSpeed >= 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`;
       const pitchStr = edgePitch >= 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`;
 
-      // Split text on the client to avoid 60s Vercel limits and 504 Timeouts
-      // Limit each chunk to ~400 characters to prevent Vercel 10s timeout on hobby tier
-      const sentences = text.split(/(?<=[.\n!?;])\s+/).filter(s => s.trim().length > 0);
-      const chunks = [];
-      let currentChunk = '';
+      // Tách văn bản thành các đoạn nhỏ tự nhiên (tối đa ~130 ký tự) để mỗi request chỉ mất 3-5s
+      // Hoàn toàn tránh được giới hạn timeout 10s của Vercel Serverless
+      const chunks = splitTextIntoChunks(text, 130);
+      if (chunks.length === 0) return;
 
-      for (const sentence of sentences) {
-        if (currentChunk.length + sentence.length > 400) {
-          if (currentChunk) chunks.push(currentChunk);
-          currentChunk = sentence;
-        } else {
-          currentChunk += (currentChunk ? ' ' : '') + sentence;
-        }
-      }
-      if (currentChunk) chunks.push(currentChunk);
-
-      const audioBlobs = [];
+      const audioBlobs: Blob[] = [];
       setCloudProgress(`Đang xử lý (0/${chunks.length})...`);
 
       for (let i = 0; i < chunks.length; i++) {
@@ -272,22 +312,42 @@ export default function TextToSpeech() {
           .replace(/\bCSS\b/g, 'C.S.S')
           .replace(/\bJS\b/g, 'J.S');
 
-        const response = await fetch('/api/edge-tts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text: chunkText,
-            voice: selectedEdgeVoice,
-            rate: rateStr,
-            pitch: pitchStr
-          })
-        });
+        let response: Response | null = null;
+        let lastErrorMsg = '';
 
-        if (!response.ok) {
-          throw new Error('Lỗi kết nối tới Microsoft AI ở đoạn ' + (i + 1) + '/' + chunks.length);
+        // Tự động thử lại tối đa 2 lần nếu mạng chập chờn
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            response = await fetch('/api/edge-tts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                text: chunkText,
+                voice: selectedEdgeVoice,
+                rate: rateStr,
+                pitch: pitchStr
+              })
+            });
+
+            if (response.ok) break;
+            lastErrorMsg = await response.text();
+          } catch (fetchErr: any) {
+            lastErrorMsg = fetchErr.message;
+            if (attempt === 0) {
+              await new Promise(r => setTimeout(r, 600));
+            }
+          }
+        }
+
+        if (!response || !response.ok) {
+          throw new Error(`Đoạn ${i + 1}/${chunks.length} không phản hồi (${lastErrorMsg || 'Lỗi kết nối Microsoft'})`);
         }
 
         const blob = await response.blob();
+        if (blob.size < 50) {
+          throw new Error(`Đoạn ${i + 1}/${chunks.length} dữ liệu âm thanh bị rỗng`);
+        }
+
         audioBlobs.push(blob);
         setCloudProgress(`Đang xử lý (${i + 1}/${chunks.length})...`);
       }
