@@ -5,9 +5,72 @@ import './TextToSpeech.css';
 
 type Mode = 'browser' | 'edge';
 
-const EDGE_VOICES = [
-  { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Microsoft AI)' },
-  { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Microsoft AI)' }
+interface EdgeVoice {
+  id: string;
+  name: string;
+  badge?: string;
+  isBilingual?: boolean;
+  gender: 'female' | 'male';
+}
+
+function hasEnglishWords(text: string): boolean {
+  if (!text) return false;
+  // Ký tự ngoại ngữ không có trong bảng chữ cái tiếng Việt chuẩn
+  if (/[fjwzFJWZ]/.test(text)) return true;
+
+  const commonEnglish = new Set([
+    'ai', 'api', 'app', 'apps', 'audio', 'auto', 'admin', 'android', 'apple',
+    'best', 'big', 'blog', 'browser', 'build', 'business',
+    'call', 'camera', 'chat', 'check', 'clean', 'client', 'clip', 'cloud', 'code', 'content', 'copy',
+    'data', 'date', 'deadline', 'deal', 'demo', 'design', 'dev', 'developer', 'digital', 'doc', 'download',
+    'edit', 'editor', 'email', 'end', 'error', 'event',
+    'facebook', 'fan', 'fast', 'feed', 'feedback', 'file', 'files', 'fix', 'format', 'free',
+    'game', 'get', 'global', 'good', 'google', 'group',
+    'help', 'home', 'hot', 'html', 'hub',
+    'image', 'info', 'input', 'internet', 'ios', 'item',
+    'key', 'king',
+    'laptop', 'lead', 'leader', 'level', 'like', 'link', 'live', 'log', 'login', 'logo',
+    'mac', 'mail', 'manager', 'market', 'marketing', 'media', 'meet', 'meeting', 'member', 'menu', 'message', 'mode', 'model', 'mp3', 'mp4',
+    'net', 'network', 'new', 'news', 'note',
+    'office', 'offline', 'ok', 'okay', 'on', 'online', 'open', 'order', 'out', 'output',
+    'page', 'pass', 'password', 'pdf', 'phone', 'photo', 'plan', 'platform', 'play', 'player', 'podcast', 'post', 'pro', 'profile', 'project',
+    'rank', 'rate', 'react', 'report', 'review', 'run',
+    'sale', 'sales', 'save', 'scan', 'search', 'server', 'service', 'set', 'setting', 'settings', 'share', 'shop', 'show', 'site', 'skill', 'smart', 'software', 'sound', 'source', 'speed', 'staff', 'star', 'start', 'status', 'stop', 'story', 'stream', 'studio', 'style', 'support', 'system',
+    'tag', 'task', 'team', 'tech', 'test', 'text', 'time', 'tips', 'tool', 'tools', 'top', 'total', 'track', 'trend', 'tts',
+    'ui', 'update', 'upgrade', 'upload', 'url', 'user', 'ux',
+    'version', 'video', 'view', 'vip', 'voice',
+    'web', 'website', 'win', 'word', 'work', 'world',
+    'youtube', 'zalo', 'zoom'
+  ]);
+
+  const words = text.toLowerCase().replace(/[^a-z0-9àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ\s]/g, ' ').split(/\s+/);
+  
+  for (const w of words) {
+    if (!w) continue;
+    if (commonEnglish.has(w)) return true;
+    if (/[bdglrvsx]$/.test(w) && !/^(ong|ang|ung|dung|rang)$/.test(w) && w.length >= 3) {
+      if (!/[g]$/.test(w) || /(?:ing|ed|ag|eg|ig|og|ug)$/.test(w)) {
+        if (!/[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/.test(w)) {
+          return true;
+        }
+      }
+    }
+    if (/(?:sh|st|nd|nt|mp|ld|lt|ck|rk|sk|ct|pt|ft|pl|pr|cl|cr|bl|br|fl|fr|gl|gr|sp|sm|sn|sw)/.test(w)) {
+      if (!/^(tr|ch|th|ph|nh|kh|ng)/.test(w) && !/[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/.test(w)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+const EDGE_VOICES: EdgeVoice[] = [
+  { id: 'en-US-AvaMultilingualNeural', name: 'Ava (Nữ - Song ngữ Việt & Anh chuẩn quốc tế ⭐)', badge: 'Chuẩn tiếng Anh 100%', isBilingual: true, gender: 'female' },
+  { id: 'en-US-AndrewMultilingualNeural', name: 'Andrew (Nam - Song ngữ Việt & Anh chuẩn quốc tế ⭐)', badge: 'Chuẩn tiếng Anh 100%', isBilingual: true, gender: 'male' },
+  { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Tiếng Việt chuẩn truyền thống)', badge: 'Tiếng Việt thuần', isBilingual: false, gender: 'female' },
+  { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Tiếng Việt chuẩn truyền thống)', badge: 'Tiếng Việt thuần', isBilingual: false, gender: 'male' },
+  { id: 'en-US-EmmaMultilingualNeural', name: 'Emma (Nữ - Song ngữ Việt & Anh nhẹ nhàng)', badge: 'Song ngữ', isBilingual: true, gender: 'female' },
+  { id: 'en-US-BrianMultilingualNeural', name: 'Brian (Nam - Song ngữ Việt & Anh trầm ấm)', badge: 'Song ngữ', isBilingual: true, gender: 'male' }
 ];
 
 export default function TextToSpeech() {
@@ -74,12 +137,13 @@ export default function TextToSpeech() {
   // Trạng thái Web Speech API
   const [browserVoices, setBrowserVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedBrowserVoice, setSelectedBrowserVoice] = useState<string>('');
-  const [rate, setRate] = useState(1);
-  const [pitch, setPitch] = useState(1);
+  const [rate] = useState(1);
+  const [pitch] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   
   // Trạng thái Edge TTS (Microsoft AI)
-  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('vi-VN-HoaiMyNeural');
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('en-US-AvaMultilingualNeural');
+  const [autoBilingual, setAutoBilingual] = useState(true);
   const [edgeSpeed, setEdgeSpeed] = useState(0); // -100% đến +100%
   const [edgePitch, setEdgePitch] = useState(0); // -100Hz đến +100Hz
   const [isProcessingCloud, setIsProcessingCloud] = useState(false);
@@ -177,12 +241,23 @@ export default function TextToSpeech() {
 
       for (let i = 0; i < chunks.length; i++) {
         const chunkText = chunks[i];
+
+        // Tự động tối ưu phát âm Tiếng Anh chuẩn khi phát hiện từ tiếng Anh
+        let voiceToUse = selectedEdgeVoice;
+        if (autoBilingual && hasEnglishWords(chunkText)) {
+          if (voiceToUse.includes('HoaiMy') || voiceToUse.includes('Ava') || voiceToUse.includes('Emma')) {
+            voiceToUse = 'en-US-AvaMultilingualNeural';
+          } else if (voiceToUse.includes('NamMinh') || voiceToUse.includes('Andrew') || voiceToUse.includes('Brian')) {
+            voiceToUse = 'en-US-AndrewMultilingualNeural';
+          }
+        }
+
         const response = await fetch('/api/edge-tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: chunkText,
-            voice: selectedEdgeVoice,
+            voice: voiceToUse,
             rate: rateStr,
             pitch: pitchStr
           })
@@ -251,79 +326,71 @@ export default function TextToSpeech() {
         {/* SETTINGS PANEL */}
         {showSettings && (
           <div className="mb-6 bg-blue-50 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-4" style={{ padding: '20px' }}>
-            
-            {mode === 'edge' && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
-                  <div>
-                    <label className="block text-sm font-semibold text-blue-900 mb-2">Chọn Giọng Tiếng Việt:</label>
-                    <select 
-                      value={selectedEdgeVoice} 
-                      onChange={(e) => setSelectedEdgeVoice(e.target.value)}
-                      className="w-full p-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 shadow-sm transition-all"
-                    >
-                      {EDGE_VOICES.map((v) => (
-                        <option key={v.id} value={v.id}>{v.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-blue-900 mb-2">
-                      Tốc độ đọc: {edgeSpeed > 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`}
-                    </label>
-                    <input 
-                      type="range" 
-                      min="-50" max="50" step="5" 
-                      value={edgeSpeed} 
-                      onChange={(e) => setEdgeSpeed(parseInt(e.target.value))}
-                      className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-blue-900 mb-2">
-                      Độ thanh trầm: {edgePitch > 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`}
-                    </label>
-                    <input 
-                      type="range" 
-                      min="-50" max="50" step="5" 
-                      value={edgePitch} 
-                      onChange={(e) => setEdgePitch(parseInt(e.target.value))}
-                      className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-
-            {mode === 'browser' && (
-              <>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Chọn giọng đọc (Cài sẵn trên máy):</label>
-                  <select 
-                    value={selectedBrowserVoice} 
-                    onChange={(e) => setSelectedBrowserVoice(e.target.value)}
-                    className="w-full p-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 bg-white"
-                  >
-                    {browserVoices.map((v) => (
-                      <option key={v.name} value={v.name}>
-                        {v.name} ({v.lang}) {v.default ? ' - Mặc định' : ''}
-                      </option>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+              <div>
+                <label className="block text-sm font-semibold text-blue-900 mb-2">Chọn Giọng Đọc AI:</label>
+                <select 
+                  value={selectedEdgeVoice} 
+                  onChange={(e) => setSelectedEdgeVoice(e.target.value)}
+                  className="w-full p-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 shadow-sm transition-all"
+                >
+                  <optgroup label="Song ngữ Việt - Anh (Chuẩn phát âm tiếng Anh 100%)">
+                    {EDGE_VOICES.filter(v => v.isBilingual).map((v) => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
-                  </select>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Tốc độ: {rate}x</label>
-                    <input type="range" min="0.5" max="2" step="0.1" value={rate} onChange={(e) => setRate(parseFloat(e.target.value))} className="w-full"/>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">Độ thanh (Pitch): {pitch}</label>
-                    <input type="range" min="0" max="2" step="0.1" value={pitch} onChange={(e) => setPitch(parseFloat(e.target.value))} className="w-full"/>
-                  </div>
-                </div>
-              </>
-            )}
+                  </optgroup>
+                  <optgroup label="Tiếng Việt chuẩn truyền thống">
+                    {EDGE_VOICES.filter(v => !v.isBilingual).map((v) => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </optgroup>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-blue-900 mb-2">
+                  Tốc độ đọc: {edgeSpeed > 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`}
+                </label>
+                <input 
+                  type="range" 
+                  min="-50" max="50" step="5" 
+                  value={edgeSpeed} 
+                  onChange={(e) => setEdgeSpeed(parseInt(e.target.value))}
+                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-blue-900 mb-2">
+                  Độ thanh trầm: {edgePitch > 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`}
+                </label>
+                <input 
+                  type="range" 
+                  min="-50" max="50" step="5" 
+                  value={edgePitch} 
+                  onChange={(e) => setEdgePitch(parseInt(e.target.value))}
+                  className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
+                />
+              </div>
+            </div>
+
+            <div className="mt-2 pt-3 border-t border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <label className="flex items-center gap-2 cursor-pointer font-semibold text-sm text-blue-950">
+                <input 
+                  type="checkbox" 
+                  checked={autoBilingual} 
+                  onChange={(e) => setAutoBilingual(e.target.checked)}
+                  className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                />
+                <span>Tự động tối ưu phát âm Tiếng Anh chuẩn (Chế độ Song ngữ AI)</span>
+              </label>
+              {autoBilingual && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full w-fit">
+                  ✓ Đang bật (Chuẩn quốc tế)
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-gray-500 -mt-2">
+              * Khi bật, mọi từ hoặc cụm từ Tiếng Anh trong văn bản tiếng Việt sẽ được tự động nhận diện và phát âm chuẩn ngữ điệu quốc tế (không đọc theo kiểu vần tiếng Việt).
+            </p>
           </div>
         )}
 
@@ -331,11 +398,18 @@ export default function TextToSpeech() {
           {/* CỘT TRÁI: NHẬP LIỆU */}
           <div className="tts-section">
             <div className="tts-input-group">
-              <label style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
+              <label style={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <span><FileAudio size={18} style={{ display: 'inline', marginRight: '8px', verticalAlign: 'text-bottom' }} /> Nhập văn bản cần đọc</span>
-                <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>
-                  {text.trim() ? text.trim().split(/\s+/).length : 0} từ
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {hasEnglishWords(text) && (
+                    <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-700 font-medium flex items-center gap-1 border border-blue-200 animate-fadeIn">
+                      🌐 Đã phát hiện Tiếng Anh (Phát âm chuẩn)
+                    </span>
+                  )}
+                  <span style={{ fontSize: '0.85rem', fontWeight: 'normal', color: 'var(--text-secondary)' }}>
+                    {text.trim() ? text.trim().split(/\s+/).length : 0} từ
+                  </span>
+                </div>
               </label>
               <div style={{ position: 'relative', width: '100%', height: '100%' }}>
                 <textarea 
