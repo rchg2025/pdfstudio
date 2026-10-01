@@ -65,12 +65,12 @@ function hasEnglishWords(text: string): boolean {
 }
 
 const EDGE_VOICES: EdgeVoice[] = [
-  { id: 'en-US-AvaMultilingualNeural', name: 'Ava (Nữ - Song ngữ Việt & Anh chuẩn quốc tế ⭐)', badge: 'Chuẩn tiếng Anh 100%', isBilingual: true, gender: 'female' },
-  { id: 'en-US-AndrewMultilingualNeural', name: 'Andrew (Nam - Song ngữ Việt & Anh chuẩn quốc tế ⭐)', badge: 'Chuẩn tiếng Anh 100%', isBilingual: true, gender: 'male' },
-  { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Tiếng Việt chuẩn truyền thống)', badge: 'Tiếng Việt thuần', isBilingual: false, gender: 'female' },
-  { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Tiếng Việt chuẩn truyền thống)', badge: 'Tiếng Việt thuần', isBilingual: false, gender: 'male' },
-  { id: 'en-US-EmmaMultilingualNeural', name: 'Emma (Nữ - Song ngữ Việt & Anh nhẹ nhàng)', badge: 'Song ngữ', isBilingual: true, gender: 'female' },
-  { id: 'en-US-BrianMultilingualNeural', name: 'Brian (Nam - Song ngữ Việt & Anh trầm ấm)', badge: 'Song ngữ', isBilingual: true, gender: 'male' }
+  { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Giọng chuẩn Thuần Việt tự nhiên ⭐)', badge: 'Thuần Việt', isBilingual: false, gender: 'female' },
+  { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Giọng chuẩn Thuần Việt tự nhiên ⭐)', badge: 'Thuần Việt', isBilingual: false, gender: 'male' },
+  { id: 'en-US-AvaMultilingualNeural', name: 'Ava (Nữ - Song ngữ Anh & Việt quốc tế)', badge: 'Song ngữ', isBilingual: true, gender: 'female' },
+  { id: 'en-US-AndrewMultilingualNeural', name: 'Andrew (Nam - Song ngữ Anh & Việt quốc tế)', badge: 'Song ngữ', isBilingual: true, gender: 'male' },
+  { id: 'en-US-EmmaMultilingualNeural', name: 'Emma (Nữ - Song ngữ Anh & Việt nhẹ nhàng)', badge: 'Song ngữ', isBilingual: true, gender: 'female' },
+  { id: 'en-US-BrianMultilingualNeural', name: 'Brian (Nam - Song ngữ Anh & Việt trầm ấm)', badge: 'Song ngữ', isBilingual: true, gender: 'male' }
 ];
 
 export default function TextToSpeech() {
@@ -141,14 +141,29 @@ export default function TextToSpeech() {
   const [pitch] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   
-  // Trạng thái Edge TTS (Microsoft AI)
-  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('en-US-AvaMultilingualNeural');
-  const [autoBilingual, setAutoBilingual] = useState(true);
+  // Trạng thái Vùng Miền & Edge TTS
+  type Region = 'north' | 'south' | 'central' | 'custom';
+  const [region, setRegion] = useState<Region>('north');
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('vi-VN-HoaiMyNeural');
   const [edgeSpeed, setEdgeSpeed] = useState(0); // -100% đến +100%
   const [edgePitch, setEdgePitch] = useState(0); // -100Hz đến +100Hz
   const [isProcessingCloud, setIsProcessingCloud] = useState(false);
   const [cloudProgress, setCloudProgress] = useState('');
   const [cloudAudioUrl, setCloudAudioUrl] = useState<string | null>(null);
+
+  const handleSelectRegion = (r: Region) => {
+    setRegion(r);
+    if (r === 'north') {
+      setEdgePitch(0);
+      setEdgeSpeed(0);
+    } else if (r === 'south') {
+      setEdgePitch(-8);
+      setEdgeSpeed(8);
+    } else if (r === 'central') {
+      setEdgePitch(-16);
+      setEdgeSpeed(-5);
+    }
+  };
 
   const [showSettings, setShowSettings] = useState(false);
 
@@ -240,24 +255,29 @@ export default function TextToSpeech() {
       setCloudProgress(`Đang xử lý (0/${chunks.length})...`);
 
       for (let i = 0; i < chunks.length; i++) {
-        const chunkText = chunks[i];
+        let chunkText = chunks[i];
 
-        // Tự động tối ưu phát âm Tiếng Anh chuẩn khi phát hiện từ tiếng Anh
-        let voiceToUse = selectedEdgeVoice;
-        if (autoBilingual && hasEnglishWords(chunkText)) {
-          if (voiceToUse.includes('HoaiMy') || voiceToUse.includes('Ava') || voiceToUse.includes('Emma')) {
-            voiceToUse = 'en-US-AvaMultilingualNeural';
-          } else if (voiceToUse.includes('NamMinh') || voiceToUse.includes('Andrew') || voiceToUse.includes('Brian')) {
-            voiceToUse = 'en-US-AndrewMultilingualNeural';
-          }
-        }
+        // Chuẩn hóa một số từ viết tắt tiếng Anh thông dụng để giọng đọc thuần Việt phát âm chuẩn và rõ ràng
+        chunkText = chunkText
+          .replace(/\bAI\b/g, 'A.I')
+          .replace(/\bPDF\b/g, 'P.D.F')
+          .replace(/\bAPI\b/g, 'A.P.I')
+          .replace(/\bTTS\b/g, 'T.T.S')
+          .replace(/\bURL\b/g, 'U.R.L')
+          .replace(/\bSEO\b/g, 'S.E.O')
+          .replace(/\bCEO\b/g, 'C.E.O')
+          .replace(/\bVIP\b/g, 'V.I.P')
+          .replace(/\bIT\b/g, 'I.T')
+          .replace(/\bHTML\b/g, 'H.T.M.L')
+          .replace(/\bCSS\b/g, 'C.S.S')
+          .replace(/\bJS\b/g, 'J.S');
 
         const response = await fetch('/api/edge-tts', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: chunkText,
-            voice: voiceToUse,
+            voice: selectedEdgeVoice,
             rate: rateStr,
             pitch: pitchStr
           })
@@ -325,8 +345,78 @@ export default function TextToSpeech() {
 
         {/* SETTINGS PANEL */}
         {showSettings && (
-          <div className="mb-6 bg-blue-50 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-4" style={{ padding: '20px' }}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end">
+          <div className="mb-6 bg-blue-50 rounded-xl border border-blue-200 shadow-sm flex flex-col gap-5" style={{ padding: '20px' }}>
+            {/* TÙY CHỌN VÙNG MIỀN BẮC - TRUNG - NAM */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-blue-900">
+                  Tần số âm thanh theo Vùng Miền Việt Nam:
+                </label>
+                {region !== 'custom' && (
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-blue-200 text-blue-800 font-medium">
+                    Đang áp dụng tần số {region === 'north' ? 'Miền Bắc' : region === 'south' ? 'Miền Nam' : 'Miền Trung'}
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <button
+                  type="button"
+                  onClick={() => handleSelectRegion('north')}
+                  className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                    region === 'north'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
+                      : 'bg-white text-gray-800 border-blue-200 hover:bg-blue-100/60'
+                  }`}
+                >
+                  <span className="text-2xl">🏛️</span>
+                  <div>
+                    <div className="font-bold text-sm">Miền Bắc (Hà Nội)</div>
+                    <div className={`text-xs mt-0.5 ${region === 'north' ? 'text-blue-100' : 'text-gray-500'}`}>
+                      Tần số 0Hz • Chuẩn mực, rõ ràng, thanh thoát
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectRegion('south')}
+                  className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                    region === 'south'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
+                      : 'bg-white text-gray-800 border-blue-200 hover:bg-blue-100/60'
+                  }`}
+                >
+                  <span className="text-2xl">🌴</span>
+                  <div>
+                    <div className="font-bold text-sm">Miền Nam (Sài Gòn)</div>
+                    <div className={`text-xs mt-0.5 ${region === 'south' ? 'text-blue-100' : 'text-gray-500'}`}>
+                      Tần số -8Hz • Trầm ấm, mềm mại, ngọt ngào (+8% tốc độ)
+                    </div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSelectRegion('central')}
+                  className={`p-3 rounded-xl border text-left flex items-start gap-3 transition-all ${
+                    region === 'central'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-300'
+                      : 'bg-white text-gray-800 border-blue-200 hover:bg-blue-100/60'
+                  }`}
+                >
+                  <span className="text-2xl">🌊</span>
+                  <div>
+                    <div className="font-bold text-sm">Miền Trung (Huế / Đà Nẵng)</div>
+                    <div className={`text-xs mt-0.5 ${region === 'central' ? 'text-blue-100' : 'text-gray-500'}`}>
+                      Tần số -16Hz • Trầm sâu, dứt khoát, mộc mạc lắng đọng
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* CHỌN GIỌNG ĐỌC & ĐIỀU CHỈNH TẦN SỐ NÂNG CAO */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end pt-3 border-t border-blue-200">
               <div>
                 <label className="block text-sm font-semibold text-blue-900 mb-2">Chọn Giọng Đọc AI:</label>
                 <select 
@@ -334,63 +424,70 @@ export default function TextToSpeech() {
                   onChange={(e) => setSelectedEdgeVoice(e.target.value)}
                   className="w-full p-2.5 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 shadow-sm transition-all"
                 >
-                  <optgroup label="Song ngữ Việt - Anh (Chuẩn phát âm tiếng Anh 100%)">
-                    {EDGE_VOICES.filter(v => v.isBilingual).map((v) => (
+                  <optgroup label="Giọng Thuần Việt Tự Nhiên (Khuyên dùng)">
+                    {EDGE_VOICES.filter(v => !v.isBilingual).map((v) => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                   </optgroup>
-                  <optgroup label="Tiếng Việt chuẩn truyền thống">
-                    {EDGE_VOICES.filter(v => !v.isBilingual).map((v) => (
+                  <optgroup label="Giọng Song Ngữ Quốc Tế (Chuẩn phát âm tiếng Anh)">
+                    {EDGE_VOICES.filter(v => v.isBilingual).map((v) => (
                       <option key={v.id} value={v.id}>{v.name}</option>
                     ))}
                   </optgroup>
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-semibold text-blue-900 mb-2">
-                  Tốc độ đọc: {edgeSpeed > 0 ? `+${edgeSpeed}%` : `${edgeSpeed}%`}
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-semibold text-blue-900">
+                    Tần số cao độ (Pitch):
+                  </label>
+                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                    {edgePitch > 0 ? `+${edgePitch}Hz (Bổng)` : edgePitch < 0 ? `${edgePitch}Hz (Trầm)` : '0Hz (Chuẩn)'}
+                  </span>
+                </div>
                 <input 
                   type="range" 
-                  min="-50" max="50" step="5" 
-                  value={edgeSpeed} 
-                  onChange={(e) => setEdgeSpeed(parseInt(e.target.value))}
+                  min="-50" max="50" step="1" 
+                  value={edgePitch} 
+                  onChange={(e) => {
+                    setEdgePitch(parseInt(e.target.value));
+                    setRegion('custom');
+                  }}
                   className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-blue-900 mb-2">
-                  Độ thanh trầm: {edgePitch > 0 ? `+${edgePitch}Hz` : `${edgePitch}Hz`}
-                </label>
+                <div className="flex justify-between items-center mb-1">
+                  <label className="text-sm font-semibold text-blue-900">
+                    Tốc độ đọc (Speed):
+                  </label>
+                  <span className="text-xs font-bold text-blue-700 bg-blue-100 px-2 py-0.5 rounded">
+                    {edgeSpeed > 0 ? `+${edgeSpeed}% (Nhanh)` : edgeSpeed < 0 ? `${edgeSpeed}% (Chậm)` : '0% (Chuẩn)'}
+                  </span>
+                </div>
                 <input 
                   type="range" 
                   min="-50" max="50" step="5" 
-                  value={edgePitch} 
-                  onChange={(e) => setEdgePitch(parseInt(e.target.value))}
+                  value={edgeSpeed} 
+                  onChange={(e) => {
+                    setEdgeSpeed(parseInt(e.target.value));
+                    setRegion('custom');
+                  }}
                   className="w-full h-2 bg-blue-200 rounded-lg appearance-none cursor-pointer accent-blue-600 my-3"
                 />
               </div>
             </div>
 
-            <div className="mt-2 pt-3 border-t border-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <label className="flex items-center gap-2 cursor-pointer font-semibold text-sm text-blue-950">
-                <input 
-                  type="checkbox" 
-                  checked={autoBilingual} 
-                  onChange={(e) => setAutoBilingual(e.target.checked)}
-                  className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                />
-                <span>Tự động tối ưu phát âm Tiếng Anh chuẩn (Chế độ Song ngữ AI)</span>
-              </label>
-              {autoBilingual && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium bg-green-100 text-green-700 rounded-full w-fit">
-                  ✓ Đang bật (Chuẩn quốc tế)
-                </span>
-              )}
+            <div className="text-xs text-gray-500 flex flex-wrap items-center justify-between border-t border-blue-100 pt-2 gap-2">
+              <span>* Giọng đọc thuần Việt Hoài My & Nam Minh kết hợp tần số âm thanh tạo nên âm điệu tự nhiên chuẩn Bắc, Trung, Nam.</span>
+              <button 
+                type="button" 
+                onClick={() => handleSelectRegion('north')}
+                className="text-blue-600 hover:underline font-medium ml-auto whitespace-nowrap"
+              >
+                ↺ Đặt lại tần số chuẩn
+              </button>
             </div>
-            <p className="text-xs text-gray-500 -mt-2">
-              * Khi bật, mọi từ hoặc cụm từ Tiếng Anh trong văn bản tiếng Việt sẽ được tự động nhận diện và phát âm chuẩn ngữ điệu quốc tế (không đọc theo kiểu vần tiếng Việt).
-            </p>
           </div>
         )}
 
