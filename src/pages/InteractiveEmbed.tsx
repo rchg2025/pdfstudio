@@ -135,7 +135,7 @@ export default function InteractiveEmbed() {
   ]);
 
   // Player preview & timer state
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [activeQuiz, setActiveQuiz] = useState<QuizStop | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
@@ -152,7 +152,33 @@ export default function InteractiveEmbed() {
 
   // Ref cho iframe và timer interval
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const isPlayingRef = useRef(true);
+  const currentTimeRef = useRef(0);
+  const quizStopsRef = useRef(quizStops);
+  const answeredStopsRef = useRef(answeredStops);
+  const activeQuizRef = useRef<QuizStop | null>(null);
   const ytPlayerRef = useRef<any>(null);
+
+  // Đồng bộ refs với states
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  useEffect(() => {
+    quizStopsRef.current = quizStops;
+  }, [quizStops]);
+
+  useEffect(() => {
+    answeredStopsRef.current = answeredStops;
+  }, [answeredStops]);
+
+  useEffect(() => {
+    activeQuizRef.current = activeQuiz;
+  }, [activeQuiz]);
 
   // Xử lý nạp YouTube Iframe API nếu là YouTube
   useEffect(() => {
@@ -166,6 +192,50 @@ export default function InteractiveEmbed() {
     }
   }, [parsedEmbed]);
 
+  // Timer đồng hồ theo dõi tiến trình liên tục
+  useEffect(() => {
+    timerRef.current = setInterval(() => {
+      if (!isPlayingRef.current || activeQuizRef.current) return;
+
+      const next = currentTimeRef.current + 1;
+      currentTimeRef.current = next;
+      setCurrentTime(next);
+
+      // Kiểm tra xem có điểm dừng nào tại hoặc trước mốc này mà chưa trả lời không
+      const foundStop = quizStopsRef.current.find(
+        (stop) => next >= stop.timeSeconds && !answeredStopsRef.current.has(stop.id)
+      );
+
+      if (foundStop) {
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+        setActiveQuiz(foundStop);
+        activeQuizRef.current = foundStop;
+        setSelectedOptionId(null);
+        setAnswerStatus('idle');
+
+        // Thử pause Canva qua postMessage
+        const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
+        if (iframe?.contentWindow) {
+          try {
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pause' }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
+            iframe.contentWindow.postMessage('pause', '*');
+          } catch (e) {}
+        }
+
+        // Nếu là YouTube thì pause qua API
+        if (ytPlayerRef.current?.pauseVideo) {
+          try { ytPlayerRef.current.pauseVideo(); } catch (e) {}
+        }
+      }
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
   // Cập nhật khi rawEmbedCode đổi
   const handleApplyEmbed = () => {
     const parsed = parseEmbedInput(rawEmbedCode);
@@ -174,50 +244,23 @@ export default function InteractiveEmbed() {
       return;
     }
     setParsedEmbed(parsed);
-    setIsPlaying(false);
+    setIsPlaying(true);
+    isPlayingRef.current = true;
     setCurrentTime(0);
+    currentTimeRef.current = 0;
     setActiveQuiz(null);
+    activeQuizRef.current = null;
     setAnsweredStops(new Set());
-    showToast('Đã nạp mã nhúng thành công!', 'success');
+    answeredStopsRef.current = new Set();
+    showToast('Đã nạp mã nhúng thành công và kích hoạt bộ theo dõi!', 'success');
   };
-
-  // Timer đồng hồ theo dõi tiến trình
-  useEffect(() => {
-    if (isPlaying && !activeQuiz) {
-      timerRef.current = setInterval(() => {
-        setCurrentTime((prev) => {
-          const next = prev + 1;
-          // Kiểm tra xem có trúng điểm dừng nào không
-          const foundStop = quizStops.find(
-            (stop) => stop.timeSeconds === next && !answeredStops.has(stop.id)
-          );
-          if (foundStop) {
-            setIsPlaying(false);
-            setActiveQuiz(foundStop);
-            setSelectedOptionId(null);
-            setAnswerStatus('idle');
-            // Nếu là youtube thì pause
-            if (ytPlayerRef.current?.pauseVideo) {
-              try { ytPlayerRef.current.pauseVideo(); } catch (e) {}
-            }
-          }
-          return next;
-        });
-      }, 1000);
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [isPlaying, activeQuiz, quizStops, answeredStops]);
 
   // Toggle Play / Pause
   const handleTogglePlay = () => {
     if (activeQuiz) return;
     const nextState = !isPlaying;
     setIsPlaying(nextState);
+    isPlayingRef.current = nextState;
     if (parsedEmbed?.type === 'youtube' && ytPlayerRef.current) {
       try {
         if (nextState) ytPlayerRef.current.playVideo();
@@ -227,16 +270,27 @@ export default function InteractiveEmbed() {
   };
 
   const handleResetTimeline = () => {
-    setIsPlaying(false);
+    setIsPlaying(true);
+    isPlayingRef.current = true;
     setCurrentTime(0);
+    currentTimeRef.current = 0;
     setActiveQuiz(null);
+    activeQuizRef.current = null;
     setAnsweredStops(new Set());
+    answeredStopsRef.current = new Set();
     setSelectedOptionId(null);
     setAnswerStatus('idle');
+
+    // Reload iframe để trở về đầu bài giảng
+    const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
+    if (iframe && parsedEmbed) {
+      iframe.src = parsedEmbed.iframeSrc;
+    }
+
     if (parsedEmbed?.type === 'youtube' && ytPlayerRef.current?.seekTo) {
       try {
         ytPlayerRef.current.seekTo(0, true);
-        ytPlayerRef.current.pauseVideo();
+        ytPlayerRef.current.playVideo();
       } catch (e) {}
     }
   };
@@ -253,18 +307,32 @@ export default function InteractiveEmbed() {
       setAnswerStatus('correct');
       showToast('Chính xác! Bạn có thể tiếp tục xem bài giảng.', 'success');
       setTimeout(() => {
-        setAnsweredStops(prev => new Set(prev).add(activeQuiz.id));
+        const nextSet = new Set(answeredStopsRef.current).add(activeQuiz.id);
+        setAnsweredStops(nextSet);
+        answeredStopsRef.current = nextSet;
         setActiveQuiz(null);
+        activeQuizRef.current = null;
         setSelectedOptionId(null);
         setAnswerStatus('idle');
         setIsPlaying(true);
+        isPlayingRef.current = true;
+
+        const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
+        if (iframe?.contentWindow) {
+          try {
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'play' }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+            iframe.contentWindow.postMessage('play', '*');
+          } catch (e) {}
+        }
+
         if (parsedEmbed?.type === 'youtube' && ytPlayerRef.current?.playVideo) {
           try { ytPlayerRef.current.playVideo(); } catch (e) {}
         }
       }, 1500);
     } else {
       setAnswerStatus('wrong');
-      showToast('Chưa chính xác! Vui lòng thử lại hoặc suy nghĩ kỹ hơn.', 'error');
+      showToast('Chưa chính xác! Vui lòng chọn lại đáp án đúng để tiếp tục.', 'error');
     }
   };
 
@@ -350,7 +418,7 @@ export default function InteractiveEmbed() {
     </iframe>
 
     <!-- Lớp chặn màng trong suốt khi dừng lại làm câu hỏi -->
-    <div id="inter-blocker" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+    <div id="inter-blocker" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
       <div style="background: #ffffff; border-radius: 16px; max-width: 560px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: interPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
           <span style="background: #eff6ff; color: #2563eb; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase;">Câu hỏi dừng lại</span>
@@ -369,8 +437,8 @@ export default function InteractiveEmbed() {
   <!-- Thanh điều khiển tương tác bên dưới -->
   <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <button id="inter-play-btn" style="background: #2563eb; color: #ffffff; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
-        ▶
+      <button id="inter-play-btn" style="background: #ef4444; color: #ffffff; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px;">
+        ❚❚
       </button>
       <button id="inter-reset-btn" title="Bắt đầu lại từ đầu" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         ↺
@@ -421,7 +489,7 @@ export default function InteractiveEmbed() {
     (function() {
       const config = ${embedJson};
       let currentTime = 0;
-      let isPlaying = false;
+      let isPlaying = true;
       let activeStop = null;
       let selectedOptionId = null;
       const answeredSet = new Set();
@@ -454,11 +522,21 @@ export default function InteractiveEmbed() {
         playBtn.style.background = isPlaying ? '#ef4444' : '#2563eb';
       }
 
+      function sendIframeMsg(cmd) {
+        if (!frame || !frame.contentWindow) return;
+        try {
+          frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd }), '*');
+          frame.contentWindow.postMessage(JSON.stringify({ method: cmd }), '*');
+          frame.contentWindow.postMessage(cmd, '*');
+        } catch (e) {}
+      }
+
       function tick() {
+        if (!isPlaying || activeStop) return;
         currentTime++;
         currTimeSpan.innerText = formatTime(currentTime);
 
-        const stop = config.stops.find(s => s.timeSeconds === currentTime && !answeredSet.has(s.id));
+        const stop = config.stops.find(s => currentTime >= s.timeSeconds && !answeredSet.has(s.id));
         if (stop) {
           pausePlayback();
           triggerQuiz(stop);
@@ -466,16 +544,19 @@ export default function InteractiveEmbed() {
       }
 
       function startPlayback() {
-        if (isPlaying || activeStop) return;
+        if (activeStop) return;
         isPlaying = true;
         updatePlayBtn();
-        timer = setInterval(tick, 1000);
+        sendIframeMsg('play');
+        if (!timer) {
+          timer = setInterval(tick, 1000);
+        }
       }
 
       function pausePlayback() {
         isPlaying = false;
         updatePlayBtn();
-        if (timer) clearInterval(timer);
+        sendIframeMsg('pause');
       }
 
       function triggerQuiz(stop) {
@@ -503,6 +584,11 @@ export default function InteractiveEmbed() {
         submitBtn.style.background = '#2563eb';
         submitBtn.disabled = false;
         blocker.style.display = 'flex';
+        if (frame) {
+          frame.style.pointerEvents = 'none';
+          frame.style.opacity = '0.2';
+          frame.style.transition = 'opacity 0.3s ease';
+        }
       }
 
       submitBtn.onclick = function() {
@@ -522,6 +608,10 @@ export default function InteractiveEmbed() {
           answeredSet.add(activeStop.id);
           setTimeout(() => {
             blocker.style.display = 'none';
+            if (frame) {
+              frame.style.pointerEvents = 'auto';
+              frame.style.opacity = '1';
+            }
             activeStop = null;
             startPlayback();
           }, 1500);
@@ -529,7 +619,7 @@ export default function InteractiveEmbed() {
           feedback.style.display = 'block';
           feedback.style.background = '#fee2e2';
           feedback.style.color = '#b91c1c';
-          feedback.innerText = '✕ Sai rồi! Vui lòng chọn lại đáp án đúng.';
+          feedback.innerText = '✕ Sai rồi! Vui lòng chọn lại đáp án đúng để tiếp tục.';
         }
       };
 
@@ -539,16 +629,21 @@ export default function InteractiveEmbed() {
       };
 
       resetBtn.onclick = function() {
-        pausePlayback();
         currentTime = 0;
         currTimeSpan.innerText = '00:00';
         activeStop = null;
         answeredSet.clear();
         blocker.style.display = 'none';
+        if (frame) {
+          frame.style.pointerEvents = 'auto';
+          frame.style.opacity = '1';
+          frame.src = config.src;
+        }
+        startPlayback();
       };
 
-      // Tự động bắt đầu chạy timer khi mở
-      startPlayback();
+      // Tự động bắt đầu chạy timer theo dõi
+      timer = setInterval(tick, 1000);
     })();
   </script>
 </div>
@@ -725,6 +820,11 @@ export default function InteractiveEmbed() {
                   src={parsedEmbed.iframeSrc}
                   title="Interactive Preview"
                   className="interactive-iframe"
+                  style={{
+                    pointerEvents: activeQuiz ? 'none' : 'auto',
+                    opacity: activeQuiz ? 0.2 : 1,
+                    transition: 'opacity 0.3s ease'
+                  }}
                   allowFullScreen
                   allow="fullscreen; autoplay; encrypted-media"
                 />
