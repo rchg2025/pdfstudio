@@ -17,8 +17,12 @@ import {
   FileCode,
   Sparkles,
   Globe,
-  ExternalLink
+  ExternalLink,
+  LogIn,
+  Lock
 } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
 import './InteractiveEmbed.css';
 
@@ -114,6 +118,8 @@ function parseTimeToSeconds(timeStr: string): number {
 }
 
 export default function InteractiveEmbed() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const { showToast } = useNotification();
 
   // Input ban đầu
@@ -1351,16 +1357,46 @@ export default function InteractiveEmbed() {
         </div>
       </header>
 
-      {/* Main Grid */}
-      <div className="inter-main-grid">
-        {/* Left Column: Embed Source & Quiz Stops Management */}
-        <div className="inter-left-panel">
-          {/* Step 1: Input Embed Code */}
-          <div className="inter-card">
-            <div className="inter-card-header">
-              <span className="step-badge">Bước 1</span>
-              <h2>Dán Mã Nhúng Cần Tương Tác (Canva, YouTube, Web)</h2>
-            </div>
+      {/* BANNER YÊU CẦU ĐĂNG NHẬP NẾU CHƯA ĐĂNG NHẬP */}
+      {!user ? (
+        <div className="inter-auth-gate-card">
+          <div className="inter-auth-gate-icon">
+            <Lock size={36} />
+          </div>
+          <h2 className="inter-auth-gate-title">Yêu Cầu Đăng Nhập</h2>
+          <p className="inter-auth-gate-desc">
+            Tính năng <strong>Xuất Mã Nhúng HTML Tương Tác</strong> (chèn điểm dừng câu hỏi kiểm tra vào Canva, YouTube cho LMS / Elearning) yêu cầu bạn đăng nhập tài khoản để sử dụng và quản lý bài giảng.
+          </p>
+          <div className="inter-auth-gate-actions">
+            <button 
+              type="button" 
+              className="btn btn-primary"
+              onClick={() => navigate('/login', { state: { returnUrl: '/xuat-ma-nhung' } })}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 2rem', fontSize: '1rem' }}
+            >
+              <LogIn size={18} /> Đăng Nhập Ngay
+            </button>
+            <button 
+              type="button" 
+              className="btn btn-outline"
+              onClick={() => navigate('/register', { state: { returnUrl: '/xuat-ma-nhung' } })}
+              style={{ padding: '0.85rem 1.75rem', fontSize: '1rem' }}
+            >
+              Đăng Ký Tài Khoản
+            </button>
+          </div>
+        </div>
+      ) : (
+        /* Main Grid */
+        <div className="inter-main-grid">
+          {/* Left Column: Embed Source & Quiz Stops Management */}
+          <div className="inter-left-panel">
+            {/* Step 1: Input Embed Code */}
+            <div className="inter-card">
+              <div className="inter-card-header">
+                <span className="step-badge">Bước 1</span>
+                <h2>Dán Mã Nhúng Cần Tương Tác (Canva, YouTube, Web)</h2>
+              </div>
             <p className="inter-desc">
               Dán mã thẻ <code>&lt;iframe&gt;</code> từ Canva, YouTube hoặc đường dẫn URL bài giảng:
             </p>
@@ -1737,6 +1773,7 @@ export default function InteractiveEmbed() {
           </div>
         </div>
       </div>
+      )}
 
       {/* Modal / Dialog thêm hoặc sửa câu hỏi */}
       {editingStop && (
