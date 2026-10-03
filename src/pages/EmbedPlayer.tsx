@@ -137,6 +137,15 @@ export default function EmbedPlayer() {
         setSelectedOptionId(null);
         setAnswerStatus('idle');
 
+        // Dừng triệt để: với Canva cross-origin, ngắt src để dừng âm thanh và chuyển động slide
+        const iframe = document.getElementById('player-embed-iframe') as HTMLIFrameElement | null;
+        if (iframe) {
+          if (configRef.current?.type === 'canva') {
+            iframe.setAttribute('data-original-src', iframe.src);
+            iframe.src = 'about:blank';
+          }
+        }
+
         sendIframeCommand('pause');
         sendIframeCommand('pauseVideo');
       }
@@ -209,6 +218,7 @@ export default function EmbedPlayer() {
 
   const handleTogglePlay = () => {
     if (activeQuiz) return;
+    const iframe = document.getElementById('player-embed-iframe') as HTMLIFrameElement | null;
     if (isPlaying) {
       setIsPlaying(false);
       isPlayingRef.current = false;
@@ -217,6 +227,9 @@ export default function EmbedPlayer() {
     } else {
       setIsPlaying(true);
       isPlayingRef.current = true;
+      if (iframe && iframe.src.includes('about:blank') && config?.src) {
+        iframe.src = config.src;
+      }
       sendIframeCommand('play');
       sendIframeCommand('playVideo');
     }
@@ -257,6 +270,16 @@ export default function EmbedPlayer() {
 
         setIsPlaying(true);
         isPlayingRef.current = true;
+
+        // Khôi phục iframe Canva khi học sinh trả lời đúng để tiếp tục phát
+        const iframe = document.getElementById('player-embed-iframe') as HTMLIFrameElement | null;
+        if (iframe && configRef.current?.src) {
+          const originalSrc = iframe.getAttribute('data-original-src') || configRef.current.src;
+          if (iframe.src.includes('about:blank')) {
+            iframe.src = originalSrc;
+          }
+        }
+
         sendIframeCommand('play');
         sendIframeCommand('playVideo');
       }, 1400);

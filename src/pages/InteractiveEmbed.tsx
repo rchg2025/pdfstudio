@@ -226,13 +226,17 @@ export default function InteractiveEmbed() {
         setSelectedOptionId(null);
         setAnswerStatus('idle');
 
-        // Thử pause Canva qua postMessage
+        // Freeze Canva iframe in live preview
         const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
-        if (iframe?.contentWindow) {
+        if (iframe) {
+          if (parsedEmbed?.type === 'canva') {
+            iframe.setAttribute('data-original-src', iframe.src);
+            iframe.src = 'about:blank';
+          }
           try {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pause' }), '*');
-            iframe.contentWindow.postMessage(JSON.stringify({ method: 'pause' }), '*');
-            iframe.contentWindow.postMessage('pause', '*');
+            iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pause' }), '*');
+            iframe.contentWindow?.postMessage(JSON.stringify({ method: 'pause' }), '*');
+            iframe.contentWindow?.postMessage('pause', '*');
           } catch (e) {}
         }
 
@@ -246,7 +250,7 @@ export default function InteractiveEmbed() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, []);
+  }, [parsedEmbed]);
 
   // Tự động phân tích và nạp mã nhúng khi người dùng gõ / dán ở Bước 1
   useEffect(() => {
@@ -349,12 +353,20 @@ export default function InteractiveEmbed() {
         isPlayingRef.current = true;
 
         const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
-        if (iframe?.contentWindow) {
-          try {
-            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'play' }), '*');
-            iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
-            iframe.contentWindow.postMessage('play', '*');
-          } catch (e) {}
+        if (iframe) {
+          if (parsedEmbed?.iframeSrc) {
+            const originalSrc = iframe.getAttribute('data-original-src') || parsedEmbed.iframeSrc;
+            if (iframe.src.includes('about:blank')) {
+              iframe.src = originalSrc;
+            }
+          }
+          if (iframe.contentWindow) {
+            try {
+              iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'play' }), '*');
+              iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+              iframe.contentWindow.postMessage('play', '*');
+            } catch (e) {}
+          }
         }
 
         if (parsedEmbed?.type === 'youtube' && ytPlayerRef.current?.playVideo) {
@@ -637,6 +649,10 @@ export default function InteractiveEmbed() {
       if(frame){
         frame.style.pointerEvents='none';
         frame.style.opacity='0.2';
+        if(cfg.type==='canva'){
+          frame.setAttribute('data-orig-src', frame.src);
+          frame.src='about:blank';
+        }
       }
     }
 
@@ -691,6 +707,9 @@ export default function InteractiveEmbed() {
             if(frame){
               frame.style.pointerEvents='auto';
               frame.style.opacity='1';
+              if(frame.src.indexOf('about:blank')!==-1){
+                frame.src=frame.getAttribute('data-orig-src')||cfg.src;
+              }
             }
             curStop=null;
             play();
@@ -855,6 +874,10 @@ export default function InteractiveEmbed() {
         if (frame) {
           frame.style.pointerEvents = 'none';
           frame.style.opacity = '0.2';
+          if (cfg.type === 'canva') {
+            frame.setAttribute('data-orig-src', frame.src);
+            frame.src = 'about:blank';
+          }
         }
       }
 
@@ -911,6 +934,9 @@ export default function InteractiveEmbed() {
               if (frame) {
                 frame.style.pointerEvents = 'auto';
                 frame.style.opacity = '1';
+                if (frame.src.indexOf('about:blank') !== -1) {
+                  frame.src = frame.getAttribute('data-orig-src') || cfg.src;
+                }
               }
               curStop = null;
               play();
@@ -1164,6 +1190,10 @@ export default function InteractiveEmbed() {
           frame.style.pointerEvents = 'none';
           frame.style.opacity = '0.2';
           frame.style.transition = 'opacity 0.3s ease';
+          if (config.type === 'canva') {
+            frame.setAttribute('data-orig-src', frame.src);
+            frame.src = 'about:blank';
+          }
         }
       }
 
@@ -1217,6 +1247,9 @@ export default function InteractiveEmbed() {
             if (frame) {
               frame.style.pointerEvents = 'auto';
               frame.style.opacity = '1';
+              if (frame.src.indexOf('about:blank') !== -1) {
+                frame.src = frame.getAttribute('data-orig-src') || config.src;
+              }
             }
             activeStop = null;
             startPlayback();
