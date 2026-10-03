@@ -431,6 +431,17 @@ export default function InteractiveEmbed() {
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 
+    <!-- Man hinh Bat Dau Dong Bo Slide & Thoi Gian -->
+    <div id="elearn-start-mask-${uid}" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.72);z-index:99990;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px;box-sizing:border-box;text-align:center;">
+      <button id="elearn-start-btn-${uid}" type="button" style="background:#2563eb;color:#ffffff;border:none;padding:14px 28px;font-size:16px;font-weight:bold;border-radius:30px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);margin-bottom:10px;">
+        ▶ Bắt Đầu Chạy Bài Giảng
+      </button>
+      <div style="color:#ffffff;font-size:13px;max-width:400px;line-height:1.4;">
+        Bấm để phát Slide bài giảng và bắt đầu đồng bộ thời gian kiểm tra.
+      </div>
+    </div>
+
+    <!-- Khung cau hoi dung lai -->
     <div id="elearn-overlay-${uid}" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.92);z-index:99999;box-sizing:border-box;padding:15px;overflow-y:auto;">
       <div style="background:#ffffff;margin:20px auto;max-width:540px;padding:24px;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
         <div style="margin-bottom:12px;">
@@ -469,13 +480,16 @@ export default function InteractiveEmbed() {
 (function() {
   var cfg = ${embedJson};
   var curr = 0;
-  var playing = true;
+  var playing = false;
+  var started = false;
   var curStop = null;
   var selOpt = null;
   var answered = {};
   var timer = null;
 
   var frame = document.getElementById('elearn-frame-${uid}');
+  var startMask = document.getElementById('elearn-start-mask-${uid}');
+  var startBtn = document.getElementById('elearn-start-btn-${uid}');
   var overlay = document.getElementById('elearn-overlay-${uid}');
   var qTitle = document.getElementById('elearn-qtitle-${uid}');
   var optsBox = document.getElementById('elearn-opts-${uid}');
@@ -516,8 +530,26 @@ export default function InteractiveEmbed() {
     }
   }
 
+  function startRunning() {
+    if (startMask) startMask.style.display = 'none';
+    started = true;
+    playing = true;
+    if (playBtn) {
+      playBtn.innerText = 'Tạm Dừng';
+      playBtn.style.background = '#ef4444';
+    }
+    postMsg('play');
+    if (!timer) {
+      timer = setInterval(doTick, 1000);
+    }
+  }
+
   function play() {
     if (curStop) return;
+    if (!started) {
+      startRunning();
+      return;
+    }
     playing = true;
     if (playBtn) {
       playBtn.innerText = 'Tạm Dừng';
@@ -579,6 +611,38 @@ export default function InteractiveEmbed() {
       frame.style.opacity = '0.2';
     }
   }
+
+  if (startMask) {
+    startMask.onclick = startRunning;
+  }
+  if (startBtn) {
+    startBtn.onclick = function(e) {
+      e.stopPropagation();
+      startRunning();
+    };
+  }
+
+  // Tu dong bat dau dong bo neu nguoi dung click thang vao frame
+  window.addEventListener('blur', function() {
+    if (!started && !curStop) {
+      setTimeout(function() {
+        if (document.activeElement === frame) {
+          startRunning();
+        }
+      }, 200);
+    }
+  });
+
+  window.addEventListener('message', function(ev) {
+    if (!started && !curStop) {
+      try {
+        var d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+        if (d && (d.event === 'infoDelivery' || d.type === 'canva_ready' || d.action === 'playing' || d.status === 'playing')) {
+          startRunning();
+        }
+      } catch(e) {}
+    }
+  });
 
   if (subBtn) {
     subBtn.onclick = function() {
@@ -643,11 +707,9 @@ export default function InteractiveEmbed() {
         frame.style.opacity = '1';
         frame.src = cfg.src;
       }
-      play();
+      startRunning();
     };
   }
-
-  timer = setInterval(doTick, 1000);
 })();
 </script>`;
   };
@@ -655,6 +717,7 @@ export default function InteractiveEmbed() {
   // 2. Tạo mã HTML5 Độc Lập Nâng Cao (Full Animation, Modern Styles)
   const generateHtml5AdvancedCode = () => {
     if (!parsedEmbed) return;
+    const uid = Math.random().toString(36).substring(2, 8);
 
     const embedJson = JSON.stringify({
       src: parsedEmbed.iframeSrc,
@@ -663,25 +726,35 @@ export default function InteractiveEmbed() {
     });
 
     return `<!-- BẮT ĐẦU: KHUNG NHÚNG TƯƠNG TÁC HTML5 - TẠO BỞI RCHG STUDIO -->
-<div id="interactive-embed-wrapper" style="position: relative; width: 100%; max-width: 960px; margin: 1.5rem auto; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; box-sizing: border-box;">
+<div id="interactive-embed-wrapper-${uid}" style="position: relative; width: 100%; max-width: 960px; margin: 1.5rem auto; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; box-sizing: border-box;">
   <!-- Khung iframe trình chiếu -->
   <div style="position: relative; width: 100%; height: 0; padding-top: 56.25%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.18); background: #0f172a;">
-    <iframe id="inter-embed-frame" src="${parsedEmbed.iframeSrc}" 
+    <iframe id="inter-embed-frame-${uid}" src="${parsedEmbed.iframeSrc}" 
       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; margin: 0; padding: 0;"
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 
+    <!-- Màn hình Bắt Đầu Đồng Bộ Bài Giảng -->
+    <div id="inter-start-mask-${uid}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9990; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 20px; box-sizing: border-box; text-align: center;">
+      <button id="inter-start-btn-${uid}" type="button" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #ffffff; border: none; padding: 14px 32px; border-radius: 50px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); margin-bottom: 12px; transition: transform 0.2s;">
+        ▶ Bắt Đầu Chạy Bài Giảng
+      </button>
+      <div style="color: #cbd5e1; font-size: 14px; max-width: 420px; line-height: 1.5;">
+        Bấm để phát bài giảng và bắt đầu đồng bộ thời gian với các điểm dừng kiểm tra
+      </div>
+    </div>
+
     <!-- Lớp chặn màng trong suốt khi dừng lại làm câu hỏi -->
-    <div id="inter-blocker" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
+    <div id="inter-blocker-${uid}" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
       <div style="background: #ffffff; border-radius: 16px; max-width: 560px; width: 100%; padding: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.3); animation: interPop 0.3s cubic-bezier(0.16, 1, 0.3, 1);">
         <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
           <span style="background: #eff6ff; color: #2563eb; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; text-transform: uppercase;">Câu hỏi dừng lại</span>
-          <span id="inter-time-badge" style="font-size: 13px; color: #64748b; font-weight: 500;"></span>
+          <span id="inter-time-badge-${uid}" style="font-size: 13px; color: #64748b; font-weight: 500;"></span>
         </div>
-        <h3 id="inter-question" style="font-size: 18px; font-weight: 600; color: #0f172a; line-height: 1.4; margin: 0 0 16px 0;"></h3>
-        <div id="inter-options" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;"></div>
-        <div id="inter-feedback" style="display: none; font-size: 14px; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px;"></div>
-        <button id="inter-submit-btn" style="width: 100%; background: #2563eb; color: #ffffff; border: none; padding: 12px 20px; font-size: 15px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: background 0.2s;">
+        <h3 id="inter-question-${uid}" style="font-size: 18px; font-weight: 600; color: #0f172a; line-height: 1.4; margin: 0 0 16px 0;"></h3>
+        <div id="inter-options-${uid}" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;"></div>
+        <div id="inter-feedback-${uid}" style="display: none; font-size: 14px; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px;"></div>
+        <button id="inter-submit-btn-${uid}" style="width: 100%; background: #2563eb; color: #ffffff; border: none; padding: 12px 20px; font-size: 15px; font-weight: 600; border-radius: 10px; cursor: pointer; transition: background 0.2s;">
           Xác nhận câu trả lời
         </button>
       </div>
@@ -691,18 +764,18 @@ export default function InteractiveEmbed() {
   <!-- Thanh điều khiển tương tác bên dưới -->
   <div style="display: flex; align-items: center; justify-content: space-between; background: #ffffff; padding: 10px 16px; border: 1px solid #e2e8f0; border-radius: 10px; margin-top: 10px; box-shadow: 0 2px 6px rgba(0,0,0,0.04);">
     <div style="display: flex; align-items: center; gap: 12px;">
-      <button id="inter-play-btn" style="background: #ef4444; color: #ffffff; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px;">
+      <button id="inter-play-btn-${uid}" style="background: #ef4444; color: #ffffff; border: none; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px;">
         ❚❚
       </button>
-      <button id="inter-reset-btn" title="Bắt đầu lại từ đầu" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+      <button id="inter-reset-btn-${uid}" title="Bắt đầu lại từ đầu" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer;">
         ↺
       </button>
       <div style="font-size: 14px; font-weight: 600; color: #334155;">
-        <span id="inter-curr-time">00:00</span>
+        <span id="inter-curr-time-${uid}">00:00</span>
       </div>
     </div>
     <div style="font-size: 13px; color: #64748b;">
-      <span id="inter-stops-count"></span> điểm dừng kiểm tra
+      <span id="inter-stops-count-${uid}"></span> điểm dừng kiểm tra
     </div>
   </div>
 
@@ -743,23 +816,26 @@ export default function InteractiveEmbed() {
     (function() {
       const config = ${embedJson};
       let currentTime = 0;
-      let isPlaying = true;
+      let isPlaying = false;
+      let isStarted = false;
       let activeStop = null;
       let selectedOptionId = null;
       const answeredSet = new Set();
       let timer = null;
 
-      const frame = document.getElementById('inter-embed-frame');
-      const blocker = document.getElementById('inter-blocker');
-      const qTitle = document.getElementById('inter-question');
-      const optsContainer = document.getElementById('inter-options');
-      const feedback = document.getElementById('inter-feedback');
-      const submitBtn = document.getElementById('inter-submit-btn');
-      const playBtn = document.getElementById('inter-play-btn');
-      const resetBtn = document.getElementById('inter-reset-btn');
-      const currTimeSpan = document.getElementById('inter-curr-time');
-      const stopsCountSpan = document.getElementById('inter-stops-count');
-      const timeBadge = document.getElementById('inter-time-badge');
+      const frame = document.getElementById('inter-embed-frame-${uid}');
+      const startMask = document.getElementById('inter-start-mask-${uid}');
+      const startBtn = document.getElementById('inter-start-btn-${uid}');
+      const blocker = document.getElementById('inter-blocker-${uid}');
+      const qTitle = document.getElementById('inter-question-${uid}');
+      const optsContainer = document.getElementById('inter-options-${uid}');
+      const feedback = document.getElementById('inter-feedback-${uid}');
+      const submitBtn = document.getElementById('inter-submit-btn-${uid}');
+      const playBtn = document.getElementById('inter-play-btn-${uid}');
+      const resetBtn = document.getElementById('inter-reset-btn-${uid}');
+      const currTimeSpan = document.getElementById('inter-curr-time-${uid}');
+      const stopsCountSpan = document.getElementById('inter-stops-count-${uid}');
+      const timeBadge = document.getElementById('inter-time-badge-${uid}');
 
       if (stopsCountSpan) {
         stopsCountSpan.innerText = config.stops.length;
@@ -797,8 +873,23 @@ export default function InteractiveEmbed() {
         }
       }
 
+      function startRunning() {
+        if (startMask) startMask.style.display = 'none';
+        isStarted = true;
+        isPlaying = true;
+        updatePlayBtn();
+        sendIframeMsg('play');
+        if (!timer) {
+          timer = setInterval(tick, 1000);
+        }
+      }
+
       function startPlayback() {
         if (activeStop) return;
+        if (!isStarted) {
+          startRunning();
+          return;
+        }
         isPlaying = true;
         updatePlayBtn();
         sendIframeMsg('play');
@@ -844,6 +935,24 @@ export default function InteractiveEmbed() {
           frame.style.transition = 'opacity 0.3s ease';
         }
       }
+
+      if (startMask) startMask.onclick = startRunning;
+      if (startBtn) {
+        startBtn.onclick = function(e) {
+          e.stopPropagation();
+          startRunning();
+        };
+      }
+
+      window.addEventListener('blur', function() {
+        if (!isStarted && !activeStop) {
+          setTimeout(function() {
+            if (document.activeElement === frame) {
+              startRunning();
+            }
+          }, 200);
+        }
+      });
 
       submitBtn.onclick = function() {
         if (!activeStop || !selectedOptionId) {
@@ -893,11 +1002,8 @@ export default function InteractiveEmbed() {
           frame.style.opacity = '1';
           frame.src = config.src;
         }
-        startPlayback();
+        startRunning();
       };
-
-      // Tự động bắt đầu chạy timer theo dõi
-      timer = setInterval(tick, 1000);
     })();
   </script>
 </div>
