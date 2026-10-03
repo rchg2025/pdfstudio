@@ -22,7 +22,8 @@ import {
   HardDrive,
   Music,
   Mic,
-  Sparkles
+  Sparkles,
+  Code
 } from 'lucide-react';
 import './Home.css';
 
@@ -171,6 +172,12 @@ const otherTools = [
     icon: <Mic size={24} />,
     title: 'Đọc Văn Bản (Trình Duyệt)',
     desc: 'Chuyển đổi văn bản thành giọng nói bằng bộ máy của trình duyệt, không cần tải server.'
+  },
+  {
+    path: '/xuat-ma-nhung',
+    icon: <Code size={24} />,
+    title: 'Xuất Mã Nhúng HTML5 Tương Tác',
+    desc: 'Tự động dừng Canva/YouTube theo thời gian để trả lời câu hỏi trắc nghiệm rồi mới xem tiếp.'
   }
 ];
 
