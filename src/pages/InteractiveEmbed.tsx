@@ -246,7 +246,16 @@ export default function InteractiveEmbed() {
     };
   }, []);
 
-  // Cập nhật khi rawEmbedCode đổi
+  // Tự động phân tích và nạp mã nhúng khi người dùng gõ / dán ở Bước 1
+  useEffect(() => {
+    const parsed = parseEmbedInput(rawEmbedCode);
+    if (parsed) {
+      setParsedEmbed(parsed);
+      setHasStartedPresentation(false);
+    }
+  }, [rawEmbedCode]);
+
+  // Cập nhật thủ công khi bấm nút Nạp Khung Trình Chiếu ở Bước 1
   const handleApplyEmbed = () => {
     const parsed = parseEmbedInput(rawEmbedCode);
     if (!parsed) {
@@ -263,7 +272,12 @@ export default function InteractiveEmbed() {
     setAnsweredStops(new Set());
     answeredStopsRef.current = new Set();
     setHasStartedPresentation(false);
-    showToast('Đã nạp mã nhúng thành công và kích hoạt bộ theo dõi!', 'success');
+    
+    // Tạo lại mã xuất tương ứng ngay lập tức
+    const code = exportMode === 'standard' ? generateStandardHtmlCode() : generateHtml5AdvancedCode();
+    if (code) setExportedCode(code);
+
+    showToast('Đã nạp mã nhúng mới và cập nhật toàn bộ Bước 2, Bước 3 thành công!', 'success');
   };
 
   // Toggle Play / Pause
@@ -1010,6 +1024,15 @@ export default function InteractiveEmbed() {
 <!-- KẾT THÚC: KHUNG NHÚNG TƯƠNG TÁC HTML5 -->`;
   };
 
+  // Tự động cập nhật mã xuất ở Bước 3 bất cứ khi nào Bước 1 (mã nhúng) hoặc Bước 2 (câu hỏi) hoặc chế độ xuất thay đổi
+  useEffect(() => {
+    if (!parsedEmbed) return;
+    const code = exportMode === 'standard' ? generateStandardHtmlCode() : generateHtml5AdvancedCode();
+    if (code) {
+      setExportedCode(code);
+    }
+  }, [parsedEmbed, quizStops, exportMode]);
+
   const handleExportCode = (mode: 'standard' | 'html5') => {
     setExportMode(mode);
     const code = mode === 'standard' ? generateStandardHtmlCode() : generateHtml5AdvancedCode();
@@ -1017,8 +1040,8 @@ export default function InteractiveEmbed() {
       setExportedCode(code);
       showToast(
         mode === 'standard' 
-          ? 'Đã tạo mã HTML thường (Tương thích tốt Elearning / LMS / CKEditor)!' 
-          : 'Đã tạo mã HTML5 nâng cao!',
+          ? 'Đã chọn mã HTML thường (Tương thích tốt Elearning / LMS / CKEditor)!' 
+          : 'Đã chọn mã HTML5 nâng cao!',
         'success'
       );
     }
