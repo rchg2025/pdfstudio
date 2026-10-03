@@ -75,8 +75,16 @@ function parseEmbedInput(input: string): ParsedEmbed | null {
   let type: 'youtube' | 'canva' | 'generic' = 'generic';
   if (src.includes('youtube.com') || src.includes('youtu.be')) {
     type = 'youtube';
+    // Đảm bảo có enablejsapi=1 và autoplay=1 cho YouTube
+    if (!src.includes('enablejsapi=1')) {
+      src += (src.includes('?') ? '&' : '?') + 'enablejsapi=1&autoplay=1&mute=0';
+    }
   } else if (src.includes('canva.com')) {
     type = 'canva';
+    // Đảm bảo Canva có autoplay=1 để slide tự chuyển động
+    if (!src.includes('autoplay=1')) {
+      src += (src.includes('?') ? '&' : '?') + 'autoplay=1&auto=1';
+    }
   }
 
   return {
@@ -143,8 +151,10 @@ export default function InteractiveEmbed() {
   const [answeredStops, setAnsweredStops] = useState<Set<string>>(new Set());
 
   // Export code state
+  const [exportMode, setExportMode] = useState<'standard' | 'html5'>('standard');
   const [exportedCode, setExportedCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [hasStartedPresentation, setHasStartedPresentation] = useState(false);
 
   // Editing stop modal / form
   const [editingStop, setEditingStop] = useState<QuizStop | null>(null);
@@ -252,6 +262,7 @@ export default function InteractiveEmbed() {
     activeQuizRef.current = null;
     setAnsweredStops(new Set());
     answeredStopsRef.current = new Set();
+    setHasStartedPresentation(false);
     showToast('Đã nạp mã nhúng thành công và kích hoạt bộ theo dõi!', 'success');
   };
 
@@ -261,6 +272,9 @@ export default function InteractiveEmbed() {
     const nextState = !isPlaying;
     setIsPlaying(nextState);
     isPlayingRef.current = nextState;
+    if (nextState && !hasStartedPresentation) {
+      setHasStartedPresentation(true);
+    }
     if (parsedEmbed?.type === 'youtube' && ytPlayerRef.current) {
       try {
         if (nextState) ytPlayerRef.current.playVideo();
@@ -280,6 +294,7 @@ export default function InteractiveEmbed() {
     answeredStopsRef.current = new Set();
     setSelectedOptionId(null);
     setAnswerStatus('idle');
+    setHasStartedPresentation(true);
 
     // Reload iframe để trở về đầu bài giảng
     const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
@@ -398,8 +413,247 @@ export default function InteractiveEmbed() {
     showToast('Đã lưu câu hỏi trắc nghiệm thành công!', 'success');
   };
 
-  // Tạo mã nhúng HTML5 tự chứa độc lập (Standalone HTML5 Embed Bundle)
-  const generateExportCode = () => {
+  // 1. Tạo mã HTML Thường (Tương thích 100% Elearning, Moodle, CKEditor, LMS trường học)
+  const generateStandardHtmlCode = () => {
+    if (!parsedEmbed) return;
+    const uid = Math.random().toString(36).substring(2, 8);
+    const embedJson = JSON.stringify({
+      src: parsedEmbed.iframeSrc,
+      type: parsedEmbed.type,
+      stops: quizStops
+    });
+
+    return `<!-- MA NHUNG TUONG TAC LMS / E-LEARNING (CHUAN HTML TUONG THICH) -->
+<div id="elearn-box-${uid}" style="position:relative;width:100%;max-width:960px;margin:20px auto;font-family:Arial,Helvetica,sans-serif;color:#1e293b;box-sizing:border-box;">
+  <div style="position:relative;width:100%;padding-top:56.25%;background:#000000;border:1px solid #cbd5e1;overflow:hidden;">
+    <iframe id="elearn-frame-${uid}" src="${parsedEmbed.iframeSrc}"
+      style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;margin:0;padding:0;"
+      allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
+    </iframe>
+
+    <div id="elearn-overlay-${uid}" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.92);z-index:99999;box-sizing:border-box;padding:15px;overflow-y:auto;">
+      <div style="background:#ffffff;margin:20px auto;max-width:540px;padding:24px;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
+        <div style="margin-bottom:12px;">
+          <span style="background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:bold;padding:4px 8px;border-radius:4px;text-transform:uppercase;">Câu hỏi dừng lại</span>
+          <span id="elearn-time-badge-${uid}" style="font-size:13px;color:#64748b;margin-left:8px;font-weight:bold;"></span>
+        </div>
+        <div id="elearn-qtitle-${uid}" style="font-size:16px;font-weight:bold;color:#0f172a;line-height:1.4;margin-bottom:16px;"></div>
+        <div id="elearn-opts-${uid}" style="margin-bottom:16px;"></div>
+        <div id="elearn-alert-${uid}" style="display:none;padding:10px;margin-bottom:14px;border-radius:4px;font-size:14px;"></div>
+        <button id="elearn-subbtn-${uid}" type="button" style="width:100%;background:#2563eb;color:#ffffff;border:none;padding:12px;font-size:15px;font-weight:bold;border-radius:6px;cursor:pointer;">
+          Xác nhận câu trả lời
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;padding:10px 14px;border:1px solid #cbd5e1;border-top:0;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button id="elearn-playbtn-${uid}" type="button" style="background:#ef4444;color:#ffffff;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-weight:bold;font-size:13px;">
+        Tạm Dừng
+      </button>
+      <button id="elearn-resetbtn-${uid}" type="button" style="background:#e2e8f0;color:#334155;border:1px solid #cbd5e1;padding:6px 12px;border-radius:4px;cursor:pointer;font-size:13px;">
+        Xem Lại Từ Đầu
+      </button>
+      <span style="font-size:14px;font-weight:bold;color:#0f172a;margin-left:6px;">
+        Thời gian: <span id="elearn-clock-${uid}">00:00</span>
+      </span>
+    </div>
+    <div style="font-size:13px;color:#64748b;">
+      Có <strong>${quizStops.length}</strong> điểm dừng kiểm tra
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+(function() {
+  var cfg = ${embedJson};
+  var curr = 0;
+  var playing = true;
+  var curStop = null;
+  var selOpt = null;
+  var answered = {};
+  var timer = null;
+
+  var frame = document.getElementById('elearn-frame-${uid}');
+  var overlay = document.getElementById('elearn-overlay-${uid}');
+  var qTitle = document.getElementById('elearn-qtitle-${uid}');
+  var optsBox = document.getElementById('elearn-opts-${uid}');
+  var alertBox = document.getElementById('elearn-alert-${uid}');
+  var subBtn = document.getElementById('elearn-subbtn-${uid}');
+  var playBtn = document.getElementById('elearn-playbtn-${uid}');
+  var resetBtn = document.getElementById('elearn-resetbtn-${uid}');
+  var clock = document.getElementById('elearn-clock-${uid}');
+  var timeBadge = document.getElementById('elearn-time-badge-${uid}');
+
+  function fmt(s) {
+    var m = Math.floor(s / 60);
+    var sec = Math.floor(s % 60);
+    return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function postMsg(cmd) {
+    if (!frame || !frame.contentWindow) return;
+    try {
+      frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd }), '*');
+      frame.contentWindow.postMessage(JSON.stringify({ method: cmd }), '*');
+      frame.contentWindow.postMessage(cmd, '*');
+    } catch(e) {}
+  }
+
+  function doTick() {
+    if (!playing || curStop) return;
+    curr++;
+    if (clock) clock.innerText = fmt(curr);
+
+    for (var i = 0; i < cfg.stops.length; i++) {
+      var s = cfg.stops[i];
+      if (curr >= s.timeSeconds && !answered[s.id]) {
+        pause();
+        showQuiz(s);
+        break;
+      }
+    }
+  }
+
+  function play() {
+    if (curStop) return;
+    playing = true;
+    if (playBtn) {
+      playBtn.innerText = 'Tạm Dừng';
+      playBtn.style.background = '#ef4444';
+    }
+    postMsg('play');
+    if (!timer) timer = setInterval(doTick, 1000);
+  }
+
+  function pause() {
+    playing = false;
+    if (playBtn) {
+      playBtn.innerText = 'Tiếp Tục';
+      playBtn.style.background = '#2563eb';
+    }
+    postMsg('pause');
+  }
+
+  function showQuiz(stop) {
+    curStop = stop;
+    selOpt = null;
+    if (timeBadge) timeBadge.innerText = 'Mốc: ' + fmt(stop.timeSeconds);
+    if (qTitle) qTitle.innerText = stop.question;
+    if (alertBox) alertBox.style.display = 'none';
+
+    if (optsBox) {
+      optsBox.innerHTML = '';
+      for (var j = 0; j < stop.options.length; j++) {
+        (function(opt, idx) {
+          var label = String.fromCharCode(65 + idx);
+          var div = document.createElement('div');
+          div.style.cssText = 'padding:10px 12px;margin-bottom:8px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;cursor:pointer;font-size:14px;';
+          div.innerHTML = '<strong>' + label + '.</strong> ' + opt.text;
+          div.onclick = function() {
+            selOpt = opt.id;
+            var children = optsBox.children;
+            for (var c = 0; c < children.length; c++) {
+              children[c].style.background = '#f8fafc';
+              children[c].style.borderColor = '#cbd5e1';
+              children[c].style.color = '#1e293b';
+            }
+            div.style.background = '#eff6ff';
+            div.style.borderColor = '#2563eb';
+            div.style.color = '#1d4ed8';
+          };
+          optsBox.appendChild(div);
+        })(stop.options[j], j);
+      }
+    }
+
+    if (subBtn) {
+      subBtn.innerText = 'Xác nhận câu trả lời';
+      subBtn.style.background = '#2563eb';
+      subBtn.disabled = false;
+    }
+    if (overlay) overlay.style.display = 'block';
+    if (frame) {
+      frame.style.pointerEvents = 'none';
+      frame.style.opacity = '0.2';
+    }
+  }
+
+  if (subBtn) {
+    subBtn.onclick = function() {
+      if (!curStop || !selOpt) {
+        alert('Vui lòng chọn một phương án trả lời!');
+        return;
+      }
+      var found = null;
+      for (var k = 0; k < curStop.options.length; k++) {
+        if (curStop.options[k].id === selOpt) {
+          found = curStop.options[k];
+          break;
+        }
+      }
+      if (found && found.isCorrect) {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#dcfce7';
+          alertBox.style.color = '#15803d';
+          alertBox.innerText = '✓ Chính xác! ' + (curStop.explanation || '');
+        }
+        subBtn.disabled = true;
+        subBtn.style.background = '#16a34a';
+        subBtn.innerText = 'Đúng rồi! Đang tiếp tục bài giảng...';
+        answered[curStop.id] = true;
+        setTimeout(function() {
+          if (overlay) overlay.style.display = 'none';
+          if (frame) {
+            frame.style.pointerEvents = 'auto';
+            frame.style.opacity = '1';
+          }
+          curStop = null;
+          play();
+        }, 1500);
+      } else {
+        if (alertBox) {
+          alertBox.style.display = 'block';
+          alertBox.style.background = '#fee2e2';
+          alertBox.style.color = '#b91c1c';
+          alertBox.innerText = '✕ Sai rồi! Vui lòng chọn lại đáp án đúng để tiếp tục.';
+        }
+      }
+    };
+  }
+
+  if (playBtn) {
+    playBtn.onclick = function() {
+      if (playing) pause();
+      else play();
+    };
+  }
+
+  if (resetBtn) {
+    resetBtn.onclick = function() {
+      curr = 0;
+      if (clock) clock.innerText = '00:00';
+      curStop = null;
+      answered = {};
+      if (overlay) overlay.style.display = 'none';
+      if (frame) {
+        frame.style.pointerEvents = 'auto';
+        frame.style.opacity = '1';
+        frame.src = cfg.src;
+      }
+      play();
+    };
+  }
+
+  timer = setInterval(doTick, 1000);
+})();
+</script>`;
+  };
+
+  // 2. Tạo mã HTML5 Độc Lập Nâng Cao (Full Animation, Modern Styles)
+  const generateHtml5AdvancedCode = () => {
     if (!parsedEmbed) return;
 
     const embedJson = JSON.stringify({
@@ -408,7 +662,7 @@ export default function InteractiveEmbed() {
       stops: quizStops
     });
 
-    const code = `<!-- BẮT ĐẦU: KHUNG NHÚNG TƯƠNG TÁC HTML5 - TẠO BỞI RCHG STUDIO -->
+    return `<!-- BẮT ĐẦU: KHUNG NHÚNG TƯƠNG TÁC HTML5 - TẠO BỞI RCHG STUDIO -->
 <div id="interactive-embed-wrapper" style="position: relative; width: 100%; max-width: 960px; margin: 1.5rem auto; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; box-sizing: border-box;">
   <!-- Khung iframe trình chiếu -->
   <div style="position: relative; width: 100%; height: 0; padding-top: 56.25%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.18); background: #0f172a;">
@@ -648,9 +902,20 @@ export default function InteractiveEmbed() {
   </script>
 </div>
 <!-- KẾT THÚC: KHUNG NHÚNG TƯƠNG TÁC HTML5 -->`;
+  };
 
-    setExportedCode(code);
-    showToast('Đã tạo mã nhúng tương tác HTML5 hoàn chỉnh!', 'success');
+  const handleExportCode = (mode: 'standard' | 'html5') => {
+    setExportMode(mode);
+    const code = mode === 'standard' ? generateStandardHtmlCode() : generateHtml5AdvancedCode();
+    if (code) {
+      setExportedCode(code);
+      showToast(
+        mode === 'standard' 
+          ? 'Đã tạo mã HTML thường (Tương thích tốt Elearning / LMS / CKEditor)!' 
+          : 'Đã tạo mã HTML5 nâng cao!',
+        'success'
+      );
+    }
   };
 
   const handleCopyCode = async () => {
@@ -658,7 +923,7 @@ export default function InteractiveEmbed() {
     try {
       await navigator.clipboard.writeText(exportedCode);
       setCopied(true);
-      showToast('Đã sao chép toàn bộ mã HTML5 vào bộ nhớ tạm!', 'success');
+      showToast('Đã sao chép mã nhúng vào bộ nhớ tạm!', 'success');
       setTimeout(() => setCopied(false), 2000);
     } catch {
       showToast('Không thể sao chép tự động, vui lòng chọn và copy thủ công.', 'warning');
@@ -674,9 +939,9 @@ export default function InteractiveEmbed() {
             <Code size={26} />
           </div>
           <div>
-            <h1 className="inter-title">Xuất Mã Nhúng HTML5 Tương Tác</h1>
+            <h1 className="inter-title">Xuất Mã Nhúng HTML Tương Tác</h1>
             <p className="inter-subtitle">
-              Thêm điểm dừng câu hỏi trắc nghiệm vào Canva, YouTube hoặc website bất kỳ và xuất mã nhúng HTML5 hoàn chỉnh.
+              Thêm điểm dừng câu hỏi trắc nghiệm vào Canva, YouTube hoặc website bất kỳ và xuất mã nhúng HTML thường (chuẩn Elearning/LMS) hoặc HTML5.
             </p>
           </div>
         </div>
@@ -771,24 +1036,61 @@ export default function InteractiveEmbed() {
             </div>
           </div>
 
-          {/* Step 3: Export HTML5 Button */}
+          {/* Step 3: Export Code Button */}
           <div className="inter-card">
             <div className="inter-card-header">
               <span className="step-badge">Bước 3</span>
-              <h2>Xuất Mã Nhúng HTML5 Hoàn Chỉnh</h2>
+              <h2>Xuất Mã Nhúng Trực Tiếp</h2>
             </div>
             <p className="inter-desc">
-              Tạo khối mã HTML5 tự chứa tất cả giao diện câu hỏi, logic dừng và bảo vệ nội dung để nhúng vào website, WordPress, LMS hoặc bài viết của bạn.
+              Chọn định dạng phù hợp với hệ thống bạn muốn nhúng vào:
             </p>
-            <button className="btn btn-primary btn-large" onClick={generateExportCode} style={{ width: '100%' }}>
-              <FileCode size={20} /> Xuất Toàn Bộ Thành Mã Thẻ HTML
-            </button>
+
+            {/* Export Mode Toggle Buttons */}
+            <div className="export-mode-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+              <button 
+                className={`btn ${exportMode === 'standard' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleExportCode('standard')}
+                style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
+                  <FileCode size={18} /> Mã HTML Thường (Elearning / LMS)
+                </div>
+                <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
+                  Tối ưu cho Moodle, CMS Elearning Nam Sài Gòn, CKEditor
+                </span>
+              </button>
+
+              <button 
+                className={`btn ${exportMode === 'html5' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleExportCode('html5')}
+                style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
+                  <Sparkles size={18} /> Mã HTML5 Nâng Cao
+                </div>
+                <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
+                  Giao diện hiện đại có hiệu ứng mờ cho Web độc lập
+                </span>
+              </button>
+            </div>
+
+            {/* Hướng dẫn dán vào LMS */}
+            <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', padding: '0.85rem 1rem', fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>
+                💡 Hướng dẫn dán vào LMS (elearning.namsaigon.edu.vn):
+              </strong>
+              1. Bấm nút <strong>"Mã HTML Thường"</strong> ở trên và bấm <strong>"Sao Chép Mã"</strong>.<br />
+              2. Trên trang Cập nhật bài giảng LMS, ở khung soạn thảo nội dung hãy bấm vào nút <strong>Mã nguồn (Source / &lt;&gt;)</strong> trên thanh công cụ.<br />
+              3. Dán toàn bộ mã đã sao chép vào rồi bấm Lưu lại bài giảng.
+            </div>
 
             {exportedCode && (
               <div className="export-result-box">
                 <div className="export-result-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
-                    <Code size={18} /> Mã HTML5 sẵn sàng nhúng
+                    <Code size={18} /> 
+                    {exportMode === 'standard' ? 'Mã HTML Thường (Chuẩn LMS)' : 'Mã HTML5 Nâng Cao'}
                   </div>
                   <button className="btn btn-primary btn-sm" onClick={handleCopyCode}>
                     {copied ? <Check size={16} /> : <Copy size={16} />}
@@ -815,19 +1117,80 @@ export default function InteractiveEmbed() {
             {/* Display Frame Screen */}
             <div className="interactive-screen-wrapper">
               {parsedEmbed ? (
-                <iframe
-                  id="preview-iframe"
-                  src={parsedEmbed.iframeSrc}
-                  title="Interactive Preview"
-                  className="interactive-iframe"
-                  style={{
-                    pointerEvents: activeQuiz ? 'none' : 'auto',
-                    opacity: activeQuiz ? 0.2 : 1,
-                    transition: 'opacity 0.3s ease'
-                  }}
-                  allowFullScreen
-                  allow="fullscreen; autoplay; encrypted-media"
-                />
+                <>
+                  <iframe
+                    id="preview-iframe"
+                    src={parsedEmbed.iframeSrc}
+                    title="Interactive Preview"
+                    className="interactive-iframe"
+                    style={{
+                      pointerEvents: activeQuiz ? 'none' : 'auto',
+                      opacity: activeQuiz ? 0.2 : 1,
+                      transition: 'opacity 0.3s ease'
+                    }}
+                    allowFullScreen
+                    allow="fullscreen; autoplay; encrypted-media"
+                  />
+                  {!hasStartedPresentation && (
+                    <div 
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'rgba(15, 23, 42, 0.7)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        zIndex: 40,
+                        backdropFilter: 'blur(3px)',
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        setHasStartedPresentation(true);
+                        setIsPlaying(true);
+                        isPlayingRef.current = true;
+                        // Thử gửi lệnh play tới iframe
+                        const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
+                        if (iframe?.contentWindow) {
+                          try {
+                            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'play' }), '*');
+                            iframe.contentWindow.postMessage(JSON.stringify({ method: 'play' }), '*');
+                            iframe.contentWindow.postMessage('play', '*');
+                          } catch (e) {}
+                        }
+                        if (parsedEmbed?.type === 'youtube' && ytPlayerRef.current?.playVideo) {
+                          try { ytPlayerRef.current.playVideo(); } catch (e) {}
+                        }
+                      }}
+                    >
+                      <button 
+                        style={{
+                          background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                          color: '#ffffff',
+                          border: 'none',
+                          padding: '14px 28px',
+                          borderRadius: '50px',
+                          fontSize: '1rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem',
+                          boxShadow: '0 8px 25px rgba(37, 99, 235, 0.4)',
+                          transition: 'transform 0.2s ease'
+                        }}
+                      >
+                        <Play size={20} fill="#ffffff" /> Bắt Đầu Chạy Bài Giảng
+                      </button>
+                      <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginTop: '0.75rem', margin: 0 }}>
+                        Bấm để kích hoạt phát slide/video và đồng bộ bộ đếm điểm dừng
+                      </p>
+                    </div>
+                  )}
+                </>
               ) : (
                 <div className="preview-placeholder">
                   <AlertCircle size={40} />
