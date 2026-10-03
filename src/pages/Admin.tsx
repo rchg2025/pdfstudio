@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { Eye, Edit, Trash2, ExternalLink } from "lucide-react";
+import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert } from "lucide-react";
 
 
 export default function Admin() {
@@ -192,6 +192,38 @@ export default function Admin() {
       } catch (e) {
         console.error(e);
         showToast('Lỗi khi xóa tài khoản', 'error');
+      }
+    });
+  };
+
+  const toggleUserStatus = (targetUser: any) => {
+    const isCurrentlyDisabled = targetUser.role === 'DISABLED';
+    const newRole = isCurrentlyDisabled ? 'USER' : 'DISABLED';
+    const actionLabel = isCurrentlyDisabled ? 'Kích hoạt' : 'Vô hiệu hóa';
+
+    showConfirm(`Bạn có chắc chắn muốn ${actionLabel} tài khoản "${targetUser.email}"?`, async () => {
+      try {
+        const res = await fetch('/api/admin/users', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({
+            id: targetUser.id,
+            email: targetUser.email,
+            name: targetUser.name,
+            role: newRole
+          })
+        });
+
+        if (res.ok) {
+          fetchUsers();
+          showToast(`Đã ${actionLabel.toLowerCase()} tài khoản thành công!`, 'success');
+        } else {
+          const d = await res.json();
+          showToast(d.message || `Lỗi khi ${actionLabel.toLowerCase()} tài khoản`, 'error');
+        }
+      } catch (e) {
+        console.error(e);
+        showToast(`Lỗi khi ${actionLabel.toLowerCase()} tài khoản`, 'error');
       }
     });
   };
@@ -445,10 +477,11 @@ export default function Admin() {
                 <input type="text" value={editingUser.name || ''} onChange={e => setEditingUser({...editingUser, name: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Vai trò</label>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Vai trò & Trạng thái</label>
                 <select value={editingUser.role || 'USER'} onChange={e => setEditingUser({...editingUser, role: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
-                  <option value="USER">USER</option>
-                  <option value="ADMIN">ADMIN</option>
+                  <option value="USER">USER (Người dùng - Kích hoạt)</option>
+                  <option value="ADMIN">ADMIN (Quản trị viên)</option>
+                  <option value="DISABLED">DISABLED (Vô hiệu hóa tài khoản)</option>
                 </select>
               </div>
               <div>
@@ -639,9 +672,10 @@ export default function Admin() {
                   onChange={e => { setUserRoleFilter(e.target.value); setUsersPage(1); }}
                   className="input"
                 >
-                  <option value="all">Tất cả vai trò</option>
+                  <option value="all">Tất cả vai trò & trạng thái</option>
                   <option value="ADMIN">Quản trị (ADMIN)</option>
-                  <option value="USER">Người dùng (USER)</option>
+                  <option value="USER">Người dùng hoạt động (USER)</option>
+                  <option value="DISABLED">Đã vô hiệu hóa (DISABLED)</option>
                 </select>
                 <select 
                   value={userTimeFilter}
@@ -663,29 +697,80 @@ export default function Admin() {
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Tên</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Vai trò</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Trạng thái</th>
                         <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)', position: 'sticky', right: 0, background: 'var(--bg-secondary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.length === 0 ? (
-                        <tr><td colSpan={4} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có người dùng.</td></tr>
-                      ) : paginatedUsers.map((u: any) => (
-                        <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                          <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: 500 }}>{u.email}</td>
-                          <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{u.name || 'N/A'}</td>
-                          <td style={{ padding: '1rem' }}>
-                            <span style={{ padding: '0.25rem 0.5rem', background: u.role === 'ADMIN' ? '#dbeafe' : '#f1f5f9', color: u.role === 'ADMIN' ? '#1d4ed8' : '#475569', borderRadius: '0.25rem', fontSize: '0.75rem', fontWeight: 600 }}>
-                              {u.role}
-                            </span>
-                          </td>
-                          <td style={{ padding: '1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
-                            <button onClick={() => setEditingUser(u)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '1rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Edit size={16} /><span className="action-text">Sửa</span></button>
-                            {u.id !== user?.id && (
-                              <button onClick={() => deleteUser(u.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Trash2 size={16} /><span className="action-text">Xóa</span></button>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
+                        <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có người dùng.</td></tr>
+                      ) : paginatedUsers.map((u: any) => {
+                        const isDisabled = u.role === 'DISABLED';
+                        return (
+                          <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', opacity: isDisabled ? 0.75 : 1 }}>
+                            <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                              {u.email}
+                              {isDisabled && <span style={{ marginLeft: '6px', fontSize: '0.72rem', color: '#ef4444', fontWeight: 600 }}>(Khóa)</span>}
+                            </td>
+                            <td style={{ padding: '1rem', color: 'var(--text-secondary)' }}>{u.name || 'N/A'}</td>
+                            <td style={{ padding: '1rem' }}>
+                              <span style={{ 
+                                padding: '0.25rem 0.5rem', 
+                                background: u.role === 'ADMIN' ? '#dbeafe' : isDisabled ? '#fee2e2' : '#f1f5f9', 
+                                color: u.role === 'ADMIN' ? '#1d4ed8' : isDisabled ? '#b91c1c' : '#475569', 
+                                borderRadius: '0.25rem', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 600 
+                              }}>
+                                {u.role === 'ADMIN' ? 'ADMIN' : isDisabled ? 'DISABLED' : 'USER'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '1rem' }}>
+                              <span style={{ 
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.35rem',
+                                padding: '0.25rem 0.6rem', 
+                                background: isDisabled ? '#fee2e2' : '#dcfce7', 
+                                color: isDisabled ? '#dc2626' : '#15803d', 
+                                borderRadius: '999px', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 700 
+                              }}>
+                                {isDisabled ? <ShieldAlert size={12} /> : <ShieldCheck size={12} />}
+                                {isDisabled ? 'Đã Vô Hiệu Hóa' : 'Đang Hoạt Động'}
+                              </span>
+                            </td>
+                            <td style={{ padding: '1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
+                              {u.id !== user?.id && (
+                                <button 
+                                  onClick={() => toggleUserStatus(u)} 
+                                  style={{ 
+                                    color: isDisabled ? '#16a34a' : '#ea580c', 
+                                    background: 'none', 
+                                    border: 'none', 
+                                    cursor: 'pointer', 
+                                    fontWeight: 600, 
+                                    fontSize: '0.875rem', 
+                                    marginRight: '0.85rem', 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: '0.25rem' 
+                                  }}
+                                  title={isDisabled ? 'Bấm để kích hoạt tài khoản' : 'Bấm để vô hiệu hóa tài khoản'}
+                                >
+                                  {isDisabled ? <UserCheck size={16} /> : <UserX size={16} />}
+                                  <span className="action-text">{isDisabled ? 'Kích hoạt' : 'Khóa'}</span>
+                                </button>
+                              )}
+                              <button onClick={() => setEditingUser(u)} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', marginRight: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Edit size={16} /><span className="action-text">Sửa</span></button>
+                              {u.id !== user?.id && (
+                                <button onClick={() => deleteUser(u.id)} style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 500, fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><Trash2 size={16} /><span className="action-text">Xóa</span></button>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
 

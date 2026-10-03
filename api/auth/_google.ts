@@ -76,6 +76,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     let user = await prisma.user.findUnique({ where: { email } });
     
     if (user) {
+      if (user.role === 'DISABLED') {
+        return res.status(403).json({ message: 'Tài khoản của bạn đã bị vô hiệu hóa bởi Quản trị viên. Vui lòng liên hệ quản trị hệ thống để được hỗ trợ.' });
+      }
+
       if (!user.googleId) {
         user = await prisma.user.update({
           where: { email },

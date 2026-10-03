@@ -44,6 +44,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không chính xác.' });
     }
 
+    if (user.role === 'DISABLED') {
+      return res.status(403).json({ message: 'Tài khoản của bạn đã bị vô hiệu hóa bởi Quản trị viên. Vui lòng liên hệ quản trị hệ thống để được hỗ trợ.' });
+    }
+
     const secret = process.env.JWT_SECRET || 'fallback_secret_key';
     const token = jwt.sign(
       { userId: user.id, email: user.email, role: user.role },
