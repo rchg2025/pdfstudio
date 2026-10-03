@@ -445,8 +445,6 @@ export default function InteractiveEmbed() {
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 
-
-
     <!-- Khung cau hoi dung lai -->
     <div id="elearn-overlay-${uid}" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.92);z-index:99999;box-sizing:border-box;padding:15px;overflow-y:auto;">
       <div style="background:#ffffff;margin:20px auto;max-width:540px;padding:24px;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.5);">
@@ -480,240 +478,445 @@ export default function InteractiveEmbed() {
       Có <strong>${quizStops.length}</strong> điểm dừng kiểm tra
     </div>
   </div>
-</div>
 
-<script type="text/javascript">
-(function() {
-  var cfg = ${embedJson};
-  var curr = 0;
-  var playing = true;
-  var curStop = null;
-  var selOpt = null;
-  var answered = {};
-  var timer = null;
+  <!-- Kích hoạt khởi động chắc chắn không bị LMS loại bỏ -->
+  <img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" style="display:none;" onload="if(!window.initElearn_${uid}){window.initElearn_${uid}=true;(function(){
+    var cfg=${embedJson};
+    var curr=0;
+    var playing=true;
+    var curStop=null;
+    var selOpt=null;
+    var answered={};
+    var timer=null;
 
-  var frame = document.getElementById('elearn-frame-${uid}');
-  var overlay = document.getElementById('elearn-overlay-${uid}');
-  var qTitle = document.getElementById('elearn-qtitle-${uid}');
-  var optsBox = document.getElementById('elearn-opts-${uid}');
-  var alertBox = document.getElementById('elearn-alert-${uid}');
-  var subBtn = document.getElementById('elearn-subbtn-${uid}');
-  var playBtn = document.getElementById('elearn-playbtn-${uid}');
-  var resetBtn = document.getElementById('elearn-resetbtn-${uid}');
-  var clock = document.getElementById('elearn-clock-${uid}');
-  var timeBadge = document.getElementById('elearn-time-badge-${uid}');
+    var frame=document.getElementById('elearn-frame-${uid}');
+    var overlay=document.getElementById('elearn-overlay-${uid}');
+    var qTitle=document.getElementById('elearn-qtitle-${uid}');
+    var optsBox=document.getElementById('elearn-opts-${uid}');
+    var alertBox=document.getElementById('elearn-alert-${uid}');
+    var subBtn=document.getElementById('elearn-subbtn-${uid}');
+    var playBtn=document.getElementById('elearn-playbtn-${uid}');
+    var resetBtn=document.getElementById('elearn-resetbtn-${uid}');
+    var clock=document.getElementById('elearn-clock-${uid}');
+    var timeBadge=document.getElementById('elearn-time-badge-${uid}');
 
-  function fmt(s) {
-    var m = Math.floor(s / 60);
-    var sec = Math.floor(s % 60);
-    return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
-  }
+    function fmt(s){
+      var m=Math.floor(s/60);
+      var sec=Math.floor(s%60);
+      return (m<10?'0':'')+m+':'+(sec<10?'0':'')+sec;
+    }
 
-  function postMsg(cmd) {
-    if (!frame || !frame.contentWindow) return;
-    try {
-      frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd }), '*');
-      frame.contentWindow.postMessage(JSON.stringify({ method: cmd }), '*');
-      frame.contentWindow.postMessage(cmd, '*');
-    } catch(e) {}
-  }
+    function postMsg(cmd){
+      if(!frame||!frame.contentWindow)return;
+      try{
+        frame.contentWindow.postMessage(JSON.stringify({event:'command',func:cmd}),'*');
+        frame.contentWindow.postMessage(JSON.stringify({method:cmd}),'*');
+        frame.contentWindow.postMessage(cmd,'*');
+      }catch(e){}
+    }
 
-  function checkStops(t) {
-    for (var i = 0; i < cfg.stops.length; i++) {
-      var s = cfg.stops[i];
-      if (t >= s.timeSeconds && !answered[s.id]) {
-        pause();
-        showQuiz(s);
-        return true;
+    function checkStops(t){
+      for(var i=0;i<cfg.stops.length;i++){
+        var s=cfg.stops[i];
+        if(t>=s.timeSeconds&&!answered[s.id]){
+          pause();
+          showQuiz(s);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function doTick(){
+      if(!playing||curStop)return;
+      curr++;
+      if(clock)clock.innerText=fmt(curr);
+      checkStops(curr);
+      if(cfg.type==='youtube'&&frame&&frame.contentWindow){
+        try{frame.contentWindow.postMessage(JSON.stringify({event:'listening'}),'*');}catch(e){}
       }
     }
-    return false;
-  }
 
-  function doTick() {
-    if (!playing || curStop) return;
-    curr++;
-    if (clock) clock.innerText = fmt(curr);
-    checkStops(curr);
-
-    // Kích hoạt YouTube gửi lại tiến độ thời gian nếu có API
-    if (cfg.type === 'youtube' && frame && frame.contentWindow) {
-      try {
-        frame.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
-      } catch(e) {}
+    function play(){
+      if(curStop)return;
+      playing=true;
+      if(playBtn){
+        playBtn.innerText='Tạm Dừng';
+        playBtn.style.background='#ef4444';
+      }
+      postMsg('play');
+      postMsg('playVideo');
+      if(!timer)timer=setInterval(doTick,1000);
     }
-  }
 
-  function play() {
-    if (curStop) return;
-    playing = true;
-    if (playBtn) {
-      playBtn.innerText = 'Tạm Dừng';
-      playBtn.style.background = '#ef4444';
+    function pause(){
+      playing=false;
+      if(playBtn){
+        playBtn.innerText='Tiếp Tục';
+        playBtn.style.background='#2563eb';
+      }
+      postMsg('pause');
+      postMsg('pauseVideo');
     }
-    postMsg('play');
-    postMsg('playVideo');
-    if (!timer) timer = setInterval(doTick, 1000);
-  }
 
-  function pause() {
-    playing = false;
-    if (playBtn) {
-      playBtn.innerText = 'Tiếp Tục';
-      playBtn.style.background = '#2563eb';
+    function showQuiz(stop){
+      curStop=stop;
+      selOpt=null;
+      if(timeBadge)timeBadge.innerText='Mốc: '+fmt(stop.timeSeconds);
+      if(qTitle)qTitle.innerText=stop.question;
+      if(alertBox)alertBox.style.display='none';
+
+      if(optsBox){
+        optsBox.innerHTML='';
+        for(var j=0;j<stop.options.length;j++){
+          (function(opt,idx){
+            var label=String.fromCharCode(65+idx);
+            var div=document.createElement('div');
+            div.style.cssText='padding:10px 12px;margin-bottom:8px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;cursor:pointer;font-size:14px;';
+            div.innerHTML='<strong>'+label+'.</strong> '+opt.text;
+            div.onclick=function(){
+              selOpt=opt.id;
+              var children=optsBox.children;
+              for(var c=0;c<children.length;c++){
+                children[c].style.background='#f8fafc';
+                children[c].style.borderColor='#cbd5e1';
+                children[c].style.color='#1e293b';
+              }
+              div.style.background='#eff6ff';
+              div.style.borderColor='#2563eb';
+              div.style.color='#1d4ed8';
+            };
+            optsBox.appendChild(div);
+          })(stop.options[j],j);
+        }
+      }
+
+      if(subBtn){
+        subBtn.innerText='Xác nhận câu trả lời';
+        subBtn.style.background='#2563eb';
+        subBtn.disabled=false;
+      }
+      if(overlay)overlay.style.display='block';
+      if(frame){
+        frame.style.pointerEvents='none';
+        frame.style.opacity='0.2';
+      }
     }
-    postMsg('pause');
-    postMsg('pauseVideo');
-  }
 
-  function showQuiz(stop) {
-    curStop = stop;
-    selOpt = null;
-    if (timeBadge) timeBadge.innerText = 'Mốc: ' + fmt(stop.timeSeconds);
-    if (qTitle) qTitle.innerText = stop.question;
-    if (alertBox) alertBox.style.display = 'none';
-
-    if (optsBox) {
-      optsBox.innerHTML = '';
-      for (var j = 0; j < stop.options.length; j++) {
-        (function(opt, idx) {
-          var label = String.fromCharCode(65 + idx);
-          var div = document.createElement('div');
-          div.style.cssText = 'padding:10px 12px;margin-bottom:8px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;cursor:pointer;font-size:14px;';
-          div.innerHTML = '<strong>' + label + '.</strong> ' + opt.text;
-          div.onclick = function() {
-            selOpt = opt.id;
-            var children = optsBox.children;
-            for (var c = 0; c < children.length; c++) {
-              children[c].style.background = '#f8fafc';
-              children[c].style.borderColor = '#cbd5e1';
-              children[c].style.color = '#1e293b';
+    window.addEventListener('message',function(ev){
+      if(curStop)return;
+      try{
+        var d=typeof ev.data==='string'?JSON.parse(ev.data):ev.data;
+        if(!d)return;
+        if(d.event==='infoDelivery'&&d.info){
+          if(typeof d.info.currentTime==='number'){
+            var ytSec=Math.floor(d.info.currentTime);
+            if(ytSec>0&&Math.abs(ytSec-curr)>1){
+              curr=ytSec;
+              if(clock)clock.innerText=fmt(curr);
+              checkStops(curr);
             }
-            div.style.background = '#eff6ff';
-            div.style.borderColor = '#2563eb';
-            div.style.color = '#1d4ed8';
-          };
-          optsBox.appendChild(div);
-        })(stop.options[j], j);
-      }
-    }
+          }
+          if(d.info.playerState===1&&!playing)play();
+          else if(d.info.playerState===2&&playing)pause();
+        }
+        if((d.event==='play'||d.type==='play'||d.status==='playing')&&!playing)play();
+        else if((d.event==='pause'||d.type==='pause')&&playing)pause();
+      }catch(e){}
+    });
 
-    if (subBtn) {
-      subBtn.innerText = 'Xác nhận câu trả lời';
-      subBtn.style.background = '#2563eb';
-      subBtn.disabled = false;
-    }
-    if (overlay) overlay.style.display = 'block';
-    if (frame) {
-      frame.style.pointerEvents = 'none';
-      frame.style.opacity = '0.2';
-    }
-  }
-
-  // Tự động đồng bộ với tiến độ YouTube hoặc Canva khi nhận message
-  window.addEventListener('message', function(ev) {
-    if (curStop) return;
-    try {
-      var d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
-      if (!d) return;
-
-      // 1. YouTube API event / infoDelivery
-      if (d.event === 'infoDelivery' && d.info) {
-        if (typeof d.info.currentTime === 'number') {
-          var ytSec = Math.floor(d.info.currentTime);
-          if (ytSec > 0 && Math.abs(ytSec - curr) > 1) {
-            curr = ytSec;
-            if (clock) clock.innerText = fmt(curr);
-            checkStops(curr);
+    if(subBtn){
+      subBtn.onclick=function(){
+        if(!curStop||!selOpt){
+          alert('Vui lòng chọn một phương án trả lời!');
+          return;
+        }
+        var found=null;
+        for(var k=0;k<curStop.options.length;k++){
+          if(curStop.options[k].id===selOpt){
+            found=curStop.options[k];
+            break;
           }
         }
-        if (d.info.playerState === 1) { // 1 = YT.PlayerState.PLAYING
-          if (!playing) play();
-        } else if (d.info.playerState === 2) { // 2 = PAUSED
+        if(found&&found.isCorrect){
+          if(alertBox){
+            alertBox.style.display='block';
+            alertBox.style.background='#dcfce7';
+            alertBox.style.color='#15803d';
+            alertBox.innerText='✓ Chính xác! '+(curStop.explanation||'');
+          }
+          subBtn.disabled=true;
+          subBtn.style.background='#16a34a';
+          subBtn.innerText='Đúng rồi! Đang tiếp tục bài giảng...';
+          answered[curStop.id]=true;
+          setTimeout(function(){
+            if(overlay)overlay.style.display='none';
+            if(frame){
+              frame.style.pointerEvents='auto';
+              frame.style.opacity='1';
+            }
+            curStop=null;
+            play();
+          },1500);
+        }else{
+          if(alertBox){
+            alertBox.style.display='block';
+            alertBox.style.background='#fee2e2';
+            alertBox.style.color='#b91c1c';
+            alertBox.innerText='✕ Sai rồi! Vui lòng chọn lại đáp án đúng để tiếp tục.';
+          }
+        }
+      };
+    }
+
+    if(playBtn){
+      playBtn.onclick=function(){
+        if(playing)pause();
+        else play();
+      };
+    }
+
+    if(resetBtn){
+      resetBtn.onclick=function(){
+        curr=0;
+        if(clock)clock.innerText='00:00';
+        curStop=null;
+        answered={};
+        if(overlay)overlay.style.display='none';
+        if(frame){
+          frame.style.pointerEvents='auto';
+          frame.style.opacity='1';
+          frame.src=cfg.src;
+        }
+        play();
+      };
+    }
+
+    timer=setInterval(doTick,1000);
+  })()}" />
+
+  <script type="text/javascript">
+  if (!window.initElearn_${uid}) {
+    window.initElearn_${uid} = true;
+    (function() {
+      var cfg = ${embedJson};
+      var curr = 0;
+      var playing = true;
+      var curStop = null;
+      var selOpt = null;
+      var answered = {};
+      var timer = null;
+
+      var frame = document.getElementById('elearn-frame-${uid}');
+      var overlay = document.getElementById('elearn-overlay-${uid}');
+      var qTitle = document.getElementById('elearn-qtitle-${uid}');
+      var optsBox = document.getElementById('elearn-opts-${uid}');
+      var alertBox = document.getElementById('elearn-alert-${uid}');
+      var subBtn = document.getElementById('elearn-subbtn-${uid}');
+      var playBtn = document.getElementById('elearn-playbtn-${uid}');
+      var resetBtn = document.getElementById('elearn-resetbtn-${uid}');
+      var clock = document.getElementById('elearn-clock-${uid}');
+      var timeBadge = document.getElementById('elearn-time-badge-${uid}');
+
+      function fmt(s) {
+        var m = Math.floor(s / 60);
+        var sec = Math.floor(s % 60);
+        return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+      }
+
+      function postMsg(cmd) {
+        if (!frame || !frame.contentWindow) return;
+        try {
+          frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd }), '*');
+          frame.contentWindow.postMessage(JSON.stringify({ method: cmd }), '*');
+          frame.contentWindow.postMessage(cmd, '*');
+        } catch(e) {}
+      }
+
+      function checkStops(t) {
+        for (var i = 0; i < cfg.stops.length; i++) {
+          var s = cfg.stops[i];
+          if (t >= s.timeSeconds && !answered[s.id]) {
+            pause();
+            showQuiz(s);
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function doTick() {
+        if (!playing || curStop) return;
+        curr++;
+        if (clock) clock.innerText = fmt(curr);
+        checkStops(curr);
+        if (cfg.type === 'youtube' && frame && frame.contentWindow) {
+          try { frame.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*'); } catch(e) {}
+        }
+      }
+
+      function play() {
+        if (curStop) return;
+        playing = true;
+        if (playBtn) {
+          playBtn.innerText = 'Tạm Dừng';
+          playBtn.style.background = '#ef4444';
+        }
+        postMsg('play');
+        postMsg('playVideo');
+        if (!timer) timer = setInterval(doTick, 1000);
+      }
+
+      function pause() {
+        playing = false;
+        if (playBtn) {
+          playBtn.innerText = 'Tiếp Tục';
+          playBtn.style.background = '#2563eb';
+        }
+        postMsg('pause');
+        postMsg('pauseVideo');
+      }
+
+      function showQuiz(stop) {
+        curStop = stop;
+        selOpt = null;
+        if (timeBadge) timeBadge.innerText = 'Mốc: ' + fmt(stop.timeSeconds);
+        if (qTitle) qTitle.innerText = stop.question;
+        if (alertBox) alertBox.style.display = 'none';
+
+        if (optsBox) {
+          optsBox.innerHTML = '';
+          for (var j = 0; j < stop.options.length; j++) {
+            (function(opt, idx) {
+              var label = String.fromCharCode(65 + idx);
+              var div = document.createElement('div');
+              div.style.cssText = 'padding:10px 12px;margin-bottom:8px;border:1px solid #cbd5e1;background:#f8fafc;border-radius:6px;cursor:pointer;font-size:14px;';
+              div.innerHTML = '<strong>' + label + '.</strong> ' + opt.text;
+              div.onclick = function() {
+                selOpt = opt.id;
+                var children = optsBox.children;
+                for (var c = 0; c < children.length; c++) {
+                  children[c].style.background = '#f8fafc';
+                  children[c].style.borderColor = '#cbd5e1';
+                  children[c].style.color = '#1e293b';
+                }
+                div.style.background = '#eff6ff';
+                div.style.borderColor = '#2563eb';
+                div.style.color = '#1d4ed8';
+              };
+              optsBox.appendChild(div);
+            })(stop.options[j], j);
+          }
+        }
+
+        if (subBtn) {
+          subBtn.innerText = 'Xác nhận câu trả lời';
+          subBtn.style.background = '#2563eb';
+          subBtn.disabled = false;
+        }
+        if (overlay) overlay.style.display = 'block';
+        if (frame) {
+          frame.style.pointerEvents = 'none';
+          frame.style.opacity = '0.2';
+        }
+      }
+
+      window.addEventListener('message', function(ev) {
+        if (curStop) return;
+        try {
+          var d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+          if (!d) return;
+
+          if (d.event === 'infoDelivery' && d.info) {
+            if (typeof d.info.currentTime === 'number') {
+              var ytSec = Math.floor(d.info.currentTime);
+              if (ytSec > 0 && Math.abs(ytSec - curr) > 1) {
+                curr = ytSec;
+                if (clock) clock.innerText = fmt(curr);
+                checkStops(curr);
+              }
+            }
+            if (d.info.playerState === 1 && !playing) play();
+            else if (d.info.playerState === 2 && playing) pause();
+          }
+
+          if ((d.event === 'play' || d.type === 'play' || d.status === 'playing') && !playing) play();
+          else if ((d.event === 'pause' || d.type === 'pause') && playing) pause();
+        } catch(e) {}
+      });
+
+      if (subBtn) {
+        subBtn.onclick = function() {
+          if (!curStop || !selOpt) {
+            alert('Vui lòng chọn một phương án trả lời!');
+            return;
+          }
+          var found = null;
+          for (var k = 0; k < curStop.options.length; k++) {
+            if (curStop.options[k].id === selOpt) {
+              found = curStop.options[k];
+              break;
+            }
+          }
+          if (found && found.isCorrect) {
+            if (alertBox) {
+              alertBox.style.display = 'block';
+              alertBox.style.background = '#dcfce7';
+              alertBox.style.color = '#15803d';
+              alertBox.innerText = '✓ Chính xác! ' + (curStop.explanation || '');
+            }
+            subBtn.disabled = true;
+            subBtn.style.background = '#16a34a';
+            subBtn.innerText = 'Đúng rồi! Đang tiếp tục bài giảng...';
+            answered[curStop.id] = true;
+            setTimeout(function() {
+              if (overlay) overlay.style.display = 'none';
+              if (frame) {
+                frame.style.pointerEvents = 'auto';
+                frame.style.opacity = '1';
+              }
+              curStop = null;
+              play();
+            }, 1500);
+          } else {
+            if (alertBox) {
+              alertBox.style.display = 'block';
+              alertBox.style.background = '#fee2e2';
+              alertBox.style.color = '#b91c1c';
+              alertBox.innerText = '✕ Sai rồi! Vui lòng chọn lại đáp án đúng để tiếp tục.';
+            }
+          }
+        };
+      }
+
+      if (playBtn) {
+        playBtn.onclick = function() {
           if (playing) pause();
-        }
+          else play();
+        };
       }
 
-      // 2. Canva / Generic iframe message
-      if (d.event === 'play' || d.type === 'play' || d.status === 'playing') {
-        if (!playing) play();
-      } else if (d.event === 'pause' || d.type === 'pause') {
-        if (playing) pause();
-      }
-    } catch(e) {}
-  });
-
-  if (subBtn) {
-    subBtn.onclick = function() {
-      if (!curStop || !selOpt) {
-        alert('Vui lòng chọn một phương án trả lời!');
-        return;
-      }
-      var found = null;
-      for (var k = 0; k < curStop.options.length; k++) {
-        if (curStop.options[k].id === selOpt) {
-          found = curStop.options[k];
-          break;
-        }
-      }
-      if (found && found.isCorrect) {
-        if (alertBox) {
-          alertBox.style.display = 'block';
-          alertBox.style.background = '#dcfce7';
-          alertBox.style.color = '#15803d';
-          alertBox.innerText = '✓ Chính xác! ' + (curStop.explanation || '');
-        }
-        subBtn.disabled = true;
-        subBtn.style.background = '#16a34a';
-        subBtn.innerText = 'Đúng rồi! Đang tiếp tục bài giảng...';
-        answered[curStop.id] = true;
-        setTimeout(function() {
+      if (resetBtn) {
+        resetBtn.onclick = function() {
+          curr = 0;
+          if (clock) clock.innerText = '00:00';
+          curStop = null;
+          answered = {};
           if (overlay) overlay.style.display = 'none';
           if (frame) {
             frame.style.pointerEvents = 'auto';
             frame.style.opacity = '1';
+            frame.src = cfg.src;
           }
-          curStop = null;
           play();
-        }, 1500);
-      } else {
-        if (alertBox) {
-          alertBox.style.display = 'block';
-          alertBox.style.background = '#fee2e2';
-          alertBox.style.color = '#b91c1c';
-          alertBox.innerText = '✕ Sai rồi! Vui lòng chọn lại đáp án đúng để tiếp tục.';
-        }
+        };
       }
-    };
-  }
 
-  if (playBtn) {
-    playBtn.onclick = function() {
-      if (playing) pause();
-      else play();
-    };
+      timer = setInterval(doTick, 1000);
+    })();
   }
-
-  if (resetBtn) {
-    resetBtn.onclick = function() {
-      curr = 0;
-      if (clock) clock.innerText = '00:00';
-      curStop = null;
-      answered = {};
-      if (overlay) overlay.style.display = 'none';
-      if (frame) {
-        frame.style.pointerEvents = 'auto';
-        frame.style.opacity = '1';
-        frame.src = cfg.src;
-      }
-      play();
-    };
-  }
-
-  // Luon luon tu dong bat dau chay ngay tu giay dau tien
-  timer = setInterval(doTick, 1000);
-})();
-</script>`;
+  </script>
+</div>`;
   };
 
   // 2. Tạo mã HTML5 Độc Lập Nâng Cao (Full Animation, Modern Styles)
