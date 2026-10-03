@@ -1451,44 +1451,47 @@ export default function InteractiveEmbed() {
             </p>
 
             {/* Export Mode Toggle Buttons */}
-            <div className="export-mode-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div className="export-mode-tabs">
               <button 
-                className={`btn ${exportMode === 'player-iframe' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
+                type="button"
+                className={`export-mode-tab ${exportMode === 'player-iframe' && exportedCode ? 'active' : ''}`}
                 onClick={() => handleExportCode('player-iframe')}
-                style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center', borderColor: exportMode === 'player-iframe' ? 'var(--primary)' : 'var(--border)' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
-                  <Globe size={18} /> Mã Iframe LMS (Khuyên dùng)
+                <div className="export-mode-tab-title">
+                  <Globe size={18} style={{ flexShrink: 0 }} /> 
+                  <span>Mã Iframe LMS (Khuyên dùng)</span>
                 </div>
-                <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
+                <div className="export-mode-tab-desc">
                   100% không bị LMS chặn script, chuẩn xác từng giây
-                </span>
+                </div>
               </button>
 
               <button 
-                className={`btn ${exportMode === 'standard' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
+                type="button"
+                className={`export-mode-tab ${exportMode === 'standard' && exportedCode ? 'active' : ''}`}
                 onClick={() => handleExportCode('standard')}
-                style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
-                  <FileCode size={18} /> Mã HTML Thường
+                <div className="export-mode-tab-title">
+                  <FileCode size={18} style={{ flexShrink: 0 }} /> 
+                  <span>Mã HTML Thường</span>
                 </div>
-                <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
+                <div className="export-mode-tab-desc">
                   Chèn mã trực tiếp (cần web cho phép chạy script)
-                </span>
+                </div>
               </button>
 
               <button 
-                className={`btn ${exportMode === 'html5' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
+                type="button"
+                className={`export-mode-tab ${exportMode === 'html5' && exportedCode ? 'active' : ''}`}
                 onClick={() => handleExportCode('html5')}
-                style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center' }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
-                  <Sparkles size={18} /> Mã HTML5 Nâng Cao
+                <div className="export-mode-tab-title">
+                  <Sparkles size={18} style={{ flexShrink: 0 }} /> 
+                  <span>Mã HTML5 Nâng Cao</span>
                 </div>
-                <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
+                <div className="export-mode-tab-desc">
                   Giao diện độc lập có hiệu ứng làm mờ
-                </span>
+                </div>
               </button>
             </div>
 
