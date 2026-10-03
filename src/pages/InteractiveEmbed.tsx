@@ -1372,17 +1372,9 @@ export default function InteractiveEmbed() {
               type="button" 
               className="btn btn-primary"
               onClick={() => navigate('/login', { state: { returnUrl: '/xuat-ma-nhung' } })}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 2rem', fontSize: '1rem' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 2.5rem', fontSize: '1rem', borderRadius: '50px' }}
             >
-              <LogIn size={18} /> Đăng Nhập Ngay
-            </button>
-            <button 
-              type="button" 
-              className="btn btn-outline"
-              onClick={() => navigate('/register', { state: { returnUrl: '/xuat-ma-nhung' } })}
-              style={{ padding: '0.85rem 1.75rem', fontSize: '1rem' }}
-            >
-              Đăng Ký Tài Khoản
+              <LogIn size={18} /> Đăng Nhập
             </button>
           </div>
         </div>
