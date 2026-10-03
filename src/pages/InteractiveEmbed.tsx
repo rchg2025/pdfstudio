@@ -15,7 +15,9 @@ import {
   CheckCircle2, 
   XCircle,
   FileCode,
-  Sparkles
+  Sparkles,
+  Globe,
+  ExternalLink
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './InteractiveEmbed.css';
@@ -151,7 +153,7 @@ export default function InteractiveEmbed() {
   const [answeredStops, setAnsweredStops] = useState<Set<string>>(new Set());
 
   // Export code state
-  const [exportMode, setExportMode] = useState<'standard' | 'html5'>('standard');
+  const [exportMode, setExportMode] = useState<'player-iframe' | 'standard' | 'html5'>('player-iframe');
   const [exportedCode, setExportedCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [hasStartedPresentation, setHasStartedPresentation] = useState(false);
@@ -425,6 +427,41 @@ export default function InteractiveEmbed() {
 
     setEditingStop(null);
     showToast('Đã lưu câu hỏi trắc nghiệm thành công!', 'success');
+  };
+
+  // Tạo URL chạy Player tương tác độc lập (Mã hóa UTF-8 an toàn)
+  const getPlayerUrl = () => {
+    if (!parsedEmbed) return '';
+    const payload = JSON.stringify({
+      src: parsedEmbed.iframeSrc,
+      type: parsedEmbed.type,
+      stops: quizStops
+    });
+    // UTF-8 to Base64
+    const utf8Bytes = new TextEncoder().encode(payload);
+    let binary = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    const b64 = btoa(binary);
+    return `${window.location.origin}/embed-player#${b64}`;
+  };
+
+  // 0. Tạo mã Iframe Player Chuẩn LMS (Khuyên dùng - 100% không bị lọc script hay lỗi thời gian)
+  const generateIframePlayerCode = () => {
+    const playerUrl = getPlayerUrl();
+    if (!playerUrl) return '';
+
+    return `<!-- MA NHUNG TRINH PHAT TUONG TAC LMS / E-LEARNING (100% HOAT DONG) -->
+<div style="position:relative;width:100%;max-width:960px;margin:15px auto;padding-top:56.25%;background:#000000;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+  <iframe 
+    src="${playerUrl}" 
+    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    allow="fullscreen; autoplay; encrypted-media" 
+    allowfullscreen="allowfullscreen">
+  </iframe>
+</div>
+<!-- KET THUC MA NHUNG -->`;
   };
 
   // 1. Tạo mã HTML Thường (Tương thích 100% Elearning, Moodle, CKEditor, LMS trường học)
@@ -1221,23 +1258,34 @@ export default function InteractiveEmbed() {
   // Tự động cập nhật mã xuất ở Bước 3 bất cứ khi nào Bước 1 (mã nhúng) hoặc Bước 2 (câu hỏi) hoặc chế độ xuất thay đổi
   useEffect(() => {
     if (!parsedEmbed) return;
-    const code = exportMode === 'standard' ? generateStandardHtmlCode() : generateHtml5AdvancedCode();
+    let code = '';
+    if (exportMode === 'player-iframe') {
+      code = generateIframePlayerCode();
+    } else if (exportMode === 'standard') {
+      code = generateStandardHtmlCode() || '';
+    } else {
+      code = generateHtml5AdvancedCode() || '';
+    }
     if (code) {
       setExportedCode(code);
     }
   }, [parsedEmbed, quizStops, exportMode]);
 
-  const handleExportCode = (mode: 'standard' | 'html5') => {
+  const handleExportCode = (mode: 'player-iframe' | 'standard' | 'html5') => {
     setExportMode(mode);
-    const code = mode === 'standard' ? generateStandardHtmlCode() : generateHtml5AdvancedCode();
+    let code = '';
+    if (mode === 'player-iframe') {
+      code = generateIframePlayerCode();
+      showToast('Đã chọn Mã Iframe Player (100% Tương thích LMS Nam Sài Gòn & Moodle)!', 'success');
+    } else if (mode === 'standard') {
+      code = generateStandardHtmlCode() || '';
+      showToast('Đã chọn mã HTML thường (Tương thích tốt Elearning / LMS / CKEditor)!', 'success');
+    } else {
+      code = generateHtml5AdvancedCode() || '';
+      showToast('Đã chọn mã HTML5 nâng cao!', 'success');
+    }
     if (code) {
       setExportedCode(code);
-      showToast(
-        mode === 'standard' 
-          ? 'Đã chọn mã HTML thường (Tương thích tốt Elearning / LMS / CKEditor)!' 
-          : 'Đã chọn mã HTML5 nâng cao!',
-        'success'
-      );
     }
   };
 
@@ -1370,17 +1418,30 @@ export default function InteractiveEmbed() {
             </p>
 
             {/* Export Mode Toggle Buttons */}
-            <div className="export-mode-buttons" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
+            <div className="export-mode-buttons" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem', marginBottom: '1rem' }}>
+              <button 
+                className={`btn ${exportMode === 'player-iframe' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
+                onClick={() => handleExportCode('player-iframe')}
+                style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center', borderColor: exportMode === 'player-iframe' ? 'var(--primary)' : 'var(--border)' }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
+                  <Globe size={18} /> Mã Iframe LMS (Khuyên dùng)
+                </div>
+                <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
+                  100% không bị LMS chặn script, chuẩn xác từng giây
+                </span>
+              </button>
+
               <button 
                 className={`btn ${exportMode === 'standard' && exportedCode ? 'btn-primary' : 'btn-outline'}`}
                 onClick={() => handleExportCode('standard')}
                 style={{ padding: '0.85rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem', textAlign: 'center' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '0.95rem' }}>
-                  <FileCode size={18} /> Mã HTML Thường (Elearning / LMS)
+                  <FileCode size={18} /> Mã HTML Thường
                 </div>
                 <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
-                  Tối ưu cho Moodle, CMS Elearning Nam Sài Gòn, CKEditor
+                  Chèn mã trực tiếp (cần web cho phép chạy script)
                 </span>
               </button>
 
@@ -1393,7 +1454,7 @@ export default function InteractiveEmbed() {
                   <Sparkles size={18} /> Mã HTML5 Nâng Cao
                 </div>
                 <span style={{ fontSize: '0.75rem', opacity: 0.85, fontWeight: 400 }}>
-                  Giao diện hiện đại có hiệu ứng mờ cho Web độc lập
+                  Giao diện độc lập có hiệu ứng làm mờ
                 </span>
               </button>
             </div>
@@ -1403,17 +1464,45 @@ export default function InteractiveEmbed() {
               <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>
                 💡 Hướng dẫn dán vào LMS (elearning.namsaigon.edu.vn):
               </strong>
-              1. Bấm nút <strong>"Mã HTML Thường"</strong> ở trên và bấm <strong>"Sao Chép Mã"</strong>.<br />
-              2. Trên trang Cập nhật bài giảng LMS, ở khung soạn thảo nội dung hãy bấm vào nút <strong>Mã nguồn (Source / &lt;&gt;)</strong> trên thanh công cụ.<br />
-              3. Dán toàn bộ mã đã sao chép vào rồi bấm Lưu lại bài giảng.
+              {exportMode === 'player-iframe' ? (
+                <>
+                  1. Chọn <strong>"Mã Iframe LMS (Khuyên dùng)"</strong> và bấm <strong>"Sao Chép Mã"</strong>.<br />
+                  2. Trên trang Cập nhật bài giảng LMS, ở khung soạn thảo nội dung hãy bấm vào nút <strong>Mã nguồn (Source / &lt;&gt;)</strong> trên thanh công cụ.<br />
+                  3. Dán đoạn mã iframe vào rồi bấm <strong>Lưu lại bài giảng</strong>. Vì là iframe độc lập, toàn bộ đồng hồ, tạm dừng và danh sách câu hỏi trắc nghiệm sẽ hoạt động trơn tru 100% mà không bị CMS của trường can thiệp xóa code.
+                </>
+              ) : (
+                <>
+                  1. Bấm nút <strong>"Mã HTML Thường"</strong> ở trên và bấm <strong>"Sao Chép Mã"</strong>.<br />
+                  2. Trên trang Cập nhật bài giảng LMS, ở khung soạn thảo nội dung hãy bấm vào nút <strong>Mã nguồn (Source / &lt;&gt;)</strong> trên thanh công cụ.<br />
+                  3. Dán toàn bộ mã đã sao chép vào rồi bấm Lưu lại bài giảng.
+                </>
+              )}
             </div>
+
+            {exportMode === 'player-iframe' && getPlayerUrl() && (
+              <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <a
+                  href={getPlayerUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                >
+                  <ExternalLink size={14} /> Mở thử bài giảng ở tab mới
+                </a>
+              </div>
+            )}
 
             {exportedCode && (
               <div className="export-result-box">
                 <div className="export-result-header">
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: 600 }}>
                     <Code size={18} /> 
-                    {exportMode === 'standard' ? 'Mã HTML Thường (Chuẩn LMS)' : 'Mã HTML5 Nâng Cao'}
+                    {exportMode === 'player-iframe' 
+                      ? 'Mã Iframe Trình Phát LMS (Chuẩn An Toàn 100%)' 
+                      : exportMode === 'standard' 
+                        ? 'Mã HTML Thường (Chuẩn LMS)' 
+                        : 'Mã HTML5 Nâng Cao'}
                   </div>
                   <button className="btn btn-primary btn-sm" onClick={handleCopyCode}>
                     {copied ? <Check size={16} /> : <Copy size={16} />}

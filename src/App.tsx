@@ -37,6 +37,7 @@ const AudioEditor = React.lazy(() => import('./pages/AudioEditor'));
 const TextToSpeech = React.lazy(() => import('./pages/TextToSpeech'));
 const AiImageGenerator = React.lazy(() => import('./pages/AiImageGenerator'));
 const InteractiveEmbed = React.lazy(() => import('./pages/InteractiveEmbed'));
+const EmbedPlayer = React.lazy(() => import('./pages/EmbedPlayer'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -148,6 +149,10 @@ function App() {
               <Suspense fallback={<FallbackLoader />}><InteractiveEmbed /></Suspense>
             } />
           </Route>
+          {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
+          <Route path="embed-player" element={
+            <Suspense fallback={<FallbackLoader />}><EmbedPlayer /></Suspense>
+          } />
           </Routes>
           </BrowserRouter>
         </AuthProvider>
