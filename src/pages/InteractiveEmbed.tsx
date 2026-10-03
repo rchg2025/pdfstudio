@@ -445,15 +445,7 @@ export default function InteractiveEmbed() {
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 
-    <!-- Man hinh Bat Dau Dong Bo Slide & Thoi Gian -->
-    <div id="elearn-start-mask-${uid}" style="position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.72);z-index:99990;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:20px;box-sizing:border-box;text-align:center;">
-      <button id="elearn-start-btn-${uid}" type="button" style="background:#2563eb;color:#ffffff;border:none;padding:14px 28px;font-size:16px;font-weight:bold;border-radius:30px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);margin-bottom:10px;">
-        ▶ Bắt Đầu Chạy Bài Giảng
-      </button>
-      <div style="color:#ffffff;font-size:13px;max-width:400px;line-height:1.4;">
-        Bấm để phát Slide bài giảng và bắt đầu đồng bộ thời gian kiểm tra.
-      </div>
-    </div>
+
 
     <!-- Khung cau hoi dung lai -->
     <div id="elearn-overlay-${uid}" style="display:none;position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(15,23,42,0.92);z-index:99999;box-sizing:border-box;padding:15px;overflow-y:auto;">
@@ -494,16 +486,13 @@ export default function InteractiveEmbed() {
 (function() {
   var cfg = ${embedJson};
   var curr = 0;
-  var playing = false;
-  var started = false;
+  var playing = true;
   var curStop = null;
   var selOpt = null;
   var answered = {};
   var timer = null;
 
   var frame = document.getElementById('elearn-frame-${uid}');
-  var startMask = document.getElementById('elearn-start-mask-${uid}');
-  var startBtn = document.getElementById('elearn-start-btn-${uid}');
   var overlay = document.getElementById('elearn-overlay-${uid}');
   var qTitle = document.getElementById('elearn-qtitle-${uid}');
   var optsBox = document.getElementById('elearn-opts-${uid}');
@@ -529,47 +518,41 @@ export default function InteractiveEmbed() {
     } catch(e) {}
   }
 
+  function checkStops(t) {
+    for (var i = 0; i < cfg.stops.length; i++) {
+      var s = cfg.stops[i];
+      if (t >= s.timeSeconds && !answered[s.id]) {
+        pause();
+        showQuiz(s);
+        return true;
+      }
+    }
+    return false;
+  }
+
   function doTick() {
     if (!playing || curStop) return;
     curr++;
     if (clock) clock.innerText = fmt(curr);
+    checkStops(curr);
 
-    for (var i = 0; i < cfg.stops.length; i++) {
-      var s = cfg.stops[i];
-      if (curr >= s.timeSeconds && !answered[s.id]) {
-        pause();
-        showQuiz(s);
-        break;
-      }
-    }
-  }
-
-  function startRunning() {
-    if (startMask) startMask.style.display = 'none';
-    started = true;
-    playing = true;
-    if (playBtn) {
-      playBtn.innerText = 'Tạm Dừng';
-      playBtn.style.background = '#ef4444';
-    }
-    postMsg('play');
-    if (!timer) {
-      timer = setInterval(doTick, 1000);
+    // Kích hoạt YouTube gửi lại tiến độ thời gian nếu có API
+    if (cfg.type === 'youtube' && frame && frame.contentWindow) {
+      try {
+        frame.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+      } catch(e) {}
     }
   }
 
   function play() {
     if (curStop) return;
-    if (!started) {
-      startRunning();
-      return;
-    }
     playing = true;
     if (playBtn) {
       playBtn.innerText = 'Tạm Dừng';
       playBtn.style.background = '#ef4444';
     }
     postMsg('play');
+    postMsg('playVideo');
     if (!timer) timer = setInterval(doTick, 1000);
   }
 
@@ -580,6 +563,7 @@ export default function InteractiveEmbed() {
       playBtn.style.background = '#2563eb';
     }
     postMsg('pause');
+    postMsg('pauseVideo');
   }
 
   function showQuiz(stop) {
@@ -626,36 +610,37 @@ export default function InteractiveEmbed() {
     }
   }
 
-  if (startMask) {
-    startMask.onclick = startRunning;
-  }
-  if (startBtn) {
-    startBtn.onclick = function(e) {
-      e.stopPropagation();
-      startRunning();
-    };
-  }
-
-  // Tu dong bat dau dong bo neu nguoi dung click thang vao frame
-  window.addEventListener('blur', function() {
-    if (!started && !curStop) {
-      setTimeout(function() {
-        if (document.activeElement === frame) {
-          startRunning();
-        }
-      }, 200);
-    }
-  });
-
+  // Tự động đồng bộ với tiến độ YouTube hoặc Canva khi nhận message
   window.addEventListener('message', function(ev) {
-    if (!started && !curStop) {
-      try {
-        var d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
-        if (d && (d.event === 'infoDelivery' || d.type === 'canva_ready' || d.action === 'playing' || d.status === 'playing')) {
-          startRunning();
+    if (curStop) return;
+    try {
+      var d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+      if (!d) return;
+
+      // 1. YouTube API event / infoDelivery
+      if (d.event === 'infoDelivery' && d.info) {
+        if (typeof d.info.currentTime === 'number') {
+          var ytSec = Math.floor(d.info.currentTime);
+          if (ytSec > 0 && Math.abs(ytSec - curr) > 1) {
+            curr = ytSec;
+            if (clock) clock.innerText = fmt(curr);
+            checkStops(curr);
+          }
         }
-      } catch(e) {}
-    }
+        if (d.info.playerState === 1) { // 1 = YT.PlayerState.PLAYING
+          if (!playing) play();
+        } else if (d.info.playerState === 2) { // 2 = PAUSED
+          if (playing) pause();
+        }
+      }
+
+      // 2. Canva / Generic iframe message
+      if (d.event === 'play' || d.type === 'play' || d.status === 'playing') {
+        if (!playing) play();
+      } else if (d.event === 'pause' || d.type === 'pause') {
+        if (playing) pause();
+      }
+    } catch(e) {}
   });
 
   if (subBtn) {
@@ -721,9 +706,12 @@ export default function InteractiveEmbed() {
         frame.style.opacity = '1';
         frame.src = cfg.src;
       }
-      startRunning();
+      play();
     };
   }
+
+  // Luon luon tu dong bat dau chay ngay tu giay dau tien
+  timer = setInterval(doTick, 1000);
 })();
 </script>`;
   };
@@ -748,15 +736,7 @@ export default function InteractiveEmbed() {
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 
-    <!-- Màn hình Bắt Đầu Đồng Bộ Bài Giảng -->
-    <div id="inter-start-mask-${uid}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9990; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; padding: 20px; box-sizing: border-box; text-align: center;">
-      <button id="inter-start-btn-${uid}" type="button" style="background: linear-gradient(135deg, #2563eb, #7c3aed); color: #ffffff; border: none; padding: 14px 32px; border-radius: 50px; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 8px 25px rgba(37, 99, 235, 0.4); margin-bottom: 12px; transition: transform 0.2s;">
-        ▶ Bắt Đầu Chạy Bài Giảng
-      </button>
-      <div style="color: #cbd5e1; font-size: 14px; max-width: 420px; line-height: 1.5;">
-        Bấm để phát bài giảng và bắt đầu đồng bộ thời gian với các điểm dừng kiểm tra
-      </div>
-    </div>
+
 
     <!-- Lớp chặn màng trong suốt khi dừng lại làm câu hỏi -->
     <div id="inter-blocker-${uid}" style="display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;">
@@ -830,16 +810,13 @@ export default function InteractiveEmbed() {
     (function() {
       const config = ${embedJson};
       let currentTime = 0;
-      let isPlaying = false;
-      let isStarted = false;
+      let isPlaying = true;
       let activeStop = null;
       let selectedOptionId = null;
       const answeredSet = new Set();
       let timer = null;
 
       const frame = document.getElementById('inter-embed-frame-${uid}');
-      const startMask = document.getElementById('inter-start-mask-${uid}');
-      const startBtn = document.getElementById('inter-start-btn-${uid}');
       const blocker = document.getElementById('inter-blocker-${uid}');
       const qTitle = document.getElementById('inter-question-${uid}');
       const optsContainer = document.getElementById('inter-options-${uid}');
@@ -875,38 +852,37 @@ export default function InteractiveEmbed() {
         } catch (e) {}
       }
 
+      function checkStops(t) {
+        for (let i = 0; i < config.stops.length; i++) {
+          const s = config.stops[i];
+          if (t >= s.timeSeconds && !answeredSet.has(s.id)) {
+            pausePlayback();
+            triggerQuiz(s);
+            return true;
+          }
+        }
+        return false;
+      }
+
       function tick() {
         if (!isPlaying || activeStop) return;
         currentTime++;
         currTimeSpan.innerText = formatTime(currentTime);
+        checkStops(currentTime);
 
-        const stop = config.stops.find(s => currentTime >= s.timeSeconds && !answeredSet.has(s.id));
-        if (stop) {
-          pausePlayback();
-          triggerQuiz(stop);
-        }
-      }
-
-      function startRunning() {
-        if (startMask) startMask.style.display = 'none';
-        isStarted = true;
-        isPlaying = true;
-        updatePlayBtn();
-        sendIframeMsg('play');
-        if (!timer) {
-          timer = setInterval(tick, 1000);
+        if (config.type === 'youtube' && frame && frame.contentWindow) {
+          try {
+            frame.contentWindow.postMessage(JSON.stringify({ event: 'listening' }), '*');
+          } catch(e) {}
         }
       }
 
       function startPlayback() {
         if (activeStop) return;
-        if (!isStarted) {
-          startRunning();
-          return;
-        }
         isPlaying = true;
         updatePlayBtn();
         sendIframeMsg('play');
+        sendIframeMsg('playVideo');
         if (!timer) {
           timer = setInterval(tick, 1000);
         }
@@ -916,6 +892,7 @@ export default function InteractiveEmbed() {
         isPlaying = false;
         updatePlayBtn();
         sendIframeMsg('pause');
+        sendIframeMsg('pauseVideo');
       }
 
       function triggerQuiz(stop) {
@@ -950,22 +927,34 @@ export default function InteractiveEmbed() {
         }
       }
 
-      if (startMask) startMask.onclick = startRunning;
-      if (startBtn) {
-        startBtn.onclick = function(e) {
-          e.stopPropagation();
-          startRunning();
-        };
-      }
+      window.addEventListener('message', function(ev) {
+        if (activeStop) return;
+        try {
+          const d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+          if (!d) return;
 
-      window.addEventListener('blur', function() {
-        if (!isStarted && !activeStop) {
-          setTimeout(function() {
-            if (document.activeElement === frame) {
-              startRunning();
+          if (d.event === 'infoDelivery' && d.info) {
+            if (typeof d.info.currentTime === 'number') {
+              const ytSec = Math.floor(d.info.currentTime);
+              if (ytSec > 0 && Math.abs(ytSec - currentTime) > 1) {
+                currentTime = ytSec;
+                currTimeSpan.innerText = formatTime(currentTime);
+                checkStops(currentTime);
+              }
             }
-          }, 200);
-        }
+            if (d.info.playerState === 1 && !isPlaying) {
+              startPlayback();
+            } else if (d.info.playerState === 2 && isPlaying) {
+              pausePlayback();
+            }
+          }
+
+          if ((d.event === 'play' || d.type === 'play' || d.status === 'playing') && !isPlaying) {
+            startPlayback();
+          } else if ((d.event === 'pause' || d.type === 'pause') && isPlaying) {
+            pausePlayback();
+          }
+        } catch(e) {}
       });
 
       submitBtn.onclick = function() {
@@ -1016,8 +1005,10 @@ export default function InteractiveEmbed() {
           frame.style.opacity = '1';
           frame.src = config.src;
         }
-        startRunning();
+        startPlayback();
       };
+
+      timer = setInterval(tick, 1000);
     })();
   </script>
 </div>
