@@ -41,61 +41,219 @@ export interface QuizStop {
   triggered?: boolean;
 }
 
-interface ParsedEmbed {
-  type: 'youtube' | 'canva' | 'generic';
+export type EmbedPlatformType = 'youtube' | 'canva' | 'drive' | 'generic';
+
+export interface ParsedEmbed {
+  type: EmbedPlatformType;
+  platformName: string;
   iframeSrc: string;
   originalHtml: string;
 }
 
-function parseEmbedInput(input: string): ParsedEmbed | null {
+export function parseEmbedInput(input: string): ParsedEmbed | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
-  // 1. Kiểm tra iframe src
+  // 1. Kiểm tra nếu có thẻ <iframe ... src="...">
   const srcMatch = trimmed.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-  let src = srcMatch ? srcMatch[1] : '';
+  let rawSrc = srcMatch ? srcMatch[1].trim() : '';
 
-  // 2. Nếu người dùng dán link trực tiếp thay vì mã nhúng
-  if (!src) {
-    if (trimmed.includes('youtube.com/watch?v=')) {
-      const vMatch = trimmed.match(/[?&]v=([^&]+)/);
-      if (vMatch) {
-        src = `https://www.youtube.com/embed/${vMatch[1]}`;
-      }
-    } else if (trimmed.includes('youtu.be/')) {
-      const idMatch = trimmed.match(/youtu\.be\/([^?&]+)/);
-      if (idMatch) {
-        src = `https://www.youtube.com/embed/${idMatch[1]}`;
-      }
-    } else if (trimmed.includes('canva.com/design/')) {
-      const cleanUrl = trimmed.split('?')[0].replace(/\/watch$/, '');
-      src = `${cleanUrl}/watch?embed`;
-    } else if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      src = trimmed;
+  // 2. Nếu không có thẻ iframe, trích xuất URL trực tiếp từ input
+  if (!rawSrc) {
+    // Tìm URL đầu tiên trong chuỗi (kể cả khi dán kèm văn bản hoặc dán trong dấu ngoặc)
+    const urlMatch = trimmed.match(/(https?:\/\/[^\s"'<>]+)/i);
+    if (urlMatch) {
+      rawSrc = urlMatch[1];
+    } else if (trimmed.startsWith('//')) {
+      rawSrc = 'https:' + trimmed;
+    } else if (
+      trimmed.startsWith('drive.google.com') || 
+      trimmed.startsWith('docs.google.com') || 
+      trimmed.startsWith('youtube.com') || 
+      trimmed.startsWith('youtu.be') || 
+      trimmed.startsWith('canva.com')
+    ) {
+      rawSrc = 'https://' + trimmed;
     }
   }
 
-  if (!src) return null;
+  if (!rawSrc) return null;
 
-  // Xác định loại
-  let type: 'youtube' | 'canva' | 'generic' = 'generic';
-  if (src.includes('youtube.com') || src.includes('youtu.be')) {
-    type = 'youtube';
-    // Đảm bảo có enablejsapi=1 và autoplay=1 cho YouTube
-    if (!src.includes('enablejsapi=1')) {
-      src += (src.includes('?') ? '&' : '?') + 'enablejsapi=1&autoplay=1&mute=0';
-    }
-  } else if (src.includes('canva.com')) {
-    type = 'canva';
-    // Đảm bảo Canva có autoplay=1 để slide tự chuyển động
-    if (!src.includes('autoplay=1')) {
-      src += (src.includes('?') ? '&' : '?') + 'autoplay=1&auto=1';
-    }
+  // Xóa các ký tự thừa ở cuối URL nếu có (dấu ngoặc, dấu chấm, phẩy)
+  rawSrc = rawSrc.replace(/[.,;'">)]+$/, '');
+
+  // 3. XỬ LÝ GOOGLE DRIVE & GOOGLE WORKSPACE
+  // 3.1. Google Drive File (Video, PDF, Audio, v.v.)
+  // Hỗ trợ các link:
+  // - https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+  // - https://drive.google.com/file/d/FILE_ID/preview
+  // - https://drive.google.com/open?id=FILE_ID
+  // - https://drive.google.com/uc?id=FILE_ID
+  const driveFileMatch = rawSrc.match(/drive\.google\.com\/(?:file\/(?:u\/\d+\/)?d\/|open\?[^#]*id=|uc\?[^#]*id=)([a-zA-Z0-9_-]+)/i);
+  if (driveFileMatch) {
+    const fileId = driveFileMatch[1];
+    const resKeyMatch = rawSrc.match(/[?&]resourcekey=([^&]+)/);
+    const resKeyParam = resKeyMatch ? `?resourcekey=${resKeyMatch[1]}` : '';
+    return {
+      type: 'drive',
+      platformName: 'Google Drive (Tệp / Video)',
+      iframeSrc: `https://drive.google.com/file/d/${fileId}/preview${resKeyParam}`,
+      originalHtml: trimmed
+    };
   }
+
+  // 3.2. Google Slides (Trình chiếu Google)
+  const gSlidesMatch = rawSrc.match(/docs\.google\.com\/presentation\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)/i);
+  if (gSlidesMatch) {
+    const presId = gSlidesMatch[1];
+    return {
+      type: 'drive',
+      platformName: 'Google Slides (Trình chiếu)',
+      iframeSrc: `https://docs.google.com/presentation/d/${presId}/embed?start=false&loop=false&delayms=3000`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 3.3. Google Docs (Tài liệu văn bản)
+  const gDocsMatch = rawSrc.match(/docs\.google\.com\/document\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)/i);
+  if (gDocsMatch) {
+    const docId = gDocsMatch[1];
+    return {
+      type: 'drive',
+      platformName: 'Google Docs (Tài liệu)',
+      iframeSrc: `https://docs.google.com/document/d/${docId}/preview`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 3.4. Google Sheets (Bảng tính)
+  const gSheetsMatch = rawSrc.match(/docs\.google\.com\/spreadsheets\/(?:u\/\d+\/)?d\/([a-zA-Z0-9_-]+)/i);
+  if (gSheetsMatch) {
+    const sheetId = gSheetsMatch[1];
+    return {
+      type: 'drive',
+      platformName: 'Google Sheets (Bảng tính)',
+      iframeSrc: `https://docs.google.com/spreadsheets/d/${sheetId}/preview`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 3.5. Google Forms (Biểu mẫu)
+  const gFormsMatch = rawSrc.match(/docs\.google\.com\/forms\/(?:d\/e\/|d\/)?([a-zA-Z0-9_-]+)/i);
+  if (gFormsMatch) {
+    const base = rawSrc.split('?')[0].replace(/\/viewform$/, '');
+    return {
+      type: 'drive',
+      platformName: 'Google Forms (Biểu mẫu)',
+      iframeSrc: `${base}/viewform?embedded=true`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 4. XỬ LÝ YOUTUBE (Watch, Shorts, Live, Embed, youtu.be)
+  let ytId = '';
+  if (rawSrc.includes('youtube.com/watch')) {
+    const m = rawSrc.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+    if (m) ytId = m[1];
+  } else if (rawSrc.includes('youtu.be/')) {
+    const m = rawSrc.match(/youtu\.be\/([a-zA-Z0-9_-]+)/);
+    if (m) ytId = m[1];
+  } else if (rawSrc.includes('youtube.com/shorts/')) {
+    const m = rawSrc.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/);
+    if (m) ytId = m[1];
+  } else if (rawSrc.includes('youtube.com/live/')) {
+    const m = rawSrc.match(/youtube\.com\/live\/([a-zA-Z0-9_-]+)/);
+    if (m) ytId = m[1];
+  } else if (rawSrc.includes('youtube.com/embed/')) {
+    const m = rawSrc.match(/youtube\.com\/embed\/([a-zA-Z0-9_-]+)/);
+    if (m) ytId = m[1];
+  }
+
+  if (ytId) {
+    return {
+      type: 'youtube',
+      platformName: 'YouTube Video',
+      iframeSrc: `https://www.youtube.com/embed/${ytId}?enablejsapi=1&autoplay=1&mute=0`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 5. XỬ LÝ CANVA (Thuyết trình / Video)
+  if (rawSrc.includes('canva.com/design/')) {
+    const cleanUrl = rawSrc.split('?')[0].replace(/\/watch$/, '').replace(/\/view$/, '');
+    let finalCanva = `${cleanUrl}/watch?embed`;
+    if (!finalCanva.includes('autoplay=1')) {
+      finalCanva += (finalCanva.includes('?') ? '&' : '?') + 'autoplay=1&auto=1';
+    }
+    return {
+      type: 'canva',
+      platformName: 'Canva Presentation',
+      iframeSrc: finalCanva,
+      originalHtml: trimmed
+    };
+  }
+
+  // 6. XỬ LÝ VIMEO
+  const vimeoMatch = rawSrc.match(/vimeo\.com\/(?:video\/)?([0-9]+)/i);
+  if (vimeoMatch) {
+    return {
+      type: 'generic',
+      platformName: 'Vimeo Video',
+      iframeSrc: `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 7. XỬ LÝ LOOM
+  const loomMatch = rawSrc.match(/loom\.com\/(?:share|embed)\/([a-zA-Z0-9_-]+)/i);
+  if (loomMatch) {
+    return {
+      type: 'generic',
+      platformName: 'Loom Video',
+      iframeSrc: `https://www.loom.com/embed/${loomMatch[1]}?autoplay=1`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 8. XỬ LÝ WORDWALL
+  const wwMatch = rawSrc.match(/wordwall\.net\/(?:resource|play|embed)\/([0-9]+)/i);
+  if (wwMatch) {
+    return {
+      type: 'generic',
+      platformName: 'Wordwall Trò Chơi',
+      iframeSrc: `https://wordwall.net/embed/${wwMatch[1]}`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 9. XỬ LÝ GENIALLY
+  const genialMatch = rawSrc.match(/view\.genial\.ly\/([a-zA-Z0-9_-]+)/i);
+  if (genialMatch) {
+    return {
+      type: 'generic',
+      platformName: 'Genially Interactive',
+      iframeSrc: `https://view.genial.ly/${genialMatch[1]}`,
+      originalHtml: trimmed
+    };
+  }
+
+  // 10. BẤT KỲ ĐƯỜNG DẪN / TRANG WEB NÀO KHÁC (Generic Web / Direct Video)
+  let genericSrc = rawSrc;
+  if (!genericSrc.startsWith('http://') && !genericSrc.startsWith('https://')) {
+    genericSrc = 'https://' + genericSrc;
+  }
+
+  const isVideoDirect = /\.(mp4|webm|ogg)(\?.*)?$/i.test(genericSrc);
+  const platformName = srcMatch 
+    ? 'Mã Nhúng Iframe Tùy Chọn' 
+    : isVideoDirect 
+      ? 'Tệp Video Trực Tiếp' 
+      : 'Liên Kết Trang Web / Iframe';
 
   return {
-    type,
-    iframeSrc: src,
+    type: 'generic',
+    platformName,
+    iframeSrc: genericSrc,
     originalHtml: trimmed
   };
 }
@@ -1387,24 +1545,95 @@ export default function InteractiveEmbed() {
             <div className="inter-card">
               <div className="inter-card-header">
                 <span className="step-badge">Bước 1</span>
-                <h2>Dán Mã Nhúng Cần Tương Tác (Canva, YouTube, Web)</h2>
+                <h2>Dán Mã Nhúng Hoặc Link Bài Giảng (Google Drive, Canva, YouTube, Web...)</h2>
               </div>
-            <p className="inter-desc">
-              Dán mã thẻ <code>&lt;iframe&gt;</code> từ Canva, YouTube hoặc đường dẫn URL bài giảng:
-            </p>
-            <textarea
-              className="inter-textarea"
-              rows={4}
-              value={rawEmbedCode}
-              onChange={(e) => setRawEmbedCode(e.target.value)}
-              placeholder="<div ...><iframe src='https://www.canva.com/design/.../watch?embed' ...></iframe></div>"
-            />
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
-              <button className="btn btn-primary" onClick={handleApplyEmbed}>
-                <Sparkles size={16} /> Nạp Khung Trình Chiếu
-              </button>
+              <p className="inter-desc">
+                Hỗ trợ link chia sẻ <strong>Google Drive</strong> (Video/Slide/Doc), <strong>Canva</strong>, <strong>YouTube / Shorts</strong>, hoặc bất kỳ mã <code>&lt;iframe&gt;</code>, liên kết web nào:
+              </p>
+
+              {/* Supported Platform Chips */}
+              <div className="embed-platform-chips">
+                <span className="embed-chip active">
+                  <span className="chip-dot"></span> 📁 Google Drive
+                </span>
+                <span className="embed-chip active">
+                  <span className="chip-dot"></span> 🎨 Canva
+                </span>
+                <span className="embed-chip active">
+                  <span className="chip-dot"></span> ▶️ YouTube / Shorts
+                </span>
+                <span className="embed-chip active">
+                  <span className="chip-dot"></span> 🌐 Mọi Website / Iframe
+                </span>
+              </div>
+
+              {/* Quick Sample Links */}
+              <div className="embed-sample-pills">
+                <span className="sample-label">Thử nhanh mẫu:</span>
+                <button 
+                  type="button" 
+                  className="sample-pill-btn" 
+                  onClick={() => setRawEmbedCode('https://drive.google.com/file/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs/view?usp=sharing')}
+                  title="Dán link mẫu Google Drive video"
+                >
+                  📁 Link Google Drive
+                </button>
+                <button 
+                  type="button" 
+                  className="sample-pill-btn" 
+                  onClick={() => setRawEmbedCode(defaultSample)}
+                  title="Dán mã nhúng Canva mẫu"
+                >
+                  🎨 Mã Nhúng Canva
+                </button>
+                <button 
+                  type="button" 
+                  className="sample-pill-btn" 
+                  onClick={() => setRawEmbedCode('https://www.youtube.com/watch?v=ScMzIvxBSi4')}
+                  title="Dán link YouTube mẫu"
+                >
+                  ▶️ Link YouTube
+                </button>
+              </div>
+
+              <textarea
+                className="inter-textarea"
+                rows={4}
+                value={rawEmbedCode}
+                onChange={(e) => setRawEmbedCode(e.target.value)}
+                placeholder="Dán link Google Drive (https://drive.google.com/file/d/...), Canva, YouTube hoặc mã <iframe src='...'></iframe>..."
+              />
+
+              {/* Detection Result Box */}
+              {parsedEmbed ? (
+                <div className="embed-detection-box success">
+                  <div className="embed-detection-header">
+                    <CheckCircle2 size={16} />
+                    <span>Đã nhận diện: <strong>{parsedEmbed.platformName}</strong></span>
+                  </div>
+                  <div className="embed-detection-url">
+                    <span className="url-label">Link nhúng tự động:</span>
+                    <code>{parsedEmbed.iframeSrc}</code>
+                  </div>
+                  {parsedEmbed.type === 'drive' && (
+                    <div className="embed-drive-hint">
+                      💡 <strong>Lưu ý Google Drive:</strong> Hãy chắc chắn tệp của bạn đã bật quyền chia sẻ <em>"Bất kỳ ai có đường liên kết đều có thể xem"</em> để học sinh không bị báo lỗi quyền truy cập trên LMS.
+                    </div>
+                  )}
+                </div>
+              ) : rawEmbedCode.trim() ? (
+                <div className="embed-detection-box warning">
+                  <AlertCircle size={16} />
+                  <span>Chưa nhận diện được liên kết hợp lệ. Vui lòng dán link bắt đầu bằng http(s):// hoặc thẻ &lt;iframe&gt;.</span>
+                </div>
+              ) : null}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                <button className="btn btn-primary" onClick={handleApplyEmbed}>
+                  <Sparkles size={16} /> Nạp Khung Trình Chiếu
+                </button>
+              </div>
             </div>
-          </div>
 
           {/* Step 2: Quiz Stops Configuration */}
           <div className="inter-card">

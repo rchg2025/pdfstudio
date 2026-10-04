@@ -17,7 +17,7 @@ interface QuizStop {
 
 interface PlayerConfig {
   src: string;
-  type: 'youtube' | 'canva' | 'generic';
+  type: 'youtube' | 'canva' | 'drive' | 'generic';
   stops: QuizStop[];
   title?: string;
 }
