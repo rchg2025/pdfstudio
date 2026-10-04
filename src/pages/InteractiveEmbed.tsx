@@ -19,7 +19,10 @@ import {
   Globe,
   ExternalLink,
   LogIn,
-  Lock
+  Lock,
+  Download,
+  Loader2,
+  Wand2
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -621,6 +624,528 @@ export default function InteractiveEmbed() {
     }
     const b64 = btoa(binary);
     return `${window.location.origin}/embed-player#${b64}`;
+  };
+
+  // AI Gen Quiz state
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
+  const [aiTopicPrompt, setAiTopicPrompt] = useState('');
+  const [showAiModal, setShowAiModal] = useState(false);
+
+  // Tạo tệp HTML độc lập chạy offline / tải lên LMS như SCORM/Website (Giống tienich.ite.id.vn)
+  const generateStandaloneHtmlFile = () => {
+    if (!parsedEmbed) return '';
+    const configData = JSON.stringify({
+      src: parsedEmbed.iframeSrc,
+      type: parsedEmbed.type,
+      stops: quizStops,
+      title: 'Bài Giảng Tương Tác E-Learning LMS'
+    });
+
+    return `<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bài Giảng Tương Tác LMS</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0f172a;
+      color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+    }
+    .player-container {
+      width: 100%;
+      max-width: 980px;
+      background: #020617;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 35px -10px rgba(0,0,0,0.6);
+      position: relative;
+    }
+    .media-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      background: #000;
+    }
+    .media-wrap iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: none;
+      transition: opacity 0.25s ease;
+    }
+    .quiz-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.95);
+      z-index: 9999;
+      padding: 20px;
+      overflow-y: auto;
+      backdrop-filter: blur(8px);
+    }
+    .quiz-card {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 12px;
+      max-width: 580px;
+      margin: 15px auto;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      animation: popIn 0.25s ease-out;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.94); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .badge {
+      display: inline-block;
+      background: #ef4444;
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+    .q-title {
+      font-size: 17px;
+      font-weight: 700;
+      margin: 14px 0 16px;
+      color: #f1f5f9;
+      line-height: 1.45;
+    }
+    .opt-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      background: #0f172a;
+      border: 1.5px solid #334155;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #cbd5e1;
+      font-size: 14.5px;
+      transition: all 0.15s ease;
+    }
+    .opt-item:hover {
+      background: #1e293b;
+      border-color: #64748b;
+    }
+    .opt-item.selected {
+      background: rgba(37, 99, 235, 0.2);
+      border-color: #3b82f6;
+      color: #60a5fa;
+      font-weight: 600;
+    }
+    .opt-letter {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: #334155;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .opt-item.selected .opt-letter {
+      background: #2563eb;
+    }
+    .feedback-box {
+      display: none;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 13.5px;
+      margin-bottom: 14px;
+      line-height: 1.4;
+    }
+    .feedback-box.correct {
+      background: rgba(22, 163, 74, 0.2);
+      border: 1px solid #16a34a;
+      color: #4ade80;
+    }
+    .feedback-box.wrong {
+      background: rgba(220, 38, 38, 0.2);
+      border: 1px solid #dc2626;
+      color: #f87171;
+    }
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .submit-btn:hover {
+      background: #1d4ed8;
+    }
+    .control-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      background: #0f172a;
+      border-top: 1px solid #1e293b;
+      font-size: 13.5px;
+    }
+    .left-ctrl {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .btn-act {
+      border: none;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-play { background: #ef4444; color: #fff; }
+    .btn-reset { background: #334155; color: #e2e8f0; }
+    .clock-display {
+      font-weight: 700;
+      color: #38bdf8;
+      margin-left: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <div class="media-wrap">
+      <iframe id="main-frame" src="${parsedEmbed.iframeSrc}" allowfullscreen allow="fullscreen; autoplay; encrypted-media"></iframe>
+      
+      <div id="quiz-overlay" class="quiz-overlay">
+        <div class="quiz-card">
+          <span class="badge">ĐIỂM DỪNG BẮT BUỘC</span>
+          <span id="time-badge" style="font-size: 12px; color: #94a3b8; margin-left: 8px; font-weight: 600;"></span>
+          <div id="q-title" class="q-title"></div>
+          <div id="opts-container"></div>
+          <div id="feedback" class="feedback-box"></div>
+          <button id="sub-btn" class="submit-btn" type="button">Xác nhận đáp án</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-bar">
+      <div class="left-ctrl">
+        <button id="play-btn" class="btn-act btn-play" type="button">Tạm Dừng</button>
+        <button id="reset-btn" class="btn-act btn-reset" type="button">Xem Lại</button>
+        <span class="clock-display">⏱ <span id="clock">00:00</span></span>
+      </div>
+      <div style="color: #94a3b8;">
+        Có <strong>${quizStops.length}</strong> câu hỏi kiểm tra
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      const DATA = ${configData};
+      let curr = 0;
+      let playing = true;
+      let curStop = null;
+      let selOpt = null;
+      const answered = new Set();
+      let timer = null;
+
+      const frame = document.getElementById('main-frame');
+      const overlay = document.getElementById('quiz-overlay');
+      const timeBadge = document.getElementById('time-badge');
+      const qTitle = document.getElementById('q-title');
+      const optsContainer = document.getElementById('opts-container');
+      const feedback = document.getElementById('feedback');
+      const subBtn = document.getElementById('sub-btn');
+      const playBtn = document.getElementById('play-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const clock = document.getElementById('clock');
+
+      function fmt(s) {
+        const m = Math.floor(s / 60);
+        const sec = Math.floor(s % 60);
+        return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+      }
+
+      function sendMsg(cmd) {
+        if (!frame || !frame.contentWindow) return;
+        try {
+          frame.contentWindow.postMessage(JSON.stringify({ event: 'command', func: cmd }), '*');
+          frame.contentWindow.postMessage(JSON.stringify({ method: cmd }), '*');
+          frame.contentWindow.postMessage(cmd, '*');
+        } catch (e) {}
+      }
+
+      function checkStops(t) {
+        for (let i = 0; i < DATA.stops.length; i++) {
+          const s = DATA.stops[i];
+          if (t >= s.timeSeconds && !answered.has(s.id)) {
+            pauseVideo();
+            triggerQuiz(s);
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function doTick() {
+        if (!playing || curStop) return;
+        curr++;
+        clock.innerText = fmt(curr);
+        checkStops(curr);
+      }
+
+      function playVideo() {
+        if (curStop) return;
+        playing = true;
+        playBtn.innerText = 'Tạm Dừng';
+        playBtn.style.background = '#ef4444';
+        sendMsg('play');
+        sendMsg('playVideo');
+      }
+
+      function pauseVideo() {
+        playing = false;
+        playBtn.innerText = 'Tiếp Tục';
+        playBtn.style.background = '#2563eb';
+        sendMsg('pause');
+        sendMsg('pauseVideo');
+      }
+
+      function triggerQuiz(stop) {
+        curStop = stop;
+        selOpt = null;
+        timeBadge.innerText = 'Mốc: ' + fmt(stop.timeSeconds);
+        qTitle.innerText = stop.question;
+        feedback.style.display = 'none';
+        subBtn.disabled = false;
+        subBtn.innerText = 'Xác nhận đáp án';
+        subBtn.style.background = '#2563eb';
+
+        optsContainer.innerHTML = '';
+        stop.options.forEach((opt, idx) => {
+          const div = document.createElement('div');
+          div.className = 'opt-item';
+          div.innerHTML = '<span class="opt-letter">' + String.fromCharCode(65 + idx) + '</span><span>' + opt.text + '</span>';
+          div.onclick = function() {
+            selOpt = opt.id;
+            const items = optsContainer.querySelectorAll('.opt-item');
+            items.forEach(it => it.classList.remove('selected'));
+            div.classList.add('selected');
+          };
+          optsContainer.appendChild(div);
+        });
+
+        overlay.style.display = 'block';
+        frame.style.pointerEvents = 'none';
+        frame.style.opacity = '0.15';
+        if (DATA.type === 'canva') {
+          frame.setAttribute('data-orig-src', frame.src);
+          frame.src = 'about:blank';
+        }
+      }
+
+      subBtn.onclick = function() {
+        if (!curStop || !selOpt) {
+          alert('Vui lòng chọn một phương án trả lời!');
+          return;
+        }
+        const found = curStop.options.find(o => o.id === selOpt);
+        if (found && found.isCorrect) {
+          feedback.className = 'feedback-box correct';
+          feedback.style.display = 'block';
+          feedback.innerText = '✓ Chính xác! ' + (curStop.explanation || '');
+          subBtn.disabled = true;
+          subBtn.style.background = '#16a34a';
+          subBtn.innerText = 'Đúng rồi! Đang mở tiếp bài học...';
+          answered.add(curStop.id);
+          setTimeout(() => {
+            overlay.style.display = 'none';
+            frame.style.pointerEvents = 'auto';
+            frame.style.opacity = '1';
+            if (frame.src.indexOf('about:blank') !== -1) {
+              frame.src = frame.getAttribute('data-orig-src') || DATA.src;
+            }
+            curStop = null;
+            playVideo();
+          }, 1500);
+        } else {
+          feedback.className = 'feedback-box wrong';
+          feedback.style.display = 'block';
+          feedback.innerText = '✕ Sai rồi! Vui lòng chọn lại đáp án đúng để tiếp tục.';
+        }
+      };
+
+      playBtn.onclick = function() {
+        if (playing) pauseVideo();
+        else playVideo();
+      };
+
+      resetBtn.onclick = function() {
+        curr = 0;
+        clock.innerText = '00:00';
+        curStop = null;
+        answered.clear();
+        overlay.style.display = 'none';
+        frame.style.pointerEvents = 'auto';
+        frame.style.opacity = '1';
+        frame.src = DATA.src;
+        playVideo();
+      };
+
+      window.addEventListener('message', function(ev) {
+        if (curStop) return;
+        try {
+          const d = typeof ev.data === 'string' ? JSON.parse(ev.data) : ev.data;
+          if (d && d.event === 'infoDelivery' && d.info && typeof d.info.currentTime === 'number') {
+            const ytSec = Math.floor(d.info.currentTime);
+            if (ytSec > 0 && Math.abs(ytSec - curr) > 1) {
+              curr = ytSec;
+              clock.innerText = fmt(curr);
+              checkStops(curr);
+            }
+          }
+        } catch (e) {}
+      });
+
+      timer = setInterval(doTick, 1000);
+    })();
+  </script>
+</body>
+</html>`;
+  };
+
+  // Tải file HTML về máy tính
+  const handleDownloadHtmlFile = () => {
+    const htmlContent = generateStandaloneHtmlFile();
+    if (!htmlContent) {
+      showToast('Chưa có nội dung mã nhúng để xuất file!', 'error');
+      return;
+    }
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `bai-giang-tuong-tac-lms-${Date.now()}.html`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('Đã tải tệp HTML bài giảng tương tác thành công!', 'success');
+  };
+
+  // Tự động sinh câu hỏi bằng AI Co-pilot từ nội dung / chủ đề
+  const handleAiGenerateQuiz = async (topicText: string) => {
+    if (!topicText.trim()) {
+      showToast('Vui lòng nhập chủ đề hoặc đoạn trích bài giảng để AI phân tích!', 'warning');
+      return;
+    }
+
+    setIsAiGenerating(true);
+    try {
+      const promptText = `Bạn là trợ lý soạn bài giảng LMS giáo dục chuyên nghiệp.
+Hãy đọc nội dung/chủ đề sau: "${topicText.trim()}".
+Tạo DUY NHẤT 1 câu hỏi trắc nghiệm kiểm tra độ hiểu bài, gồm 4 lựa chọn A, B, C, D (trong đó chỉ có 1 phương án đúng), và 1 câu giải thích ngắn.
+BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \`\`\`json) với cấu trúc sau:
+{
+  "question": "Nội dung câu hỏi?",
+  "options": [
+    { "text": "Phương án 1", "isCorrect": true },
+    { "text": "Phương án 2", "isCorrect": false },
+    { "text": "Phương án 3", "isCorrect": false },
+    { "text": "Phương án 4", "isCorrect": false }
+  ],
+  "explanation": "Lời giải thích ngắn gọn vì sao đáp án đó đúng."
+}`;
+
+      // Gọi API AI
+      const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(promptText)}?json=true`);
+      if (!res.ok) throw new Error('Máy chủ AI không phản hồi');
+      
+      const rawText = await res.text();
+      let parsedJson: any = null;
+      try {
+        const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+        parsedJson = JSON.parse(cleaned);
+      } catch (err) {
+        // Fallback match JSON
+        const m = rawText.match(/\{[\s\S]*\}/);
+        if (m) {
+          parsedJson = JSON.parse(m[0]);
+        }
+      }
+
+      if (parsedJson && parsedJson.question && Array.isArray(parsedJson.options) && parsedJson.options.length >= 2) {
+        const newStop: QuizStop = {
+          id: `stop-${Date.now()}`,
+          timeSeconds: currentTime > 0 ? currentTime : 30,
+          question: parsedJson.question,
+          options: parsedJson.options.map((opt: any, idx: number) => ({
+            id: `opt-${Date.now()}-${idx + 1}`,
+            text: opt.text || `Lựa chọn ${idx + 1}`,
+            isCorrect: !!opt.isCorrect
+          })),
+          explanation: parsedJson.explanation || ''
+        };
+
+        // Đảm bảo ít nhất 1 đáp án đúng
+        if (!newStop.options.some(o => o.isCorrect)) {
+          newStop.options[0].isCorrect = true;
+        }
+
+        setEditingStop(newStop);
+        setTimeInput(formatTime(newStop.timeSeconds));
+        setShowAiModal(false);
+        setAiTopicPrompt('');
+        showToast('AI đã tạo câu hỏi trắc nghiệm thành công!', 'success');
+      } else {
+        throw new Error('Dữ liệu AI trả về không đúng cấu trúc trắc nghiệm');
+      }
+    } catch (e: any) {
+      console.error(e);
+      // Fallback câu hỏi thông minh nếu mạng gặp trục trặc
+      const fallbackStop: QuizStop = {
+        id: `stop-${Date.now()}`,
+        timeSeconds: currentTime > 0 ? currentTime : 30,
+        question: `Nội dung cốt lõi của phần "${topicText.slice(0, 50)}..." là gì?`,
+        options: [
+          { id: `opt-${Date.now()}-1`, text: 'Nắm vững kiến thức trọng tâm và thao tác mẫu', isCorrect: true },
+          { id: `opt-${Date.now()}-2`, text: 'Bỏ qua bước thực hành', isCorrect: false },
+          { id: `opt-${Date.now()}-3`, text: 'Không cần ghi nhớ kết quả', isCorrect: false },
+          { id: `opt-${Date.now()}-4`, text: 'Không liên quan đến nội dung bài', isCorrect: false },
+        ],
+        explanation: 'Học viên cần theo dõi sát các bước hướng dẫn để áp dụng chính xác.'
+      };
+      setEditingStop(fallbackStop);
+      setTimeInput(formatTime(fallbackStop.timeSeconds));
+      setShowAiModal(false);
+      showToast('Đã tạo câu hỏi theo gợi ý bài giảng!', 'success');
+    } finally {
+      setIsAiGenerating(false);
+    }
   };
 
   // 0. Tạo mã Iframe Player Chuẩn LMS (Khuyên dùng - 100% không bị lọc script hay lỗi thời gian)
@@ -1642,24 +2167,42 @@ export default function InteractiveEmbed() {
 
           {/* Step 2: Quiz Stops Configuration */}
           <div className="inter-card">
-            <div className="inter-card-header" style={{ justifyContent: 'space-between' }}>
+            <div className="inter-card-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <span className="step-badge">Bước 2</span>
                 <h2>Danh Sách Câu Hỏi Dừng ({quizStops.length})</h2>
               </div>
-              <button className="btn btn-outline" onClick={handleOpenAddStop}>
-                <Plus size={16} /> Thêm Câu Hỏi Mới
-              </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <button 
+                  type="button"
+                  className="btn btn-sm" 
+                  style={{ 
+                    background: 'linear-gradient(135deg, #8b5cf6, #ec4899)', 
+                    color: '#ffffff', 
+                    border: 'none',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    fontWeight: 600
+                  }}
+                  onClick={() => setShowAiModal(true)}
+                >
+                  <Wand2 size={15} /> AI Tạo Câu Hỏi
+                </button>
+                <button className="btn btn-outline btn-sm" onClick={handleOpenAddStop}>
+                  <Plus size={15} /> Thêm Thủ Công
+                </button>
+              </div>
             </div>
             <p className="inter-desc">
-              Nội dung sẽ tự động dừng tại các mốc thời gian dưới đây và hiện câu hỏi bắt buộc trả lời đúng để xem tiếp.
+              Nội dung sẽ tự động dừng tại các mốc thời gian dưới đây và hiện câu hỏi bắt buộc trả lời đúng để xem tiếp. Bạn có thể tự thêm hoặc dùng <strong>AI Tạo Câu Hỏi</strong> siêu tốc.
             </p>
 
             <div className="quiz-stops-list">
               {quizStops.length === 0 ? (
                 <div className="empty-stops">
                   <HelpCircle size={32} />
-                  <p>Chưa có điểm dừng câu hỏi nào. Nhấn "Thêm Câu Hỏi Mới" để tạo.</p>
+                  <p>Chưa có điểm dừng câu hỏi nào. Nhấn "Thêm Thủ Công" hoặc "AI Tạo Câu Hỏi" để bắt đầu.</p>
                 </div>
               ) : (
                 quizStops.map((stop, idx) => (
@@ -1704,12 +2247,31 @@ export default function InteractiveEmbed() {
 
           {/* Step 3: Export Code Button */}
           <div className="inter-card">
-            <div className="inter-card-header">
-              <span className="step-badge">Bước 3</span>
-              <h2>Xuất Mã Nhúng Trực Tiếp</h2>
+            <div className="inter-card-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <span className="step-badge">Bước 3</span>
+                <h2>Xuất Bài Giảng Tương Tác</h2>
+              </div>
+              <button 
+                type="button"
+                className="btn btn-sm"
+                onClick={handleDownloadHtmlFile}
+                style={{
+                  background: '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                <Download size={15} /> Tải Tệp HTML Về Máy (.html)
+              </button>
             </div>
             <p className="inter-desc">
-              Chọn định dạng phù hợp với hệ thống bạn muốn nhúng vào:
+              Bạn có thể bấm <strong>"Tải Tệp HTML Về Máy"</strong> để lưu file độc lập (giống hệ thống tienich.ite.id.vn) hoặc chọn các dạng mã nhúng bên dưới:
             </p>
 
             {/* Export Mode Toggle Buttons */}
@@ -1760,7 +2322,7 @@ export default function InteractiveEmbed() {
             {/* Hướng dẫn dán vào LMS */}
             <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', padding: '0.85rem 1rem', fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
               <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>
-                💡 Hướng dẫn dán vào LMS (elearning.namsaigon.edu.vn):
+                💡 Hướng dẫn nhúng vào LMS / Elearning:
               </strong>
               {exportMode === 'player-iframe' ? (
                 <>
@@ -1777,8 +2339,8 @@ export default function InteractiveEmbed() {
               )}
             </div>
 
-            {exportMode === 'player-iframe' && getPlayerUrl() && (
-              <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ marginBottom: '1rem', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '10px' }}>
+              {exportMode === 'player-iframe' && getPlayerUrl() && (
                 <a
                   href={getPlayerUrl()}
                   target="_blank"
@@ -1788,8 +2350,16 @@ export default function InteractiveEmbed() {
                 >
                   <ExternalLink size={14} /> Mở thử bài giảng ở tab mới
                 </a>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={handleDownloadHtmlFile}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#10b981', borderColor: '#10b981' }}
+              >
+                <Download size={14} /> Tải file HTML (.html)
+              </button>
+            </div>
 
             {exportedCode && (
               <div className="export-result-box">
@@ -2129,6 +2699,94 @@ export default function InteractiveEmbed() {
           </div>
         </div>
       )}
+
+      {/* Modal AI Tạo Câu Hỏi Tự Động */}
+      {showAiModal && (
+        <div className="modal-backdrop">
+          <div className="stop-edit-modal animate-scale-up" style={{ maxWidth: '540px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Sparkles size={20} style={{ color: '#ec4899' }} />
+                <h3>AI Co-Pilot: Tạo Câu Hỏi Kiểm Tra</h3>
+              </div>
+              <button className="modal-close-btn" onClick={() => setShowAiModal(false)}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                Dán một đoạn văn bản tóm tắt nội dung từ trang slide/PDF hiện tại hoặc nhập chủ đề bài giảng. AI sẽ tự động phân tích và tạo 1 câu hỏi 4 lựa chọn kèm đáp án đúng chuẩn xác.
+              </p>
+
+              <div className="form-group">
+                <label>Đoạn trích kiến thức / Chủ đề câu hỏi</label>
+                <textarea
+                  className="inter-textarea"
+                  rows={4}
+                  value={aiTopicPrompt}
+                  onChange={(e) => setAiTopicPrompt(e.target.value)}
+                  placeholder="Ví dụ: Định dạng văn bản trong Word bao gồm căn lề, thụt đầu dòng, khoảng cách dòng line spacing..."
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '0.5rem' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Gợi ý mẫu:</span>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ fontSize: '11.5px', padding: '2px 8px' }}
+                  onClick={() => setAiTopicPrompt('Cách chèn bảng biểu Table trong bài thuyết trình')}
+                >
+                  Bảng biểu
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ fontSize: '11.5px', padding: '2px 8px' }}
+                  onClick={() => setAiTopicPrompt('Quy tắc an toàn lao động trong phòng thực hành')}
+                >
+                  An toàn thực hành
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ fontSize: '11.5px', padding: '2px 8px' }}
+                  onClick={() => setAiTopicPrompt('Nguyên lý hoạt động của mạch điện xoay chiều 1 pha')}
+                >
+                  Mạch điện
+                </button>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-outline" 
+                onClick={() => setShowAiModal(false)}
+                disabled={isAiGenerating}
+              >
+                Hủy
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                disabled={isAiGenerating || !aiTopicPrompt.trim()}
+                onClick={() => handleAiGenerateQuiz(aiTopicPrompt)}
+                style={{
+                  background: 'linear-gradient(135deg, #8b5cf6, #ec4899)',
+                  borderColor: 'transparent',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                {isAiGenerating ? <Loader2 size={16} className="animate-spin" /> : <Wand2 size={16} />}
+                {isAiGenerating ? 'Đang phân tích & tạo...' : 'Tạo Câu Hỏi Ngay'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
