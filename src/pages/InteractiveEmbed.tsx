@@ -1617,7 +1617,12 @@ export default function InteractiveEmbed() {
                   </div>
                   {parsedEmbed.type === 'drive' && (
                     <div className="embed-drive-hint">
-                      💡 <strong>Lưu ý Google Drive:</strong> Hãy chắc chắn tệp của bạn đã bật quyền chia sẻ <em>"Bất kỳ ai có đường liên kết đều có thể xem"</em> để học sinh không bị báo lỗi quyền truy cập trên LMS.
+                      <div style={{ marginBottom: '4px' }}>
+                        💡 <strong>Lưu ý quyền chia sẻ:</strong> Hãy chắc chắn tệp Google Drive đã được bật <em>"Bất kỳ ai có đường liên kết đều có thể xem"</em> để học sinh mở được trên LMS.
+                      </div>
+                      <div style={{ fontSize: '0.76rem', lineHeight: 1.4, opacity: 0.95, borderTop: '1px dashed rgba(133, 77, 14, 0.25)', paddingTop: '4px', marginTop: '4px' }}>
+                        ⭐ <strong>Mẹo chuyên nghiệp cho Video:</strong> Bạn nên tải video bài giảng lên <strong>YouTube ở chế độ "Không công khai" (Unlisted)</strong> rồi dán link vào đây. YouTube hỗ trợ API tự động dừng video, phát tiếp và đồng bộ chính xác từng giây với câu hỏi (Google Drive không có API điều khiển dừng phát từ xa do chính sách bảo mật của Google).
+                      </div>
                     </div>
                   )}
                 </div>

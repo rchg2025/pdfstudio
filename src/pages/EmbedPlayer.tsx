@@ -26,7 +26,8 @@ export default function EmbedPlayer() {
   const [config, setConfig] = useState<PlayerConfig | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
   const [activeQuiz, setActiveQuiz] = useState<QuizStop | null>(null);
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [answerStatus, setAnswerStatus] = useState<'idle' | 'correct' | 'wrong'>('idle');
@@ -94,6 +95,15 @@ export default function EmbedPlayer() {
         return;
       }
       setConfig(parsed);
+      if (parsed.type === 'youtube') {
+        setHasStarted(true);
+        setIsPlaying(true);
+        isPlayingRef.current = true;
+      } else {
+        setHasStarted(false);
+        setIsPlaying(false);
+        isPlayingRef.current = false;
+      }
     } catch (err: any) {
       console.error('Lỗi nạp cấu hình:', err);
       setError('Dữ liệu bài giảng không hợp lệ hoặc đã bị lỗi định dạng!');
@@ -372,6 +382,58 @@ export default function EmbedPlayer() {
           allowFullScreen
           allow="fullscreen; autoplay; encrypted-media"
         />
+
+        {/* Lớp phủ Bắt đầu bài giảng cho Canva / Drive / Generic */}
+        {!hasStarted && config?.type !== 'youtube' && (
+          <div 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              background: 'rgba(15, 23, 42, 0.75)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 50,
+              backdropFilter: 'blur(4px)',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              setHasStarted(true);
+              setIsPlaying(true);
+              isPlayingRef.current = true;
+              sendIframeCommand('play');
+              sendIframeCommand('playVideo');
+            }}
+          >
+            <button
+              type="button"
+              style={{
+                background: 'linear-gradient(135deg, #2563eb, #7c3aed)',
+                color: '#ffffff',
+                border: 'none',
+                padding: '14px 32px',
+                borderRadius: '50px',
+                fontSize: '1.05rem',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                boxShadow: '0 8px 25px rgba(37, 99, 235, 0.45)',
+                transition: 'transform 0.2s ease'
+              }}
+            >
+              <Play size={22} fill="#ffffff" /> Bắt Đầu Học Bài Giảng
+            </button>
+            <p style={{ color: '#cbd5e1', fontSize: '0.88rem', marginTop: '0.85rem', margin: '0.85rem 0 0' }}>
+              Bấm để khởi động bài giảng và bắt đầu đồng bộ các điểm dừng câu hỏi
+            </p>
+          </div>
+        )}
 
         {/* Khung câu hỏi trắc nghiệm chặn màn hình */}
         {activeQuiz && (
