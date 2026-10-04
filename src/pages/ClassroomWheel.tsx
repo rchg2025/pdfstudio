@@ -6,7 +6,9 @@ import {
   Volume2, 
   VolumeX,
   Shuffle,
-  Award
+  Award,
+  Copy,
+  History
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './ClassroomWheel.css';
@@ -40,6 +42,11 @@ export default function ClassroomWheel() {
   const [rotation, setRotation] = useState(0);
   const [teamSize, setTeamSize] = useState(2);
   const [teams, setTeams] = useState<string[][]>([]);
+
+  const [allowDuplicates, setAllowDuplicates] = useState(true);
+  const [splitMode, setSplitMode] = useState<'byMembers' | 'byGroups'>('byMembers');
+  const [groupCount, setGroupCount] = useState(3);
+  const [history, setHistory] = useState<string[]>([]);
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -151,7 +158,7 @@ export default function ClassroomWheel() {
     } catch (e) {}
   };
 
-  // Spin Action
+  // Spin Action: Tính toán góc chính xác tuyệt đối với kim chỉ phía trên (270 độ / 3π/2)
   const handleSpin = () => {
     if (isSpinning || items.length < 2) {
       if (items.length < 2) showToast('Cần ít nhất 2 mục để quay!', 'warning');
@@ -161,7 +168,8 @@ export default function ClassroomWheel() {
     setIsSpinning(true);
     setWinner(null);
 
-    const spinDegrees = 1800 + Math.floor(Math.random() * 1800); // 5 to 10 full turns
+    // Random số vòng quay (từ 5 đến 10 vòng đầy đủ)
+    const spinDegrees = 1800 + Math.floor(Math.random() * 1800);
     const targetRotation = rotation + spinDegrees;
     setRotation(targetRotation);
 
@@ -174,41 +182,81 @@ export default function ClassroomWheel() {
       clearInterval(interval);
       setIsSpinning(false);
 
-      // Determine slice winner (arrow is at right side 0 rad or top)
-      const degreesMod = targetRotation % 360;
-      // pointer is at top: 270 deg (or 90 deg counter)
-      const sliceSize = 360 / items.length;
-      // Canvas starts at 0 rad (right), arrow is at right:
-      const winningIndex = Math.floor(((360 - (degreesMod % 360)) % 360) / sliceSize);
-      const chosen = items[winningIndex % items.length];
+      // Kim chỉ ▼ nằm ở đỉnh trên cùng (top: 270 deg / -90 deg trong hệ tọa độ Canvas tiêu chuẩn)
+      // Khi canvas quay góc targetRotation theo chiều kim đồng hồ:
+      // Góc tương đối của lát cắt nằm dưới con trỏ top:
+      const total = items.length;
+      const sliceSize = 360 / total;
+      const normalizedRotation = targetRotation % 360;
+      // pointerAngle = 270°. Góc trong canvas = (270 - normalizedRotation) mod 360
+      const effectiveAngle = ((270 - normalizedRotation) % 360 + 360) % 360;
+      const winningIndex = Math.floor(effectiveAngle / sliceSize) % total;
+      const chosen = items[winningIndex];
+
       setWinner(chosen);
+      setHistory(prev => [chosen, ...prev.slice(0, 19)]);
       playWinSound();
       showToast(`🎉 Xin chúc mừng: ${chosen}!`, 'success');
+
+      // Nếu không cho phép dùng lại tên đã chọn: tự động loại bỏ
+      if (!allowDuplicates) {
+        setTimeout(() => {
+          setItemsText(prev => {
+            const lines = prev.split('\n').map(s => s.trim()).filter(Boolean);
+            const idx = lines.indexOf(chosen);
+            if (idx !== -1) {
+              lines.splice(idx, 1);
+            }
+            return lines.join('\n');
+          });
+        }, 1200);
+      }
     }, 4500);
   };
 
-  // Chia nhóm ngẫu nhiên
+  // Chia nhóm ngẫu nhiên linh động (Theo số người mỗi nhóm HOẶC theo tổng số nhóm)
   const handleGenerateTeams = () => {
-    if (items.length < 2) {
+    const validItems = items.filter(i => i !== 'Chưa có dữ liệu');
+    if (validItems.length < 2) {
       showToast('Cần ít nhất 2 học sinh để chia nhóm!', 'warning');
       return;
     }
-    const shuffled = [...items].sort(() => Math.random() - 0.5);
+
+    const shuffled = [...validItems].sort(() => Math.random() - 0.5);
     const result: string[][] = [];
-    for (let i = 0; i < shuffled.length; i += teamSize) {
-      result.push(shuffled.slice(i, i + teamSize));
+
+    if (splitMode === 'byMembers') {
+      // Chia theo số lượng người mỗi nhóm
+      const size = Math.max(2, teamSize);
+      for (let i = 0; i < shuffled.length; i += size) {
+        result.push(shuffled.slice(i, i + size));
+      }
+    } else {
+      // Chia theo tổng số nhóm cố định
+      const count = Math.max(2, Math.min(groupCount, shuffled.length));
+      for (let i = 0; i < count; i++) {
+        result.push([]);
+      }
+      shuffled.forEach((person, idx) => {
+        result[idx % count].push(person);
+      });
     }
+
     setTeams(result);
-    showToast(`Đã chia thành ${result.length} nhóm học tập ngẫu nhiên!`, 'success');
+    showToast(`Đã chia thành công ${result.length} nhóm học tập!`, 'success');
   };
 
-  // Xóa người trúng khỏi danh sách
+  // Xóa thủ công người trúng khỏi danh sách
   const handleRemoveWinner = () => {
     if (!winner) return;
-    const updated = items.filter(s => s !== winner);
-    setItemsText(updated.join('\n'));
+    const lines = itemsText.split('\n').map(s => s.trim()).filter(Boolean);
+    const idx = lines.indexOf(winner);
+    if (idx !== -1) {
+      lines.splice(idx, 1);
+    }
+    setItemsText(lines.join('\n'));
     setWinner(null);
-    showToast(`Đã loại bỏ ${winner} khỏi danh sách quay tiếp theo!`, 'info');
+    showToast(`Đã loại bỏ "${winner}" khỏi danh sách quay!`, 'info');
   };
 
   return (
@@ -227,6 +275,15 @@ export default function ClassroomWheel() {
         </div>
 
         <div className="wheel-header-actions">
+          <label className="wheel-toggle-label" title="Bật nếu muốn người đã quay trúng vẫn có thể được quay tiếp ở các lượt sau">
+            <input 
+              type="checkbox" 
+              checked={allowDuplicates} 
+              onChange={(e) => setAllowDuplicates(e.target.checked)} 
+            />
+            <span>Cho phép dùng lại tên đã chọn</span>
+          </label>
+
           <button 
             type="button" 
             className="btn btn-outline btn-sm"
@@ -294,22 +351,52 @@ export default function ClassroomWheel() {
               </div>
             )}
           </div>
+
+          {/* Lịch sử quay trúng gần đây */}
+          {history.length > 0 && (
+            <div className="wheel-history-card">
+              <div className="history-header">
+                <History size={16} style={{ color: 'var(--primary)' }} />
+                <strong>Lịch sử quay trúng gần nhất ({history.length}):</strong>
+                <button 
+                  type="button" 
+                  className="btn btn-outline btn-sm" 
+                  style={{ marginLeft: 'auto', padding: '2px 8px', fontSize: '0.75rem' }}
+                  onClick={() => setHistory([])}
+                >
+                  Xóa lịch sử
+                </button>
+              </div>
+              <div className="history-tags">
+                {history.map((h, i) => (
+                  <span key={i} className="history-tag">
+                    #{i + 1} {h}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right Column: Name List & Team Generator */}
         <div className="wheel-right-panel">
           <div className="wheel-card">
-            <h3>Danh Sách Tên / Câu Hỏi ({items.length})</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+              <h3 style={{ margin: 0 }}>Danh Sách Tên / Câu Hỏi ({items.length})</h3>
+              <span style={{ fontSize: '0.8rem', color: allowDuplicates ? '#10b981' : '#f59e0b', fontWeight: 600 }}>
+                {allowDuplicates ? '✓ Giữ tên sau khi quay' : '⚡ Tự loại bỏ sau khi trúng'}
+              </span>
+            </div>
             <p className="field-hint">Mỗi dòng tương ứng với 1 người hoặc 1 câu hỏi trên vòng quay.</p>
             <textarea 
               className="inter-textarea" 
-              rows={8}
+              rows={7}
               value={itemsText}
               onChange={(e) => setItemsText(e.target.value)}
               placeholder="Nhập họ và tên học sinh (mỗi người 1 dòng)..."
             />
             
-            <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
@@ -329,29 +416,81 @@ export default function ClassroomWheel() {
 
           {/* Random Team Generator */}
           <div className="wheel-card" style={{ marginTop: '1.25rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Users size={18} style={{ color: 'var(--primary)' }} />
-              <h3 style={{ margin: 0 }}>Chia Nhóm Ngẫu Nhiên</h3>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Users size={18} style={{ color: 'var(--primary)' }} />
+                <h3 style={{ margin: 0 }}>Chia Nhóm Học Tập Linh Hoạt</h3>
+              </div>
+              {teams.length > 0 && (
+                <button 
+                  type="button" 
+                  className="btn btn-outline btn-sm"
+                  style={{ fontSize: '0.8rem', padding: '3px 8px' }}
+                  onClick={() => {
+                    const text = teams.map((g, idx) => `[Nhóm ${idx + 1} - ${g.length} thành viên]:\n` + g.map((m, mIdx) => `  ${mIdx + 1}. ${m}`).join('\n')).join('\n\n');
+                    navigator.clipboard.writeText(text);
+                    showToast('Đã sao chép danh sách chia nhóm vào clipboard!', 'success');
+                  }}
+                >
+                  <Copy size={13} /> Sao Chép Danh Sách
+                </button>
+              )}
             </div>
-            <p className="field-hint">Tự động xáo trộn danh sách trên thành các nhóm nhỏ để hoạt động nhóm.</p>
+            <p className="field-hint">Tự động xáo trộn danh sách người học thành các nhóm nhỏ kèm số thứ tự rõ ràng.</p>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <label style={{ fontSize: '0.88rem' }}>Số người mỗi nhóm:</label>
-              <input 
-                type="number" 
-                min={2} 
-                max={10} 
-                value={teamSize}
-                onChange={(e) => setTeamSize(Math.max(2, parseInt(e.target.value, 10) || 2))}
-                className="inter-input"
-                style={{ width: '70px', padding: '4px 8px' }}
-              />
+            {/* Chế độ chia nhóm */}
+            <div className="team-mode-tabs">
+              <button 
+                type="button"
+                className={`team-mode-tab ${splitMode === 'byMembers' ? 'active' : ''}`}
+                onClick={() => setSplitMode('byMembers')}
+              >
+                Chia theo số người mỗi nhóm
+              </button>
+              <button 
+                type="button"
+                className={`team-mode-tab ${splitMode === 'byGroups' ? 'active' : ''}`}
+                onClick={() => setSplitMode('byGroups')}
+              >
+                Chia đều theo tổng số nhóm
+              </button>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px', flexWrap: 'wrap' }}>
+              {splitMode === 'byMembers' ? (
+                <>
+                  <label style={{ fontSize: '0.88rem' }}>Số người mỗi nhóm:</label>
+                  <input 
+                    type="number" 
+                    min={2} 
+                    max={20} 
+                    value={teamSize}
+                    onChange={(e) => setTeamSize(Math.max(2, parseInt(e.target.value, 10) || 2))}
+                    className="inter-input"
+                    style={{ width: '70px', padding: '5px 8px' }}
+                  />
+                </>
+              ) : (
+                <>
+                  <label style={{ fontSize: '0.88rem' }}>Chia thành bao nhiêu nhóm:</label>
+                  <input 
+                    type="number" 
+                    min={2} 
+                    max={20} 
+                    value={groupCount}
+                    onChange={(e) => setGroupCount(Math.max(2, parseInt(e.target.value, 10) || 2))}
+                    className="inter-input"
+                    style={{ width: '70px', padding: '5px 8px' }}
+                  />
+                </>
+              )}
+
               <button 
                 type="button" 
                 className="btn btn-primary btn-sm"
                 onClick={handleGenerateTeams}
               >
-                <Shuffle size={14} /> Chia Nhóm
+                <Shuffle size={14} /> Xáo Trộn &amp; Chia Nhóm
               </button>
             </div>
 
@@ -359,12 +498,18 @@ export default function ClassroomWheel() {
               <div className="teams-grid">
                 {teams.map((group, idx) => (
                   <div key={idx} className="team-box">
-                    <span className="team-badge">Nhóm {idx + 1} ({group.length})</span>
-                    <ul className="team-members">
+                    <div className="team-header">
+                      <span className="team-badge">Nhóm {idx + 1}</span>
+                      <span className="team-count">{group.length} bạn</span>
+                    </div>
+                    <ol className="team-members">
                       {group.map((m, mIdx) => (
-                        <li key={mIdx}>{m}</li>
+                        <li key={mIdx}>
+                          <span className="member-index">{mIdx + 1}.</span>
+                          <span className="member-name">{m}</span>
+                        </li>
                       ))}
-                    </ul>
+                    </ol>
                   </div>
                 ))}
               </div>
