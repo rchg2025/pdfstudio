@@ -1,29 +1,34 @@
 .hotspot-container {
-  max-width: 1080px;
+  width: 100%;
+  max-width: 1320px;
   margin: 0 auto;
   padding: 1.5rem 1rem 3rem;
+  box-sizing: border-box;
 }
 
 .hs-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1.25rem;
   margin-bottom: 2rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  padding: 1.25rem 1.75rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
 
 .hs-title-group {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .hs-icon {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   border-radius: var(--radius-lg);
   background: linear-gradient(135deg, #10b981, #06b6d4);
   display: flex;
@@ -42,29 +47,24 @@
 }
 
 .hs-subtitle {
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   color: var(--text-secondary);
   margin: 0.25rem 0 0;
-  max-width: 600px;
+  max-width: 680px;
 }
 
 .hs-header-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
 }
 
 .hs-layout-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1.35fr 0.85fr;
   gap: 1.5rem;
   align-items: start;
-}
-
-@media (max-width: 860px) {
-  .hs-layout-grid {
-    grid-template-columns: 1fr;
-  }
 }
 
 .hs-stage-panel {
@@ -76,15 +76,15 @@
 }
 
 .hs-bar {
-  padding: 0.65rem 1rem;
+  padding: 0.75rem 1.25rem;
   background: var(--bg-tertiary);
   border-bottom: 1px solid var(--border);
-  font-size: 0.85rem;
+  font-size: 0.88rem;
 }
 
 .hs-hint {
   color: var(--primary);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .hs-canvas-wrap {
@@ -107,12 +107,12 @@
 /* Marker Pins */
 .hs-pin-marker {
   position: absolute;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: #ef4444;
   color: #ffffff;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -120,7 +120,7 @@
   transform: translate(-50%, -50%);
   cursor: pointer;
   border: 2.5px solid #ffffff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
   transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
   z-index: 10;
 }
@@ -134,17 +134,18 @@
 /* Popover Bubble */
 .hs-bubble {
   position: absolute;
-  bottom: calc(100% + 12px);
+  bottom: calc(100% + 14px);
   left: 50%;
   transform: translateX(-50%);
   background: #0f172a;
   border: 1px solid #38bdf8;
   border-radius: var(--radius-lg);
-  padding: 1rem 1.15rem;
-  width: 260px;
+  padding: 1.15rem 1.25rem;
+  width: 280px;
+  max-width: 80vw;
   color: #f8fafc;
   line-height: 1.45;
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
   z-index: 99;
   pointer-events: auto;
 }
@@ -164,24 +165,24 @@
   display: inline-block;
   background: #0284c7;
   color: #ffffff;
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 0.15rem 0.45rem;
+  padding: 0.2rem 0.5rem;
   border-radius: var(--radius-sm);
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.4rem;
 }
 
 .hs-bubble-title {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
+  margin: 0 0 0.4rem;
+  font-size: 1.05rem;
   font-weight: 700;
   color: #38bdf8;
 }
 
 .hs-bubble-desc {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: #cbd5e1;
 }
 
@@ -189,18 +190,18 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  padding: 1.25rem;
+  padding: 1.5rem;
 }
 
 .pin-item-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.65rem;
+  padding: 0.75rem 0.85rem;
   border: 1px solid var(--border);
   background: var(--bg-primary);
   border-radius: var(--radius-md);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.6rem;
   cursor: pointer;
   transition: all 0.15s;
 }
@@ -211,12 +212,12 @@
 }
 
 .pin-num {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   background: var(--primary);
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -227,7 +228,7 @@
 .pin-info {
   display: flex;
   flex-direction: column;
-  font-size: 0.82rem;
+  font-size: 0.85rem;
   overflow: hidden;
 }
 
@@ -243,4 +244,39 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* Mobile & Tablet responsiveness */
+@media (max-width: 1024px) {
+  .hs-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .hotspot-container {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .hs-header {
+    padding: 1rem;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .hs-header-actions {
+    width: 100%;
+  }
+
+  .hs-header-actions button,
+  .hs-header-actions label {
+    flex: 1;
+    justify-content: center;
+    font-size: 0.85rem;
+  }
+
+  .hs-bubble {
+    width: 240px;
+    padding: 0.85rem;
+  }
 }
