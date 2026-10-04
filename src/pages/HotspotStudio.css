@@ -131,34 +131,59 @@
   z-index: 20;
 }
 
-/* Popover Bubble */
-.hs-bubble {
+/* In-app Responsive Pin Detail Panel */
+.hs-detail-panel {
   position: absolute;
-  bottom: calc(100% + 14px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: #0f172a;
-  border: 1px solid #38bdf8;
+  bottom: 14px;
+  left: 14px;
+  right: 14px;
+  background: rgba(15, 23, 42, 0.94);
+  border: 1.5px solid #38bdf8;
   border-radius: var(--radius-lg);
-  padding: 1.15rem 1.25rem;
-  width: 280px;
-  max-width: 80vw;
+  padding: 1rem 1.25rem;
   color: #f8fafc;
   line-height: 1.45;
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
   z-index: 99;
-  pointer-events: auto;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
-.hs-bubble::after {
-  content: '';
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  border-width: 6px;
-  border-style: solid;
-  border-color: #0f172a transparent transparent transparent;
+@media (min-width: 768px) {
+  .hs-detail-panel {
+    max-width: 440px;
+    left: 16px;
+    right: auto;
+    bottom: 16px;
+  }
+}
+
+.hs-detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.hs-close-btn {
+  background: #334155;
+  border: none;
+  color: #e2e8f0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s;
+}
+
+.hs-close-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
 }
 
 .hs-badge {
@@ -168,9 +193,9 @@
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
+  padding: 0.2rem 0.55rem;
   border-radius: var(--radius-sm);
-  margin-bottom: 0.4rem;
+  letter-spacing: 0.5px;
 }
 
 .hs-bubble-title {
@@ -178,12 +203,15 @@
   font-size: 1.05rem;
   font-weight: 700;
   color: #38bdf8;
+  line-height: 1.35;
 }
 
 .hs-bubble-desc {
   margin: 0;
   font-size: 0.88rem;
   color: #cbd5e1;
+  line-height: 1.5;
+  white-space: pre-line;
 }
 
 .hs-card {
@@ -273,10 +301,5 @@
     flex: 1;
     justify-content: center;
     font-size: 0.85rem;
-  }
-
-  .hs-bubble {
-    width: 240px;
-    padding: 0.85rem;
   }
 }

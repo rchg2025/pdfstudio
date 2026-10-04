@@ -112,10 +112,8 @@ const Navbar = () => {
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
             <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Xuất Mã Nhúng</NavLink>
             <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
-            <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>Vòng Quay</NavLink>
-            <NavLink to="/tao-phieu-hoc-tap" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Phiếu Bài Tập</NavLink>
             <NavLink to="/anh-tuong-tac-hotspot" className={({isActive}) => isActive ? "nav-link active font-medium text-teal-600" : "nav-link font-medium text-teal-600"}>Ảnh Tương Tác</NavLink>
-            <NavLink to="/long-tieng-slide" className={({isActive}) => isActive ? "nav-link active font-medium text-pink-600" : "nav-link font-medium text-pink-600"}>Lồng Tiếng Slide</NavLink>
+            <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>Vòng Quay</NavLink>
             <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
             

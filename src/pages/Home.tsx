@@ -27,9 +27,7 @@ import {
   GraduationCap,
   Compass,
   BookOpen,
-  FileCheck,
-  MapPin,
-  Mic2
+  MapPin
 } from 'lucide-react';
 import './Home.css';
 
@@ -178,12 +176,6 @@ const otherTools = [
     icon: <Mic size={24} />,
     title: 'Đọc Văn Bản (Trình Duyệt)',
     desc: 'Chuyển đổi văn bản thành giọng nói bằng bộ máy của trình duyệt, không cần tải server.'
-  },
-  {
-    path: '/xuat-ma-nhung',
-    icon: <Code size={24} />,
-    title: 'Xuất Mã Nhúng HTML5 Tương Tác',
-    desc: 'Tự động dừng Canva/YouTube theo thời gian để trả lời câu hỏi trắc nghiệm rồi mới xem tiếp.'
   }
 ];
 
@@ -201,28 +193,16 @@ const edTechTools = [
     desc: '1-click tạo bộ thẻ lật 3D ôn tập kiến thức từ bài học bằng AI, xuất HTML nhúng LMS học tập.'
   },
   {
-    path: '/vong-quay-lop-hoc',
-    icon: <Compass size={24} />,
-    title: 'Vòng Quay May Mắn & Bốc Thăm',
-    desc: 'Gọi tên ngẫu nhiên, tạo câu hỏi khởi động và tự động chia nhóm học tập sôi động trong giờ học.'
-  },
-  {
-    path: '/tao-phieu-hoc-tap',
-    icon: <FileCheck size={24} />,
-    title: 'Tạo Phiếu Học Tập & Đề Thi A4',
-    desc: 'AI thiết kế đề thi trắc nghiệm & tự luận chuẩn A4 có phần chấm điểm, lời phê in ấn sắc nét.'
-  },
-  {
     path: '/anh-tuong-tac-hotspot',
     icon: <MapPin size={24} />,
     title: 'Hình Ảnh Chú Thích Tương Tác',
     desc: 'Đính kèm các điểm chạm (Pin) giải thích thông minh lên sơ đồ, bản đồ, tranh minh họa học tập.'
   },
   {
-    path: '/long-tieng-slide',
-    icon: <Mic2 size={24} />,
-    title: 'Lồng Tiếng Slide Bài Giảng AI',
-    desc: 'AI viết kịch bản thuyết minh và phát âm lồng tiếng chuẩn từng trang slide cho bài giảng số.'
+    path: '/vong-quay-lop-hoc',
+    icon: <Compass size={24} />,
+    title: 'Vòng Quay May Mắn & Bốc Thăm',
+    desc: 'Gọi tên ngẫu nhiên, tạo câu hỏi khởi động và tự động chia nhóm học tập sôi động trong giờ học.'
   }
 ];
 

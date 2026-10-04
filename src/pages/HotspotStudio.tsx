@@ -4,7 +4,10 @@ import {
   Plus, 
   Trash2, 
   Download, 
-  Upload
+  Upload,
+  Code,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './HotspotStudio.css';
@@ -49,6 +52,8 @@ export default function HotspotStudio() {
   const [activePin, setActivePin] = useState<HotspotPin | null>(null);
   const [selectedPinForEdit, setSelectedPinForEdit] = useState<HotspotPin | null>(null);
   const [isPlacingPin, setIsPlacingPin] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const imageContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -71,6 +76,7 @@ export default function HotspotStudio() {
 
     setPins(prev => [...prev, newPin]);
     setSelectedPinForEdit(newPin);
+    setActivePin(newPin);
     setIsPlacingPin(false);
     showToast('Đã đánh dấu điểm tương tác mới!', 'success');
   };
@@ -96,6 +102,9 @@ export default function HotspotStudio() {
   const handleUpdatePin = (updated: HotspotPin) => {
     setPins(prev => prev.map(p => p.id === updated.id ? updated : p));
     setSelectedPinForEdit(updated);
+    if (activePin?.id === updated.id) {
+      setActivePin(updated);
+    }
   };
 
   // Xóa pin
@@ -106,59 +115,127 @@ export default function HotspotStudio() {
     showToast('Đã xóa điểm tương tác.', 'info');
   };
 
-  // Xuất file HTML tương tác độc lập (Có thể tải lên LMS/Moodle)
-  const handleExportHtml = () => {
-    const html = `<!DOCTYPE html>
+  // Tạo mã HTML tương tác độc lập (Hiển thị thông tin rõ ràng, tối ưu 100% full màn hình)
+  const generateStandaloneHtml = () => {
+    const pinsJson = JSON.stringify(pins);
+    return `<!DOCTYPE html>
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hình Ảnh Chú Thích Tương Tác</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-    body { background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 15px; }
-    .wrapper { max-width: 960px; width: 100%; background: #1e293b; border-radius: 12px; overflow: hidden; box-shadow: 0 15px 35px rgba(0,0,0,0.5); }
-    .img-box { position: relative; width: 100%; line-height: 0; }
-    .img-box img { width: 100%; height: auto; display: block; }
-    .pin { position: absolute; width: 32px; height: 32px; border-radius: 50%; background: #ef4444; border: 2.5px solid #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; font-size: 13px; transform: translate(-50%, -50%); cursor: pointer; animation: pulse 2s infinite; z-index: 10; transition: transform 0.2s; }
-    .pin:hover { transform: translate(-50%, -50%) scale(1.2); }
-    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
-    .card { display: none; position: absolute; background: #0f172a; border: 1.5px solid #38bdf8; border-radius: 8px; padding: 14px 16px; width: 280px; color: #f8fafc; line-height: 1.4; box-shadow: 0 10px 25px rgba(0,0,0,0.7); z-index: 99; transform: translate(-50%, -120%); pointer-events: auto; }
-    .badge { display: inline-block; background: #0284c7; color: #fff; font-size: 10px; font-weight: 700; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; margin-bottom: 6px; }
-    .title { font-size: 15px; font-weight: 700; color: #38bdf8; margin-bottom: 4px; }
-    .desc { font-size: 13px; color: #cbd5e1; }
+    body { background: #0f172a; color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 12px; margin: 0; }
+    .wrapper { width: 100%; max-width: 1100px; background: #1e293b; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 45px rgba(0,0,0,0.6); border: 1px solid #334155; position: relative; }
+    .top-bar { display: flex; align-items: center; justify-content: space-between; padding: 12px 18px; background: #0f172a; border-bottom: 1px solid #334155; font-size: 13.5px; }
+    .top-bar h3 { font-size: 15px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 8px; margin: 0; }
+    .top-bar span { color: #94a3b8; font-size: 12.5px; }
+    .img-box { position: relative; width: 100%; line-height: 0; user-select: none; background: #020617; }
+    .img-box img { width: 100%; height: auto; display: block; object-fit: contain; max-height: 82vh; }
+    
+    /* Pin markers */
+    .pin { position: absolute; width: 34px; height: 34px; border-radius: 50%; background: #ef4444; border: 2.5px solid #ffffff; box-shadow: 0 4px 14px rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; color: #ffffff; font-weight: 700; font-size: 13.5px; transform: translate(-50%, -50%); cursor: pointer; animation: pulse 2.2s infinite; z-index: 20; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s; }
+    .pin:hover, .pin.active { transform: translate(-50%, -50%) scale(1.22); background: #2563eb; z-index: 30; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 14px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+    
+    /* Responsive Info Panel: Guaranteed unclipped, full-width or card display */
+    .info-panel { display: none; position: absolute; bottom: 14px; left: 14px; right: 14px; background: rgba(15, 23, 42, 0.95); border: 1.5px solid #38bdf8; border-radius: 12px; padding: 16px 20px; color: #f8fafc; z-index: 99; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 15px 35px rgba(0,0,0,0.7); animation: slideUp 0.25s ease-out; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+    .info-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+    .badge { display: inline-block; background: #0284c7; color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; letter-spacing: 0.5px; }
+    .close-btn { background: #334155; border: none; color: #e2e8f0; width: 26px; height: 26px; border-radius: 50%; font-size: 14px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .close-btn:hover { background: #ef4444; color: #fff; }
+    .title { font-size: 17px; font-weight: 700; color: #38bdf8; margin-bottom: 6px; line-height: 1.35; }
+    .desc { font-size: 14px; color: #cbd5e1; line-height: 1.55; white-space: pre-line; }
+    
+    @media (min-width: 768px) {
+      .info-panel { max-width: 480px; left: 20px; right: auto; bottom: 20px; }
+    }
   </style>
 </head>
 <body>
   <div class="wrapper">
-    <div class="img-box">
+    <div class="top-bar">
+      <h3>📍 Hình Ảnh Chú Thích Tương Tác</h3>
+      <span>Bấm vào các điểm số trên ảnh để xem chú thích</span>
+    </div>
+    <div class="img-box" id="img-box">
       <img src="${imageUrl}" alt="Interactive Material">
-      ${pins.map((p, idx) => `
-        <div class="pin" style="left: ${p.xPercent}%; top: ${p.yPercent}%;" onclick="toggleCard(event, 'card-${p.id}')">
-          ${idx + 1}
-          <div id="card-${p.id}" class="card">
-            ${p.badge ? `<span class="badge">${p.badge}</span>` : ''}
-            <div class="title">${p.title}</div>
-            <div class="desc">${p.description}</div>
-          </div>
+      <div id="pins-container"></div>
+      
+      <!-- Panel hiển thị chi tiết khi bấm vào pin -->
+      <div id="info-panel" class="info-panel">
+        <div class="info-header">
+          <span id="pin-badge" class="badge"></span>
+          <button class="close-btn" onclick="closePanel(event)">✕</button>
         </div>
-      `).join('')}
+        <div id="pin-title" class="title"></div>
+        <div id="pin-desc" class="desc"></div>
+      </div>
     </div>
   </div>
+
   <script>
-    function toggleCard(e, id) {
-      e.stopPropagation();
-      const el = document.getElementById(id);
-      const isShown = el.style.display === 'block';
-      document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
-      if (!isShown) el.style.display = 'block';
+    const PINS = ${pinsJson};
+    const pinsContainer = document.getElementById('pins-container');
+    const infoPanel = document.getElementById('info-panel');
+    const pinBadge = document.getElementById('pin-badge');
+    const pinTitle = document.getElementById('pin-title');
+    const pinDesc = document.getElementById('pin-desc');
+
+    function renderPins() {
+      pinsContainer.innerHTML = '';
+      PINS.forEach((p, idx) => {
+        const pinEl = document.createElement('div');
+        pinEl.className = 'pin';
+        pinEl.id = 'pin-' + p.id;
+        pinEl.style.left = p.xPercent + '%';
+        pinEl.style.top = p.yPercent + '%';
+        pinEl.innerText = idx + 1;
+        pinEl.onclick = function(e) {
+          e.stopPropagation();
+          selectPin(p);
+        };
+        pinsContainer.appendChild(pinEl);
+      });
     }
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.card').forEach(c => c.style.display = 'none');
+
+    function selectPin(p) {
+      document.querySelectorAll('.pin').forEach(el => el.classList.remove('active'));
+      const activeEl = document.getElementById('pin-' + p.id);
+      if (activeEl) activeEl.classList.add('active');
+
+      if (p.badge) {
+        pinBadge.innerText = p.badge;
+        pinBadge.style.display = 'inline-block';
+      } else {
+        pinBadge.style.display = 'none';
+      }
+      pinTitle.innerText = p.title || 'Điểm Chú Thích';
+      pinDesc.innerText = p.description || 'Không có mô tả chi tiết.';
+      infoPanel.style.display = 'block';
+    }
+
+    function closePanel(e) {
+      if (e) e.stopPropagation();
+      infoPanel.style.display = 'none';
+      document.querySelectorAll('.pin').forEach(el => el.classList.remove('active'));
+    }
+
+    document.getElementById('img-box').addEventListener('click', function() {
+      closePanel();
     });
+
+    renderPins();
   </script>
 </body>
 </html>`;
+  };
 
+  // Xuất file HTML tương tác độc lập (Có thể tải lên LMS/Moodle)
+  const handleExportHtml = () => {
+    const html = generateStandaloneHtml();
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -167,6 +244,39 @@ export default function HotspotStudio() {
     a.click();
     URL.revokeObjectURL(url);
     showToast('Đã xuất file HTML Hình Ảnh Tương Tác!', 'success');
+  };
+
+  // Tạo mã Iframe cho LMS
+  const generateIframeCode = () => {
+    const html = generateStandaloneHtml();
+    const utf8Bytes = new TextEncoder().encode(html);
+    let binary = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    const b64 = btoa(binary);
+
+    return `<!-- MA NHUNG HINH ANH CHU THICH TUONG TAC HOTSPOT CHO LMS / E-LEARNING -->
+<div style="position:relative;width:100%;max-width:1080px;margin:15px auto;padding-top:62%;background:#0f172a;border-radius:12px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.35);">
+  <iframe 
+    src="data:text/html;charset=utf-8;base64,${b64}" 
+    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    allow="fullscreen" 
+    allowfullscreen="allowfullscreen">
+  </iframe>
+</div>
+<!-- KET THUC MA NHUNG -->`;
+  };
+
+  const handleCopyIframe = async () => {
+    try {
+      await navigator.clipboard.writeText(generateIframeCode());
+      setCopied(true);
+      showToast('Đã sao chép mã nhúng Iframe!', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast('Không thể sao chép tự động, vui lòng chọn và copy thủ công.', 'warning');
+    }
   };
 
   return (
@@ -191,11 +301,19 @@ export default function HotspotStudio() {
           </label>
           <button 
             type="button" 
+            className="btn btn-outline btn-sm"
+            style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+            onClick={() => setShowExportModal(true)}
+          >
+            <Code size={15} /> Lấy Mã Nhúng Iframe
+          </button>
+          <button 
+            type="button" 
             className="btn btn-primary btn-sm"
             onClick={handleExportHtml}
             style={{ background: '#10b981', border: 'none' }}
           >
-            <Download size={15} /> Xuất HTML Nhúng LMS
+            <Download size={15} /> Tải Tệp HTML
           </button>
         </div>
       </header>
@@ -205,7 +323,7 @@ export default function HotspotStudio() {
         <div className="hs-stage-panel">
           <div className="hs-bar">
             <span className="hs-hint">
-              {isPlacingPin ? '🎯 Bấm chuột vào vị trí bất kỳ trên ảnh để cắm điểm' : '💡 Bấm nút "Cắm Điểm Chú Thích" bên phải để thêm điểm mới'}
+              {isPlacingPin ? '🎯 Bấm chuột vào vị trí bất kỳ trên ảnh để cắm điểm' : '💡 Bấm nút "Cắm Điểm" bên phải để thêm điểm mới, hoặc bấm vào điểm số để xem nội dung'}
             </span>
           </div>
 
@@ -229,17 +347,36 @@ export default function HotspotStudio() {
                 title={pin.title}
               >
                 <span>{idx + 1}</span>
-
-                {/* Popover Bubble */}
-                {activePin?.id === pin.id && (
-                  <div className="hs-bubble animate-scale-up" onClick={(e) => e.stopPropagation()}>
-                    {pin.badge && <span className="hs-badge">{pin.badge}</span>}
-                    <h4 className="hs-bubble-title">{pin.title}</h4>
-                    <p className="hs-bubble-desc">{pin.description}</p>
-                  </div>
-                )}
               </div>
             ))}
+
+            {/* In-app Responsive Pin Detail Panel */}
+            {activePin && (
+              <div className="hs-detail-panel animate-scale-up" onClick={(e) => e.stopPropagation()}>
+                <div className="hs-detail-header">
+                  {activePin.badge && <span className="hs-badge">{activePin.badge}</span>}
+                  <button 
+                    type="button" 
+                    className="hs-close-btn"
+                    onClick={() => setActivePin(null)}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <h4 className="hs-bubble-title">{activePin.title}</h4>
+                <p className="hs-bubble-desc">{activePin.description}</p>
+                <div style={{ marginTop: '0.75rem', display: 'flex', justifyContent: 'flex-end' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-sm"
+                    style={{ fontSize: '0.8rem', padding: '3px 8px' }}
+                    onClick={() => setSelectedPinForEdit(activePin)}
+                  >
+                    Chỉnh Sửa Điểm Này
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -338,6 +475,51 @@ export default function HotspotStudio() {
           </div>
         </div>
       </div>
+
+      {/* Modal Xuất Mã Nhúng Iframe LMS */}
+      {showExportModal && (
+        <div className="modal-backdrop">
+          <div className="stop-edit-modal animate-scale-up" style={{ maxWidth: '640px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={20} style={{ color: 'var(--primary)' }} />
+                <h3>Xuất Mã Nhúng Iframe Cho LMS / Elearning</h3>
+              </div>
+              <button className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                Sao chép đoạn mã iframe dưới đây và dán vào ô <strong>Mã nguồn (Source / &lt;&gt;)</strong> trong khung soạn thảo bài giảng của LMS (Moodle, Canvas, LMS Cao đẳng Nam Sài Gòn,...).
+              </p>
+
+              <div className="export-result-box" style={{ marginTop: '0.5rem' }}>
+                <div className="export-result-header">
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>Mã Iframe Chuẩn LMS (Tự chứa toàn bộ dữ liệu &amp; ảnh)</span>
+                  <button className="btn btn-primary btn-sm" onClick={handleCopyIframe}>
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                    {copied ? 'Đã Sao Chép' : 'Sao Chép Mã'}
+                  </button>
+                </div>
+                <pre className="export-code-block" style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                  {generateIframeCode()}
+                </pre>
+              </div>
+
+              <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '1rem', lineHeight: 1.5 }}>
+                💡 <strong>Mẹo:</strong> Bài giảng Hotspot nhúng qua Iframe chạy hoàn toàn độc lập, học sinh có thể click trực tiếp vào các điểm chú thích trên điện thoại lẫn máy tính mà không bị lỗi giao diện.
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline" onClick={() => setShowExportModal(false)}>Đóng</button>
+              <button type="button" className="btn btn-primary" onClick={handleCopyIframe}>
+                {copied ? 'Đã Sao Chép Mã' : 'Sao Chép Mã Nhúng'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

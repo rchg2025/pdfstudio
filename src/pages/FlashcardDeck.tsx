@@ -11,7 +11,9 @@ import {
   Volume2,
   Wand2,
   Loader2,
-  Sparkles
+  Sparkles,
+  Code,
+  Copy
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './FlashcardDeck.css';
@@ -62,6 +64,10 @@ export default function FlashcardDeck() {
   const [newFront, setNewFront] = useState('');
   const [newBack, setNewBack] = useState('');
   const [newExample, setNewExample] = useState('');
+
+  // Export Iframe Modal
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Lật thẻ
   const handleFlip = () => {
@@ -283,6 +289,41 @@ BẮT BUỘC trả về đúng định dạng JSON Array thuần túy (không ma
     showToast('Đã xuất file HTML Flashcard thành công!', 'success');
   };
 
+  // Tạo mã nhúng Iframe an toàn cho LMS
+  const generateIframeCode = () => {
+    const payload = JSON.stringify({ title: deckTitle, cards });
+    // UTF-8 to Base64
+    const utf8Bytes = new TextEncoder().encode(payload);
+    let binary = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    const b64 = btoa(binary);
+    const playerUrl = `${window.location.origin}/embed-player#flashcard:${b64}`;
+
+    return `<!-- MA NHUNG THE GHI NHO FLASHCARD CHO LMS / E-LEARNING -->
+<div style="position:relative;width:100%;max-width:920px;margin:15px auto;padding-top:56.25%;background:#0f172a;border-radius:12px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+  <iframe 
+    src="${playerUrl}" 
+    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    allow="fullscreen" 
+    allowfullscreen="allowfullscreen">
+  </iframe>
+</div>
+<!-- KET THUC MA NHUNG -->`;
+  };
+
+  const handleCopyIframe = async () => {
+    try {
+      await navigator.clipboard.writeText(generateIframeCode());
+      setCopied(true);
+      showToast('Đã sao chép mã nhúng Iframe!', 'success');
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      showToast('Không thể sao chép tự động, vui lòng chọn và copy thủ công.', 'warning');
+    }
+  };
+
   const currentCard = cards[currentIndex] || cards[0];
 
   return (
@@ -319,10 +360,18 @@ BẮT BUỘC trả về đúng định dạng JSON Array thuần túy (không ma
           <button 
             type="button" 
             className="btn btn-outline"
+            style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+            onClick={() => setShowExportModal(true)}
+          >
+            <Code size={16} /> Lấy Mã Nhúng Iframe
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-outline"
             style={{ color: '#10b981', borderColor: '#10b981' }}
             onClick={handleExportHtml}
           >
-            <Download size={16} /> Xuất HTML Nhúng LMS
+            <Download size={16} /> Tải Tệp HTML
           </button>
         </div>
       </header>
@@ -542,6 +591,51 @@ BẮT BUỘC trả về đúng định dạng JSON Array thuần túy (không ma
             <div className="modal-footer">
               <button type="button" className="btn btn-outline" onClick={() => setShowAddModal(false)}>Hủy</button>
               <button type="button" className="btn btn-primary" onClick={handleAddManualCard}>Lưu Thẻ</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xuất Mã Nhúng Iframe LMS */}
+      {showExportModal && (
+        <div className="modal-backdrop">
+          <div className="stop-edit-modal animate-scale-up" style={{ maxWidth: '640px' }}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={20} style={{ color: 'var(--primary)' }} />
+                <h3>Xuất Mã Nhúng Iframe Cho LMS / Elearning</h3>
+              </div>
+              <button className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
+            </div>
+
+            <div className="modal-body">
+              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                Sao chép đoạn mã iframe dưới đây và dán vào ô <strong>Mã nguồn (Source / &lt;&gt;)</strong> trong khung soạn thảo bài giảng của LMS (Moodle, Canvas, LMS Cao đẳng Nam Sài Gòn,...).
+              </p>
+
+              <div className="export-result-box" style={{ marginTop: '0.5rem' }}>
+                <div className="export-result-header">
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8' }}>Mã Iframe Chuẩn LMS (100% không bị lọc)</span>
+                  <button className="btn btn-primary btn-sm" onClick={handleCopyIframe}>
+                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                    {copied ? 'Đã Sao Chép' : 'Sao Chép Mã'}
+                  </button>
+                </div>
+                <pre className="export-code-block" style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                  {generateIframeCode()}
+                </pre>
+              </div>
+
+              <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', padding: '0.75rem 1rem', fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '1rem', lineHeight: 1.5 }}>
+                💡 <strong>Mẹo:</strong> Bài giảng Flashcard nhúng qua Iframe có thể hoạt động hoàn toàn độc lập, học sinh có thể lật thẻ, bấm nghe phát âm trực tiếp ngay trên trang LMS mà không cần rời website.
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline" onClick={() => setShowExportModal(false)}>Đóng</button>
+              <button type="button" className="btn btn-primary" onClick={handleCopyIframe}>
+                {copied ? 'Đã Sao Chép Mã' : 'Sao Chép Mã Nhúng'}
+              </button>
             </div>
           </div>
         </div>
