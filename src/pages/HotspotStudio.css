@@ -1,0 +1,246 @@
+.hotspot-container {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.hs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.hs-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.hs-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #10b981, #06b6d4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.hs-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.hs-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  max-width: 600px;
+}
+
+.hs-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hs-layout-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .hs-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.hs-stage-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.hs-bar {
+  padding: 0.65rem 1rem;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+}
+
+.hs-hint {
+  color: var(--primary);
+  font-weight: 500;
+}
+
+.hs-canvas-wrap {
+  position: relative;
+  width: 100%;
+  line-height: 0;
+  user-select: none;
+}
+
+.hs-canvas-wrap.placing-cursor {
+  cursor: crosshair;
+}
+
+.hs-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Marker Pins */
+.hs-pin-marker {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  border: 2.5px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  z-index: 10;
+}
+
+.hs-pin-marker:hover, .hs-pin-marker.active {
+  transform: translate(-50%, -50%) scale(1.2);
+  background: #3b82f6;
+  z-index: 20;
+}
+
+/* Popover Bubble */
+.hs-bubble {
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #0f172a;
+  border: 1px solid #38bdf8;
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.15rem;
+  width: 260px;
+  color: #f8fafc;
+  line-height: 1.45;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.6);
+  z-index: 99;
+  pointer-events: auto;
+}
+
+.hs-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 6px;
+  border-style: solid;
+  border-color: #0f172a transparent transparent transparent;
+}
+
+.hs-badge {
+  display: inline-block;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.35rem;
+}
+
+.hs-bubble-title {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.hs-bubble-desc {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+.hs-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+}
+
+.pin-item-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pin-item-row:hover {
+  border-color: var(--primary);
+  background: var(--bg-tertiary);
+}
+
+.pin-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--primary);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pin-info {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.82rem;
+  overflow: hidden;
+}
+
+.pin-info strong {
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pin-info span {
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

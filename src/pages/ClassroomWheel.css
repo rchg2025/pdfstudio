@@ -1,0 +1,213 @@
+.wheel-container {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.wheel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.wheel-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.wheel-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+.wheel-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.wheel-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  max-width: 600px;
+}
+
+.wheel-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 860px) {
+  .wheel-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.wheel-stage-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 2rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.wheel-wrapper {
+  position: relative;
+  width: 380px;
+  height: 380px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 480px) {
+  .wheel-wrapper {
+    width: 280px;
+    height: 280px;
+  }
+  .wheel-canvas {
+    width: 280px !important;
+    height: 280px !important;
+  }
+}
+
+.wheel-canvas {
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.wheel-pointer {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 28px;
+  color: #ef4444;
+  z-index: 10;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  line-height: 1;
+}
+
+.spin-btn {
+  padding: 0.85rem 2.5rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #ef4444, #f59e0b);
+  border: none;
+  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.spin-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 8px 25px rgba(239, 68, 68, 0.45);
+}
+
+.winner-popup {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #0f172a;
+  border: 2px solid #fbbf24;
+  border-radius: var(--radius-xl);
+  padding: 1.75rem 2rem;
+  text-align: center;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  z-index: 20;
+  min-width: 280px;
+}
+
+.winner-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: #fbbf24;
+  text-transform: uppercase;
+  display: block;
+}
+
+.winner-name {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: #f8fafc;
+  margin: 0.5rem 0 0;
+}
+
+.wheel-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+}
+
+.wheel-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 0;
+  margin-bottom: 0.35rem;
+}
+
+.field-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 0.75rem;
+}
+
+.teams-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.team-box {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.65rem 0.75rem;
+}
+
+.team-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary);
+  display: block;
+  margin-bottom: 0.35rem;
+  border-bottom: 1px dashed var(--border);
+  padding-bottom: 0.25rem;
+}
+
+.team-members {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}

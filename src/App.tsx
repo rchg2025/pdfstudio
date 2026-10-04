@@ -38,6 +38,11 @@ const TextToSpeech = React.lazy(() => import('./pages/TextToSpeech'));
 const AiImageGenerator = React.lazy(() => import('./pages/AiImageGenerator'));
 const InteractiveEmbed = React.lazy(() => import('./pages/InteractiveEmbed'));
 const EmbedPlayer = React.lazy(() => import('./pages/EmbedPlayer'));
+const FlashcardDeck = React.lazy(() => import('./pages/FlashcardDeck'));
+const ClassroomWheel = React.lazy(() => import('./pages/ClassroomWheel'));
+const WorksheetMaker = React.lazy(() => import('./pages/WorksheetMaker'));
+const HotspotStudio = React.lazy(() => import('./pages/HotspotStudio'));
+const SlideDubbing = React.lazy(() => import('./pages/SlideDubbing'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -147,6 +152,21 @@ function App() {
             } />
             <Route path="xuat-ma-nhung" element={
               <Suspense fallback={<FallbackLoader />}><InteractiveEmbed /></Suspense>
+            } />
+            <Route path="the-ghi-nho-flashcard" element={
+              <Suspense fallback={<FallbackLoader />}><FlashcardDeck /></Suspense>
+            } />
+            <Route path="vong-quay-lop-hoc" element={
+              <Suspense fallback={<FallbackLoader />}><ClassroomWheel /></Suspense>
+            } />
+            <Route path="tao-phieu-hoc-tap" element={
+              <Suspense fallback={<FallbackLoader />}><WorksheetMaker /></Suspense>
+            } />
+            <Route path="anh-tuong-tac-hotspot" element={
+              <Suspense fallback={<FallbackLoader />}><HotspotStudio /></Suspense>
+            } />
+            <Route path="long-tieng-slide" element={
+              <Suspense fallback={<FallbackLoader />}><SlideDubbing /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

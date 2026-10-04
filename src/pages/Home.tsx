@@ -23,7 +23,13 @@ import {
   Music,
   Mic,
   Sparkles,
-  Code
+  Code,
+  GraduationCap,
+  Compass,
+  BookOpen,
+  FileCheck,
+  MapPin,
+  Mic2
 } from 'lucide-react';
 import './Home.css';
 
@@ -181,6 +187,45 @@ const otherTools = [
   }
 ];
 
+const edTechTools = [
+  {
+    path: '/xuat-ma-nhung',
+    icon: <Code size={24} />,
+    title: 'Xuất Mã Nhúng LMS Tương Tác',
+    desc: 'Tự động dừng bài giảng Canva/YouTube để trả lời trắc nghiệm, xuất file HTML độc lập và mã nhúng LMS.'
+  },
+  {
+    path: '/the-ghi-nho-flashcard',
+    icon: <BookOpen size={24} />,
+    title: 'Thẻ Ghi Nhớ AI (Flashcards)',
+    desc: '1-click tạo bộ thẻ lật 3D ôn tập kiến thức từ bài học bằng AI, xuất HTML nhúng LMS học tập.'
+  },
+  {
+    path: '/vong-quay-lop-hoc',
+    icon: <Compass size={24} />,
+    title: 'Vòng Quay May Mắn & Bốc Thăm',
+    desc: 'Gọi tên ngẫu nhiên, tạo câu hỏi khởi động và tự động chia nhóm học tập sôi động trong giờ học.'
+  },
+  {
+    path: '/tao-phieu-hoc-tap',
+    icon: <FileCheck size={24} />,
+    title: 'Tạo Phiếu Học Tập & Đề Thi A4',
+    desc: 'AI thiết kế đề thi trắc nghiệm & tự luận chuẩn A4 có phần chấm điểm, lời phê in ấn sắc nét.'
+  },
+  {
+    path: '/anh-tuong-tac-hotspot',
+    icon: <MapPin size={24} />,
+    title: 'Hình Ảnh Chú Thích Tương Tác',
+    desc: 'Đính kèm các điểm chạm (Pin) giải thích thông minh lên sơ đồ, bản đồ, tranh minh họa học tập.'
+  },
+  {
+    path: '/long-tieng-slide',
+    icon: <Mic2 size={24} />,
+    title: 'Lồng Tiếng Slide Bài Giảng AI',
+    desc: 'AI viết kịch bản thuyết minh và phát âm lồng tiếng chuẩn từng trang slide cho bài giảng số.'
+  }
+];
+
 
 const Home = () => {
   return (
@@ -207,6 +252,28 @@ const Home = () => {
       </section>
 
       <section style={{ marginTop: '4rem' }}>
+        <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', paddingBottom: '20px' }}>
+          <GraduationCap size={28} /> Công Cụ Giảng Dạy & E-Learning LMS
+        </h2>
+        <div className="tools-grid">
+          {edTechTools.map((tool, index) => (
+            <Link to={tool.path} key={index} className="tool-card" style={{ borderColor: 'rgba(99, 102, 241, 0.25)' }}>
+              <div className="tool-card-bg-icon">
+                {tool.icon}
+              </div>
+              <div className="tool-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
+                {tool.icon}
+              </div>
+              <div className="tool-content">
+                <h3 className="tool-title">{tool.title}</h3>
+                <p className="tool-desc">{tool.desc}</p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ marginTop: '5rem' }}>
         <h2 className="text-2xl font-bold mb-10 text-center text-gradient" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', paddingBottom: '20px' }}>
           <FileEdit size={28} /> Công cụ PDF
         </h2>

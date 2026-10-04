@@ -1,0 +1,257 @@
+.flashcard-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.fc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.fc-title-group {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.fc-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, #6366f1, #a855f7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.fc-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.fc-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin: 0.25rem 0 0;
+  max-width: 600px;
+}
+
+.fc-header-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.fc-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+
+.fc-deck-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 680px;
+  margin-bottom: 1rem;
+}
+
+.fc-deck-title-input {
+  background: transparent;
+  border: 1px dashed transparent;
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-sm);
+  outline: none;
+  transition: all 0.2s;
+  flex: 1;
+}
+
+.fc-deck-title-input:hover,
+.fc-deck-title-input:focus {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.fc-counter {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 0.3rem 0.8rem;
+  border-radius: 999px;
+}
+
+/* 3D Flip Card Container */
+.fc-card-perspective {
+  width: 100%;
+  max-width: 680px;
+  height: 380px;
+  perspective: 1200px;
+  cursor: pointer;
+  margin-bottom: 1.75rem;
+}
+
+.fc-card-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: var(--radius-xl);
+}
+
+.fc-card-inner.flipped {
+  transform: rotateY(180deg);
+}
+
+.fc-card-face {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: var(--radius-xl);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.75rem;
+  box-sizing: border-box;
+  box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--border);
+}
+
+.fc-card-front {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.fc-card-back {
+  background: linear-gradient(145deg, #1e1b4b, #0f172a);
+  color: #e0e7ff;
+  transform: rotateY(180deg);
+  border: 1px solid #4338ca;
+}
+
+.fc-face-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.fc-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+}
+
+.fc-badge.front {
+  background: rgba(59, 130, 246, 0.15);
+  color: var(--primary);
+}
+
+.fc-badge.back {
+  background: rgba(168, 85, 247, 0.25);
+  color: #c084fc;
+}
+
+.fc-card-tools {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fc-tool-btn {
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.7;
+  transition: all 0.2s;
+}
+
+.fc-card-back .fc-tool-btn {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.fc-tool-btn:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.fc-tool-btn.memorized {
+  background: #10b981;
+  color: #ffffff;
+  opacity: 1;
+}
+
+.fc-card-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem 0;
+  overflow-y: auto;
+}
+
+.fc-main-text {
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.fc-example-text {
+  margin-top: 1rem;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #a5b4fc;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-md);
+  border-left: 3px solid #6366f1;
+}
+
+.fc-face-bottom {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.fc-card-back .fc-face-bottom {
+  color: #818cf8;
+}
+
+.fc-nav-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
