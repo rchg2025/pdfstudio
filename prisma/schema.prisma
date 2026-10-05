@@ -61,3 +61,29 @@ model Visit {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model QaRoom {
+  id          String       @id @default(cuid())
+  code        String       @unique // e.g. "839201"
+  title       String       // e.g. "Thảo luận Bài 5: Khám dấu hiệu sinh tồn"
+  subject     String?      // e.g. "Điều dưỡng cơ bản"
+  teacherName String?      // e.g. "Thầy Luyến"
+  isOpen      Boolean      @default(true) // Cho phép đặt câu hỏi hay tạm khóa
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  questions   QaQuestion[]
+}
+
+model QaQuestion {
+  id          String   @id @default(cuid())
+  roomId      String
+  room        QaRoom   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  content     String
+  authorAlias String   @default("Ẩn danh")
+  category    String   @default("Thắc mắc chung") // #Lý_thuyết, #Thực_hành, #Thi_cử, #Góp_ý
+  upvotes     Int      @default(0)
+  isAnswered  Boolean  @default(false)
+  isPinned    Boolean  @default(false)
+  answerNote  String?  // Ghi chú câu trả lời của giảng viên nếu có
+  createdAt   DateTime @default(now())
+}

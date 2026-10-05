@@ -48,6 +48,7 @@ const ProcessOrdering = React.lazy(() => import('./pages/ProcessOrdering'));
 const SortingGame = React.lazy(() => import('./pages/SortingGame'));
 const FormulaCalculator = React.lazy(() => import('./pages/FormulaCalculator'));
 const ClassroomActivityTimer = React.lazy(() => import('./pages/ClassroomActivityTimer'));
+const AnonymousQaWall = React.lazy(() => import('./pages/AnonymousQaWall'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -187,6 +188,9 @@ function App() {
             } />
             <Route path="dong-ho-hoat-dong" element={
               <Suspense fallback={<FallbackLoader />}><ClassroomActivityTimer /></Suspense>
+            } />
+            <Route path="buc-tuong-cau-hoi" element={
+              <Suspense fallback={<FallbackLoader />}><AnonymousQaWall /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

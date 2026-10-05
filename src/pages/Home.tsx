@@ -34,7 +34,8 @@ import {
   ListOrdered,
   Boxes,
   Calculator,
-  Timer
+  Timer,
+  MessageSquare
 } from 'lucide-react';
 import './Home.css';
 
@@ -252,6 +253,12 @@ const edTechTools = [
     icon: <Timer size={24} />,
     title: 'Đồng Hồ Hoạt Động & Chuông Bấm Đấu Trí',
     desc: 'Đồng hồ đếm ngược thảo luận nhóm, thi tình huống tia chớp và chuông bấm (Buzzer) giành quyền trả lời thời gian thực.'
+  },
+  {
+    path: '/buc-tuong-cau-hoi',
+    icon: <MessageSquare size={24} />,
+    title: 'Bức Tường Câu Hỏi Vô Danh & Hộp Thắc Mắc',
+    desc: 'Quét mã QR đặt câu hỏi ẩn danh, bình chọn (Upvote) thắc mắc chung và chiếu trực tiếp lên bảng/máy chiếu lớp học.'
   }
 ];
 
