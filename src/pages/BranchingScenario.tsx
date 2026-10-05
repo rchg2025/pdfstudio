@@ -177,6 +177,150 @@ const DEFAULT_SCENARIOS: ScenarioItem[] = [
         options: []
       }
     ]
+  },
+  {
+    id: 'scenario-hotel-complaint',
+    title: 'Kịch bản 3 [Khách Sạn - Du Lịch]: Xử lý khách hàng VIP phàn nàn về buồng phòng',
+    description: 'Rèn luyện kỹ năng giải quyết khiếu nại (Service Recovery) theo tiêu chuẩn 5 sao.',
+    nodes: [
+      {
+        id: 'start',
+        title: 'Tình huống 1: Khách hàng giận dữ tại quầy Lễ tân',
+        story: 'Ông Smith (khách VIP) bước xuống sảnh với thái độ bức xúc vì phòng Deluxe vừa nhận chưa được thay ga trải giường và điều hòa phát ra tiếng ồn lớn. Bạn là Trưởng ca Lễ tân, bước đầu tiên bạn sẽ làm gì?',
+        imageUrl: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1000&q=80',
+        isEnd: false,
+        options: [
+          {
+            id: 'opt-ht-1',
+            text: 'Phương án A: Chân thành xin lỗi, mời khách vào phòng chờ VIP dùng nước quả tươi, lắng nghe ghi chép chi tiết và đề xuất nâng hạng phòng (Upgrade) miễn phí ngay lập tức.',
+            targetNodeId: 'node-ht-success',
+            feedback: 'Rất chuyên nghiệp! Quy tắc L-A-S-T (Listen, Apologize, Solve, Thank) được áp dụng hoàn hảo, biến khách hàng bất mãn thành khách hàng trung thành.',
+            score: 20
+          },
+          {
+            id: 'opt-ht-2',
+            text: 'Phương án B: Giải thích do bộ phận Housekeeping hôm nay quá tải và yêu cầu khách quay lại phòng chờ thợ bảo trì lên sửa.',
+            targetNodeId: 'node-ht-failure',
+            feedback: 'Sai lầm nghiêm trọng! Khách hàng không có trách nhiệm nghe bạn đổ lỗi cho bộ phận nội bộ. Thái độ này có thể dẫn đến việc khách hủy phòng và đánh giá 1 sao.',
+            score: -15
+          }
+        ]
+      },
+      {
+        id: 'node-ht-failure',
+        title: 'Hệ quả: Khách bỏ khách sạn & để lại đánh giá 1 sao',
+        story: 'Ông Smith hủy đặt phòng cả tuần, đăng bài phản ánh gay gắt trên TripAdvisor. Khách sạn mất doanh thu và bị ảnh hưởng uy tín nghiêm trọng.',
+        imageUrl: 'https://images.unsplash.com/photo-1590381105924-c72589b9ef3f?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'failure',
+        options: []
+      },
+      {
+        id: 'node-ht-success',
+        title: 'Kết quả: Khách hàng ấn tượng sâu sắc và khen ngợi',
+        story: 'Khách vui vẻ nhận phòng Suite hướng biển, gửi thư cảm ơn Tổng quản lý vì sự phản ứng nhanh nhẹn và chu đáo của bạn.',
+        imageUrl: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'success',
+        options: []
+      }
+    ]
+  },
+  {
+    id: 'scenario-childcare-fever',
+    title: 'Kịch bản 4 [Nuôi Dưỡng Trẻ - Mầm Non]: Xử trí trẻ sốt cao co giật tại lớp',
+    description: 'Kỹ năng sơ cấp cứu khẩn cấp cho giáo viên mầm non và bảo mẫu.',
+    nodes: [
+      {
+        id: 'start',
+        title: 'Tình huống 1: Bé 3 tuổi bất ngờ tím tái, co giật trong giờ ngủ trưa',
+        story: 'Trong giờ ngủ trưa tại trường mầm non, bé Bo (3 tuổi) có biểu hiện sốt cao đột ngột, người gồng cứng, mắt trợn và bắt đầu co giật. Bạn sẽ ưu tiên làm gì đầu tiên?',
+        imageUrl: 'https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&w=1000&q=80',
+        isEnd: false,
+        options: [
+          {
+            id: 'opt-cc-1',
+            text: 'Phương án A: Đặt trẻ nằm nghiêng sang một bên nơi an toàn thoáng mát, nới lỏng quần áo, tuyệt đối không chèn ép miệng/cho ngón tay vào mồm trẻ, gọi nhân viên y tế trường ngay.',
+            targetNodeId: 'node-cc-success',
+            feedback: 'Rất chuẩn mực y khoa! Đặt nằm nghiêng chống sặc đường thở và không chèn vật cứng vào mồm tránh làm gãy răng hay tổn thương niêm mạc của bé.',
+            score: 20
+          },
+          {
+            id: 'opt-cc-2',
+            text: 'Phương án B: Ôm ghì chặt lấy bé và cố gắng cậy miệng bé để nhét khăn hoặc thìa sắt vào lưỡi vì sợ cắn vào lưỡi.',
+            targetNodeId: 'node-cc-danger',
+            feedback: 'Cực kỳ nguy hiểm! Nghiên cứu y học chứng minh trẻ co giật không bao giờ tự cắn đứt lưỡi, việc cố cậy miệng có thể gây tắc thở hoặc gãy răng hóc dị vật.',
+            score: -20
+          }
+        ]
+      },
+      {
+        id: 'node-cc-danger',
+        title: 'Hệ quả: Dị vật đường thở đe dọa tính mạng',
+        story: 'Thìa làm xước rách khoang miệng chảy máu, trẻ bị sặc dịch vào phế quản. Tình trạng chuyển biến nguy kịch phải gọi cấp cứu 115 khẩn cấp.',
+        imageUrl: 'https://images.unsplash.com/photo-1516574187841-cb9cc2ca948b?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'failure',
+        options: []
+      },
+      {
+        id: 'node-cc-success',
+        title: 'Kết quả: Cắt cơn co giật an toàn & hạ sốt thành công',
+        story: 'Sau 2 phút trẻ qua cơn giật, đường thở thông thoáng và được nhân viên y tế chườm ấm, dùng thuốc hạ sốt qua đường hậu môn an toàn.',
+        imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'success',
+        options: []
+      }
+    ]
+  },
+  {
+    id: 'scenario-mechanical-lathe',
+    title: 'Kịch bản 5 [Cơ Khí Chế Tạo]: Sự cố kẹt phoi và tiếng kêu lạ trên máy tiện',
+    description: 'An toàn lao động và kỹ thuật xử lý sự cố trong xưởng cơ khí thực hành.',
+    nodes: [
+      {
+        id: 'start',
+        title: 'Tình huống 1: Máy tiện CNC phát tiếng rít lớn và phoi quấn ổ dao',
+        story: 'Khi sinh viên đang thực hành tiện trục chi tiết, phoi kim loại dày bị quấn thành búi lớn quanh đài gá dao và trục chính phát ra âm thanh gầm rú bất thường. Phản ứng tức thì là gì?',
+        imageUrl: 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=1000&q=80',
+        isEnd: false,
+        options: [
+          {
+            id: 'opt-mc-1',
+            text: 'Phương án A: Nhấn ngay nút dừng khẩn cấp E-STOP (Emergency Stop), lùi dao và báo giảng viên xưởng.',
+            targetNodeId: 'node-mc-success',
+            feedback: 'Rất chính xác! Nguyên tắc số 1 trong an toàn cơ khí là ngắt nguồn máy trước khi can thiệp vào bất kỳ vùng gia công nào.',
+            score: 15
+          },
+          {
+            id: 'opt-mc-2',
+            text: 'Phương án B: Vội vàng lấy móc sắt hoặc đeo găng tay thò vào gạt búi phoi khi mâm cặp vẫn đang quay.',
+            targetNodeId: 'node-mc-danger',
+            feedback: 'Đại kỵ trong nghề cơ khí! Phoi quấn có thể kéo cả găng tay và cánh tay vào mâm cặp quay tốc độ cao gây tai nạn lao động nghiêm trọng.',
+            score: -25
+          }
+        ]
+      },
+      {
+        id: 'node-mc-danger',
+        title: 'Hệ quả: Tai nạn lao động chấn thương nghiêm trọng',
+        story: 'Mâm cặp cuốn móc sắt văng mạnh làm vỡ kính bảo hộ xưởng, sinh viên bị thương tích nặng.',
+        imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'failure',
+        options: []
+      },
+      {
+        id: 'node-mc-success',
+        title: 'Kết quả: Bảo vệ an toàn người và máy, tối ưu chế độ cắt',
+        story: 'Máy dừng êm dịu, sinh viên dùng móc chuyên dụng gỡ phoi khi máy đã ngắt điện hoàn toàn. Giảng viên hướng dẫn điều chỉnh lại bước tiến dao để bẻ phoi đạt chuẩn.',
+        imageUrl: 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'success',
+        options: []
+      }
+    ]
   }
 ];
 

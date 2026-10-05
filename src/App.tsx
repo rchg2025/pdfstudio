@@ -43,6 +43,10 @@ const ClassroomWheel = React.lazy(() => import('./pages/ClassroomWheel'));
 const HotspotStudio = React.lazy(() => import('./pages/HotspotStudio'));
 const InteractiveWorksheet = React.lazy(() => import('./pages/InteractiveWorksheet'));
 const BranchingScenario = React.lazy(() => import('./pages/BranchingScenario'));
+const BeforeAfterCompare = React.lazy(() => import('./pages/BeforeAfterCompare'));
+const ProcessOrdering = React.lazy(() => import('./pages/ProcessOrdering'));
+const SortingGame = React.lazy(() => import('./pages/SortingGame'));
+const FormulaCalculator = React.lazy(() => import('./pages/FormulaCalculator'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -167,6 +171,18 @@ function App() {
             } />
             <Route path="tinh-huong-phan-nhanh" element={
               <Suspense fallback={<FallbackLoader />}><BranchingScenario /></Suspense>
+            } />
+            <Route path="doi-chieu-truoc-sau" element={
+              <Suspense fallback={<FallbackLoader />}><BeforeAfterCompare /></Suspense>
+            } />
+            <Route path="quy-trinh-sop" element={
+              <Suspense fallback={<FallbackLoader />}><ProcessOrdering /></Suspense>
+            } />
+            <Route path="phan-loai-ghep-noi" element={
+              <Suspense fallback={<FallbackLoader />}><SortingGame /></Suspense>
+            } />
+            <Route path="bang-tinh-chuyen-nganh" element={
+              <Suspense fallback={<FallbackLoader />}><FormulaCalculator /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

@@ -29,7 +29,11 @@ import {
   BookOpen,
   MapPin,
   FileCheck2,
-  GitFork
+  GitFork,
+  Columns,
+  ListOrdered,
+  Boxes,
+  Calculator
 } from 'lucide-react';
 import './Home.css';
 
@@ -217,6 +221,30 @@ const edTechTools = [
     icon: <GitFork size={24} />,
     title: 'Mô Phỏng Tình Huống Phân Nhánh',
     desc: 'Xây dựng bài học tương tác theo cây quyết định, rèn luyện kỹ năng giải quyết tình huống thực tế.'
+  },
+  {
+    path: '/doi-chieu-truoc-sau',
+    icon: <Columns size={24} />,
+    title: 'Bảng Đối Chiếu Trước - Sau (Slider)',
+    desc: 'So sánh trực quan hai trạng thái bằng thanh gạt ngang: Chăm sóc da, mối hàn cơ khí, setup buồng phòng.'
+  },
+  {
+    path: '/quy-trinh-sop',
+    icon: <ListOrdered size={24} />,
+    title: 'Mô Phỏng Quy Trình Tuân Thủ (SOP)',
+    desc: 'Bài tập kéo thả sắp xếp đúng trình tự các bước thực hành y tế, an toàn vận hành cơ khí và mầm non.'
+  },
+  {
+    path: '/phan-loai-ghep-noi',
+    icon: <Boxes size={24} />,
+    title: 'Ghép Nối & Phân Loại Kéo Thả',
+    desc: 'Phân nhóm tài khoản kế toán (Nợ/Có), thuật ngữ tiếng Anh chuyên ngành y dược, quầy bar khách sạn.'
+  },
+  {
+    path: '/bang-tinh-chuyen-nganh',
+    icon: <Calculator size={24} />,
+    title: 'Bảng Tra Cứu & Tính Toán Tương Tác',
+    desc: 'Tự động tính liều thuốc, tốc độ truyền dịch, khấu hao TSCĐ và chế độ cắt gọt cơ khí có diễn giải chi tiết.'
   }
 ];
 
