@@ -580,3 +580,83 @@
 .bs-preview-remove-btn:hover {
   text-decoration: underline;
 }
+
+/* ========================================================
+   Mobile & Small Screen Optimizations (< 768px)
+   ======================================================== */
+@media (max-width: 992px) {
+  .bs-layout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .scenario-container {
+    padding: 0.85rem 0.85rem 2.5rem;
+  }
+
+  .bs-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .bs-title-group {
+    gap: 0.85rem;
+  }
+
+  .bs-title {
+    font-size: 1.25rem;
+  }
+
+  .bs-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .bs-header-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .bs-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .bs-mode-tabs {
+    width: 100%;
+  }
+
+  .bs-mode-tab {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .bs-stage-panel,
+  .bs-editor-panel {
+    padding: 1rem;
+    border-radius: var(--radius-lg);
+  }
+
+  .bs-card-play {
+    padding: 1.25rem 1rem;
+  }
+
+  .bs-card-play-title {
+    font-size: 1.3rem;
+  }
+
+  .bs-play-choice-btn {
+    padding: 0.85rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .bs-modal-content {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+}

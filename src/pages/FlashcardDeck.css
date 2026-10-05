@@ -470,3 +470,87 @@
   background: var(--bg-secondary);
 }
 
+/* ========================================================
+   Mobile & Small Screen Optimizations (< 768px)
+   ======================================================== */
+@media (max-width: 768px) {
+  .flashcard-container {
+    padding: 0.85rem 0.85rem 2.5rem;
+  }
+
+  .fc-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .fc-title-group {
+    gap: 0.85rem;
+  }
+
+  .fc-title {
+    font-size: 1.25rem;
+  }
+
+  .fc-subtitle {
+    font-size: 0.85rem;
+  }
+
+  .fc-header-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .fc-header-actions .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .fc-deck-info {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .fc-deck-title-input {
+    width: 100%;
+    font-size: 1.05rem;
+  }
+
+  .fc-card-perspective {
+    height: 340px;
+    margin-bottom: 1.25rem;
+  }
+
+  .fc-card-content {
+    font-size: 1.15rem;
+    padding: 1.5rem 1rem;
+  }
+
+  .fc-controls-bar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    width: 100%;
+  }
+
+  .fc-nav-btn {
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .fc-flip-btn {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.95rem;
+  }
+
+  .fc-modal-content {
+    max-width: 95vw;
+    margin: 1rem;
+  }
+}
+
