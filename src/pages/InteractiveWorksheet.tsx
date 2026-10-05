@@ -96,6 +96,7 @@ export default function InteractiveWorksheet() {
   // Modal export
   const [showExportModal, setShowExportModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [showAnswersAfterGrading, setShowAnswersAfterGrading] = useState(false);
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
 
@@ -196,6 +197,7 @@ export default function InteractiveWorksheet() {
   const handleReset = () => {
     setStudentAnswers({});
     setGradedResult(null);
+    setShowAnswersAfterGrading(false);
   };
 
   // Tạo file HTML độc lập cho LMS
@@ -638,18 +640,57 @@ export default function InteractiveWorksheet() {
               )}
 
               <div style={{ marginTop: '1.5rem' }}>
-                <h4 className="ws-label" style={{ marginBottom: '0.75rem' }}>Danh sách câu hỏi ({zones.length})</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                  <h4 className="ws-label" style={{ margin: 0 }}>Danh sách câu hỏi ({zones.length})</h4>
+                  {gradedResult?.submitted && (
+                    <button 
+                      type="button" 
+                      className="btn btn-outline btn-xs"
+                      onClick={() => setShowAnswersAfterGrading(prev => !prev)}
+                    >
+                      {showAnswersAfterGrading ? 'Ẩn đáp án' : 'Xem đáp án chi tiết'}
+                    </button>
+                  )}
+                </div>
                 <div className="ws-items-list">
-                  {zones.map((z, idx) => (
-                    <div key={z.id} className="ws-item-card">
-                      <div className="ws-item-info">
-                        <span className="ws-item-name">#{idx + 1}. {z.label}</span>
-                        <span className="ws-item-type">
-                          Đáp án đúng: <strong>{z.correctAnswer}</strong>
-                        </span>
+                  {zones.map((z, idx) => {
+                    const ans = studentAnswers[z.id];
+                    const isGraded = gradedResult?.submitted;
+                    const isOk = isGraded ? gradedResult.details[z.id] : undefined;
+
+                    return (
+                      <div key={z.id} className="ws-item-card">
+                        <div className="ws-item-info">
+                          <span className="ws-item-name">#{idx + 1}. {z.label}</span>
+                          <span className="ws-item-type">
+                            {!isGraded ? (
+                              ans ? (
+                                <span style={{ color: 'var(--primary)', fontWeight: 500 }}>
+                                  Đã trả lời: <strong>{ans}</strong>
+                                </span>
+                              ) : (
+                                <span style={{ color: 'var(--text-muted)' }}>Chưa điền câu trả lời</span>
+                              )
+                            ) : (
+                              <span>
+                                {isOk ? (
+                                  <strong style={{ color: '#10b981' }}>✅ Đúng</strong>
+                                ) : (
+                                  <strong style={{ color: '#ef4444' }}>❌ Chưa chính xác</strong>
+                                )}
+                                {showAnswersAfterGrading && (
+                                  <div style={{ marginTop: '0.25rem', color: '#10b981', fontSize: '0.82rem' }}>
+                                    Đáp án đúng: <strong>{z.correctAnswer}</strong>
+                                    {z.explanation && <div style={{ color: 'var(--text-secondary)', fontStyle: 'italic', marginTop: '2px' }}>💡 {z.explanation}</div>}
+                                  </div>
+                                )}
+                              </span>
+                            )}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
