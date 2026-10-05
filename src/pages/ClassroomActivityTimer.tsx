@@ -324,6 +324,10 @@ export default function ClassroomActivityTimer() {
     showToast(`Đã thêm đội: "${name}"`, 'success');
   };
 
+  const handleUpdateTeamName = (id: string, newName: string) => {
+    setTeams(prev => prev.map(t => t.id === id ? { ...t, name: newName } : t));
+  };
+
   const handleDeleteTeam = (id: string) => {
     if (teams.length <= 2) {
       showToast('Nên duy trì ít nhất 2 đội thi!', 'warning');
@@ -824,11 +828,15 @@ export default function ClassroomActivityTimer() {
                 <div key={t.id} className="bt-team-row">
                   <div className="bt-team-info">
                     <div className="bt-team-color-dot" style={{ background: t.color }} />
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
-                      {t.name}
-                    </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                      [Phím {t.keyShort}]
+                    <input 
+                      type="text" 
+                      className="bt-team-name-input"
+                      value={t.name}
+                      onChange={(e) => handleUpdateTeamName(t.id, e.target.value)}
+                      title="Nhấp để đổi tên đội"
+                    />
+                    <span className="bt-team-key-badge" title={`Bấm phím ${t.keyShort} để cướp chuông`}>
+                      Phím {t.keyShort}
                     </span>
                   </div>
 
