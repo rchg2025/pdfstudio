@@ -402,8 +402,69 @@ button {
     max-height: 98vh;
   }
 
+  /* Nút bấm trên mobile: Nhỏ gọn hơn, cho phép co giãn hoặc xuống dòng tự nhiên */
   .btn {
-    padding: 0.65rem 1.15rem;
-    font-size: 0.88rem;
+    padding: 0.45rem 0.85rem !important;
+    font-size: 0.82rem !important;
+    gap: 0.35rem !important;
+    border-radius: var(--radius-sm) !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    text-align: center;
+    line-height: 1.25 !important;
+    flex-shrink: 1 !important;
+  }
+
+  .btn svg {
+    flex-shrink: 0;
+  }
+
+  .btn-sm {
+    padding: 0.35rem 0.65rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .btn-lg {
+    padding: 0.6rem 1.15rem !important;
+    font-size: 0.9rem !important;
+  }
+
+  /* Thanh chứa các nút hành động trên Header: Tự động xuống dòng hoặc cuộn mượt mà */
+  .inter-header-actions,
+  .fc-header-actions,
+  .hs-header-actions,
+  .wheel-header-actions,
+  .ws-header-actions,
+  .bs-header-actions,
+  .compare-actions,
+  .process-actions,
+  .sorting-actions,
+  .calc-actions,
+  .bt-actions,
+  .qa-header-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 0.45rem !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: auto !important;
+    padding-bottom: 2px;
+  }
+
+  /* Các chip / preset thanh mẫu có thể trượt ngang khi cần */
+  .compare-presets-chips,
+  .process-presets-chips,
+  .sorting-presets-chips,
+  .calc-presets-chips,
+  .bt-presets-chips,
+  .qa-filters-group {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100% !important;
+    gap: 0.4rem !important;
+    padding: 4px 2px !important;
   }
 }
