@@ -429,3 +429,44 @@
   line-height: 1.5;
 }
 
+/* Modal Form Controls */
+.modal-body .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 1.15rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-body .form-group label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+}
+
+.modal-body .inter-input,
+.modal-body .inter-textarea {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  box-sizing: border-box;
+  outline: none;
+  transition: all 0.2s;
+  line-height: 1.5;
+}
+
+.modal-body .inter-input:focus,
+.modal-body .inter-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+  background: var(--bg-secondary);
+}
+
