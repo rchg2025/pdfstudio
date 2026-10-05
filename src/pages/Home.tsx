@@ -27,7 +27,9 @@ import {
   GraduationCap,
   Compass,
   BookOpen,
-  MapPin
+  MapPin,
+  FileCheck2,
+  GitFork
 } from 'lucide-react';
 import './Home.css';
 
@@ -203,6 +205,18 @@ const edTechTools = [
     icon: <Compass size={24} />,
     title: 'Vòng Quay May Mắn & Bốc Thăm',
     desc: 'Gọi tên ngẫu nhiên, tạo câu hỏi khởi động và tự động chia nhóm học tập sôi động trong giờ học.'
+  },
+  {
+    path: '/phieu-bai-tap-tuong-tac',
+    icon: <FileCheck2 size={24} />,
+    title: 'Phiếu Bài Tập Tương Tác (Worksheet)',
+    desc: 'Biến tài liệu PDF/ảnh bài tập thành phiếu điền từ, trắc nghiệm và tự động chấm điểm trên LMS.'
+  },
+  {
+    path: '/tinh-huong-phan-nhanh',
+    icon: <GitFork size={24} />,
+    title: 'Mô Phỏng Tình Huống Phân Nhánh',
+    desc: 'Xây dựng bài học tương tác theo cây quyết định, rèn luyện kỹ năng giải quyết tình huống thực tế.'
   }
 ];
 

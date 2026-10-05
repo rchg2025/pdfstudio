@@ -114,6 +114,8 @@ const Navbar = () => {
             <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
             <NavLink to="/anh-tuong-tac-hotspot" className={({isActive}) => isActive ? "nav-link active font-medium text-teal-600" : "nav-link font-medium text-teal-600"}>Ảnh Tương Tác</NavLink>
             <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>Vòng Quay</NavLink>
+            <NavLink to="/phieu-bai-tap-tuong-tac" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Phiếu Bài Tập</NavLink>
+            <NavLink to="/tinh-huong-phan-nhanh" className={({isActive}) => isActive ? "nav-link active font-medium text-fuchsia-600" : "nav-link font-medium text-fuchsia-600"}>Tình Huống Phân Nhánh</NavLink>
             <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
             

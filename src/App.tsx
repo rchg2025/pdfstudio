@@ -41,6 +41,8 @@ const EmbedPlayer = React.lazy(() => import('./pages/EmbedPlayer'));
 const FlashcardDeck = React.lazy(() => import('./pages/FlashcardDeck'));
 const ClassroomWheel = React.lazy(() => import('./pages/ClassroomWheel'));
 const HotspotStudio = React.lazy(() => import('./pages/HotspotStudio'));
+const InteractiveWorksheet = React.lazy(() => import('./pages/InteractiveWorksheet'));
+const BranchingScenario = React.lazy(() => import('./pages/BranchingScenario'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -159,6 +161,12 @@ function App() {
             } />
             <Route path="vong-quay-lop-hoc" element={
               <Suspense fallback={<FallbackLoader />}><ClassroomWheel /></Suspense>
+            } />
+            <Route path="phieu-bai-tap-tuong-tac" element={
+              <Suspense fallback={<FallbackLoader />}><InteractiveWorksheet /></Suspense>
+            } />
+            <Route path="tinh-huong-phan-nhanh" element={
+              <Suspense fallback={<FallbackLoader />}><BranchingScenario /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
