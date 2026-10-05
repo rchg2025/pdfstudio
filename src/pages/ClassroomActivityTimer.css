@@ -151,7 +151,81 @@
   border: 2px solid #334155;
   position: relative;
   overflow: hidden;
-  transition: border-color 0.3s;
+  transition: all 0.3s ease;
+}
+
+/* Nút mở toàn màn hình */
+.bt-fullscreen-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(30, 41, 59, 0.7);
+  border: 1px solid #475569;
+  color: #94a3b8;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  z-index: 20;
+}
+
+.bt-fullscreen-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+  transform: scale(1.08);
+}
+
+/* Fullscreen mode on projector / large screen */
+.bt-timer-card:fullscreen,
+.bt-timer-card.is-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  box-sizing: border-box;
+}
+
+.bt-timer-card:fullscreen .bt-time-digits,
+.bt-timer-card.is-fullscreen .bt-time-digits {
+  font-size: min(18vw, 15rem);
+  margin: 1.5rem 0;
+}
+
+.bt-timer-card:fullscreen .bt-timer-phase-title,
+.bt-timer-card.is-fullscreen .bt-timer-phase-title {
+  font-size: min(4vw, 2.2rem);
+}
+
+.bt-timer-card:fullscreen .bt-timer-desc,
+.bt-timer-card.is-fullscreen .bt-timer-desc {
+  font-size: min(2.2vw, 1.25rem);
+  max-width: 900px;
+}
+
+.bt-timer-card:fullscreen .bt-progress-track,
+.bt-timer-card.is-fullscreen .bt-progress-track {
+  height: 14px;
+  max-width: 900px;
+  margin: 1.5rem auto;
+}
+
+.bt-fullscreen-ctrls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
 }
 
 .bt-timer-card.danger {

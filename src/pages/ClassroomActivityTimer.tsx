@@ -15,7 +15,9 @@ import {
   Trash2, 
   Check, 
   Copy, 
-  Flame
+  Flame,
+  Maximize2,
+  Minimize2
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './ClassroomActivityTimer.css';
@@ -109,9 +111,40 @@ export default function ClassroomActivityTimer() {
   // Modal
   const [showExportModal, setShowExportModal] = useState<boolean>(false);
   const [copied, setCopied] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   // Interval timer ref
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerCardRef = useRef<HTMLDivElement | null>(null);
+
+  // Fullscreen event listener
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = async () => {
+    try {
+      if (!document.fullscreenElement) {
+        if (timerCardRef.current?.requestFullscreen) {
+          await timerCardRef.current.requestFullscreen();
+        } else if ((timerCardRef.current as any)?.webkitRequestFullscreen) {
+          await (timerCardRef.current as any).webkitRequestFullscreen();
+        }
+      } else {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if ((document as any)?.webkitExitFullscreen) {
+          await (document as any).webkitExitFullscreen();
+        }
+      }
+    } catch (err) {
+      showToast('Trình duyệt chặn mở toàn màn hình', 'warning');
+    }
+  };
 
   // Web Audio Context Synthesizer
   const playBeep = (freq: number = 600, duration: number = 0.1, type: OscillatorType = 'triangle') => {
@@ -328,12 +361,17 @@ export default function ClassroomActivityTimer() {
     .desc { font-size: 13.5px; color: #94a3b8; }
     .content { padding: 24px; }
     .timer-box { background: #0b1120; border-radius: 16px; padding: 24px; text-align: center; border: 2px solid #334155; margin-bottom: 20px; position: relative; }
+    .timer-box:fullscreen { width: 100vw; height: 100vh; border-radius: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; box-sizing: border-box; }
+    .timer-box:fullscreen .digits { font-size: min(20vw, 160px); margin: 20px 0; }
+    .timer-box:fullscreen .track { max-width: 900px; height: 14px; }
     .digits { font-family: monospace; font-size: 64px; font-weight: 900; letter-spacing: 2px; color: #f8fafc; }
     .digits.danger { color: #ef4444; }
     .digits.warning { color: #f59e0b; }
+    .fs-btn { position: absolute; top: 12px; right: 12px; background: #1e293b; border: 1px solid #475569; color: #94a3b8; border-radius: 8px; width: 34px; height: 34px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+    .fs-btn:hover { background: #38bdf8; color: #0f172a; }
     .track { width: 100%; height: 8px; background: #1e293b; border-radius: 99px; margin-top: 16px; overflow: hidden; }
     .fill { height: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); transition: width 0.25s linear; }
-    .timer-ctrls { display: flex; justify-content: center; gap: 12px; margin-top: 20px; }
+    .timer-ctrls { display: flex; justify-content: center; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
     .btn { padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; cursor: pointer; border: none; }
     .btn-main { background: #38bdf8; color: #0f172a; }
     .btn-reset { background: transparent; border: 1px solid #475569; color: #cbd5e1; }
@@ -353,6 +391,7 @@ export default function ClassroomActivityTimer() {
     </div>
     <div class="content">
       <div class="timer-box" id="timerBox">
+        <button class="fs-btn" onclick="toggleFs()" title="Toàn màn hình">⛶</button>
         <div class="digits" id="timeDigits">${formatTime(totalSeconds)}</div>
         <div class="track">
           <div class="fill" id="trackFill" style="width: 0%;"></div>
@@ -360,6 +399,7 @@ export default function ClassroomActivityTimer() {
         <div class="timer-ctrls">
           <button class="btn btn-main" id="startBtn" onclick="toggleTimer()">Bắt Đầu / Tạm Dừng (Space)</button>
           <button class="btn btn-reset" onclick="resetTimer()">Đặt Lại</button>
+          <button class="btn btn-reset" onclick="toggleFs()">⛶ Toàn Màn Hình</button>
         </div>
       </div>
 
@@ -466,6 +506,17 @@ export default function ClassroomActivityTimer() {
       winner = null;
       document.getElementById('winnerBox').style.display = 'none';
       playTone(400, 0.08);
+    }
+
+    function toggleFs() {
+      const box = document.getElementById('timerBox');
+      if (!document.fullscreenElement) {
+        if (box.requestFullscreen) box.requestFullscreen();
+        else if (box.webkitRequestFullscreen) box.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      }
     }
 
     window.addEventListener('keydown', (e) => {
@@ -594,7 +645,20 @@ export default function ClassroomActivityTimer() {
         {/* Left Column: Timer & Buzzer Arena */}
         <div className="bt-arena-panel">
           {/* Timer Card */}
-          <div className={`bt-timer-card ${isDangerTime ? 'danger' : ''}`}>
+          <div 
+            ref={timerCardRef}
+            className={`bt-timer-card ${isDangerTime ? 'danger' : ''} ${isFullscreen ? 'is-fullscreen' : ''}`}
+          >
+            {/* Nút Toàn màn hình góc trên bên phải */}
+            <button 
+              type="button" 
+              className="bt-fullscreen-btn"
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Thu nhỏ lại (Esc)' : 'Mở rộng toàn màn hình cho máy chiếu'}
+            >
+              {isFullscreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+            </button>
+
             <div className="bt-timer-phase-title">{phaseTitle}</div>
             <div className="bt-timer-desc">{phaseDesc}</div>
 
@@ -609,6 +673,36 @@ export default function ClassroomActivityTimer() {
                 style={{ width: `${progressPercent}%` }}
               />
             </div>
+
+            {/* Điều khiển khi ở chế độ Fullscreen máy chiếu */}
+            {isFullscreen && (
+              <div className="bt-fullscreen-ctrls animate-fade-in">
+                <button 
+                  type="button" 
+                  className="btn btn-primary"
+                  onClick={toggleTimer}
+                  style={{ minWidth: '180px', fontSize: '1.1rem', padding: '0.85rem 1.75rem' }}
+                >
+                  {isRunning ? <><Pause size={20} /> Tạm Dừng</> : <><Play size={20} /> Bắt Đầu (Space)</>}
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline"
+                  onClick={handleResetTimer}
+                  style={{ color: '#fff', borderColor: '#475569', padding: '0.85rem 1.5rem', fontSize: '1.05rem' }}
+                >
+                  <RotateCcw size={18} /> Đặt Lại
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline"
+                  onClick={toggleFullscreen}
+                  style={{ color: '#94a3b8', borderColor: '#334155', padding: '0.85rem 1.25rem' }}
+                >
+                  <Minimize2 size={18} /> Thoát Toàn Màn Hình
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Quick Add Time */}
