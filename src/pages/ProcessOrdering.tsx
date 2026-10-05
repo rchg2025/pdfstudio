@@ -16,7 +16,8 @@ import {
   BookOpen, 
   Tag, 
   ShieldAlert,
-  Play
+  Play,
+  GripVertical
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './ProcessOrdering.css';
@@ -123,6 +124,10 @@ export default function ProcessOrdering() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Kéo thả Drag and Drop
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
   const handleSelectPreset = (id: string) => {
     const p = PRESET_PROCESSES.find(item => item.id === id);
     if (!p) return;
@@ -133,6 +138,47 @@ export default function ProcessOrdering() {
     setShuffledSteps([...p.steps].sort(() => Math.random() - 0.5));
     setIsSubmitted(false);
     showToast(`Đã nạp mẫu: ${p.name}`, 'info');
+  };
+
+  // Kéo thả HTML5 Drag and Drop
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (isSubmitted) return;
+    setDraggedIndex(index);
+    e.dataTransfer.setData('text/plain', String(index));
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    if (isSubmitted) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetIndex: number) => {
+    if (isSubmitted) return;
+    e.preventDefault();
+    setDragOverIndex(null);
+    const sourceIndexStr = e.dataTransfer.getData('text/plain');
+    const sourceIndex = sourceIndexStr !== '' ? parseInt(sourceIndexStr, 10) : draggedIndex;
+    
+    if (sourceIndex === null || isNaN(sourceIndex) || sourceIndex === targetIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const list = [...shuffledSteps];
+    const [movedItem] = list.splice(sourceIndex, 1);
+    list.splice(targetIndex, 0, movedItem);
+    setShuffledSteps(list);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
   };
 
   // Di chuyển bước trong chế độ Play (Kéo thả/Bấm lên xuống)
@@ -215,7 +261,10 @@ export default function ProcessOrdering() {
     .desc { font-size: 14px; color: #94a3b8; line-height: 1.5; }
     .body { padding: 20px; }
     .steps-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-    .step-item { display: flex; align-items: center; gap: 12px; background: #0f172a; border: 1px solid #334155; padding: 12px 16px; border-radius: 12px; transition: all 0.2s; }
+    .step-item { display: flex; align-items: center; gap: 12px; background: #0f172a; border: 1px solid #334155; padding: 12px 16px; border-radius: 12px; transition: all 0.2s; cursor: grab; user-select: none; }
+    .step-item:active { cursor: grabbing; }
+    .step-item.dragging { opacity: 0.4; border: 2px dashed #38bdf8; }
+    .step-item.drag-over { border: 2px solid #38bdf8; transform: scale(1.01); }
     .step-num { width: 32px; height: 32px; border-radius: 50%; background: #334155; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
     .step-content { flex: 1; }
     .step-title { font-size: 15px; font-weight: 600; color: #f8fafc; margin-bottom: 3px; }
@@ -252,6 +301,7 @@ export default function ProcessOrdering() {
     const ORIGINAL_STEPS = ${stepsJson};
     let currentSteps = [...ORIGINAL_STEPS].sort(() => Math.random() - 0.5);
     let isChecked = false;
+    let draggedIdx = null;
 
     function render() {
       const container = document.getElementById('list');
@@ -263,7 +313,38 @@ export default function ProcessOrdering() {
           statusClass = st.order === idx + 1 ? 'correct' : 'wrong';
         }
         item.className = 'step-item ' + statusClass;
+        if (!isChecked) {
+          item.draggable = true;
+          item.ondragstart = (e) => {
+            draggedIdx = idx;
+            e.dataTransfer.setData('text/plain', String(idx));
+            item.classList.add('dragging');
+          };
+          item.ondragend = () => {
+            draggedIdx = null;
+            item.classList.remove('dragging');
+            document.querySelectorAll('.step-item').forEach(el => el.classList.remove('drag-over'));
+          };
+          item.ondragover = (e) => {
+            e.preventDefault();
+            item.classList.add('drag-over');
+          };
+          item.ondragleave = () => {
+            item.classList.remove('drag-over');
+          };
+          item.ondrop = (e) => {
+            e.preventDefault();
+            item.classList.remove('drag-over');
+            const from = parseInt(e.dataTransfer.getData('text/plain') || draggedIdx, 10);
+            if (!isNaN(from) && from !== idx) {
+              const [moved] = currentSteps.splice(from, 1);
+              currentSteps.splice(idx, 0, moved);
+              render();
+            }
+          };
+        }
         item.innerHTML = \`
+          <div style="cursor:grab;color:#64748b;font-size:16px;user-select:none;">⋮⋮</div>
           <div class="step-num">\${idx + 1}</div>
           <div class="step-content">
             <div class="step-title">\${st.title}</div>
@@ -446,12 +527,25 @@ export default function ProcessOrdering() {
             {shuffledSteps.map((st, idx) => {
               const isCorrect = isSubmitted && st.order === idx + 1;
               const isWrong = isSubmitted && st.order !== idx + 1;
+              const isDragging = draggedIndex === idx;
+              const isDragOver = dragOverIndex === idx;
 
               return (
                 <div 
                   key={st.id} 
-                  className={`process-step-play-card ${isCorrect ? 'step-correct' : ''} ${isWrong ? 'step-wrong' : ''}`}
+                  draggable={!isSubmitted}
+                  onDragStart={(e) => handleDragStart(e, idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDrop={(e) => handleDrop(e, idx)}
+                  onDragEnd={handleDragEnd}
+                  className={`process-step-play-card ${!isSubmitted ? 'is-draggable' : ''} ${isDragging ? 'is-dragging' : ''} ${isDragOver ? 'drag-over' : ''} ${isCorrect ? 'step-correct' : ''} ${isWrong ? 'step-wrong' : ''}`}
                 >
+                  {!isSubmitted && (
+                    <div className="process-drag-handle" title="Kéo thả vị trí">
+                      <GripVertical size={18} />
+                    </div>
+                  )}
+
                   <div className="process-step-badge">
                     Vị trí #{idx + 1}
                   </div>
@@ -620,19 +714,22 @@ export default function ProcessOrdering() {
 
       {/* Modal Iframe */}
       {showExportModal && (
-        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={() => setShowExportModal(false)}>
+          <div className="stop-edit-modal animate-scale-up" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3><Code size={18} color="var(--primary)" /> Mã Nhúng LMS Cho Bài Tập Quy Trình</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={20} style={{ color: 'var(--primary)' }} />
+                <h3>Mã Nhúng LMS Cho Bài Tập Quy Trình</h3>
+              </div>
               <button type="button" className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Sao chép mã nhúng bên dưới để đưa bài tập sắp xếp quy trình SOP vào Canvas, Moodle hoặc Google Sites. Sinh viên có thể bấm di chuyển các bước và xem điểm số trực tiếp!
+              <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
+                Sao chép mã nhúng bên dưới để đưa bài tập sắp xếp quy trình SOP vào Canvas, Moodle hoặc Google Sites. Sinh viên có thể kéo thả tự do hoặc bấm nút di chuyển các bước và xem điểm số trực tiếp!
               </p>
               <div className="export-result-box">
                 <div className="export-result-header">
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Mã HTML Iframe độc lập tự chấm điểm</span>
+                  <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>Mã HTML Iframe độc lập tự chấm điểm</span>
                   <button 
                     type="button" 
                     className="btn btn-primary btn-xs"

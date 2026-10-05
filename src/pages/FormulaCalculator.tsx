@@ -379,19 +379,22 @@ export default function FormulaCalculator() {
 
       {/* Modal Iframe */}
       {showExportModal && (
-        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={() => setShowExportModal(false)}>
+          <div className="stop-edit-modal animate-scale-up" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3><Code size={18} color="var(--primary)" /> Mã Nhúng LMS Bảng Tính Chuyên Ngành</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={20} style={{ color: 'var(--primary)' }} />
+                <h3>Mã Nhúng LMS Bảng Tính Chuyên Ngành</h3>
+              </div>
               <button type="button" className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
                 Sao chép mã nhúng bên dưới để đưa bảng tính tương tác trực quan này vào Canvas, Moodle hoặc Google Sites!
               </p>
               <div className="export-result-box">
                 <div className="export-result-header">
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Mã HTML Iframe độc lập Responsive 100%</span>
+                  <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>Mã HTML Iframe độc lập Responsive 100%</span>
                   <button 
                     type="button" 
                     className="btn btn-primary btn-xs"

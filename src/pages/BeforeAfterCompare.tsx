@@ -112,8 +112,41 @@ export default function BeforeAfterCompare() {
 
   const [showExportModal, setShowExportModal] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [isUploading, setIsUploading] = useState<'before' | 'after' | null>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [isDraggingStage, setIsDraggingStage] = useState(false);
 
+  const handleStagePointerMove = (clientX: number) => {
+    if (!stageRef.current) return;
+    const rect = stageRef.current.getBoundingClientRect();
+    let x = clientX - rect.left;
+    if (x < 0) x = 0;
+    if (x > rect.width) x = rect.width;
+    const pct = Math.round((x / rect.width) * 100);
+    setSliderPos(pct);
+  };
+
+  const handleStageMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsDraggingStage(true);
+    handleStagePointerMove(e.clientX);
+  };
+
+  const handleStageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (isDraggingStage) {
+      handleStagePointerMove(e.clientX);
+    }
+  };
+
+  const handleStageMouseUp = () => {
+    setIsDraggingStage(false);
+  };
+
+  const handleStageTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches[0]) {
+      handleStagePointerMove(e.touches[0].clientX);
+    }
+  };
+
+  const [isUploading, setIsUploading] = useState<'before' | 'after' | null>(null);
   const beforeFileRef = useRef<HTMLInputElement>(null);
   const afterFileRef = useRef<HTMLInputElement>(null);
 
@@ -208,8 +241,8 @@ export default function BeforeAfterCompare() {
     .img-layer img { width: 100%; height: 100%; object-fit: cover; display: block; }
     
     .layer-after { z-index: 1; }
-    .layer-before { z-index: 2; width: 50%; overflow: hidden; border-right: 3px solid #38bdf8; box-shadow: 4px 0 16px rgba(0,0,0,0.4); }
-    .layer-before img { width: 860px; max-width: none; }
+    .layer-before { z-index: 2; clip-path: inset(0 50% 0 0); }
+    .layer-before img { width: 100%; height: 100%; object-fit: cover; }
     
     .badge { position: absolute; top: 14px; z-index: 5; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
     .badge-before { left: 14px; background: rgba(239, 68, 68, 0.9); color: #fff; }
@@ -236,28 +269,21 @@ export default function BeforeAfterCompare() {
         <img src="${afterImg}" alt="After">
       </div>
       <div class="img-layer layer-before" id="beforeLayer">
-        <img id="beforeImgEl" src="${beforeImg}" alt="Before">
+        <img src="${beforeImg}" alt="Before">
       </div>
       
       <div class="slider-handle" id="handle">
         <div class="handle-circle">↔</div>
       </div>
     </div>
-    <div class="footer">💡 Kéo thanh trượt ngang hoặc chạm giữ ngón tay để đối chiếu từng chi tiết</div>
+    <div class="footer">💡 Kéo thanh trượt ngang hoặc chạm giữ ngón tay trên ảnh để đối chiếu từng chi tiết</div>
   </div>
 
   <script>
     const box = document.getElementById('box');
     const beforeLayer = document.getElementById('beforeLayer');
-    const beforeImgEl = document.getElementById('beforeImgEl');
     const handle = document.getElementById('handle');
     let isDown = false;
-
-    function updateSize() {
-      beforeImgEl.style.width = box.clientWidth + 'px';
-    }
-    window.addEventListener('resize', updateSize);
-    updateSize();
 
     function setPos(clientX) {
       const rect = box.getBoundingClientRect();
@@ -265,7 +291,7 @@ export default function BeforeAfterCompare() {
       if (x < 0) x = 0;
       if (x > rect.width) x = rect.width;
       const pct = (x / rect.width) * 100;
-      beforeLayer.style.width = pct + '%';
+      beforeLayer.style.clipPath = 'inset(0 ' + (100 - pct) + '% 0 0)';
       handle.style.left = pct + '%';
     }
 
@@ -390,21 +416,31 @@ export default function BeforeAfterCompare() {
             <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>{desc}</span>
           </div>
 
-          <div className="compare-interactive-stage">
+          <div 
+            ref={stageRef}
+            className="compare-interactive-stage"
+            onMouseDown={handleStageMouseDown}
+            onMouseMove={handleStageMouseMove}
+            onMouseUp={handleStageMouseUp}
+            onMouseLeave={handleStageMouseUp}
+            onTouchStart={(e) => handleStagePointerMove(e.touches[0].clientX)}
+            onTouchMove={handleStageTouchMove}
+            style={{ cursor: 'ew-resize' }}
+          >
             <div className="compare-badge compare-badge-before">{beforeLabel}</div>
             <div className="compare-badge compare-badge-after">{afterLabel}</div>
 
             {/* Layer Sau (Nằm dưới full width) */}
             <div className="compare-img-wrap after-wrap">
-              <img src={afterImg} alt={afterLabel} />
+              <img src={afterImg} alt={afterLabel} draggable={false} />
             </div>
 
             {/* Layer Trước (Cắt clip theo slider) */}
             <div 
               className="compare-img-wrap before-wrap" 
-              style={{ width: `${sliderPos}%` }}
+              style={{ clipPath: `inset(0 ${100 - sliderPos}% 0 0)` }}
             >
-              <img src={beforeImg} alt={beforeLabel} />
+              <img src={beforeImg} alt={beforeLabel} draggable={false} />
             </div>
 
             {/* Thanh cầm kéo trượt */}
@@ -560,19 +596,22 @@ export default function BeforeAfterCompare() {
 
       {/* Modal Xuất Mã Nhúng Iframe */}
       {showExportModal && (
-        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={() => setShowExportModal(false)}>
+          <div className="stop-edit-modal animate-scale-up" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3><Code size={18} color="var(--primary)" /> Mã Nhúng LMS Cho Bảng Đối Chiếu</h3>
-              <button type="button" className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={20} style={{ color: 'var(--primary)' }} />
+                <h3>Mã Nhúng LMS Cho Bảng Đối Chiếu</h3>
+              </div>
+              <button className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
                 Dán mã nhúng này vào LMS (Canvas, Moodle, Google Sites, Web trường...). Sinh viên có thể dùng chuột hoặc ngón tay cảm ứng trên điện thoại để kéo thanh gạt đối chiếu trực tiếp!
               </p>
               <div className="export-result-box">
                 <div className="export-result-header">
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Mã HTML Iframe độc lập Responsive 100%</span>
+                  <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>Mã HTML Iframe độc lập Responsive 100%</span>
                   <button 
                     type="button" 
                     className="btn btn-primary btn-xs"

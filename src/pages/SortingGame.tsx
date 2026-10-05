@@ -9,7 +9,11 @@ import {
   Sparkles, 
   Tag, 
   CheckCircle2, 
-  Volume2
+  Volume2,
+  Plus,
+  Trash2,
+  Edit3,
+  Play
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './SortingGame.css';
@@ -94,6 +98,15 @@ export default function SortingGame() {
   const [categories, setCategories] = useState<string[]>(currentPreset.categories);
   const [cards, setCards] = useState<CardItem[]>(currentPreset.cards);
 
+  // Mode: Trải nghiệm chơi vs Soạn bài tập
+  const [mode, setMode] = useState<'play' | 'editor'>('play');
+
+  // Input soạn thẻ/nhóm mới
+  const [newCatName, setNewCatName] = useState('');
+  const [newCardText, setNewCardText] = useState('');
+  const [newCardCat, setNewCardCat] = useState('');
+  const [newCardHint, setNewCardHint] = useState('');
+
   // Trạng thái chơi (Phân nhóm kéo thả / bấm chọn)
   const [userAssignments, setUserAssignments] = useState<Record<string, string>>({}); // cardId -> category
   const [isSubmitted, setIsSubmitted] = useState(false);
@@ -113,6 +126,74 @@ export default function SortingGame() {
     setUserAssignments({});
     setIsSubmitted(false);
     showToast(`Đã áp dụng mẫu: ${p.title}`, 'info');
+  };
+
+  // Quản lý Nhóm danh mục
+  const handleAddCategory = () => {
+    const name = newCatName.trim();
+    if (!name) {
+      showToast('Vui lòng nhập tên nhóm danh mục', 'warning');
+      return;
+    }
+    if (categories.includes(name)) {
+      showToast('Nhóm danh mục này đã tồn tại!', 'warning');
+      return;
+    }
+    setCategories(prev => [...prev, name]);
+    setNewCatName('');
+    showToast(`Đã thêm nhóm: "${name}"`, 'success');
+  };
+
+  const handleDeleteCategory = (catName: string) => {
+    if (categories.length <= 1) {
+      showToast('Cần giữ lại ít nhất 1 nhóm danh mục', 'warning');
+      return;
+    }
+    setCategories(prev => prev.filter(c => c !== catName));
+    // Xóa hoặc unassign các thẻ thuộc nhóm này
+    setCards(prev => prev.filter(c => c.category !== catName));
+    setUserAssignments(prev => {
+      const next = { ...prev };
+      Object.keys(next).forEach(k => {
+        if (next[k] === catName) delete next[k];
+      });
+      return next;
+    });
+    showToast(`Đã xóa nhóm "${catName}"`, 'info');
+  };
+
+  // Quản lý Thẻ câu hỏi
+  const handleAddCard = () => {
+    const txt = newCardText.trim();
+    if (!txt) {
+      showToast('Vui lòng nhập nội dung thẻ cần xếp', 'warning');
+      return;
+    }
+    const cat = newCardCat || categories[0];
+    if (!cat) {
+      showToast('Vui lòng tạo ít nhất 1 nhóm danh mục trước', 'warning');
+      return;
+    }
+    const newCard: CardItem = {
+      id: `custom-${Date.now()}`,
+      text: txt,
+      category: cat,
+      hint: newCardHint.trim() || undefined
+    };
+    setCards(prev => [...prev, newCard]);
+    setNewCardText('');
+    setNewCardHint('');
+    showToast('Đã thêm thẻ mới vào bài tập!', 'success');
+  };
+
+  const handleDeleteCard = (cardId: string) => {
+    setCards(prev => prev.filter(c => c.id !== cardId));
+    setUserAssignments(prev => {
+      const next = { ...prev };
+      delete next[cardId];
+      return next;
+    });
+    showToast('Đã xóa thẻ', 'info');
   };
 
   const handleAssign = (cardId: string, category: string) => {
@@ -412,12 +493,31 @@ export default function SortingGame() {
         </div>
       </div>
 
+      {/* Switcher: Luyện tập vs Soạn bài tập */}
+      <div className="sorting-mode-tabs">
+        <button 
+          type="button" 
+          className={`sorting-tab-btn ${mode === 'play' ? 'active' : ''}`}
+          onClick={() => setMode('play')}
+        >
+          <Play size={15} /> Sinh viên Luyện tập ({cards.length} thẻ)
+        </button>
+        <button 
+          type="button" 
+          className={`sorting-tab-btn ${mode === 'editor' ? 'active' : ''}`}
+          onClick={() => setMode('editor')}
+        >
+          <Edit3 size={15} /> Giảng viên Soạn nội dung ({categories.length} nhóm)
+        </button>
+      </div>
+
       {/* Main Interactive Stage */}
-      <div className="sorting-play-wrap">
-        <div className="sorting-intro">
-          <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{title}</h2>
-          <p style={{ margin: '0.25rem 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{desc}</p>
-        </div>
+      {mode === 'play' && (
+        <div className="sorting-play-wrap">
+          <div className="sorting-intro">
+            <h2 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--text-primary)' }}>{title}</h2>
+            <p style={{ margin: '0.25rem 0 0', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{desc}</p>
+          </div>
 
         {/* Thùng chứa các thẻ chưa xếp */}
         <div className="sorting-unassigned-zone">
@@ -526,49 +626,205 @@ export default function SortingGame() {
           })}
         </div>
 
-        {/* Footer Actions */}
-        <div className="sorting-footer-bar">
-          <button type="button" className="btn btn-outline btn-sm" onClick={handleReset}>
-            <RotateCcw size={14} /> Bắt đầu lại
-          </button>
+          {/* Footer Actions */}
+          <div className="sorting-footer-bar">
+            <button type="button" className="btn btn-outline btn-sm" onClick={handleReset}>
+              <RotateCcw size={14} /> Bắt đầu lại
+            </button>
 
-          {isSubmitted ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ fontSize: '1.25rem', fontWeight: 700, color: score >= 80 ? '#10b981' : '#f59e0b' }}>
-                Điểm số: {score} / 100 điểm
-              </span>
-              <button type="button" className="btn btn-primary btn-sm" onClick={handleReset}>
-                Làm lại lần nữa
+            {isSubmitted ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: score >= 80 ? '#10b981' : '#f59e0b' }}>
+                  Điểm số: {score} / 100 điểm
+                </span>
+                <button type="button" className="btn btn-primary btn-sm" onClick={handleReset}>
+                  Làm lại lần nữa
+                </button>
+              </div>
+            ) : (
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={handleCheckAnswers}
+                disabled={Object.keys(userAssignments).length === 0}
+              >
+                <Check size={16} /> Kiểm Tra Kết Quả & Chấm Điểm
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Mode EDITOR: Thầy cô tự thêm nhóm và thẻ câu hỏi */}
+      {mode === 'editor' && (
+        <div className="sorting-editor-wrap animate-fade-in">
+          {/* Tiêu đề & mô tả bài tập */}
+          <div className="sorting-panel">
+            <h3 className="sorting-panel-title">✏️ Thông Tin Hoạt Động Phân Loại</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+                  Tiêu đề hoạt động:
+                </label>
+                <input 
+                  type="text" 
+                  className="bs-input" 
+                  value={title} 
+                  onChange={(e) => setTitle(e.target.value)} 
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'block', marginBottom: '0.35rem' }}>
+                  Mô tả / Yêu cầu bài tập:
+                </label>
+                <textarea 
+                  className="bs-textarea" 
+                  rows={2} 
+                  value={desc} 
+                  onChange={(e) => setDesc(e.target.value)} 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Quản lý các nhóm danh mục */}
+          <div className="sorting-panel">
+            <div className="sorting-panel-header">
+              <h3 className="sorting-panel-title">🗂️ Các Nhóm Danh Mục Cần Phân Loại ({categories.length})</h3>
+            </div>
+            
+            <div className="sorting-cat-editor-list" style={{ marginBottom: '1.25rem' }}>
+              {categories.map((cat, idx) => (
+                <div key={idx} className="sorting-cat-edit-tag">
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{cat}</span>
+                  <button 
+                    type="button" 
+                    className="sorting-cat-del-btn" 
+                    onClick={() => handleDeleteCategory(cat)}
+                    title="Xóa nhóm này"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+              <input 
+                type="text" 
+                className="bs-input" 
+                placeholder="Nhập tên nhóm mới (VD: Tài sản ngắn hạn, Dụng cụ vô khuẩn...)"
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAddCategory(); }}
+                style={{ flex: 1 }}
+              />
+              <button 
+                type="button" 
+                className="btn btn-primary btn-sm"
+                onClick={handleAddCategory}
+              >
+                <Plus size={15} /> Thêm Nhóm
               </button>
             </div>
-          ) : (
-            <button 
-              type="button" 
-              className="btn btn-primary"
-              onClick={handleCheckAnswers}
-              disabled={Object.keys(userAssignments).length === 0}
-            >
-              <Check size={16} /> Kiểm Tra Kết Quả & Chấm Điểm
-            </button>
-          )}
+          </div>
+
+          {/* Quản lý các thẻ câu hỏi */}
+          <div className="sorting-panel">
+            <div className="sorting-panel-header">
+              <h3 className="sorting-panel-title">🏷️ Danh Sách Thẻ Cần Xếp ({cards.length})</h3>
+            </div>
+
+            {/* Form thêm thẻ mới */}
+            <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.25rem', marginBottom: '1.5rem' }}>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--primary)', marginBottom: '0.75rem' }}>
+                + Thêm Thẻ Câu Hỏi / Thuật Ngữ Mới:
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.5fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                <input 
+                  type="text" 
+                  className="bs-input" 
+                  placeholder="Nội dung thẻ (VD: Paracetamol 500mg, Vốn chủ sở hữu...)"
+                  value={newCardText}
+                  onChange={(e) => setNewCardText(e.target.value)}
+                />
+                <select 
+                  className="bs-input" 
+                  value={newCardCat || (categories[0] || '')} 
+                  onChange={(e) => setNewCardCat(e.target.value)}
+                >
+                  {categories.map((cat, idx) => (
+                    <option key={idx} value={cat}>Nhóm: {cat}</option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <input 
+                  type="text" 
+                  className="bs-input" 
+                  placeholder="Gợi ý chuyên môn cho sinh viên (tùy chọn)..."
+                  value={newCardHint}
+                  onChange={(e) => setNewCardHint(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button 
+                  type="button" 
+                  className="btn btn-primary btn-sm"
+                  onClick={handleAddCard}
+                >
+                  <Plus size={15} /> Thêm Thẻ
+                </button>
+              </div>
+            </div>
+
+            {/* Grid các thẻ hiện tại */}
+            <div className="sorting-cards-editor-grid">
+              {cards.map(c => (
+                <div key={c.id} className="sorting-card-edit-item">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.92rem' }}>{c.text}</span>
+                    <button 
+                      type="button" 
+                      onClick={() => handleDeleteCard(c.id)}
+                      style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '2px' }}
+                      title="Xóa thẻ này"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: '#10b981', fontWeight: 600 }}>
+                    🎯 Nhóm đúng: {c.category}
+                  </div>
+                  {c.hint && (
+                    <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                      💡 {c.hint}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Modal Iframe */}
       {showExportModal && (
-        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-backdrop" onClick={() => setShowExportModal(false)}>
+          <div className="stop-edit-modal animate-scale-up" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3><Code size={18} color="var(--primary)" /> Mã Nhúng LMS Trò Chơi Phân Loại</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Code size={20} style={{ color: 'var(--primary)' }} />
+                <h3>Mã Nhúng LMS Trò Chơi Phân Loại</h3>
+              </div>
               <button type="button" className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
             </div>
             <div className="modal-body">
-              <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1rem' }}>
                 Nhúng trò chơi phân loại này vào Canvas, Moodle, Google Sites để sinh viên tương tác trực tiếp trên bài giảng điện tử!
               </p>
               <div className="export-result-box">
                 <div className="export-result-header">
-                  <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Mã HTML Iframe độc lập Responsive 100%</span>
+                  <span style={{ fontSize: '0.82rem', color: '#94a3b8', fontWeight: 600 }}>Mã HTML Iframe độc lập Responsive 100%</span>
                   <button 
                     type="button" 
                     className="btn btn-primary btn-xs"
