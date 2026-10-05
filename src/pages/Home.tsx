@@ -33,7 +33,8 @@ import {
   Columns,
   ListOrdered,
   Boxes,
-  Calculator
+  Calculator,
+  Timer
 } from 'lucide-react';
 import './Home.css';
 
@@ -245,6 +246,12 @@ const edTechTools = [
     icon: <Calculator size={24} />,
     title: 'Bảng Tra Cứu & Tính Toán Tương Tác',
     desc: 'Tự động tính liều thuốc, tốc độ truyền dịch, khấu hao TSCĐ và chế độ cắt gọt cơ khí có diễn giải chi tiết.'
+  },
+  {
+    path: '/dong-ho-hoat-dong',
+    icon: <Timer size={24} />,
+    title: 'Đồng Hồ Hoạt Động & Chuông Bấm Đấu Trí',
+    desc: 'Đồng hồ đếm ngược thảo luận nhóm, thi tình huống tia chớp và chuông bấm (Buzzer) giành quyền trả lời thời gian thực.'
   }
 ];
 
