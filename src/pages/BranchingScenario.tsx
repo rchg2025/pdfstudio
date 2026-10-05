@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   GitFork, 
   Plus, 
@@ -13,9 +13,15 @@ import {
   Sparkles, 
   ArrowRight, 
   Trophy, 
-  AlertCircle 
+  AlertCircle,
+  Upload,
+  FolderPlus,
+  Loader2,
+  ExternalLink,
+  BookOpen
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import './BranchingScenario.css';
 
 export interface ScenarioOption {
@@ -36,85 +42,190 @@ export interface ScenarioNode {
   options: ScenarioOption[];
 }
 
+export interface ScenarioItem {
+  id: string;
+  title: string;
+  description: string;
+  nodes: ScenarioNode[];
+}
+
+const DEFAULT_SCENARIOS: ScenarioItem[] = [
+  {
+    id: 'scenario-conflict-res',
+    title: 'Kịch bản 1: Giải quyết mâu thuẫn làm việc nhóm',
+    description: 'Rèn luyện kỹ năng sư phạm khi học sinh tranh cãi gay gắt trong giờ thảo luận nhóm.',
+    nodes: [
+      {
+        id: 'start',
+        title: 'Tình huống 1: Hai học sinh to tiếng trong giờ thảo luận',
+        story: 'Trong lúc cả lớp đang làm việc nhóm, bạn An và bạn Bình bất ngờ tranh cãi gay gắt về việc ai là người trình bày slide. Bình tức giận đập bàn và từ chối tiếp tục làm việc. Bạn sẽ xử lý thế nào?',
+        imageUrl: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1000&q=80',
+        isEnd: false,
+        options: [
+          {
+            id: 'opt-1-1',
+            text: 'Phương án A: Quát lớn yêu cầu cả hai trật tự ngay lập tức và dọa trừ điểm hạnh kiểm.',
+            targetNodeId: 'node-escalate',
+            feedback: 'Hành động này làm căng thẳng leo thang và khiến học sinh cảm thấy bị áp đặt, không giải quyết được gốc rễ vấn đề.',
+            score: -5
+          },
+          {
+            id: 'opt-1-2',
+            text: 'Phương án B: Nhẹ nhàng bước tới, tạm thời tách hai bạn ra và đề nghị lắng nghe lý do từ từng bạn.',
+            targetNodeId: 'node-listen',
+            feedback: 'Rất chuẩn xác! Sự bình tĩnh của giáo viên giúp hạ nhiệt cảm xúc và tạo không gian an toàn cho đối thoại.',
+            score: 10
+          }
+        ]
+      },
+      {
+        id: 'node-escalate',
+        title: 'Hệ quả: Căng thẳng leo thang',
+        story: 'Bình cảm thấy bất công và bức xúc bỏ ra khỏi lớp học. Giờ học bị gián đoạn và không khí lớp học trở nên ngột ngạt.',
+        imageUrl: 'https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'failure',
+        options: []
+      },
+      {
+        id: 'node-listen',
+        title: 'Tình huống 2: Tìm tiếng nói chung cho nhóm',
+        story: 'Khi lắng nghe, bạn phát hiện An đã chuẩn bị nội dung rất kỹ, còn Bình là người thiết kế slide chính. Cả hai đều muốn đóng góp cho nhóm nhưng thiếu sự phân công rõ ràng. Bước tiếp theo bạn chọn là gì?',
+        imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1000&q=80',
+        isEnd: false,
+        options: [
+          {
+            id: 'opt-2-1',
+            text: 'Gợi ý chia đôi phần thuyết trình: An mở đầu & nội dung, Bình kết luận & phản biện Q&A.',
+            targetNodeId: 'node-success',
+            feedback: 'Tuyệt vời! Giải pháp win-win tôn trọng công sức của cả hai bạn và rèn luyện kỹ năng làm việc nhóm thực tế.',
+            score: 15
+          },
+          {
+            id: 'opt-2-2',
+            text: 'Quyết định bốc thăm ngẫu nhiên để chọn ra một bạn duy nhất trình bày.',
+            targetNodeId: 'node-neutral',
+            feedback: 'Bốc thăm giải quyết được tranh chấp tạm thời nhưng chưa phát huy tối đa tinh thần hợp tác của cả nhóm.',
+            score: 5
+          }
+        ]
+      },
+      {
+        id: 'node-success',
+        title: 'Kết quả: Nhóm thuyết trình xuất sắc!',
+        story: 'Cả An và Bình đều hoàn thành phần việc của mình một cách tự tin. Cả lớp dành tràng pháo tay lớn, hai bạn vui vẻ bắt tay làm hòa và đạt điểm tối đa!',
+        imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'success',
+        options: []
+      },
+      {
+        id: 'node-neutral',
+        title: 'Kết quả: Bài học kết thúc an toàn',
+        story: 'Nhóm hoàn thành bài thuyết trình đúng hạn, tuy nhiên không khí giữa các thành viên vẫn còn chút gượng gạo. Bạn cần thêm thời gian để gắn kết nhóm sau giờ học.',
+        imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'neutral',
+        options: []
+      }
+    ]
+  },
+  {
+    id: 'scenario-lab-safety',
+    title: 'Kịch bản 2: Xử lý sự cố an toàn trong phòng thí nghiệm',
+    description: 'Tình huống bất ngờ khi hóa chất bị đổ ra bàn trong giờ thực hành Hóa - Sinh.',
+    nodes: [
+      {
+        id: 'start',
+        title: 'Tình huống 1: Hóa chất bị đổ tràn trong giờ thực hành',
+        story: 'Một nhóm học sinh sơ ý làm đổ lọ dung dịch axit nhẹ ra mặt bàn thực hành. Một học sinh hoảng hốt định dùng tay không lấy giẻ lau thấm ngay. Bạn sẽ chỉ dẫn thế nào?',
+        imageUrl: 'https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=1000&q=80',
+        isEnd: false,
+        options: [
+          {
+            id: 'opt-lab-1',
+            text: 'Phương án A: Hô lớn yêu cầu học sinh lùi lại ngay, đeo găng tay bảo hộ và dùng bột trung hòa/cát thấm theo quy trình.',
+            targetNodeId: 'node-lab-success',
+            feedback: 'Rất chính xác! Luôn ưu tiên an toàn cá nhân và tuân thủ đúng quy trình xử lý hóa chất.',
+            score: 15
+          },
+          {
+            id: 'opt-lab-2',
+            text: 'Phương án B: Lấy vòi nước xối mạnh trực tiếp lên bàn để rửa trôi axit.',
+            targetNodeId: 'node-lab-danger',
+            feedback: 'Nguy hiểm! Xối vòi nước mạnh có thể làm dung dịch axit bắn vào mắt hoặc da của những người xung quanh.',
+            score: -10
+          }
+        ]
+      },
+      {
+        id: 'node-lab-danger',
+        title: 'Hệ quả: Nguy cơ bỏng hóa chất lan rộng',
+        story: 'Nước xối làm dung dịch bắn tung tóe lên áo một học sinh gần đó. Bạn phải lập tức đưa học sinh đến bồn rửa mắt và sơ cứu khẩn cấp.',
+        imageUrl: 'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'failure',
+        options: []
+      },
+      {
+        id: 'node-lab-success',
+        title: 'Kết quả: Xử lý sự cố an toàn tuyệt đối',
+        story: 'Axit được trung hòa an toàn, các em học sinh hiểu rõ quy trình an toàn phòng thí nghiệm và bài thực hành tiếp tục thành công tốt đẹp.',
+        imageUrl: 'https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=1000&q=80',
+        isEnd: true,
+        endType: 'success',
+        options: []
+      }
+    ]
+  }
+];
+
 export default function BranchingScenario() {
   const { showToast } = useNotification();
+  const { token } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Kịch bản mẫu: Tình huống giải quyết tranh chấp trong giờ học
-  const [nodes, setNodes] = useState<ScenarioNode[]>([
-    {
-      id: 'start',
-      title: 'Tình huống 1: Hai học sinh to tiếng trong giờ thảo luận',
-      story: 'Trong lúc cả lớp đang làm việc nhóm, bạn An và bạn Bình bất ngờ tranh cãi gay gắt về việc ai là người trình bày slide. Bình tức giận đập bàn và từ chối tiếp tục làm việc. Bạn sẽ xử lý thế nào?',
-      imageUrl: 'https://images.unsplash.com/photo-1577896851231-70ef18881754?auto=format&fit=crop&w=1000&q=80',
-      isEnd: false,
-      options: [
-        {
-          id: 'opt-1-1',
-          text: 'Phương án A: Quát lớn yêu cầu cả hai trật tự ngay lập tức và dọa trừ điểm hạnh kiểm.',
-          targetNodeId: 'node-escalate',
-          feedback: 'Hành động này làm căng thẳng leo thang và khiến học sinh cảm thấy bị áp đặt, không giải quyết được gốc rễ vấn đề.',
-          score: -5
-        },
-        {
-          id: 'opt-1-2',
-          text: 'Phương án B: Nhẹ nhàng bước tới, tạm thời tách hai bạn ra và đề nghị lắng nghe lý do từ từng bạn.',
-          targetNodeId: 'node-listen',
-          feedback: 'Rất chuẩn xác! Sự bình tĩnh của giáo viên giúp hạ nhiệt cảm xúc và tạo không gian an toàn cho đối thoại.',
-          score: 10
-        }
-      ]
-    },
-    {
-      id: 'node-escalate',
-      title: 'Hệ quả: Căng thẳng leo thang',
-      story: 'Bình cảm thấy bất công và bức xúc bỏ ra khỏi lớp học. Giờ học bị gián đoạn và không khí lớp học trở nên ngột ngạt.',
-      imageUrl: 'https://images.unsplash.com/photo-1594608661623-aa0bd3a69d98?auto=format&fit=crop&w=1000&q=80',
-      isEnd: true,
-      endType: 'failure',
-      options: []
-    },
-    {
-      id: 'node-listen',
-      title: 'Tình huống 2: Tìm tiếng nói chung cho nhóm',
-      story: 'Khi lắng nghe, bạn phát hiện An đã chuẩn bị nội dung rất kỹ, còn Bình là người thiết kế slide chính. Cả hai đều muốn đóng góp cho nhóm nhưng thiếu sự phân công rõ ràng. Bước tiếp theo bạn chọn là gì?',
-      imageUrl: 'https://images.unsplash.com/photo-1524178232363-1fb2b075b655?auto=format&fit=crop&w=1000&q=80',
-      isEnd: false,
-      options: [
-        {
-          id: 'opt-2-1',
-          text: 'Gợi ý chia đôi phần thuyết trình: An mở đầu & nội dung, Bình kết luận & phản biện Q&A.',
-          targetNodeId: 'node-success',
-          feedback: 'Tuyệt vời! Giải pháp win-win tôn trọng công sức của cả hai bạn và rèn luyện kỹ năng làm việc nhóm thực tế.',
-          score: 15
-        },
-        {
-          id: 'opt-2-2',
-          text: 'Quyết định bốc thăm ngẫu nhiên để chọn ra một bạn duy nhất trình bày.',
-          targetNodeId: 'node-neutral',
-          feedback: 'Bốc thăm giải quyết được tranh chấp tạm thời nhưng chưa phát huy tối đa tinh thần hợp tác của cả nhóm.',
-          score: 5
-        }
-      ]
-    },
-    {
-      id: 'node-success',
-      title: 'Kết quả: Nhóm thuyết trình xuất sắc!',
-      story: 'Cả An và Bình đều hoàn thành phần việc của mình một cách tự tin. Cả lớp dành tràng pháo tay lớn, hai bạn vui vẻ bắt tay làm hòa và đạt điểm tối đa!',
-      imageUrl: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1000&q=80',
-      isEnd: true,
-      endType: 'success',
-      options: []
-    },
-    {
-      id: 'node-neutral',
-      title: 'Kết quả: Bài học kết thúc an toàn',
-      story: 'Nhóm hoàn thành bài thuyết trình đúng hạn, tuy nhiên không khí giữa các thành viên vẫn còn chút gượng gạo. Bạn cần thêm thời gian để gắn kết nhóm sau giờ học.',
-      imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80',
-      isEnd: true,
-      endType: 'neutral',
-      options: []
+  // Quản lý nhiều kịch bản (Multiple Scenarios)
+  const [scenarios, setScenarios] = useState<ScenarioItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('branching_scenarios_library');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // fallback
     }
-  ]);
+    return DEFAULT_SCENARIOS;
+  });
+
+  const [activeScenarioId, setActiveScenarioId] = useState<string>(() => {
+    return scenarios[0]?.id || 'scenario-conflict-res';
+  });
+
+  const currentScenario = scenarios.find(s => s.id === activeScenarioId) || scenarios[0] || DEFAULT_SCENARIOS[0];
+  const nodes = currentScenario.nodes;
+
+  const setNodes = (action: ScenarioNode[] | ((prev: ScenarioNode[]) => ScenarioNode[])) => {
+    setScenarios(prevList => {
+      return prevList.map(sc => {
+        if (sc.id === activeScenarioId) {
+          const nextNodes = typeof action === 'function' ? action(sc.nodes) : action;
+          return { ...sc, nodes: nextNodes };
+        }
+        return sc;
+      });
+    });
+  };
+
+  // Lưu scenarios vào localStorage khi có thay đổi
+  useEffect(() => {
+    try {
+      localStorage.setItem('branching_scenarios_library', JSON.stringify(scenarios));
+    } catch {
+      // ignore
+    }
+  }, [scenarios]);
 
   const [mode, setMode] = useState<'editor' | 'simulator'>('simulator');
   const [selectedNodeId, setSelectedNodeId] = useState<string>('start');
@@ -162,6 +273,158 @@ export default function BranchingScenario() {
     setCurrentScore(0);
     setHistoryLog([]);
     setLastFeedback(null);
+  };
+
+  // Quản lý kịch bản: Thêm kịch bản mới
+  const handleCreateScenario = () => {
+    const title = window.prompt('Nhập tên kịch bản mới (ví dụ: Kịch bản 3: Sơ cứu chấn thương thể dục):');
+    if (!title || !title.trim()) return;
+
+    const newScenarioId = `scenario-${Date.now()}`;
+    const newScenario: ScenarioItem = {
+      id: newScenarioId,
+      title: title.trim(),
+      description: 'Mô tả ngắn gọn về tình huống và mục tiêu học tập...',
+      nodes: [
+        {
+          id: 'start',
+          title: 'Tình huống 1: Mở đầu câu chuyện',
+          story: 'Mô tả bối cảnh tình huống thực tế mà người học phải đối mặt tại đây...',
+          imageUrl: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1000&q=80',
+          isEnd: false,
+          options: [
+            {
+              id: `opt-${Date.now()}-1`,
+              text: 'Phương án A: Cách xử lý thứ nhất...',
+              targetNodeId: `node-end-${Date.now()}`,
+              feedback: 'Nhận xét về lựa chọn này...',
+              score: 10
+            }
+          ]
+        },
+        {
+          id: `node-end-${Date.now()}`,
+          title: 'Kết quả giải quyết',
+          story: 'Diễn biến và kết quả của sự việc sau khi người học lựa chọn phương án trên...',
+          isEnd: true,
+          endType: 'success',
+          options: []
+        }
+      ]
+    };
+
+    setScenarios(prev => [...prev, newScenario]);
+    setActiveScenarioId(newScenarioId);
+    setSelectedNodeId('start');
+    setCurrentNodeId('start');
+    setCurrentScore(0);
+    setHistoryLog([]);
+    setLastFeedback(null);
+    showToast(`Đã tạo kịch bản mới: "${title.trim()}"!`, 'success');
+  };
+
+  // Đổi tên kịch bản hiện tại
+  const handleRenameScenario = () => {
+    const newTitle = window.prompt('Nhập tên mới cho kịch bản này:', currentScenario.title);
+    if (!newTitle || !newTitle.trim() || newTitle.trim() === currentScenario.title) return;
+
+    setScenarios(prev => prev.map(s => s.id === activeScenarioId ? { ...s, title: newTitle.trim() } : s));
+    showToast('Đã cập nhật tên kịch bản!', 'success');
+  };
+
+  // Xóa kịch bản hiện tại
+  const handleDeleteScenario = (id: string) => {
+    if (scenarios.length <= 1) {
+      showToast('Cần giữ lại ít nhất 1 kịch bản!', 'warning');
+      return;
+    }
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa kịch bản "${currentScenario.title}" không?`)) return;
+
+    const remaining = scenarios.filter(s => s.id !== id);
+    setScenarios(remaining);
+    setActiveScenarioId(remaining[0].id);
+    setSelectedNodeId('start');
+    setCurrentNodeId('start');
+    setCurrentScore(0);
+    setHistoryLog([]);
+    setLastFeedback(null);
+    showToast('Đã xóa kịch bản.', 'info');
+  };
+
+  // Xử lý upload ảnh minh họa (lên Google Drive hoặc nạp Base64)
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Giới hạn 5MB
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('Ảnh quá lớn! Vui lòng chọn ảnh dưới 5MB.', 'warning');
+      return;
+    }
+
+    setIsUploadingImage(true);
+
+    try {
+      // 1. Chuyển ảnh sang Base64
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // 2. Thử tải lên Google Drive nếu người dùng đã đăng nhập có token
+      if (token) {
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              imageBase64: base64Data,
+              filename: `scenario-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) {
+              handleUpdateNode({ imageUrl: data.url });
+              showToast('Đã tải ảnh lên Google Drive thành công!', 'success');
+              setIsUploadingImage(false);
+              return;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Lỗi khi tải ảnh lên Google Drive:', uploadErr);
+        }
+      }
+
+      // 3. Fallback: Nếu chưa đăng nhập hoặc Drive chưa cấu hình / lỗi, dùng Base64 trực tiếp
+      handleUpdateNode({ imageUrl: base64Data });
+      if (token) {
+        showToast('Google Drive chưa được cấu hình hoặc phản hồi lỗi, đã lưu ảnh dưới dạng nội bộ!', 'info');
+      } else {
+        showToast('Đã tải ảnh lên cục bộ (Đăng nhập để tự động lưu vào Google Drive)!', 'info');
+      }
+    } catch (err: any) {
+      showToast('Không thể đọc file ảnh: ' + (err.message || 'Lỗi không xác định'), 'error');
+    } finally {
+      setIsUploadingImage(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Xóa ảnh của nút hiện tại
+  const handleRemoveImage = () => {
+    handleUpdateNode({ imageUrl: '' });
+    showToast('Đã gỡ ảnh minh họa của tình huống này.', 'info');
   };
 
   // Thêm Node mới
@@ -453,6 +716,60 @@ export default function BranchingScenario() {
         </div>
       </header>
 
+      {/* Thanh chọn & quản lý Kịch Bản (Multiple Scenarios Switcher) */}
+      <div className="bs-scenario-bar">
+        <div className="bs-scenario-bar-left">
+          <BookOpen size={18} className="text-primary" />
+          <span style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+            Kịch bản đang chọn:
+          </span>
+          <select 
+            className="bs-scenario-select"
+            value={activeScenarioId}
+            onChange={(e) => {
+              setActiveScenarioId(e.target.value);
+              setSelectedNodeId('start');
+              handleRestartSimulator();
+            }}
+          >
+            {scenarios.map(sc => (
+              <option key={sc.id} value={sc.id}>
+                {sc.title} ({sc.nodes.length} nút)
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="bs-scenario-bar-actions">
+          <button 
+            type="button" 
+            className="btn btn-primary btn-xs"
+            onClick={handleCreateScenario}
+          >
+            <FolderPlus size={13} /> Thêm kịch bản mới
+          </button>
+          <button 
+            type="button" 
+            className="btn btn-outline btn-xs"
+            onClick={handleRenameScenario}
+            title="Đổi tên kịch bản hiện tại"
+          >
+            <Edit3 size={13} /> Đổi tên
+          </button>
+          {scenarios.length > 1 && (
+            <button 
+              type="button" 
+              className="btn btn-outline btn-xs"
+              style={{ color: 'var(--danger)', borderColor: 'var(--border)' }}
+              onClick={() => handleDeleteScenario(activeScenarioId)}
+              title="Xóa kịch bản này"
+            >
+              <Trash2 size={13} /> Xóa kịch bản
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* Chế độ Simulator (Người học trải nghiệm) */}
       {mode === 'simulator' && (
         <div className="bs-simulator-wrap animate-fade-in">
@@ -603,15 +920,93 @@ export default function BranchingScenario() {
                 />
               </div>
 
+              {/* Phần ảnh minh họa: Hỗ trợ URL & Tải ảnh lên Google Drive */}
               <div>
-                <label className="bs-label">Link ảnh minh họa (URL)</label>
-                <input 
-                  type="text" 
-                  className="bs-input" 
-                  value={selectedNode.imageUrl || ''}
-                  placeholder="https://..."
-                  onChange={(e) => handleUpdateNode({ imageUrl: e.target.value })}
-                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <label className="bs-label" style={{ margin: 0 }}>
+                    Ảnh minh họa tình huống
+                  </label>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    Nhập link hoặc tải ảnh lên Google Drive
+                  </span>
+                </div>
+
+                <div className="bs-image-upload-zone">
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                    <input 
+                      type="text" 
+                      className="bs-input" 
+                      value={selectedNode.imageUrl || ''}
+                      placeholder="Dán link ảnh (https://...) hoặc bấm tải lên..."
+                      onChange={(e) => handleUpdateNode({ imageUrl: e.target.value })}
+                    />
+                    
+                    <input 
+                      type="file" 
+                      ref={fileInputRef} 
+                      onChange={handleFileUpload} 
+                      accept="image/*" 
+                      style={{ display: 'none' }} 
+                    />
+
+                    <button 
+                      type="button" 
+                      className="btn btn-outline btn-sm bs-btn-upload"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingImage}
+                      title="Tải ảnh lên Google Drive (theo cấu hình hệ thống)"
+                    >
+                      {isUploadingImage ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" /> Đang tải...
+                        </>
+                      ) : (
+                        <>
+                          <Upload size={14} /> Tải ảnh lên
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  {selectedNode.imageUrl && (
+                    <div className="bs-image-preview-card">
+                      <img 
+                        src={selectedNode.imageUrl} 
+                        alt="Preview" 
+                        className="bs-image-preview-thumb" 
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                      <div className="bs-image-preview-info">
+                        <span className="bs-image-preview-url" title={selectedNode.imageUrl}>
+                          {selectedNode.imageUrl.startsWith('data:') 
+                            ? 'Ảnh cục bộ (Base64 data URL)' 
+                            : selectedNode.imageUrl}
+                        </span>
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+                          {!selectedNode.imageUrl.startsWith('data:') && (
+                            <a 
+                              href={selectedNode.imageUrl} 
+                              target="_blank" 
+                              rel="noreferrer" 
+                              className="bs-preview-link"
+                            >
+                              <ExternalLink size={12} /> Xem ảnh gốc
+                            </a>
+                          )}
+                          <button 
+                            type="button" 
+                            className="bs-preview-remove-btn"
+                            onClick={handleRemoveImage}
+                          >
+                            <Trash2 size={12} /> Gỡ ảnh
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
