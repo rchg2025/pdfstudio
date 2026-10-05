@@ -437,13 +437,18 @@ export default function AnonymousQaWall() {
           </div>
           <div>
             <h1 className="qa-main-title">
-              Bức Tường Câu Hỏi Vô Danh & Hộp Thắc Mắc
+              {viewRole === 'student' ? 'Hộp Đặt Câu Hỏi Ẩn Danh' : 'Bức Tường Câu Hỏi Vô Danh & Hộp Thắc Mắc'}
             </h1>
             <p className="qa-main-sub">
               {currentRoom 
                 ? `${currentRoom.title} ${currentRoom.subject ? `• Môn: ${currentRoom.subject}` : ''} ${currentRoom.teacherName ? `• GV: ${currentRoom.teacherName}` : ''}`
                 : 'Đặt câu hỏi ẩn danh, bình chọn thắc mắc chung và giải đáp trực tiếp trên lớp học'}
             </p>
+            {currentRoom && (
+              <div className="qa-room-info-badge">
+                Mã phòng PIN: <strong>{currentRoom.code}</strong> • {currentRoom.isOpen ? '🟢 Đang mở nhận câu hỏi' : '🔴 Tạm khóa nhận câu hỏi'}
+              </div>
+            )}
           </div>
         </div>
 
@@ -559,7 +564,7 @@ export default function AnonymousQaWall() {
 
       {/* KHI ĐÃ CÓ PHÒNG HỌC */}
       {currentRoom && (
-        <div className="qa-workspace">
+        <div className={`qa-workspace ${viewRole === 'student' ? 'student-view' : ''}`}>
           {/* CỘT BÊN TRÁI: THÔNG TIN PHÒNG, MÃ QR & QUÉT MÃ (Cho Projector / Teacher) */}
           {viewRole === 'teacher' && (
             <aside className="qa-sidebar">
