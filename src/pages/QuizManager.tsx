@@ -906,10 +906,10 @@ export default function QuizManager() {
     const b64 = btoa(binary);
 
     return `<!-- MA NHUNG BAI THI TRAC NGHIEM CHO LMS / CANVAS / MOODLE -->
-<div style="position:relative;width:100%;max-width:920px;margin:15px auto;padding-top:72%;background:#090d16;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.45);">
+<div style="position:relative;width:100%;max-width:920px;margin:15px auto;padding-top:72%;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06);">
   <iframe 
     src="data:text/html;charset=utf-8;base64,${b64}" 
-    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;background:#f8fafc;" 
     allow="fullscreen" 
     allowfullscreen="allowfullscreen">
   </iframe>
