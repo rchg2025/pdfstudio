@@ -1962,7 +1962,19 @@ export default function QuizManager() {
                   <select 
                     className="qm-select"
                     value={formQType}
-                    onChange={(e) => setFormQType(e.target.value as any)}
+                    onChange={(e) => {
+                      const newType = e.target.value as any;
+                      setFormQType(newType);
+                      if (newType === 'multiple_choice') {
+                        if (!formQCorrectAnswers || formQCorrectAnswers.length === 0) {
+                          setFormQCorrectAnswers(formQCorrectAnswer ? [formQCorrectAnswer] : [formQOptions[0] || 'Đáp án A']);
+                        }
+                      } else if (newType === 'choice') {
+                        if (!formQCorrectAnswer && formQCorrectAnswers && formQCorrectAnswers.length > 0) {
+                          setFormQCorrectAnswer(formQCorrectAnswers[0]);
+                        }
+                      }
+                    }}
                   >
                     <option value="choice">Trắc nghiệm ABCD (1 đáp án)</option>
                     <option value="multiple_choice">Chọn nhiều đáp án đúng</option>
@@ -2128,84 +2140,85 @@ export default function QuizManager() {
                         />
 
                         {isMultiple ? (
-                          <label 
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              if (isChecked) {
+                                setFormQCorrectAnswers(prev => prev.filter(a => a !== opt));
+                              } else {
+                                setFormQCorrectAnswers(prev => [...prev, opt]);
+                              }
+                            }}
                             style={{ 
                               display: 'inline-flex', 
                               alignItems: 'center', 
-                              gap: '0.35rem', 
+                              gap: '0.45rem', 
                               cursor: 'pointer', 
-                              padding: '0.4rem 0.6rem', 
-                              borderRadius: 'var(--radius-sm)', 
-                              background: isChecked ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)',
-                              border: isChecked ? '1px solid #10b981' : '1px solid var(--border)',
-                              fontSize: '0.8rem',
-                              whiteSpace: 'nowrap'
+                              padding: '0.45rem 0.8rem', 
+                              borderRadius: '6px', 
+                              background: isChecked ? 'rgba(16, 185, 129, 0.2)' : 'var(--bg-tertiary)',
+                              border: isChecked ? '1.5px solid #10b981' : '1px solid var(--border)',
+                              fontSize: '0.82rem',
+                              whiteSpace: 'nowrap',
+                              color: isChecked ? '#10b981' : 'var(--text-secondary)',
+                              fontWeight: isChecked ? 700 : 500,
+                              transition: 'all 0.15s ease'
                             }}
-                            title="Tích chọn nếu là đáp án đúng"
+                            title="Bấm để đánh dấu hoặc bỏ chọn đáp án đúng này"
                           >
-                            <input 
-                              type="checkbox" 
-                              checked={isChecked}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setFormQCorrectAnswers(prev => [...prev, opt]);
-                                } else {
-                                  setFormQCorrectAnswers(prev => prev.filter(a => a !== opt));
-                                }
-                              }}
-                            />
-                            <span style={{ color: isChecked ? '#10b981' : 'var(--text-secondary)', fontWeight: isChecked ? 600 : 400 }}>
-                              {isChecked ? 'Đúng' : 'Chọn'}
+                            <span style={{ fontSize: '1.15rem', lineHeight: 1, color: isChecked ? '#10b981' : 'inherit' }}>
+                              {isChecked ? '☑' : '☐'}
                             </span>
-                          </label>
+                            <span>{isChecked ? 'Đáp án đúng' : 'Đánh dấu đúng'}</span>
+                          </button>
                         ) : (
-                          <label 
+                          <button 
+                            type="button"
+                            onClick={() => setFormQCorrectAnswer(opt)}
                             style={{ 
                               display: 'inline-flex', 
                               alignItems: 'center', 
-                              gap: '0.35rem', 
+                              gap: '0.45rem', 
                               cursor: 'pointer', 
-                              padding: '0.4rem 0.6rem', 
-                              borderRadius: 'var(--radius-sm)', 
-                              background: isChecked ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)',
-                              border: isChecked ? '1px solid #10b981' : '1px solid var(--border)',
-                              fontSize: '0.8rem',
-                              whiteSpace: 'nowrap'
+                              padding: '0.45rem 0.8rem', 
+                              borderRadius: '6px', 
+                              background: isChecked ? 'rgba(99, 102, 241, 0.2)' : 'var(--bg-tertiary)',
+                              border: isChecked ? '1.5px solid var(--primary)' : '1px solid var(--border)',
+                              fontSize: '0.82rem',
+                              whiteSpace: 'nowrap',
+                              color: isChecked ? 'var(--primary)' : 'var(--text-secondary)',
+                              fontWeight: isChecked ? 700 : 500,
+                              transition: 'all 0.15s ease'
                             }}
-                            title="Chọn làm đáp án đúng duy nhất"
+                            title="Bấm để chọn làm đáp án đúng duy nhất"
                           >
-                            <input 
-                              type="radio" 
-                              name="correctOpt" 
-                              checked={isChecked}
-                              onChange={() => setFormQCorrectAnswer(opt)}
-                            />
-                            <span style={{ color: isChecked ? '#10b981' : 'var(--text-secondary)', fontWeight: isChecked ? 600 : 400 }}>
-                              {isChecked ? 'Đúng' : 'Chọn'}
+                            <span style={{ fontSize: '1.15rem', lineHeight: 1, color: isChecked ? 'var(--primary)' : 'inherit' }}>
+                              {isChecked ? '🔘' : '⚪'}
                             </span>
-                          </label>
+                            <span>{isChecked ? 'Đáp án đúng' : 'Chọn đúng'}</span>
+                          </button>
                         )}
 
                         {formQOptions.length > 2 && (
                           <button 
                             type="button" 
                             className="btn btn-outline btn-xs" 
-                            style={{ color: 'var(--danger)', padding: '0.4rem 0.5rem' }}
+                            style={{ color: 'var(--danger)', padding: '0.45rem 0.55rem' }}
                             onClick={() => handleDeleteOption(oIdx)}
-                            title="Xóa phương án này"
+                            title="Xóa bớt phương án này"
                           >
-                            <Trash2 size={13} />
+                            <Trash2 size={14} />
                           </button>
                         )}
                       </div>
                     );
                   })}
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {formQType === 'choice' 
-                        ? '* Chọn nút tròn "Đúng" ở phương án chính xác duy nhất.' 
-                        : '* Tích chọn các ô "Đúng" cho một hoặc nhiều phương án đúng.'}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.82rem', color: formQType === 'multiple_choice' ? '#10b981' : 'var(--primary)', fontWeight: 600 }}>
+                      {formQType === 'multiple_choice' 
+                        ? '☑️ Đang ở chế độ Chọn Nhiều Đáp Án: Bấm nút "Đánh dấu đúng" ở các phương án để chọn 2, 3 hoặc nhiều đáp án đúng cùng lúc.' 
+                        : '🔘 Đang ở chế độ 1 Đáp Án Đúng: Bấm nút "Chọn đúng" ở phương án là đáp án chính xác duy nhất.'}
                     </span>
                     <button 
                       type="button" 
