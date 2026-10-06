@@ -14,29 +14,55 @@ export interface ParsedExamResult {
  * Trích xuất bảng đáp án nếu nằm ở cuối đề thi
  * Hỗ trợ bảng <table> (như file doc xuất HTML) hoặc bảng chữ dạng 1-A 2-B 3-C
  */
-function extractAnswerMapFromHtml(doc: Document): Record<number, string> {
+function extractAnswerMapFromHtml(doc: Document, rawContent: string): Record<number, string> {
   const map: Record<number, string> = {};
 
   // 1. Tìm trong các thẻ <table>
-  const tables = doc.querySelectorAll('table');
+  const tables = Array.from(doc.querySelectorAll('table'));
   tables.forEach(table => {
     const text = table.textContent || '';
-    if (text.includes('STT') || text.includes('Đáp án') || text.includes('ĐÁP ÁN') || text.includes('Câu')) {
-      const rows = table.querySelectorAll('tr');
+    if (text.includes('STT') || text.includes('Đáp án') || text.includes('ĐÁP ÁN') || text.includes('Câu') || text.includes('Đ/A')) {
+      const rows = Array.from(table.querySelectorAll('tr'));
       rows.forEach(row => {
         const cells = Array.from(row.querySelectorAll('td, th')).map(c => (c.textContent || '').trim());
-        // Bảng thường có các cặp cột: [STT1, ĐA1, STT2, ĐA2, STT3, ĐA3]
-        for (let i = 0; i < cells.length - 1; i++) {
-          const num = parseInt(cells[i], 10);
-          const ansCandidate = cells[i + 1].toUpperCase();
-          if (!isNaN(num) && num > 0 && /^[A-D]$/.test(ansCandidate)) {
-            map[num] = ansCandidate;
-            i++; // Nhảy qua cột đáp án
+        for (let i = 0; i < cells.length; i++) {
+          const cellText = cells[i];
+          // Ô chứa cả số và đáp án (ví dụ: "1. C", "1-C", "Câu 1: C")
+          const singleMatch = cellText.match(/^(?:Câu\s*)?(\d+)[\s.:/-]+([A-D])$/i);
+          if (singleMatch) {
+            const num = parseInt(singleMatch[1], 10);
+            const ans = singleMatch[2].toUpperCase();
+            if (num > 0) map[num] = ans;
+            continue;
+          }
+          // Cặp 2 ô liên tiếp: [STT, Đáp án]
+          if (i < cells.length - 1) {
+            const num = parseInt(cellText, 10);
+            const nextCandidate = cells[i + 1].toUpperCase();
+            if (!isNaN(num) && num > 0 && /^[A-D]$/.test(nextCandidate)) {
+              map[num] = nextCandidate;
+              i++; // Nhảy qua cột đáp án
+            }
           }
         }
       });
     }
   });
+
+  // 2. Tìm trong văn bản cuối đề thi (Regex trích xuất danh sách đáp án dạng "1. A  2. B  3. C" hoặc "1-A, 2-B")
+  const allText = doc.body ? doc.body.textContent || '' : rawContent;
+  const answerSectionMatch = allText.match(/(?:BẢNG ĐÁP ÁN|ĐÁP ÁN VÀ THANG ĐIỂM|HƯỚNG DẪN CHẤM)[\s\S]*$/i);
+  if (answerSectionMatch) {
+    const pairRegex = /(?:Câu\s*)?(\d+)[\s.:/-]+([A-D])\b/gi;
+    let m;
+    while ((m = pairRegex.exec(answerSectionMatch[0])) !== null) {
+      const qNum = parseInt(m[1], 10);
+      const ans = m[2].toUpperCase();
+      if (qNum > 0 && !map[qNum]) {
+        map[qNum] = ans;
+      }
+    }
+  }
 
   return map;
 }
@@ -48,13 +74,21 @@ export async function parseExamFile(file: File): Promise<ParsedExamResult> {
   let htmlContent = '';
   const fileName = file.name.toLowerCase();
 
-  if (fileName.endsWith('.docx')) {
-    // Xử lý file .docx bằng mammoth
-    const arrayBuffer = await file.arrayBuffer();
-    const result = await mammoth.convertToHtml({ arrayBuffer });
-    htmlContent = result.value;
-  } else {
-    // Đọc dưới dạng text (cho .doc, .html, .htm, .txt)
+  try {
+    // Kiểm tra header binary xem có phải file ZIP / DOCX hay không (kể cả khi file có đuôi .doc)
+    const headerSlice = await file.slice(0, 4).arrayBuffer();
+    const headerBytes = new Uint8Array(headerSlice);
+    const isZipDocx = headerBytes[0] === 0x50 && headerBytes[1] === 0x4B && headerBytes[2] === 0x03 && headerBytes[3] === 0x04;
+
+    if (fileName.endsWith('.docx') || isZipDocx) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await mammoth.convertToHtml({ arrayBuffer });
+      htmlContent = result.value;
+    } else {
+      // Đọc dưới dạng text (cho Word HTML .doc, .html, .htm, .txt)
+      htmlContent = await file.text();
+    }
+  } catch {
     htmlContent = await file.text();
   }
 
@@ -72,9 +106,9 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
   let subject = '';
   let timeLimitMinutes = 0;
 
-  // 1. Tìm tiêu đề và môn học từ các thẻ tiêu đề (h2, h3, title)
-  const h2List = Array.from(doc.querySelectorAll('h2, h1, h3'));
-  for (const h of h2List) {
+  // 1. Tìm tiêu đề và môn học từ các thẻ tiêu đề (h1, h2, h3, h4)
+  const headings = Array.from(doc.querySelectorAll('h1, h2, h3, h4'));
+  for (const h of headings) {
     const text = (h.textContent || '').trim();
     if (!title && (text.includes('ĐỀ THI') || text.includes('BÀI KIỂM TRA') || text.includes('ĐÁNH GIÁ'))) {
       title = text;
@@ -85,8 +119,11 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
 
   if (!title) {
     const pageTitle = doc.querySelector('title')?.textContent?.trim();
-    if (pageTitle && !pageTitle.toLowerCase().includes('export')) title = pageTitle;
-    else title = defaultName.replace(/\.[^/.]+$/, '');
+    if (pageTitle && !pageTitle.toLowerCase().includes('export')) {
+      title = pageTitle;
+    } else {
+      title = defaultName.replace(/\.[^/.]+$/, '');
+    }
   }
 
   // 2. Tìm thời gian làm bài (ví dụ: "Thời gian làm bài: 90 phút")
@@ -97,73 +134,80 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
   }
 
   // 3. Trích xuất Bảng Đáp Án ở cuối đề thi
-  const answerMap = extractAnswerMapFromHtml(doc);
-
-  // Cũng hỗ trợ regex trích xuất bảng đáp án từ văn bản thuần (vd: "1. A  2. B  3. C")
-  if (Object.keys(answerMap).length === 0) {
-    const tableRegex = /(?:BẢNG ĐÁP ÁN|ĐÁP ÁN VÀ THANG ĐIỂM)[\s\S]*$/i;
-    const endSection = allText.match(tableRegex);
-    if (endSection) {
-      const pairRegex = /(\d+)[\s.:/-]+([A-D])\b/gi;
-      let m;
-      while ((m = pairRegex.exec(endSection[0])) !== null) {
-        const qNum = parseInt(m[1], 10);
-        const ans = m[2].toUpperCase();
-        if (qNum > 0 && !answerMap[qNum]) {
-          answerMap[qNum] = ans;
-        }
-      }
-    }
-  }
+  const answerMap = extractAnswerMapFromHtml(doc, rawContent);
 
   // 4. Tìm và bóc tách các câu hỏi
-  const questions: QuizQuestion[] = [];
+  let questions: QuizQuestion[] = [];
 
-  // Cách A: Tìm theo cấu trúc <div class="question"> (như tệp Word HTML mẫu)
-  const questionDivs = doc.querySelectorAll('.question');
-  if (questionDivs.length > 0) {
-    questionDivs.forEach((qDiv, idx) => {
-      const qNum = idx + 1;
-      const paragraphs = Array.from(qDiv.querySelectorAll('p'));
-      let questionText = '';
-      const options: string[] = [];
+  // === CHIẾN LƯỢC 1: Cấu trúc danh sách <ol> (Rất phổ biến trong file Word HTML) ===
+  const olElements = Array.from(doc.querySelectorAll('ol'));
+  for (const ol of olElements) {
+    const directLis = Array.from(ol.children).filter(el => el.tagName.toLowerCase() === 'li');
+    if (directLis.length === 0) continue;
 
-      paragraphs.forEach(p => {
-        const text = (p.textContent || '').trim();
-        if (p.classList.contains('options')) {
-          // Lấy các options từ span hoặc dòng text
-          const spans = p.querySelectorAll('span');
-          if (spans.length > 0) {
-            spans.forEach(sp => {
-              const optText = (sp.textContent || '').trim().replace(/^[A-D][.:)]\s*/i, '');
-              if (optText) options.push(optText);
-            });
-          } else {
-            // Tách options qua regex A. B. C. D.
-            const optMatches = text.split(/(?=[A-D][.:)])/);
-            optMatches.forEach(o => {
-              const optText = o.trim().replace(/^[A-D][.:)]\s*/i, '');
-              if (optText) options.push(optText);
-            });
+    const olQuestions: QuizQuestion[] = [];
+    directLis.forEach((li) => {
+      const qNum = questions.length + olQuestions.length + 1;
+      let options: string[] = [];
+      let detectedAnswerLetter = '';
+
+      // Kiểm tra xem li có chứa danh sách con ul / ol làm phương án lựa chọn không
+      const nestedList = li.querySelector('ul, ol');
+      if (nestedList) {
+        const optLis = Array.from(nestedList.querySelectorAll('li'));
+        options = optLis.map(optLi => {
+          const raw = (optLi.textContent || '').trim();
+          if (optLi.querySelector('b, strong, u') || raw.startsWith('*')) {
+            const letterMatch = raw.match(/^[*]?\s*([A-D])[.:)]/i);
+            if (letterMatch) detectedAnswerLetter = letterMatch[1].toUpperCase();
           }
-        } else if (/^Câu\s*\d+[:.]/i.test(text) || !questionText) {
-          questionText = text.replace(/^Câu\s*\d+[:.]\s*/i, '').trim();
-        }
-      });
-
-      // Nếu p không có class options, tìm span options trực tiếp
-      if (options.length === 0) {
-        const spans = qDiv.querySelectorAll('span');
-        spans.forEach(sp => {
-          const t = (sp.textContent || '').trim();
-          if (/^[A-D][.:)]/i.test(t)) {
-            options.push(t.replace(/^[A-D][.:)]\s*/i, ''));
+          return raw.replace(/^[A-D][.:)]\s*/i, '').trim();
+        }).filter(Boolean);
+      } else {
+        // Tìm các thẻ con p, div, span bắt đầu bằng A., B., C., D.
+        const childNodes = Array.from(li.querySelectorAll('p, div, span, li'));
+        childNodes.forEach(node => {
+          const txt = (node.textContent || '').trim();
+          if (/^[A-D][.:)]\s*/i.test(txt)) {
+            if (node.querySelector('b, strong, u') || txt.startsWith('*')) {
+              const letterMatch = txt.match(/^[*]?\s*([A-D])[.:)]/i);
+              if (letterMatch) detectedAnswerLetter = letterMatch[1].toUpperCase();
+            }
+            options.push(txt.replace(/^[A-D][.:)]\s*/i, '').trim());
           }
         });
+
+        // Nếu vẫn chưa có options, tìm dạng inline A. ... B. ... C. ... D. ...
+        if (options.length === 0) {
+          const liText = (li.textContent || '').trim();
+          if (liText.includes('A.') && liText.includes('B.')) {
+            const parts = liText.split(/(?=[A-D][.:)])/);
+            parts.forEach(part => {
+              if (/^[A-D][.:)]/i.test(part.trim())) {
+                options.push(part.trim().replace(/^[A-D][.:)]\s*/i, ''));
+              }
+            });
+          }
+        }
       }
 
-      if (questionText && options.length >= 2) {
-        const correctLetter = answerMap[qNum];
+      // Lấy nội dung câu hỏi: clone thẻ li và loại bỏ các thẻ ul, ol, table
+      const cloneLi = li.cloneNode(true) as HTMLElement;
+      cloneLi.querySelectorAll('ul, ol, table').forEach(n => n.remove());
+      const qText = (cloneLi.textContent || '')
+        .trim()
+        .replace(/^Câu\s*\d+[:.]\s*/i, '')
+        .replace(/^\d+[:.)/]\s*/i, '')
+        .trim();
+
+      // Kiểm tra đáp án ghi chú trực tiếp trong câu: ví dụ "Đáp án: B"
+      const inlineAnsMatch = (li.textContent || '').match(/(?:Đáp án|Đ\/A|Key|Answer)[:.]?\s*([A-D])\b/i);
+      if (inlineAnsMatch) {
+        detectedAnswerLetter = inlineAnsMatch[1].toUpperCase();
+      }
+
+      if (qText && options.length >= 2) {
+        const correctLetter = answerMap[qNum] || detectedAnswerLetter;
         let correctAnswer = options[0];
         if (correctLetter) {
           const letterIdx = ['A', 'B', 'C', 'D'].indexOf(correctLetter);
@@ -172,11 +216,11 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
           }
         }
 
-        questions.push({
+        olQuestions.push({
           id: `imp-${Date.now()}-${qNum}`,
           type: 'choice',
-          difficulty: assignSmartDifficulty(qNum, questionDivs.length),
-          question: questionText,
+          difficulty: assignSmartDifficulty(qNum, directLis.length),
+          question: qText,
           options,
           correctAnswer,
           points: 1,
@@ -184,22 +228,93 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
         });
       }
     });
+
+    if (olQuestions.length >= 2) {
+      questions = [...questions, ...olQuestions];
+    }
   }
 
-  // Cách B: Fallback duyệt tuần tự các đoạn văn <p> hoặc phân tích văn bản thuần
+  // === CHIẾN LƯỢC 2: Thẻ có class .question hoặc [data-question] ===
   if (questions.length === 0) {
-    const rawParagraphs = Array.from(doc.querySelectorAll('p, div, li'))
+    const questionDivs = Array.from(doc.querySelectorAll('.question, [data-question]'));
+    if (questionDivs.length > 0) {
+      questionDivs.forEach((qDiv, idx) => {
+        const qNum = idx + 1;
+        const paragraphs = Array.from(qDiv.querySelectorAll('p'));
+        let questionText = '';
+        const options: string[] = [];
+
+        paragraphs.forEach(p => {
+          const text = (p.textContent || '').trim();
+          if (p.classList.contains('options')) {
+            const spans = p.querySelectorAll('span');
+            if (spans.length > 0) {
+              spans.forEach(sp => {
+                const optText = (sp.textContent || '').trim().replace(/^[A-D][.:)]\s*/i, '');
+                if (optText) options.push(optText);
+              });
+            } else {
+              const optMatches = text.split(/(?=[A-D][.:)])/);
+              optMatches.forEach(o => {
+                const optText = o.trim().replace(/^[A-D][.:)]\s*/i, '');
+                if (optText) options.push(optText);
+              });
+            }
+          } else if (/^Câu\s*\d+[:.]/i.test(text) || !questionText) {
+            questionText = text.replace(/^Câu\s*\d+[:.]\s*/i, '').trim();
+          }
+        });
+
+        if (options.length === 0) {
+          const spans = qDiv.querySelectorAll('span');
+          spans.forEach(sp => {
+            const t = (sp.textContent || '').trim();
+            if (/^[A-D][.:)]/i.test(t)) {
+              options.push(t.replace(/^[A-D][.:)]\s*/i, ''));
+            }
+          });
+        }
+
+        if (questionText && options.length >= 2) {
+          const correctLetter = answerMap[qNum];
+          let correctAnswer = options[0];
+          if (correctLetter) {
+            const letterIdx = ['A', 'B', 'C', 'D'].indexOf(correctLetter);
+            if (letterIdx >= 0 && options[letterIdx]) {
+              correctAnswer = options[letterIdx];
+            }
+          }
+
+          questions.push({
+            id: `imp-${Date.now()}-${qNum}`,
+            type: 'choice',
+            difficulty: assignSmartDifficulty(qNum, questionDivs.length),
+            question: questionText,
+            options,
+            correctAnswer,
+            points: 1,
+            explanation: `Đáp án đúng là phương án ${correctLetter || 'A'}: ${correctAnswer}.`
+          });
+        }
+      });
+    }
+  }
+
+  // === CHIẾN LƯỢC 3: Quét theo các khối Câu 1: / 1. / Bài 1: qua danh sách thẻ văn bản ===
+  if (questions.length === 0) {
+    const rawParagraphs = Array.from(doc.querySelectorAll('p, div, li, h3, h4'))
       .map(el => (el.textContent || '').trim())
       .filter(Boolean);
 
     let currentQText = '';
     let currentOptions: string[] = [];
     let currentQNum = 0;
+    let detectedAnswer = '';
 
     const finalizeCurrent = () => {
       if (currentQText && currentOptions.length >= 2) {
         const qNum = currentQNum || questions.length + 1;
-        const correctLetter = answerMap[qNum];
+        const correctLetter = answerMap[qNum] || detectedAnswer;
         let correctAnswer = currentOptions[0];
         if (correctLetter) {
           const letterIdx = ['A', 'B', 'C', 'D'].indexOf(correctLetter);
@@ -211,7 +326,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
         questions.push({
           id: `imp-${Date.now()}-${qNum}`,
           type: 'choice',
-          difficulty: 'medium',
+          difficulty: assignSmartDifficulty(qNum, Math.max(10, questions.length + 1)),
           question: currentQText,
           options: [...currentOptions],
           correctAnswer,
@@ -221,6 +336,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
       }
       currentQText = '';
       currentOptions = [];
+      detectedAnswer = '';
     };
 
     rawParagraphs.forEach(pText => {
@@ -230,26 +346,34 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
         return;
       }
 
-      const qMatch = pText.match(/^Câu\s*(\d+)[:.]\s*(.+)/i);
+      const qMatch = pText.match(/^(?:Câu|Bài|Question|Q)\s*(\d+)[:.]\s*(.+)/i) || pText.match(/^(\d+)[\.:\)]\s+(.+)/);
       if (qMatch) {
         finalizeCurrent();
         currentQNum = parseInt(qMatch[1], 10);
         currentQText = qMatch[2].trim();
       } else if (/^[A-D][.:)]\s*/i.test(pText)) {
-        // Dòng chứa một phương án
-        const optClean = pText.replace(/^[A-D][.:)]\s*/i, '').trim();
-        if (optClean) currentOptions.push(optClean);
+        currentOptions.push(pText.replace(/^[A-D][.:)]\s*/i, '').trim());
       } else if (pText.includes('A.') && pText.includes('B.')) {
-        // Dòng chứa nhiều phương án A. ... B. ...
         const parts = pText.split(/(?=[A-D][.:)])/);
         parts.forEach(part => {
           const optClean = part.replace(/^[A-D][.:)]\s*/i, '').trim();
           if (optClean) currentOptions.push(optClean);
         });
+      } else if (/(?:Đáp án|Đ\/A|Key)[:.]?\s*([A-D])\b/i.test(pText)) {
+        const m = pText.match(/(?:Đáp án|Đ\/A|Key)[:.]?\s*([A-D])\b/i);
+        if (m) detectedAnswer = m[1].toUpperCase();
       }
     });
 
     finalizeCurrent();
+  }
+
+  // Cập nhật lại phân bổ độ khó theo tỷ lệ tổng số câu hỏi đã tìm thấy
+  if (questions.length > 0) {
+    questions = questions.map((q, idx) => ({
+      ...q,
+      difficulty: assignSmartDifficulty(idx + 1, questions.length)
+    }));
   }
 
   return {
