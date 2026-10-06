@@ -1,0 +1,175 @@
+/* Profile Page Styling & Mobile Optimization */
+.profile-container {
+  padding: 2rem 1rem 4rem;
+  width: 100%;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.profile-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.profile-title {
+  font-size: 1.85rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.profile-subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  max-width: 580px;
+  margin: 0 auto;
+  line-height: 1.5;
+}
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.profile-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.profile-plan-card {
+  padding: 1.5rem;
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.profile-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.profile-plan-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.profile-plan-status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.65rem;
+  border-radius: 9999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.profile-details-box {
+  background: var(--bg-primary);
+  padding: 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.profile-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  font-size: 0.88rem;
+}
+
+.profile-detail-row:not(:last-child) {
+  border-bottom: 1px dashed rgba(226, 232, 240, 0.6);
+}
+
+.profile-form-card {
+  padding: 1.75rem;
+  background: var(--bg-primary);
+}
+
+/* ========================================================
+   RESPONSIVE DESIGN CHO MÀN HÌNH MOBILE & TABLET (< 768px)
+   ======================================================== */
+@media (max-width: 768px) {
+  .profile-container {
+    padding: 1rem 0.75rem 3rem;
+  }
+
+  .profile-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .profile-title {
+    font-size: 1.35rem !important;
+    word-break: break-word;
+    letter-spacing: -0.01em;
+  }
+
+  .profile-subtitle {
+    font-size: 0.85rem;
+    padding: 0 0.5rem;
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .profile-plan-card {
+    padding: 1.15rem !important;
+  }
+
+  .profile-plan-header {
+    margin-bottom: 1rem;
+  }
+
+  .profile-plan-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+
+  .profile-plan-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .profile-details-box {
+    padding: 0.85rem !important;
+    margin-bottom: 1rem;
+  }
+
+  .profile-detail-row {
+    font-size: 0.82rem !important;
+    padding: 0.4rem 0;
+  }
+
+  .profile-detail-row strong,
+  .profile-detail-row span {
+    text-align: right;
+  }
+
+  .profile-form-card {
+    padding: 1.15rem !important;
+  }
+
+  .profile-benefits-card {
+    padding: 1.15rem !important;
+  }
+}

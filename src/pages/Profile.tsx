@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import SubscriptionModal from '../components/SubscriptionModal';
+import './Profile.css';
 
 export default function Profile() {
   const { user, token, refreshUser, isExpired, remainingDays } = useAuth();
@@ -115,85 +116,79 @@ export default function Profile() {
   };
 
   return (
-    <div className="animate-fade-in" style={{ padding: '2rem 1rem 4rem', width: '100%', maxWidth: '900px', margin: '0 auto' }}>
+    <div className="animate-fade-in profile-container">
       
       {/* Header trang */}
-      <div className="tool-header text-center" style={{ marginBottom: '2rem' }}>
-        <h1 className="text-gradient" style={{ fontSize: '2rem', marginBottom: '0.5rem', textTransform: 'uppercase' }}>
-          Hồ Sơ & Thông Tin Cá Nhân
+      <div className="tool-header profile-header">
+        <h1 className="text-gradient profile-title">
+          HỒ SƠ & THÔNG TIN CÁ NHÂN
         </h1>
-        <p className="text-secondary" style={{ fontSize: '0.95rem' }}>
+        <p className="profile-subtitle">
           Xem gói cước, theo dõi thời hạn sử dụng và cập nhật thông tin tài khoản của bạn.
         </p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.5rem' }}>
+      <div className="profile-grid">
         
         {/* CỘT 1: THẺ THÔNG TIN GÓI CƯỚC & THỜI HẠN */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div className="profile-col-left">
           
           <div 
-            className="glass-card" 
+            className="glass-card profile-plan-card" 
             style={{ 
-              padding: '1.75rem', 
               background: isExpired 
                 ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, rgba(245, 158, 11, 0.06) 100%)' 
                 : 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%)',
-              border: isExpired ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(37, 99, 235, 0.25)',
-              boxShadow: 'var(--shadow-md)'
+              border: isExpired ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(37, 99, 235, 0.25)'
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <div style={{ 
-                  width: '46px', 
-                  height: '46px', 
-                  borderRadius: '12px', 
-                  background: isExpired ? '#fee2e2' : user?.isLifetime ? '#d1fae5' : '#dbeafe',
-                  color: isExpired ? '#dc2626' : user?.isLifetime ? '#059669' : '#1d4ed8',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Crown size={24} />
+            <div className="profile-plan-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', minWidth: 0 }}>
+                <div 
+                  className="profile-plan-icon"
+                  style={{ 
+                    background: isExpired ? '#fee2e2' : user?.isLifetime ? '#d1fae5' : '#dbeafe',
+                    color: isExpired ? '#dc2626' : user?.isLifetime ? '#059669' : '#1d4ed8'
+                  }}
+                >
+                  <Crown size={22} />
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                <div style={{ minWidth: 0 }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', lineHeight: 1.3 }}>
                     Gói Cước Đang Dùng
                   </h3>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
                     Mã người dùng: #{user?.id?.slice(-6).toUpperCase()}
                   </span>
                 </div>
               </div>
 
-              <span style={{
-                fontSize: '0.78rem',
-                fontWeight: 700,
-                padding: '0.2rem 0.65rem',
-                borderRadius: '9999px',
-                background: isExpired ? '#fef2f2' : '#ecfdf5',
-                color: isExpired ? '#dc2626' : '#059669',
-                border: isExpired ? '1px solid #fca5a5' : '1px solid #6ee7b7'
-              }}>
+              <span 
+                className="profile-plan-status-badge"
+                style={{
+                  background: isExpired ? '#fef2f2' : '#ecfdf5',
+                  color: isExpired ? '#dc2626' : '#059669',
+                  border: isExpired ? '1px solid #fca5a5' : '1px solid #6ee7b7'
+                }}
+              >
                 {isExpired ? 'Hết hạn' : 'Hoạt động'}
               </span>
             </div>
 
-            <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: '10px', border: '1px solid var(--border)', marginBottom: '1.25rem' }}>
-              <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.4rem' }}>
+            <div className="profile-details-box">
+              <div style={{ fontSize: '0.98rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.5rem' }}>
                 {getPlanTitle()}
               </div>
               
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.88rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                <div className="profile-detail-row">
                   <span style={{ color: 'var(--text-secondary)' }}>Ngày hết hạn:</span>
-                  <strong style={{ color: 'var(--text-primary)' }}>
-                    {user?.isLifetime ? 'Vĩnh viễn (Không giới hạn)' : formatDate(user?.subscriptionExpiresAt)}
+                  <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                    {user?.isLifetime ? 'Vĩnh viễn' : formatDate(user?.subscriptionExpiresAt)}
                   </strong>
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="profile-detail-row">
                   <span style={{ color: 'var(--text-secondary)' }}>Thời gian còn lại:</span>
                   {user?.isLifetime ? (
                     <span style={{ color: '#059669', fontWeight: 700 }}>Trọn đời 👑</span>
@@ -204,8 +199,8 @@ export default function Profile() {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Vai trò tài khoản:</span>
+                <div className="profile-detail-row">
+                  <span style={{ color: 'var(--text-secondary)' }}>Vai trò:</span>
                   <span style={{ 
                     fontWeight: 600, 
                     color: user?.role === 'ADMIN' ? '#7c3aed' : 'var(--text-primary)',
@@ -213,8 +208,8 @@ export default function Profile() {
                     alignItems: 'center',
                     gap: '0.25rem'
                   }}>
-                    {user?.role === 'ADMIN' ? <ShieldCheck size={15} /> : null}
-                    {user?.role === 'ADMIN' ? 'Quản trị viên (ADMIN)' : 'Thành viên (USER)'}
+                    {user?.role === 'ADMIN' ? <ShieldCheck size={14} /> : null}
+                    {user?.role === 'ADMIN' ? 'Quản trị viên' : 'Thành viên'}
                   </span>
                 </div>
               </div>
@@ -224,7 +219,7 @@ export default function Profile() {
               type="button" 
               onClick={() => setIsSubModalOpen(true)}
               className="btn btn-primary" 
-              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}
+              style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontWeight: 700 }}
             >
               <Sparkles size={16} />
               {isExpired ? 'Gia Hạn Tài Khoản Ngay' : 'Nâng Cấp / Gia Hạn Thêm Ngày'}
@@ -232,11 +227,11 @@ export default function Profile() {
           </div>
 
           {/* Hộp quyền lợi */}
-          <div className="glass-card" style={{ padding: '1.5rem', background: 'var(--bg-primary)' }}>
-            <h4 style={{ fontSize: '0.95rem', fontWeight: 700, marginBottom: '0.85rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+          <div className="glass-card profile-benefits-card" style={{ background: 'var(--bg-primary)' }}>
+            <h4 style={{ fontSize: '0.92rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               <CheckCircle2 size={16} color="var(--success)" /> Quyền Lợi Tài Khoản
             </h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.6rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.55rem', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
               <li style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                 <span style={{ color: 'var(--success)', fontWeight: 'bold' }}>✓</span>
                 <span>Toàn quyền sử dụng bộ 25+ tiện ích sư phạm & số hóa tài liệu.</span>
@@ -258,8 +253,8 @@ export default function Profile() {
         </div>
 
         {/* CỘT 2: FORM CẬP NHẬT THÔNG TIN CÁ NHÂN & MẬT KHẨU */}
-        <div className="glass-card" style={{ padding: '2rem', background: 'var(--bg-primary)' }}>
-          <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
+        <div className="glass-card profile-form-card">
+          <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '1.15rem', color: 'var(--text-primary)' }}>
             Thông Tin Tài Khoản
           </h3>
 
