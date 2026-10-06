@@ -62,7 +62,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({
       message: 'Login successful',
       token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role }
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        role: user.role,
+        subscriptionPlan: user.subscriptionPlan,
+        subscriptionExpiresAt: user.subscriptionExpiresAt,
+        isLifetime: user.isLifetime
+      }
     });
   } catch (error: any) {
     console.error('Login error:', error);

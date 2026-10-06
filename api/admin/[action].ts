@@ -22,7 +22,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === 'users') {
       if (req.method === 'GET') {
         const users = await prisma.user.findMany({
-          select: { id: true, email: true, name: true, role: true, createdAt: true },
+          select: { 
+            id: true, 
+            email: true, 
+            name: true, 
+            role: true, 
+            createdAt: true,
+            subscriptionPlan: true,
+            subscriptionExpiresAt: true,
+            isLifetime: true
+          },
           orderBy: { createdAt: 'desc' }
         });
         return res.status(200).json(users);
@@ -34,26 +43,77 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ message: 'User deleted' });
       }
       if (req.method === 'POST') {
-        const { email, password, name, role } = req.body;
+        const { email, password, name, role, subscriptionPlan, subscriptionExpiresAt, isLifetime } = req.body;
         if (!email || !password) return res.status(400).json({ message: 'Email and password required' });
         const existing = await prisma.user.findUnique({ where: { email } });
         if (existing) return res.status(400).json({ message: 'Email đã tồn tại' });
         const hashedPassword = await bcrypt.hash(password, 10);
+        
+        let subExp = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
         const user = await prisma.user.create({
-          data: { email, passwordHash: hashedPassword, name, role: role || 'USER' },
-          select: { id: true, email: true, name: true, role: true, createdAt: true }
+          data: { 
+            email, 
+            passwordHash: hashedPassword, 
+            name, 
+            role: role || 'USER',
+            subscriptionPlan: subscriptionPlan || 'TRIAL_30D',
+            subscriptionExpiresAt: isLifetime ? null : subExp,
+            isLifetime: !!isLifetime
+          },
+          select: { 
+            id: true, 
+            email: true, 
+            name: true, 
+            role: true, 
+            createdAt: true,
+            subscriptionPlan: true,
+            subscriptionExpiresAt: true,
+            isLifetime: true
+          }
         });
         return res.status(201).json(user);
       }
       if (req.method === 'PUT') {
-        const { id, email, password, name, role } = req.body;
+        const { id, email, password, name, role, subscriptionPlan, subscriptionExpiresAt, isLifetime, extendDays } = req.body;
         if (!id) return res.status(400).json({ message: 'Invalid ID' });
-        const dataToUpdate: any = { email, name, role };
-        if (password) dataToUpdate.passwordHash = await bcrypt.hash(password, 10);
+        
+        const existingUser = await prisma.user.findUnique({ where: { id } });
+        if (!existingUser) return res.status(404).json({ message: 'Không tìm thấy người dùng' });
+
+        const dataToUpdate: any = {};
+        if (email !== undefined) dataToUpdate.email = email;
+        if (name !== undefined) dataToUpdate.name = name;
+        if (role !== undefined) dataToUpdate.role = role;
+        if (subscriptionPlan !== undefined) dataToUpdate.subscriptionPlan = subscriptionPlan;
+        if (isLifetime !== undefined) dataToUpdate.isLifetime = !!isLifetime;
+        
+        if (password) {
+          dataToUpdate.passwordHash = await bcrypt.hash(password, 10);
+        }
+
+        if (extendDays !== undefined && Number(extendDays) > 0) {
+          const baseDate = (existingUser.subscriptionExpiresAt && new Date(existingUser.subscriptionExpiresAt) > new Date())
+            ? new Date(existingUser.subscriptionExpiresAt)
+            : new Date();
+          dataToUpdate.subscriptionExpiresAt = new Date(baseDate.getTime() + Number(extendDays) * 24 * 60 * 60 * 1000);
+          dataToUpdate.isLifetime = false;
+        } else if (subscriptionExpiresAt !== undefined) {
+          dataToUpdate.subscriptionExpiresAt = subscriptionExpiresAt ? new Date(subscriptionExpiresAt) : null;
+        }
+
         const user = await prisma.user.update({
           where: { id },
           data: dataToUpdate,
-          select: { id: true, email: true, name: true, role: true, createdAt: true }
+          select: { 
+            id: true, 
+            email: true, 
+            name: true, 
+            role: true, 
+            createdAt: true,
+            subscriptionPlan: true,
+            subscriptionExpiresAt: true,
+            isLifetime: true
+          }
         });
         return res.status(200).json(user);
       }
@@ -189,6 +249,105 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({ message: 'Kết nối thành công! Đã gửi một email kiểm tra.' });
       } catch (error: any) {
         return res.status(400).json({ message: 'Không thể kết nối SMTP.', error: error.message });
+      }
+    }
+
+    // -------------------------------------------------------------
+    // SUBSCRIPTION ORDERS (Quản lý chuyển khoản & Gia hạn)
+    // -------------------------------------------------------------
+    if (action === 'subscription-orders') {
+      if (req.method === 'GET') {
+        const orders = await prisma.subscriptionOrder.findMany({
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                subscriptionPlan: true,
+                subscriptionExpiresAt: true,
+                isLifetime: true
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+        return res.status(200).json(orders);
+      }
+
+      // Xử lý duyệt hoặc từ chối đơn chuyển khoản
+      if (req.method === 'PUT') {
+        const { id, status, note } = req.body;
+        if (!id || !status) {
+          return res.status(400).json({ message: 'Thiếu id hoặc status' });
+        }
+
+        const order = await prisma.subscriptionOrder.findUnique({
+          where: { id },
+          include: { user: true }
+        });
+
+        if (!order) {
+          return res.status(404).json({ message: 'Không tìm thấy đơn gia hạn' });
+        }
+
+        if (status === 'APPROVED') {
+          // Kích hoạt gói cho user
+          const currentUser = order.user;
+          const isLifetime = order.planDays >= 99999 || order.planKey === 'plan_lifetime';
+
+          let newExpiresAt: Date | null = null;
+          let newPlan = order.planKey.toUpperCase();
+
+          if (!isLifetime) {
+            // Nếu user hiện tại còn hạn dùng thì cộng dồn từ ngày hết hạn cũ, ngược lại cộng từ bây giờ
+            const baseDate = (currentUser.subscriptionExpiresAt && new Date(currentUser.subscriptionExpiresAt) > new Date())
+              ? new Date(currentUser.subscriptionExpiresAt)
+              : new Date();
+            newExpiresAt = new Date(baseDate.getTime() + order.planDays * 24 * 60 * 60 * 1000);
+          }
+
+          // Cập nhật User
+          await prisma.user.update({
+            where: { id: order.userId },
+            data: {
+              subscriptionPlan: newPlan,
+              subscriptionExpiresAt: isLifetime ? null : newExpiresAt,
+              isLifetime: isLifetime
+            }
+          });
+
+          // Cập nhật Order
+          const updatedOrder = await prisma.subscriptionOrder.update({
+            where: { id },
+            data: { status: 'APPROVED', note: note || order.note }
+          });
+
+          return res.status(200).json({
+            message: 'Đã phê duyệt đơn và kích hoạt gia hạn thành công cho người dùng!',
+            order: updatedOrder
+          });
+        }
+
+        if (status === 'REJECTED') {
+          const updatedOrder = await prisma.subscriptionOrder.update({
+            where: { id },
+            data: { status: 'REJECTED', note: note || order.note }
+          });
+          return res.status(200).json({
+            message: 'Đã từ chối đơn gia hạn',
+            order: updatedOrder
+          });
+        }
+
+        return res.status(400).json({ message: 'Trạng thái không hợp lệ' });
+      }
+
+      if (req.method === 'DELETE') {
+        const { id } = req.query;
+        if (!id || typeof id !== 'string') return res.status(400).json({ message: 'Invalid ID' });
+        await prisma.subscriptionOrder.delete({ where: { id } });
+        return res.status(200).json({ message: 'Đã xóa đơn gia hạn' });
       }
     }
 

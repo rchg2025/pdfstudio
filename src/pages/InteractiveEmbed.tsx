@@ -22,11 +22,13 @@ import {
   Lock,
   Download,
   Loader2,
-  Wand2
+  Wand2,
+  Crown
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
+import SubscriptionModal from '../components/SubscriptionModal';
 import './InteractiveEmbed.css';
 
 export interface QuizOption {
@@ -279,9 +281,10 @@ function parseTimeToSeconds(timeStr: string): number {
 }
 
 export default function InteractiveEmbed() {
-  const { user } = useAuth();
+  const { user, isExpired } = useAuth();
   const navigate = useNavigate();
   const { showToast } = useNotification();
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
   // Input ban đầu
   const defaultSample = `<div style="position: relative; width: 100%; height: 0; padding-top: 56.2500%;
@@ -2040,7 +2043,7 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
         </div>
       </header>
 
-      {/* BANNER YÊU CẦU ĐĂNG NHẬP NẾU CHƯA ĐĂNG NHẬP */}
+      {/* BANNER YÊU CẦU ĐĂNG NHẬP HOẶC HẾT HẠN */}
       {!user ? (
         <div className="inter-auth-gate-card">
           <div className="inter-auth-gate-icon">
@@ -2058,6 +2061,26 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 2.5rem', fontSize: '1rem', borderRadius: '50px' }}
             >
               <LogIn size={18} /> Đăng Nhập
+            </button>
+          </div>
+        </div>
+      ) : isExpired ? (
+        <div className="inter-auth-gate-card" style={{ borderColor: '#f87171', background: '#fef2f2' }}>
+          <div className="inter-auth-gate-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
+            <Crown size={36} />
+          </div>
+          <h2 className="inter-auth-gate-title" style={{ color: '#991b1b' }}>Tài Khoản Đã Hết Hạn Sử Dụng</h2>
+          <p className="inter-auth-gate-desc" style={{ color: '#7f1d1d' }}>
+            Thời hạn dùng thử miễn phí hoặc gói dịch vụ của bạn đã hết. Hãy gia hạn để tiếp tục thiết kế và xuất mã nhúng HTML tương tác không giới hạn.
+          </p>
+          <div className="inter-auth-gate-actions">
+            <button 
+              type="button" 
+              className="btn btn-primary"
+              onClick={() => setIsSubModalOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', padding: '0.85rem 2.5rem', fontSize: '1rem', borderRadius: '50px', background: '#dc2626' }}
+            >
+              <Crown size={18} /> Gia Hạn Ngay
             </button>
           </div>
         </div>
@@ -2786,6 +2809,12 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
           </div>
         </div>
       )}
+
+      <SubscriptionModal
+        isOpen={isSubModalOpen}
+        onClose={() => setIsSubModalOpen(false)}
+        reason="Tài khoản của bạn đã hết hạn dùng. Vui lòng gia hạn để tiếp tục thiết kế bài giảng & xuất mã nhúng tương tác."
+      />
     </div>
   );
 }

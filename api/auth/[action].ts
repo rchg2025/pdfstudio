@@ -37,7 +37,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const prisma = prismaModule.prisma;
         const user = await prisma.user.findUnique({
           where: { id: decoded.userId },
-          select: { id: true, email: true, name: true, role: true }
+          select: { 
+            id: true, 
+            email: true, 
+            name: true, 
+            role: true,
+            subscriptionPlan: true,
+            subscriptionExpiresAt: true,
+            isLifetime: true
+          }
         });
 
         if (!user) {
@@ -91,11 +99,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         let user = await prisma.user.findUnique({ where: { email } });
         let isNew = false;
         if (!user) {
+          const trialExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
           user = await prisma.user.create({
             data: {
               email,
               name: email.split('@')[0],
-              role: 'USER'
+              role: 'USER',
+              subscriptionPlan: 'TRIAL_30D',
+              subscriptionExpiresAt: trialExpiresAt,
+              isLifetime: false
             }
           });
           isNew = true;

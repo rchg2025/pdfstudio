@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { PlusCircle, Trash2, ExternalLink, Image as ImageIcon } from 'lucide-react';
+import { PlusCircle, Trash2, ExternalLink, Image as ImageIcon, Crown } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
+import SubscriptionModal from '../components/SubscriptionModal';
 
 export default function Dashboard() {
-  const { user, token } = useAuth();
+  const { user, token, isExpired, remainingDays } = useAuth();
   const { showToast, showConfirm } = useNotification();
   const navigate = useNavigate();
   const [frames, setFrames] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   const itemsPerPage = 9;
 
   useEffect(() => {
@@ -96,6 +98,91 @@ export default function Dashboard() {
           Quản Lý Khung Hình Của Tôi
         </h1>
         <p className="text-secondary">Chào mừng, {user?.name || user?.email}!</p>
+      </div>
+
+      {/* Thẻ Thời Gian Sử Dụng & Gói Cước */}
+      <div 
+        className="glass-card" 
+        style={{ 
+          marginBottom: '2rem', 
+          padding: '1.5rem 2rem', 
+          background: isExpired 
+            ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.05) 0%, rgba(245, 158, 11, 0.05) 100%)' 
+            : 'linear-gradient(135deg, rgba(37, 99, 235, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%)',
+          border: isExpired ? '1px solid rgba(239, 68, 68, 0.3)' : '1px solid rgba(37, 99, 235, 0.2)',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '1.25rem'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', minWidth: '260px' }}>
+          <div 
+            style={{ 
+              width: '54px', 
+              height: '54px', 
+              borderRadius: '1rem', 
+              background: isExpired ? '#fee2e2' : user?.isLifetime ? '#d1fae5' : '#dbeafe',
+              color: isExpired ? '#dc2626' : user?.isLifetime ? '#059669' : '#1d4ed8',
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)'
+            }}
+          >
+            <Crown size={28} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+              <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--text-primary)' }}>
+                {user?.isLifetime ? 'Gói Thành Viên Trọn Đời (Lifetime)' : user?.subscriptionPlan === 'TRIAL_30D' ? 'Gói Dùng Thử Miễn Phí (30 Ngày)' : 'Gói Thành Viên Tiêu Chuẩn'}
+              </span>
+              <span 
+                style={{ 
+                  fontSize: '0.75rem', 
+                  fontWeight: 700, 
+                  padding: '0.15rem 0.6rem', 
+                  borderRadius: '9999px',
+                  background: isExpired ? '#fef2f2' : '#ecfdf5',
+                  color: isExpired ? '#dc2626' : '#059669',
+                  border: isExpired ? '1px solid #fca5a5' : '1px solid #6ee7b7'
+                }}
+              >
+                {isExpired ? 'Hết hạn' : 'Đang hoạt động'}
+              </span>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', margin: 0 }}>
+              {user?.isLifetime ? (
+                <span>Toàn quyền sử dụng vĩnh viễn tất cả công cụ và tính năng trên hệ thống.</span>
+              ) : isExpired ? (
+                <span style={{ color: '#dc2626', fontWeight: 600 }}>Tài khoản của bạn đã hết hạn dùng. Vui lòng gia hạn để tiếp tục sử dụng.</span>
+              ) : (
+                <span>Thời hạn sử dụng còn lại: <strong>{remainingDays} ngày</strong> (hết hạn ngày {user?.subscriptionExpiresAt ? new Date(user.subscriptionExpiresAt).toLocaleDateString('vi-VN') : '---'})</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        <div>
+          <button 
+            type="button" 
+            className="btn btn-primary"
+            onClick={() => setIsSubModalOpen(true)}
+            style={{ 
+              display: 'inline-flex', 
+              alignItems: 'center', 
+              gap: '0.5rem', 
+              padding: '0.75rem 1.5rem', 
+              borderRadius: '0.75rem',
+              fontWeight: 700,
+              background: isExpired ? '#dc2626' : undefined
+            }}
+          >
+            <Crown size={18} />
+            {isExpired ? 'Gia Hạn Ngay' : 'Mua Thêm Ngày / Nâng Cấp'}
+          </button>
+        </div>
       </div>
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1.5rem' }}>
@@ -219,6 +306,11 @@ export default function Dashboard() {
           </>
         )}
       </div>
+
+      <SubscriptionModal
+        isOpen={isSubModalOpen}
+        onClose={() => setIsSubModalOpen(false)}
+      />
     </div>
   );
 }

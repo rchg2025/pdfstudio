@@ -88,12 +88,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const bcryptModule = await import('bcryptjs');
       const bcrypt = bcryptModule.default || bcryptModule;
       const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const trialExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 ngày dùng thử miễn phí
+
       const user = await prisma.user.create({
         data: {
           email,
           passwordHash: hashedPassword,
           name: name || email.split('@')[0],
-          role: 'USER'
+          role: 'USER',
+          subscriptionPlan: 'TRIAL_30D',
+          subscriptionExpiresAt: trialExpiresAt,
+          isLifetime: false
         }
       });
 
@@ -122,7 +128,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json({
         message: 'Đăng ký thành công',
         token,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role }
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name, 
+          role: user.role,
+          subscriptionPlan: user.subscriptionPlan,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          isLifetime: user.isLifetime
+        }
       });
     }
 

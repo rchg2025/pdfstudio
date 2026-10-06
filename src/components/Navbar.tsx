@@ -1,16 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Layers, Menu, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Layers, Menu, X, ChevronLeft, ChevronRight, Crown } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import SubscriptionModal from './SubscriptionModal';
 import './Navbar.css';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
+  const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
   
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, isExpired, remainingDays } = useAuth();
   const navRef = useRef<HTMLElement>(null);
 
   // Close mobile menu when route changes
@@ -126,6 +128,22 @@ const Navbar = () => {
             <div className="mobile-auth-links">
               {user ? (
                 <>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsSubscriptionModalOpen(true)}
+                    className="nav-link"
+                    style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.4rem', 
+                      color: isExpired ? '#ef4444' : user.isLifetime ? '#10b981' : '#2563eb',
+                      fontWeight: 600
+                    }}
+                  >
+                    <Crown size={16} />
+                    {user.isLifetime ? 'Gói Vĩnh Viễn' : isExpired ? 'Hết hạn (Gia hạn)' : `Còn ${remainingDays} ngày`}
+                  </button>
+
                   {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
                   {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảng điều khiển</NavLink>}
                   <button onClick={logout} className="nav-link logout-btn">Đăng xuất</button>
@@ -146,9 +164,33 @@ const Navbar = () => {
         </div>
 
         {/* Auth Links - Desktop Only */}
-        <div className="desktop-auth-links">
+        <div className="desktop-auth-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           {user ? (
             <>
+              {/* Subscription Pill */}
+              <button
+                type="button"
+                onClick={() => setIsSubscriptionModalOpen(true)}
+                title="Bấm để xem thông tin gói cước và gia hạn"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  padding: '0.35rem 0.75rem',
+                  borderRadius: '9999px',
+                  fontSize: '0.82rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  border: isExpired ? '1px solid #f87171' : user.isLifetime ? '1px solid #34d399' : '1px solid #93c5fd',
+                  background: isExpired ? '#fef2f2' : user.isLifetime ? '#ecfdf5' : '#eff6ff',
+                  color: isExpired ? '#dc2626' : user.isLifetime ? '#059669' : '#1d4ed8',
+                  transition: 'all 0.2s'
+                }}
+              >
+                <Crown size={15} />
+                {user.isLifetime ? 'Vĩnh Viễn' : isExpired ? 'Hết hạn (Gia hạn)' : `Còn ${remainingDays} ngày`}
+              </button>
+
               {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
               {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảng điều khiển</NavLink>}
               <button onClick={logout} className="nav-link logout-btn" style={{ color: '#ef4444' }}>Đăng xuất</button>
@@ -162,6 +204,11 @@ const Navbar = () => {
           {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
+
+      <SubscriptionModal 
+        isOpen={isSubscriptionModalOpen} 
+        onClose={() => setIsSubscriptionModalOpen(false)} 
+      />
     </header>
   );
 };

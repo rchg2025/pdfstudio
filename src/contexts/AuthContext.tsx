@@ -1,10 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string | null;
   role: string;
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: string | null;
+  isLifetime?: boolean;
 }
 
 interface AuthContextType {
@@ -12,6 +15,9 @@ interface AuthContextType {
   token: string | null;
   login: (token: string, user: User) => void;
   logout: () => void;
+  refreshUser: () => Promise<void>;
+  isExpired: boolean;
+  remainingDays: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,6 +84,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const refreshUser = async () => {
+    const currentToken = localStorage.getItem('token');
+    if (!currentToken) return;
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+      if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.user) {
+          setUser(data.user);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const login = (newToken: string, newUser: User) => {
     if (newUser.role === 'DISABLED') {
       alert('Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.');
@@ -97,8 +122,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = '/';
   };
 
+  // Tính số ngày sử dụng còn lại & trạng thái hết hạn
+  let remainingDays = 0;
+  let isExpired = false;
+
+  if (user) {
+    if (user.role === 'ADMIN' || user.isLifetime) {
+      remainingDays = 99999;
+      isExpired = false;
+    } else if (user.subscriptionExpiresAt) {
+      const diffMs = new Date(user.subscriptionExpiresAt).getTime() - Date.now();
+      remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+      if (remainingDays <= 0) {
+        remainingDays = 0;
+        isExpired = true;
+      }
+    } else {
+      isExpired = true;
+      remainingDays = 0;
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, refreshUser, isExpired, remainingDays }}>
       {children}
     </AuthContext.Provider>
   );

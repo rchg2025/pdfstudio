@@ -56,12 +56,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       await prisma.verificationToken.deleteMany({ where: { email: tempEmail, type: 'GOOGLE_REGISTER' } });
 
+      const trialExpiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 ngày dùng thử miễn phí
+
       const newUser = await prisma.user.create({
         data: {
           email: tempEmail,
           name: tempName,
           googleId: tempGoogleId,
-          role: 'USER'
+          role: 'USER',
+          subscriptionPlan: 'TRIAL_30D',
+          subscriptionExpiresAt: trialExpiresAt,
+          isLifetime: false
         }
       });
 
@@ -90,7 +95,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json({
         message: 'Kích hoạt tài khoản và đăng nhập thành công',
         token,
-        user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role }
+        user: { 
+          id: newUser.id, 
+          email: newUser.email, 
+          name: newUser.name, 
+          role: newUser.role,
+          subscriptionPlan: newUser.subscriptionPlan,
+          subscriptionExpiresAt: newUser.subscriptionExpiresAt,
+          isLifetime: newUser.isLifetime
+        }
       });
     }
 
@@ -137,7 +150,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({
         message: 'Đăng nhập thành công',
         token,
-        user: { id: user.id, email: user.email, name: user.name, role: user.role }
+        user: { 
+          id: user.id, 
+          email: user.email, 
+          name: user.name, 
+          role: user.role,
+          subscriptionPlan: user.subscriptionPlan,
+          subscriptionExpiresAt: user.subscriptionExpiresAt,
+          isLifetime: user.isLifetime
+        }
       });
     } else {
       // Người dùng mới chưa có tài khoản: bắt buộc gửi mã xác nhận kích hoạt tài khoản qua email trước khi cho phép đăng nhập lần đầu

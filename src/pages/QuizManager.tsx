@@ -42,11 +42,13 @@ import {
   Monitor,
   Smartphone,
   RotateCcw,
-  AlertCircle
+  AlertCircle,
+  Crown
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import SubscriptionModal from '../components/SubscriptionModal';
 import type { 
   QuizPackage, 
   QuizQuestion, 
@@ -157,9 +159,10 @@ const DEFAULT_QUIZ: QuizPackage = {
 };
 
 export default function QuizManager() {
-  const { user, token } = useAuth();
+  const { user, token, isExpired } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
   // Storage key riêng biệt cho từng người dùng
   const storageKey = user ? `rchg_quiz_packages_${user.id}` : 'rchg_quiz_packages_guest';
@@ -1081,6 +1084,61 @@ export default function QuizManager() {
             </Link>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (isExpired) {
+    return (
+      <div className="quiz-manager-container animate-fade-in" style={{ maxWidth: 640, margin: '60px auto', padding: '1rem' }}>
+        <div style={{
+          background: 'var(--surface)',
+          padding: '2.5rem 2rem',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid #f87171',
+          boxShadow: 'var(--shadow-lg)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: 68,
+            height: 68,
+            borderRadius: '50%',
+            background: '#fee2e2',
+            color: '#dc2626',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.5rem',
+            border: '2px solid #fca5a5'
+          }}>
+            <Crown size={36} />
+          </div>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 700, marginBottom: '0.75rem', color: '#991b1b' }}>
+            Thời Gian Sử Dụng Của Bạn Đã Hết
+          </h2>
+          <p style={{ color: '#7f1d1d', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+            Thời hạn dùng thử miễn phí hoặc gói sử dụng đã kết thúc. Vui lòng gia hạn tài khoản để tiếp tục tạo đề thi, quản lý bài làm và xuất mã nhúng khảo thí.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button 
+              type="button" 
+              onClick={() => setIsSubModalOpen(true)} 
+              className="btn btn-primary" 
+              style={{ padding: '0.75rem 1.75rem', fontWeight: 600, background: '#dc2626' }}
+            >
+              <Crown size={18} /> Gia Hạn Ngay
+            </button>
+            <Link to="/" className="btn btn-outline" style={{ padding: '0.75rem 1.5rem' }}>
+              Về Trang Chủ
+            </Link>
+          </div>
+        </div>
+
+        <SubscriptionModal
+          isOpen={isSubModalOpen}
+          onClose={() => setIsSubModalOpen(false)}
+          reason="Tài khoản của bạn đã hết hạn dùng. Vui lòng gia hạn để tiếp tục sử dụng hệ thống Quản lý đề thi."
+        />
       </div>
     );
   }

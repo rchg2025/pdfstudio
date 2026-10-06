@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert } from "lucide-react";
+import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert, Crown, CheckCircle, XCircle, Clock, Check } from "lucide-react";
 
 
 export default function Admin() {
@@ -35,12 +35,25 @@ export default function Admin() {
   const [userRoleFilter, setUserRoleFilter] = useState('all');
   const [userTimeFilter, setUserTimeFilter] = useState('all');
 
+  // States cho Gia Hạn & Chuyển Khoản
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [orderSearchQuery, setOrderSearchQuery] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('all');
+
+  // Quick Extend Modal for User
+  const [quickExtendUser, setQuickExtendUser] = useState<any>(null);
+  const [extendDaysInput, setExtendDaysInput] = useState<number>(30);
+
   // States cho Cấu hình
   const [settings, setSettings] = useState({
     smtpHost: '', smtpPort: '', smtpUser: '', smtpPass: '', adminNotificationEmail: '',
     googleClientId: '', googleClientSecret: '',
     googleDriveFolderId: '', googleDriveServiceJson: '',
-    geminiApiKey: '', geminiCustomModel: 'auto'
+    geminiApiKey: '', geminiCustomModel: 'auto',
+    bankId: 'MB', bankAccountNo: '', bankAccountName: '',
+    price_90d: '99000', price_180d: '180000', price_365d: '299000', price_lifetime: '699000'
   });
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
@@ -59,9 +72,91 @@ export default function Admin() {
     
     if (activeTab === 'frames') fetchFrames();
     if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'orders') fetchOrders();
     if (activeTab === 'settings') fetchSettings();
     if (activeTab === 'urls') fetchUrls();
   }, [activeTab]);
+
+  const fetchOrders = async () => {
+    setLoadingOrders(true);
+    try {
+      const res = await fetch('/api/admin/subscription-orders', { 
+        headers: { 'Authorization': `Bearer ${token}` } 
+      });
+      if (res.ok) setOrders(await res.json());
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const handleUpdateOrderStatus = (orderId: string, status: 'APPROVED' | 'REJECTED', note?: string) => {
+    const actionLabel = status === 'APPROVED' ? 'Phê duyệt & Kích hoạt gói' : 'Từ chối đơn';
+    showConfirm(`Bạn có chắc chắn muốn ${actionLabel} cho yêu cầu này?`, async () => {
+      try {
+        const res = await fetch('/api/admin/subscription-orders', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ id: orderId, status, note })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showToast(data.message || 'Cập nhật trạng thái thành công', 'success');
+          fetchOrders();
+          fetchUsers();
+        } else {
+          showToast(data.message || 'Thao tác thất bại', 'error');
+        }
+      } catch (err: any) {
+        showToast('Lỗi kết nối máy chủ', 'error');
+      }
+    });
+  };
+
+  const handleDeleteOrder = (orderId: string) => {
+    showConfirm('Bạn có chắc muốn xóa lịch sử đơn gia hạn này?', async () => {
+      try {
+        const res = await fetch(`/api/admin/subscription-orders?id=${orderId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          showToast('Đã xóa đơn gia hạn', 'success');
+          fetchOrders();
+        } else {
+          showToast('Xóa đơn thất bại', 'error');
+        }
+      } catch (e) {
+        showToast('Lỗi khi xóa đơn', 'error');
+      }
+    });
+  };
+
+  const handleQuickExtend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!quickExtendUser || !extendDaysInput) return;
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({
+          id: quickExtendUser.id,
+          extendDays: Number(extendDaysInput)
+        })
+      });
+      if (res.ok) {
+        showToast(`Đã cộng thêm ${extendDaysInput} ngày thành công cho ${quickExtendUser.email}!`, 'success');
+        setQuickExtendUser(null);
+        fetchUsers();
+      } else {
+        const d = await res.json();
+        showToast(d.message || 'Gia hạn thất bại', 'error');
+      }
+    } catch (err) {
+      showToast('Lỗi khi gia hạn cho người dùng', 'error');
+    }
+  };
 
   const fetchUrls = async () => {
     setLoadingUrls(true);
@@ -431,6 +526,19 @@ export default function Admin() {
   const paginatedUsers = filteredUsers.slice((usersPage - 1) * itemsPerPage, usersPage * itemsPerPage);
   const totalUserPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
+  const filteredOrders = orders.filter((o: any) => {
+    const q = orderSearchQuery.toLowerCase();
+    const matchSearch = !q || 
+      o.transferCode?.toLowerCase().includes(q) || 
+      o.user?.email?.toLowerCase().includes(q) ||
+      o.planTitle?.toLowerCase().includes(q);
+    const matchStatus = orderStatusFilter === 'all' || o.status === orderStatusFilter;
+    return matchSearch && matchStatus;
+  });
+
+  const paginatedOrders = filteredOrders.slice((ordersPage - 1) * itemsPerPage, ordersPage * itemsPerPage);
+  const totalOrderPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
   const filteredUrls = urls.filter((u: any) => {
     const query = urlSearchQuery.toLowerCase();
     return !query || 
@@ -520,7 +628,6 @@ export default function Admin() {
         </div>
       )}
 
-
       {editingUrl && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div className="glass-card" style={{ padding: '2rem', width: '90%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
@@ -543,6 +650,65 @@ export default function Admin() {
         </div>
       )}
 
+      {/* MODAL GIA HẠN NHANH NGÀY SỬ DỤNG CHO NGƯỜI DÙNG */}
+      {quickExtendUser && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="glass-card" style={{ padding: '2rem', width: '90%', maxWidth: '460px', background: 'var(--bg-primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', color: 'var(--primary)' }}>
+              <Crown size={22} />
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Gia Hạn Ngày Sử Dụng</h3>
+            </div>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.88rem', marginBottom: '1.25rem' }}>
+              Tài khoản: <strong>{quickExtendUser.email}</strong>
+            </p>
+
+            <form onSubmit={handleQuickExtend} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>
+                  Chọn số ngày cộng thêm:
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                  {[30, 90, 180, 365].map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setExtendDaysInput(d)}
+                      style={{
+                        padding: '0.5rem',
+                        borderRadius: '0.4rem',
+                        border: extendDaysInput === d ? '2px solid var(--primary)' : '1px solid var(--border)',
+                        background: extendDaysInput === d ? 'rgba(37,99,235,0.1)' : 'var(--bg-secondary)',
+                        color: extendDaysInput === d ? 'var(--primary)' : 'var(--text-primary)',
+                        fontWeight: 600,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      +{d} ngày
+                    </button>
+                  ))}
+                </div>
+                <input 
+                  type="number" 
+                  min="1" 
+                  value={extendDaysInput} 
+                  onChange={e => setExtendDaysInput(parseInt(e.target.value, 10) || 1)}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  placeholder="Nhập số ngày cụ thể..."
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setQuickExtendUser(null)} className="btn" style={{ background: 'transparent', color: 'var(--text-secondary)' }}>Hủy</button>
+                <button type="submit" className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Crown size={16} /> Kích hoạt ngay
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       <div className="tool-header text-center mb-8 md:mb-10 mt-4 md:mt-0">
         <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
           Bảng Điều Khiển Quản Trị
@@ -556,6 +722,7 @@ export default function Admin() {
           {[
             { id: 'frames', label: 'Quản Lý Khung Hình' },
             { id: 'users', label: 'Quản Lý Tài Khoản' },
+            { id: 'orders', label: 'Quản Lý Gia Hạn & Chuyển Khoản' },
             { id: 'urls', label: 'Quản Lý Link Rút Gọn' },
             { id: 'settings', label: 'Cấu Hình Hệ Thống' }
           ].map(tab => (
@@ -720,15 +887,33 @@ export default function Admin() {
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Email</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Tên</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Vai trò</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Hạn Sử Dụng</th>
                         <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Trạng thái</th>
                         <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)', position: 'sticky', right: 0, background: 'var(--bg-secondary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
                       {users.length === 0 ? (
-                        <tr><td colSpan={5} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có người dùng.</td></tr>
+                        <tr><td colSpan={6} style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-secondary)' }}>Không có người dùng.</td></tr>
                       ) : paginatedUsers.map((u: any) => {
                         const isDisabled = u.role === 'DISABLED';
+                        
+                        let uExpired = false;
+                        let uDays = 0;
+                        if (u.role === 'ADMIN' || u.isLifetime) {
+                          uDays = 99999;
+                          uExpired = false;
+                        } else if (u.subscriptionExpiresAt) {
+                          const diff = new Date(u.subscriptionExpiresAt).getTime() - Date.now();
+                          uDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
+                          if (uDays <= 0) {
+                            uDays = 0;
+                            uExpired = true;
+                          }
+                        } else {
+                          uExpired = true;
+                        }
+
                         return (
                           <tr key={u.id} style={{ borderBottom: '1px solid var(--border)', opacity: isDisabled ? 0.75 : 1 }}>
                             <td style={{ padding: '1rem', color: 'var(--text-primary)', fontWeight: 500 }}>
@@ -749,6 +934,35 @@ export default function Admin() {
                               </span>
                             </td>
                             <td style={{ padding: '1rem' }}>
+                              {u.isLifetime ? (
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', color: '#059669', fontWeight: 700, fontSize: '0.8rem', background: '#ecfdf5', padding: '0.2rem 0.55rem', borderRadius: '0.25rem' }}>
+                                  <Crown size={13} /> Vĩnh Viễn
+                                </span>
+                              ) : u.role === 'ADMIN' ? (
+                                <span style={{ color: '#2563eb', fontWeight: 600, fontSize: '0.8rem' }}>Không giới hạn</span>
+                              ) : (
+                                <div>
+                                  <span style={{ 
+                                    display: 'inline-block',
+                                    fontWeight: 700, 
+                                    fontSize: '0.78rem',
+                                    color: uExpired ? '#dc2626' : '#1d4ed8',
+                                    background: uExpired ? '#fef2f2' : '#eff6ff',
+                                    padding: '0.15rem 0.5rem',
+                                    borderRadius: '0.25rem',
+                                    border: uExpired ? '1px solid #fecaca' : '1px solid #bfdbfe'
+                                  }}>
+                                    {uExpired ? 'Hết hạn' : `Còn ${uDays} ngày`}
+                                  </span>
+                                  {u.subscriptionExpiresAt && (
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                      {new Date(u.subscriptionExpiresAt).toLocaleDateString('vi-VN')}
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                            <td style={{ padding: '1rem' }}>
                               <span style={{ 
                                 display: 'inline-flex',
                                 alignItems: 'center',
@@ -765,6 +979,28 @@ export default function Admin() {
                               </span>
                             </td>
                             <td style={{ padding: '1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
+                              {u.role !== 'ADMIN' && (
+                                <button
+                                  onClick={() => { setQuickExtendUser(u); setExtendDaysInput(30); }}
+                                  style={{
+                                    color: '#059669',
+                                    background: '#ecfdf5',
+                                    border: '1px solid #a7f3d0',
+                                    borderRadius: '0.35rem',
+                                    padding: '0.25rem 0.5rem',
+                                    cursor: 'pointer',
+                                    fontWeight: 600,
+                                    fontSize: '0.78rem',
+                                    marginRight: '0.65rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '0.25rem'
+                                  }}
+                                  title="Gia hạn thêm ngày sử dụng cho tài khoản này"
+                                >
+                                  <Crown size={14} /> +Ngày
+                                </button>
+                              )}
                               {u.id !== user?.id && (
                                 <button 
                                   onClick={() => toggleUserStatus(u)} 
@@ -819,6 +1055,210 @@ export default function Admin() {
                     </div>
                   )}
 
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB: ORDERS (QUẢN LÝ GIA HẠN & CHUYỂN KHOẢN) */}
+          {activeTab === 'orders' && (
+            <div>
+              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                <div>
+                  <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                    Yêu Cầu Gia Hạn & Chuyển Khoản ({orders.length})
+                  </h2>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                    Kiểm tra sao kê tài khoản ngân hàng khớp với <strong>Mã Chuyển Khoản</strong> và bấm <strong>Duyệt</strong> để hệ thống tự động cộng hạn dùng cho thành viên.
+                  </p>
+                </div>
+                <div style={{ display: 'flex', gap: '1rem', marginLeft: 'auto' }}>
+                  <button onClick={fetchOrders} className="btn" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '0.5rem' }}>Tải lại</button>
+                </div>
+              </div>
+
+              {/* BỘ LỌC VÀ TÌM KIẾM ĐƠN HÀNG */}
+              <div className="flex flex-col md:flex-row gap-4 mb-6">
+                <input 
+                  type="text" 
+                  placeholder="Tìm theo mã chuyển khoản (GH...), email, tên gói..." 
+                  value={orderSearchQuery}
+                  onChange={e => { setOrderSearchQuery(e.target.value); setOrdersPage(1); }}
+                  className="input flex-1 min-w-[250px]"
+                />
+                <select 
+                  value={orderStatusFilter}
+                  onChange={e => { setOrderStatusFilter(e.target.value); setOrdersPage(1); }}
+                  className="input"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="PENDING">Chờ xác nhận (PENDING)</option>
+                  <option value="APPROVED">Đã duyệt (APPROVED)</option>
+                  <option value="REJECTED">Đã từ chối (REJECTED)</option>
+                </select>
+              </div>
+
+              {loadingOrders ? (
+                <p style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem' }}>Đang tải danh sách đơn...</p>
+              ) : (
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
+                    <thead>
+                      <tr style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Mã CK</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Người mua</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Gói đăng ký</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Số tiền</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Thời gian tạo</th>
+                        <th style={{ padding: '1rem', textAlign: 'left', fontWeight: 600, color: 'var(--text-secondary)' }}>Trạng thái</th>
+                        <th style={{ padding: '1rem', textAlign: 'right', fontWeight: 600, color: 'var(--text-secondary)', position: 'sticky', right: 0, background: 'var(--bg-secondary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedOrders.map((order: any) => {
+                          const isPending = order.status === 'PENDING';
+                          const isApproved = order.status === 'APPROVED';
+                          const isRejected = order.status === 'REJECTED';
+
+                          return (
+                            <tr key={order.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                              <td style={{ padding: '1rem' }}>
+                                <span style={{ 
+                                  fontFamily: 'monospace', 
+                                  fontWeight: 700, 
+                                  color: '#dc2626', 
+                                  background: '#fef2f2', 
+                                  padding: '0.2rem 0.5rem', 
+                                  borderRadius: '0.25rem',
+                                  border: '1px dashed #fca5a5'
+                                }}>
+                                  {order.transferCode}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{order.user?.email || 'N/A'}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{order.user?.name}</div>
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{order.planTitle}</span>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                  {order.planDays >= 99999 ? 'Vĩnh viễn' : `+${order.planDays} ngày`}
+                                </div>
+                              </td>
+                              <td style={{ padding: '1rem', fontWeight: 700, color: '#059669' }}>
+                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.amount)}
+                              </td>
+                              <td style={{ padding: '1rem', color: 'var(--text-secondary)', fontSize: '0.8rem' }}>
+                                {new Date(order.createdAt).toLocaleString('vi-VN')}
+                              </td>
+                              <td style={{ padding: '1rem' }}>
+                                <span style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.3rem',
+                                  padding: '0.25rem 0.6rem',
+                                  borderRadius: '999px',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  background: isApproved ? '#dcfce7' : isRejected ? '#fee2e2' : '#fef9c3',
+                                  color: isApproved ? '#15803d' : isRejected ? '#b91c1c' : '#a16207',
+                                  border: isApproved ? '1px solid #86efac' : isRejected ? '1px solid #fca5a5' : '1px solid #fde047'
+                                }}>
+                                  {isApproved && <CheckCircle size={12} />}
+                                  {isRejected && <XCircle size={12} />}
+                                  {isPending && <Clock size={12} />}
+                                  {isApproved ? 'ĐÃ DUYỆT' : isRejected ? 'TỪ CHỐI' : 'CHỜ DUYỆT'}
+                                </span>
+                              </td>
+                              <td style={{ padding: '1rem', textAlign: 'right', position: 'sticky', right: 0, background: 'var(--bg-primary)', zIndex: 1, borderLeft: '1px solid var(--border)' }}>
+                                {isPending && (
+                                  <>
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, 'APPROVED')}
+                                      style={{
+                                        color: '#15803d',
+                                        background: '#dcfce7',
+                                        border: '1px solid #86efac',
+                                        borderRadius: '0.35rem',
+                                        padding: '0.3rem 0.65rem',
+                                        fontWeight: 600,
+                                        fontSize: '0.78rem',
+                                        cursor: 'pointer',
+                                        marginRight: '0.5rem',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '0.25rem'
+                                      }}
+                                      title="Duyệt đơn và kích hoạt ngày dùng cho tài khoản"
+                                    >
+                                      <Check size={14} /> Duyệt đơn
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateOrderStatus(order.id, 'REJECTED')}
+                                      style={{
+                                        color: '#b91c1c',
+                                        background: '#fee2e2',
+                                        border: '1px solid #fca5a5',
+                                        borderRadius: '0.35rem',
+                                        padding: '0.3rem 0.65rem',
+                                        fontWeight: 600,
+                                        fontSize: '0.78rem',
+                                        cursor: 'pointer',
+                                        marginRight: '0.5rem'
+                                      }}
+                                    >
+                                      Từ chối
+                                    </button>
+                                  </>
+                                )}
+                                <button
+                                  onClick={() => handleDeleteOrder(order.id)}
+                                  style={{
+                                    color: '#ef4444',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    padding: '0.3rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center'
+                                  }}
+                                  title="Xóa đơn"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                    </tbody>
+                  </table>
+                  {orders.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-secondary)' }}>
+                      Chưa có yêu cầu gia hạn nào từ người dùng.
+                    </div>
+                  )}
+
+                  {/* Pagination Orders */}
+                  {totalOrderPages > 1 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
+                      {Array.from({ length: totalOrderPages }).map((_, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setOrdersPage(idx + 1)}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '0.5rem',
+                            border: '1px solid var(--border)',
+                            background: ordersPage === idx + 1 ? 'var(--primary)' : 'var(--bg-secondary)',
+                            color: ordersPage === idx + 1 ? '#fff' : 'var(--text-primary)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {idx + 1}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -910,7 +1350,8 @@ export default function Admin() {
                   { id: 'google', label: 'Đăng Nhập Google' },
                   { id: 'drive', label: 'Google Drive' },
                   { id: 'email', label: 'Cấu hình Email (SMTP)' },
-                  { id: 'gemini', label: 'Cấu hình AI (Gemini)' }
+                  { id: 'gemini', label: 'Cấu hình AI (Gemini)' },
+                  { id: 'payment', label: 'Ngân Hàng & Bảng Giá Gói' }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -1074,6 +1515,140 @@ export default function Admin() {
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
                           Hệ thống sẽ tự động thử lần lượt các model khác nếu gặp lỗi Rate Limit (429) hoặc Máy chủ bận (503).
                         </span>
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Payment & Bank Pricing Section */}
+                  {activeSettingsTab === 'payment' && (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', borderBottom: '1px solid var(--border)', paddingBottom: '0.5rem' }}>
+                      <Crown size={20} className="text-primary" />
+                      <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)', margin: 0 }}>
+                        Cấu hình Tài Khoản Ngân Hàng Nhận Chuyển Khoản & Bảng Giá
+                      </h3>
+                    </div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                      Các thông tin này sẽ được dùng để tự động tạo mã <strong>VietQR</strong> chuẩn xác khi người dùng chọn gia hạn thời gian sử dụng.
+                    </p>
+
+                    {/* Thông tin ngân hàng */}
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+                      1. Thông Tin Tài Khoản Ngân Hàng
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                          Mã Ngân Hàng (Bank BIN / ID) *
+                        </label>
+                        <input 
+                          type="text" 
+                          value={settings.bankId} 
+                          onChange={e => handleSettingChange('bankId', e.target.value.toUpperCase())} 
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} 
+                          placeholder="Ví dụ: MB, VCB, TCB, ACB, VPB, TPB..." 
+                          required
+                        />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.25rem' }}>
+                          Tên viết tắt ngân hàng theo chuẩn VietQR (MB, VCB, ACB...)
+                        </span>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                          Số Tài Khoản Ngân Hàng *
+                        </label>
+                        <input 
+                          type="text" 
+                          value={settings.bankAccountNo} 
+                          onChange={e => handleSettingChange('bankAccountNo', e.target.value)} 
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} 
+                          placeholder="Nhập số tài khoản..." 
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                          Tên Chủ Tài Khoản (Không dấu) *
+                        </label>
+                        <input 
+                          type="text" 
+                          value={settings.bankAccountName} 
+                          onChange={e => handleSettingChange('bankAccountName', e.target.value.toUpperCase())} 
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} 
+                          placeholder="Ví dụ: NGUYEN VAN A" 
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bảng giá các gói gia hạn */}
+                    <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+                      2. Cấu Hình Giá Các Gói Sử Dụng (VNĐ)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                      <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                          Gói 90 Ngày (3 Tháng)
+                        </label>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Thử nghiệm ngắn hạn</p>
+                        <input 
+                          type="number" 
+                          value={settings.price_90d} 
+                          onChange={e => handleSettingChange('price_90d', e.target.value)} 
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700 }} 
+                          placeholder="99000" 
+                        />
+                      </div>
+
+                      <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                          Gói 180 Ngày (6 Tháng)
+                        </label>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Gói 1 học kỳ</p>
+                        <input 
+                          type="number" 
+                          value={settings.price_180d} 
+                          onChange={e => handleSettingChange('price_180d', e.target.value)} 
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700 }} 
+                          placeholder="180000" 
+                        />
+                      </div>
+
+                      <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '0.5rem', border: '2px solid #818cf8' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                          <label style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            Gói 365 Ngày (1 Năm)
+                          </label>
+                          <span style={{ fontSize: '0.7rem', background: '#e0e7ff', color: '#4338ca', padding: '0.1rem 0.4rem', borderRadius: '999px', fontWeight: 700 }}>Phổ biến</span>
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Gói trọn vẹn 1 năm học</p>
+                        <input 
+                          type="number" 
+                          value={settings.price_365d} 
+                          onChange={e => handleSettingChange('price_365d', e.target.value)} 
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700 }} 
+                          placeholder="299000" 
+                        />
+                      </div>
+
+                      <div style={{ background: 'var(--bg-secondary)', padding: '1rem', borderRadius: '0.5rem', border: '2px solid #34d399' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
+                          <label style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            Gói Vĩnh Viễn (Lifetime)
+                          </label>
+                          <span style={{ fontSize: '0.7rem', background: '#d1fae5', color: '#065f46', padding: '0.1rem 0.4rem', borderRadius: '999px', fontWeight: 700 }}>VIP</span>
+                        </div>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>Trọn đời, cập nhật miễn phí</p>
+                        <input 
+                          type="number" 
+                          value={settings.price_lifetime} 
+                          onChange={e => handleSettingChange('price_lifetime', e.target.value)} 
+                          style={{ width: '100%', padding: '0.6rem 0.75rem', borderRadius: '0.4rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.9rem', fontWeight: 700 }} 
+                          placeholder="699000" 
+                        />
                       </div>
                     </div>
                   </div>

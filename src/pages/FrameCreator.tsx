@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Crown } from 'lucide-react';
+import SubscriptionModal from '../components/SubscriptionModal';
 
 export default function FrameCreator() {
-  const { token, user } = useAuth();
+  const { token, user, isExpired } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const editFrame = location.state?.frame;
   const isAdminEdit = location.state?.isAdminEdit;
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
   
   const [title, setTitle] = useState(editFrame?.title || '');
   const [slug, setSlug] = useState(editFrame?.slug || '');
@@ -204,6 +207,25 @@ export default function FrameCreator() {
 
       {/* FORM TẠO/SỬA KHUNG CHỈ HIỂN THỊ KHI ĐÃ ĐĂNG NHẬP */}
       {user ? (
+        isExpired ? (
+          <div className="glass-card mt-8 text-center" style={{ padding: '3.5rem 2rem', background: '#fef2f2', border: '1px solid #f87171' }}>
+            <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1.25rem' }}>
+              <Crown size={32} />
+            </div>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#991b1b', marginBottom: '0.75rem' }}>Thời Gian Sử Dụng Của Bạn Đã Hết</h2>
+            <p style={{ color: '#7f1d1d', marginBottom: '2rem', fontSize: '1.05rem', maxWidth: '580px', margin: '0 auto 2rem', lineHeight: 1.5 }}>
+              Để tiếp tục tạo mới hoặc chỉnh sửa khung hình, vui lòng gia hạn tài khoản của bạn.
+            </p>
+            <button 
+              type="button"
+              onClick={() => setIsSubModalOpen(true)} 
+              className="btn btn-primary" 
+              style={{ padding: '0.85rem 2.5rem', fontSize: '1.1rem', borderRadius: '2rem', background: '#dc2626' }}
+            >
+              Gia Hạn Ngay
+            </button>
+          </div>
+        ) : (
         <>
           <div className="tool-header text-center mb-12 mt-12">
             <h1 className="text-gradient text-2xl md:text-3xl mb-2 uppercase">
@@ -308,9 +330,16 @@ export default function FrameCreator() {
         </form>
       </div>
         </>
+        )
       ) : (
         <div style={{ paddingBottom: '4rem' }}></div>
       )}
+
+      <SubscriptionModal
+        isOpen={isSubModalOpen}
+        onClose={() => setIsSubModalOpen(false)}
+        reason="Tài khoản của bạn đã hết hạn dùng. Vui lòng gia hạn để tiếp tục thiết kế khung hình."
+      />
     </div>
   );
 }

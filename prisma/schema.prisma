@@ -17,15 +17,34 @@ model urls {
 }
 
 model User {
+  id                   String              @id @default(cuid())
+  email                String              @unique
+  passwordHash         String?
+  name                 String?
+  role                 String              @default("USER")
+  googleId             String?             @unique
+  subscriptionPlan     String              @default("TRIAL_30D") // TRIAL_30D, PLAN_90D, PLAN_180D, PLAN_365D, LIFETIME, EXPIRED
+  subscriptionExpiresAt DateTime?
+  isLifetime           Boolean             @default(false)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  frames               Frame[]
+  subscriptionOrders   SubscriptionOrder[]
+}
+
+model SubscriptionOrder {
   id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String?
-  name         String?
-  role         String   @default("USER")
-  googleId     String?  @unique
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planKey      String   // plan_90d, plan_180d, plan_365d, plan_lifetime
+  planDays     Int      // 90, 180, 365, 99999
+  planTitle    String   // Gói 90 Ngày, Gói 180 Ngày,...
+  amount       Int      // Số tiền VNĐ
+  transferCode String   @unique // GH_XXXXXX
+  status       String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  note         String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  frames       Frame[]
 }
 
 model Frame {
@@ -86,4 +105,35 @@ model QaQuestion {
   isPinned    Boolean  @default(false)
   answerNote  String?  // Ghi chú câu trả lời của giảng viên nếu có
   createdAt   DateTime @default(now())
+}
+
+model QuizPackage {
+  id          String   @id @db.VarChar(64)
+  userId      String?  @db.VarChar(64)
+  title       String   @db.VarChar(255)
+  subject     String?  @db.VarChar(255)
+  description String?
+  code        String?  @unique @db.VarChar(32)
+  isOpen      Boolean? @default(true)
+  questions   Json     @default("[]")
+  settings    Json     @default("{}")
+  createdAt   DateTime? @default(now())
+  updatedAt   DateTime? @default(now())
+}
+
+model QuizSubmission {
+  id               String   @id @db.VarChar(64)
+  quizId           String   @db.VarChar(64)
+  quizTitle        String?  @db.VarChar(255)
+  studentName      String   @db.VarChar(255)
+  studentId        String   @db.VarChar(100)
+  className        String?  @db.VarChar(100)
+  email            String?  @db.VarChar(255)
+  score            Decimal? @default(0) @db.Decimal(5, 2)
+  totalPoints      Decimal? @default(0) @db.Decimal(5, 2)
+  percentage       Decimal? @default(0) @db.Decimal(5, 2)
+  passed           Boolean? @default(false)
+  timeSpentSeconds Int?     @default(0)
+  answers          Json?    @default("{}")
+  submittedAt      DateTime? @default(now())
 }
