@@ -34,8 +34,8 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 function adaptVercelHandler(handler: any, extraQuery: Record<string, any> = {}) {
   return async (req: express.Request, res: express.Response) => {
     try {
-      // Merge params and extraQuery into req.query
-      req.query = { ...req.query, ...req.params, ...extraQuery };
+      // Merge params and extraQuery into existing req.query object
+      Object.assign(req.query, req.params, extraQuery);
       await handler(req, res);
     } catch (err: any) {
       console.error('Server Handler Error:', err);
@@ -140,7 +140,7 @@ if (fs.existsSync(distPath)) {
       return next();
     }
     // Otherwise try redirect handler
-    req.query = { ...req.query, alias };
+    Object.assign(req.query, { alias });
     try {
       await redirectHandler(req as any, res as any);
     } catch {
