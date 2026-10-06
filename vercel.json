@@ -28,6 +28,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/quiz-api(.*)", "destination": "/api/qa-wall$1" },
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
     { "source": "/pdf-editor", "destination": "/index.html" },
