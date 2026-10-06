@@ -593,9 +593,9 @@ export default function Admin() {
       )}
 
       {editingUser && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="glass-card" style={{ padding: '2rem', width: '90%', maxWidth: '500px', background: 'var(--bg-primary)' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.5rem', color: 'var(--text-primary)' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div className="glass-card" style={{ padding: '1.75rem', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-primary)' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '1.25rem', color: 'var(--text-primary)' }}>
               {editingUser.id ? 'Sửa Người Dùng' : 'Tạo Người Dùng Mới'}
             </h3>
             <form onSubmit={saveUser} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -615,6 +615,95 @@ export default function Admin() {
                   <option value="DISABLED">DISABLED (Vô hiệu hóa tài khoản)</option>
                 </select>
               </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Gói cước & Hạn sử dụng</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', background: 'var(--bg-secondary)', padding: '0.85rem', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={!!editingUser.isLifetime} 
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setEditingUser({
+                          ...editingUser, 
+                          isLifetime: checked,
+                          subscriptionExpiresAt: checked ? null : (editingUser.subscriptionExpiresAt || new Date(Date.now() + 30*24*60*60*1000).toISOString())
+                        });
+                      }}
+                      style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                    />
+                    <span>Kích hoạt Gói Vĩnh Viễn (Lifetime - Không giới hạn thời gian)</span>
+                  </label>
+
+                  {!editingUser.isLifetime && (
+                    <div>
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>
+                        Chọn ngày hết hạn sử dụng:
+                      </div>
+                      <input 
+                        type="date" 
+                        value={editingUser.subscriptionExpiresAt ? (typeof editingUser.subscriptionExpiresAt === 'string' ? editingUser.subscriptionExpiresAt.split('T')[0] : new Date(editingUser.subscriptionExpiresAt).toISOString().split('T')[0]) : ''} 
+                        onChange={e => {
+                          const dateVal = e.target.value;
+                          setEditingUser({
+                            ...editingUser,
+                            subscriptionExpiresAt: dateVal ? new Date(`${dateVal}T23:59:59.999Z`).toISOString() : null
+                          });
+                        }} 
+                        style={{ width: '100%', padding: '0.65rem', borderRadius: '0.375rem', border: '1px solid var(--border)', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} 
+                      />
+                      <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline btn-xs"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 30);
+                            setEditingUser({ ...editingUser, isLifetime: false, subscriptionExpiresAt: d.toISOString() });
+                          }}
+                        >
+                          +30 ngày
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline btn-xs"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 90);
+                            setEditingUser({ ...editingUser, isLifetime: false, subscriptionExpiresAt: d.toISOString() });
+                          }}
+                        >
+                          +90 ngày
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline btn-xs"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 180);
+                            setEditingUser({ ...editingUser, isLifetime: false, subscriptionExpiresAt: d.toISOString() });
+                          }}
+                        >
+                          +180 ngày
+                        </button>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline btn-xs"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 365);
+                            setEditingUser({ ...editingUser, isLifetime: false, subscriptionExpiresAt: d.toISOString() });
+                          }}
+                        >
+                          +365 ngày
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               <div>
                 <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)' }}>Mật khẩu {editingUser.id ? '(Bỏ trống nếu không đổi)' : ''}</label>
                 <input type="password" value={editingUser.password || ''} onChange={e => setEditingUser({...editingUser, password: e.target.value})} style={{ width: '100%', padding: '0.75rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)' }} required={!editingUser.id} />

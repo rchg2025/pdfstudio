@@ -1530,6 +1530,11 @@ export default function QuizManager() {
                           <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                             {q.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
                           </span>
+                          {q.imageUrl && (
+                            <span className="qm-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                              <ImageIcon size={11} /> Có ảnh đính kèm
+                            </span>
+                          )}
                           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({q.points || 1} điểm)</span>
                         </div>
                         <div className="qm-q-title">{q.question}</div>
@@ -3034,6 +3039,11 @@ export default function QuizManager() {
                       <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                         {currentQ.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (currentQ.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (currentQ.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (currentQ.type === 'matching' ? 'KÉO THẢ / NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
                       </span>
+                      {currentQ.imageUrl && (
+                        <span className="qm-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                          <ImageIcon size={11} /> Có ảnh minh họa
+                        </span>
+                      )}
                     </div>
 
                     <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>

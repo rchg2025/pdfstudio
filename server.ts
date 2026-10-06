@@ -191,19 +191,28 @@ app.listen(PORT, '0.0.0.0', () => {
         const diffMs = new Date(u.subscriptionExpiresAt).getTime() - now.getTime();
         const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-        if (diffDays === 20 || diffDays === 10 || diffDays === 0) {
+        if (diffDays <= 0) {
+          // Tự động chuyển trạng thái thành DISABLED nếu hết hạn
+          await prisma.user.update({
+            where: { id: u.id },
+            data: { role: 'DISABLED' }
+          }).catch(e => console.error(`[ExpirationJob] Lỗi cập nhật DISABLED cho user ${u.email}:`, e.message));
+        }
+
+        if (diffDays === 20 || diffDays === 10 || diffDays <= 0) {
           const dateStr = now.toISOString().split('T')[0];
-          const trackKey = `warn_email_${u.id}_${diffDays}d_${dateStr}`;
+          const tagDays = diffDays <= 0 ? 0 : diffDays;
+          const trackKey = `warn_email_${u.id}_${tagDays}d_${dateStr}`;
           const existingTrack = await prisma.setting.findUnique({
             where: { key: trackKey }
           });
 
           if (!existingTrack) {
-            await sendExpirationWarningEmail(u, diffDays, u.subscriptionExpiresAt);
+            await sendExpirationWarningEmail(u, tagDays, u.subscriptionExpiresAt);
             await prisma.setting.create({
               data: { key: trackKey, value: new Date().toISOString() }
             });
-            console.log(`[ExpirationJob] Đã gửi email cảnh báo ${diffDays} ngày cho ${u.email}`);
+            console.log(`[ExpirationJob] Đã gửi email cảnh báo ${tagDays} ngày cho ${u.email}`);
           }
         }
       }

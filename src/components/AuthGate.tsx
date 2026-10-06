@@ -24,8 +24,11 @@ export default function AuthGate({
   // 1. Trường hợp chưa đăng nhập
   if (!user) {
     return (
-      <div className="max-w-2xl mx-auto my-12 px-4 animate-fade-in">
+      <div className="w-full min-h-[75vh] flex items-center justify-center p-4 animate-fade-in" style={{ minHeight: 'calc(100vh - 160px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{
+          width: '100%',
+          maxWidth: '620px',
+          margin: '0 auto',
           background: 'var(--bg-secondary)',
           border: '1.5px solid rgba(59, 130, 246, 0.3)',
           borderRadius: 'var(--radius-xl)',
@@ -107,8 +110,11 @@ export default function AuthGate({
   // 2. Trường hợp đã hết hạn sử dụng
   if (isExpired) {
     return (
-      <div className="max-w-2xl mx-auto my-12 px-4 animate-fade-in">
+      <div className="w-full min-h-[75vh] flex items-center justify-center p-4 animate-fade-in" style={{ minHeight: 'calc(100vh - 160px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{
+          width: '100%',
+          maxWidth: '620px',
+          margin: '0 auto',
           background: '#fef2f2',
           border: '1.5px solid #f87171',
           borderRadius: 'var(--radius-xl)',

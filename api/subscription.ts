@@ -130,9 +130,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (remainingDays <= 0) {
           remainingDays = 0;
           isExpired = true;
+          // Tự động chuyển trạng thái thành DISABLED nếu hết hạn sử dụng
+          if (dbUser.role === 'USER') {
+            await prisma.user.update({
+              where: { id: dbUser.id },
+              data: { role: 'DISABLED' }
+            }).catch(e => console.error('Auto-disable error:', e));
+            dbUser.role = 'DISABLED';
+          }
         }
       } else {
         isExpired = true;
+        // Tài khoản không có hạn và không phải ADMIN -> DISABLED
+        if (dbUser.role === 'USER') {
+          await prisma.user.update({
+            where: { id: dbUser.id },
+            data: { role: 'DISABLED' }
+          }).catch(e => console.error('Auto-disable error:', e));
+          dbUser.role = 'DISABLED';
+        }
       }
 
       return res.status(200).json({
