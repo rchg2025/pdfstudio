@@ -1941,19 +1941,36 @@ export default function QuizManager() {
               </h3>
 
               <div className="qm-form-group">
-                <label className="qm-label">Âm nhạc thư giãn trong lúc thi (Web Audio Generator)</label>
+                <label className="qm-label">Âm nhạc thư giãn trong lúc thi</label>
                 <select 
                   className="qm-select"
-                  value={activeQuiz.settings.bgMusicType}
+                  value={activeQuiz.settings.bgMusicType || 'lofi'}
                   onChange={(e) => updateActiveQuiz({ settings: { ...activeQuiz.settings, bgMusicType: e.target.value as any } })}
                 >
                   <option value="none">Tắt nhạc nền</option>
-                  <option value="lofi">Lofi Chill (Giai điệu thư thái, tập trung cao)</option>
-                  <option value="piano">Piano êm dịu (Giảm căng thẳng áp lực phòng thi)</option>
-                  <option value="ambient">Ambient tự nhiên (Sóng biển & đệm êm dịu)</option>
+                  <option value="lofi">Lofi Chill (Web Audio - Thư thái, tập trung cao)</option>
+                  <option value="piano">Piano êm dịu (Web Audio - Giảm căng thẳng)</option>
+                  <option value="ambient">Ambient tự nhiên (Web Audio - Sóng biển & đệm êm)</option>
+                  <option value="custom">🎵 Nhập link file nhạc tùy chỉnh (.mp3, Google Drive, v.v.)</option>
                 </select>
-                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  * Nhạc nền được tạo trực tiếp bằng Web Audio API, không tốn mạng và không lo lỗi bản quyền.
+
+                {activeQuiz.settings.bgMusicType === 'custom' && (
+                  <div style={{ marginTop: '0.6rem' }}>
+                    <input 
+                      type="url"
+                      className="qm-input"
+                      placeholder="Dán link file nhạc (VD: https://.../audio.mp3 hoặc link Google Drive)"
+                      value={activeQuiz.settings.bgMusicUrl || ''}
+                      onChange={(e) => updateActiveQuiz({ settings: { ...activeQuiz.settings, bgMusicUrl: e.target.value } })}
+                    />
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                      💡 <strong>Hỗ trợ:</strong> Link trực tiếp file <code>.mp3</code>, <code>.ogg</code>, <code>.wav</code> hoặc link chia sẻ từ <strong>Google Drive</strong> (hệ thống sẽ tự động chuyển đổi phát mượt mà).
+                    </div>
+                  </div>
+                )}
+
+                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.4rem' }}>
+                  * Nhạc nền sẽ tự động phát lặp lại trong suốt buổi thi giúp thí sinh tập trung và thư giãn tinh thần.
                 </span>
               </div>
 

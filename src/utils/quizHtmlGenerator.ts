@@ -213,7 +213,9 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
     let audioCtx = null;
     let isMusicOn = false;
 
-    // Web Audio Procedural Lofi / Ambient loop
+    let customAudioEl = null;
+
+    // Web Audio Procedural Lofi / Ambient loop or Custom Audio File
     function initAudio() {
       if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -225,13 +227,46 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
       initAudio();
       isMusicOn = !isMusicOn;
       const btn = document.getElementById('btn-music');
+      const customUrl = (QUIZ.settings && (QUIZ.settings.bgMusicUrl || (QUIZ.settings.bgMusicType === 'custom' && QUIZ.settings.bgMusicUrl))) ? QUIZ.settings.bgMusicUrl.trim() : '';
+
       if (isMusicOn) {
         btn.innerText = '🔊';
         btn.style.background = 'var(--primary)';
-        playAmbientLoop();
+        if (customUrl) {
+          playCustomAudio(customUrl);
+        } else {
+          playAmbientLoop();
+        }
       } else {
         btn.innerText = '🎵';
         btn.style.background = '';
+        if (customAudioEl) {
+          try { customAudioEl.pause(); customAudioEl.currentTime = 0; } catch(e){}
+        }
+      }
+    }
+
+    function playCustomAudio(url) {
+      if (!isMusicOn) return;
+      try {
+        let directUrl = url;
+        if (directUrl.includes('drive.google.com') || directUrl.includes('docs.google.com')) {
+          const match = directUrl.match(/\\/file\\/d\\/([a-zA-Z0-9_-]+)/);
+          if (match && match[1]) {
+            directUrl = 'https://docs.google.com/uc?export=download&id=' + match[1];
+          }
+        }
+        if (!customAudioEl) {
+          customAudioEl = new Audio(directUrl);
+          customAudioEl.loop = true;
+          customAudioEl.volume = 0.55;
+        }
+        customAudioEl.play().catch(function(e) {
+          console.warn('Cannot play custom audio, falling back to ambient loop', e);
+          playAmbientLoop();
+        });
+      } catch(err) {
+        playAmbientLoop();
       }
     }
 
@@ -263,7 +298,7 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
         osc.start(start);
         osc.stop(start + 3.5);
       });
-      if (isMusicOn) setTimeout(playAmbientLoop, 3200);
+      if (isMusicOn && !customAudioEl) setTimeout(playAmbientLoop, 3200);
     }
 
     function playClick() {

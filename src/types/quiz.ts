@@ -43,7 +43,8 @@ export interface QuizSettings {
     email: boolean;
   };
   // Cấu hình nhạc nền
-  bgMusicType: 'none' | 'lofi' | 'piano' | 'ambient';
+  bgMusicType: 'none' | 'lofi' | 'piano' | 'ambient' | 'custom';
+  bgMusicUrl?: string; // Link file nhạc tùy chỉnh (.mp3, .ogg, link Google Drive direct/proxy, v.v.)
   enableSounds: boolean;
   // Phản hồi kết quả
   showResultsImmediately: boolean;

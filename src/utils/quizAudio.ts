@@ -3,7 +3,7 @@
  * 100% offline, zero external dependencies, CORS-free, works inside LMS iframes & mobile browsers.
  */
 
-export type MusicTrack = 'none' | 'lofi' | 'piano' | 'ambient';
+export type MusicTrack = 'none' | 'lofi' | 'piano' | 'ambient' | 'custom';
 
 class QuizAudioEngine {
   private ctx: AudioContext | null = null;
@@ -13,6 +13,7 @@ class QuizAudioEngine {
   private masterGain: GainNode | null = null;
   private volume = 0.55;
   private currentTrack: MusicTrack = 'none';
+  private customAudioEl: HTMLAudioElement | null = null;
 
   public async initContext(): Promise<boolean> {
     try {
@@ -39,15 +40,43 @@ class QuizAudioEngine {
     if (this.masterGain && this.ctx) {
       this.masterGain.gain.setValueAtTime(this.volume, this.ctx.currentTime);
     }
+    if (this.customAudioEl) {
+      this.customAudioEl.volume = this.volume;
+    }
   }
 
   public getVolume(): number {
     return this.volume;
   }
 
-  public async startMusic(track: MusicTrack) {
+  public async startMusic(track: MusicTrack, customUrl?: string) {
     this.stopMusic();
     if (track === 'none') return;
+
+    if (track === 'custom') {
+      if (!customUrl || !customUrl.trim()) return;
+      this.currentTrack = 'custom';
+      this.isPlaying = true;
+      try {
+        let directUrl = customUrl.trim();
+        if (directUrl.includes('drive.google.com') || directUrl.includes('docs.google.com')) {
+          if (directUrl.includes('/file/d/')) {
+            const match = directUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+            if (match && match[1]) {
+              directUrl = `https://docs.google.com/uc?export=download&id=${match[1]}`;
+            }
+          }
+        }
+        this.customAudioEl = new Audio(directUrl);
+        this.customAudioEl.loop = true;
+        this.customAudioEl.volume = this.volume;
+        await this.customAudioEl.play();
+      } catch (err) {
+        console.warn('Custom audio playback error, fallback to procedural ambient:', err);
+        this.playAmbientLoop();
+      }
+      return;
+    }
 
     await this.initContext();
     if (!this.ctx || !this.masterGain) return;
@@ -67,6 +96,13 @@ class QuizAudioEngine {
   public stopMusic() {
     this.isPlaying = false;
     this.currentTrack = 'none';
+    if (this.customAudioEl) {
+      try {
+        this.customAudioEl.pause();
+        this.customAudioEl.currentTime = 0;
+        this.customAudioEl = null;
+      } catch {}
+    }
     if (this.timerId) {
       clearTimeout(this.timerId);
       this.timerId = null;

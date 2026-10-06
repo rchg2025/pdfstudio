@@ -145,9 +145,11 @@ export default function QuizExam() {
       setIsMusicOn(false);
       showToast('Đã tắt nhạc nền.', 'info');
     } else {
-      const trackToPlay = selectedTrack === 'none' ? 'lofi' : selectedTrack;
+      const trackToPlay = selectedTrack === 'none' 
+        ? (quiz?.settings?.bgMusicType && quiz.settings.bgMusicType !== 'none' ? quiz.settings.bgMusicType : 'lofi') 
+        : selectedTrack;
       setSelectedTrack(trackToPlay);
-      await quizAudio.startMusic(trackToPlay);
+      await quizAudio.startMusic(trackToPlay, quiz?.settings?.bgMusicUrl);
       setIsMusicOn(true);
       showToast('Đã bật nhạc nền thư giãn.', 'success');
     }
@@ -160,7 +162,7 @@ export default function QuizExam() {
       setIsMusicOn(false);
       showToast('Đã tắt nhạc nền.', 'info');
     } else {
-      await quizAudio.startMusic(track);
+      await quizAudio.startMusic(track, quiz?.settings?.bgMusicUrl);
       setIsMusicOn(true);
       showToast(`Đang phát nhạc: ${getTrackLabel(track)}`, 'success');
     }
@@ -185,6 +187,7 @@ export default function QuizExam() {
       case 'lofi': return 'Lofi Hip-Hop Chill ☕';
       case 'piano': return 'Piano Thư Giãn 🎹';
       case 'ambient': return 'Âm Hưởng Tự Nhiên 🌊';
+      case 'custom': return 'Nhạc Tùy Chỉnh (Link giáo viên) 🎶';
       default: return 'Không phát nhạc 🔇';
     }
   };
@@ -239,7 +242,7 @@ export default function QuizExam() {
     
     if (targetTrack && targetTrack !== 'none') {
       setSelectedTrack(targetTrack);
-      await quizAudio.startMusic(targetTrack);
+      await quizAudio.startMusic(targetTrack, quiz.settings?.bgMusicUrl);
       setIsMusicOn(true);
     } else {
       quizAudio.playNavSound();
@@ -895,7 +898,9 @@ export default function QuizExam() {
               <div style={{ marginBottom: '1.25rem' }}>
                 <label className="exam-label" style={{ marginBottom: '0.6rem' }}>Chọn bản nhạc nền:</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {(['lofi', 'piano', 'ambient', 'none'] as MusicTrack[]).map(t => {
+                  {(['lofi', 'piano', 'ambient', 'none'] as MusicTrack[]).concat(
+                    quiz?.settings?.bgMusicUrl ? (['custom'] as MusicTrack[]) : []
+                  ).map(t => {
                     const isCur = selectedTrack === t && (t === 'none' ? !isMusicOn : isMusicOn);
                     return (
                       <button
