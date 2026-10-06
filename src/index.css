@@ -6,6 +6,9 @@
   --bg-primary: #f8fafc; /* Very light cool gray */
   --bg-secondary: #ffffff;
   --bg-tertiary: #f1f5f9;
+  --bg-hover: #f1f5f9;
+  --surface: #ffffff;
+  --surface-hover: #f8fafc;
   
   --text-primary: #0f172a;
   --text-secondary: #475569;

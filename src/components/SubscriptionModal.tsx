@@ -66,7 +66,12 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
     }
   };
 
-  const handleCreateOrder = async () => {
+  const handleCreateOrder = async (targetPlanKey?: string) => {
+    const planToUse = targetPlanKey || selectedPlanKey;
+    if (targetPlanKey) {
+      setSelectedPlanKey(targetPlanKey);
+    }
+
     if (!token) {
       showToast('Vui lòng đăng nhập để thực hiện gia hạn', 'error');
       return;
@@ -80,7 +85,7 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ planKey: selectedPlanKey })
+        body: JSON.stringify({ planKey: planToUse })
       });
 
       const data = await res.json();
@@ -164,7 +169,7 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
                   <div 
                     key={p.key} 
                     className={`sub-plan-card ${isSelected ? 'selected' : ''} ${p.popular ? 'popular' : ''}`}
-                    onClick={() => setSelectedPlanKey(p.key)}
+                    onClick={() => handleCreateOrder(p.key)}
                   >
                     {p.popular && <div className="sub-plan-tag">Khuyên dùng ⭐</div>}
                     <div className="sub-plan-head">
@@ -187,8 +192,13 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
                       <button 
                         type="button" 
                         className={`sub-select-btn ${isSelected ? 'btn-selected' : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCreateOrder(p.key);
+                        }}
+                        disabled={loading}
                       >
-                        {isSelected ? 'Đang chọn gói này' : 'Chọn gói'}
+                        {loading && selectedPlanKey === p.key ? 'Đang tạo đơn...' : 'Thanh Toán Ngay ➔'}
                       </button>
                     </div>
                   </div>
@@ -203,7 +213,7 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
               </div>
               <button 
                 className="btn btn-primary sub-next-btn" 
-                onClick={handleCreateOrder}
+                onClick={() => handleCreateOrder()}
                 disabled={loading}
               >
                 {loading ? 'Đang khởi tạo...' : (

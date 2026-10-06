@@ -160,4 +160,54 @@ if (fs.existsSync(distPath)) {
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 PDFStudio server running at http://0.0.0.0:${PORT}`);
+
+  // Chạy background worker kiểm tra hạn dùng & gửi email cảnh báo (20 ngày, 10 ngày, hết hạn)
+  const runExpirationCheck = async () => {
+    try {
+      const { prisma } = await import('./api/_lib/prisma.js');
+      const now = new Date();
+      const users = await prisma.user.findMany({
+        where: {
+          role: { not: 'ADMIN' },
+          isLifetime: false,
+          subscriptionExpiresAt: { not: null }
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          subscriptionExpiresAt: true
+        }
+      });
+
+      const { sendExpirationWarningEmail } = await import('./api/_lib/email.js');
+      for (const u of users) {
+        if (!u.subscriptionExpiresAt) continue;
+        const diffMs = new Date(u.subscriptionExpiresAt).getTime() - now.getTime();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (diffDays === 20 || diffDays === 10 || diffDays === 0) {
+          const dateStr = now.toISOString().split('T')[0];
+          const trackKey = `warn_email_${u.id}_${diffDays}d_${dateStr}`;
+          const existingTrack = await prisma.setting.findUnique({
+            where: { key: trackKey }
+          });
+
+          if (!existingTrack) {
+            await sendExpirationWarningEmail(u, diffDays, u.subscriptionExpiresAt);
+            await prisma.setting.create({
+              data: { key: trackKey, value: new Date().toISOString() }
+            });
+            console.log(`[ExpirationJob] Đã gửi email cảnh báo ${diffDays} ngày cho ${u.email}`);
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error('[ExpirationJob] Lỗi kiểm tra hết hạn tự động:', err.message);
+    }
+  };
+
+  // Chạy sau khi server khởi động 15 giây và lặp lại mỗi 6 tiếng
+  setTimeout(runExpirationCheck, 15000);
+  setInterval(runExpirationCheck, 6 * 60 * 60 * 1000);
 });

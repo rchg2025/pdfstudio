@@ -267,3 +267,342 @@ export async function sendAdminNewUserNotification(newUser: {
   }
 }
 
+/**
+ * Helper lấy transporter nodemailer và thông tin SMTP
+ */
+async function getMailTransporter() {
+  const prismaModule = await import('./prisma.js');
+  const prisma = prismaModule.prisma;
+
+  const settings = await prisma.setting.findMany({
+    where: { key: { in: ['smtpHost', 'smtpPort', 'smtpUser', 'smtpPass', 'adminNotificationEmail'] } }
+  });
+
+  const getSetting = (k: string) => settings.find(s => s.key === k)?.value || '';
+  const host = getSetting('smtpHost');
+  const port = Number(getSetting('smtpPort')) || 587;
+  const user = getSetting('smtpUser');
+  const pass = getSetting('smtpPass');
+  const adminNotificationEmail = getSetting('adminNotificationEmail');
+
+  if (!host || !user || !pass) return null;
+
+  const nodemailerModule = await import('nodemailer');
+  const nodemailer = nodemailerModule.default || nodemailerModule;
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+  });
+
+  return { transporter, user, adminNotificationEmail, prisma };
+}
+
+/**
+ * Gửi email thông báo cho Admin khi có người dùng bấm thanh toán / tạo đơn gia hạn
+ */
+export async function sendNewOrderAdminNotification(order: {
+  id: string;
+  planTitle: string;
+  planDays: number;
+  amount: number;
+  transferCode: string;
+}, userObj: {
+  email: string;
+  name?: string | null;
+}) {
+  try {
+    const mailSetup = await getMailTransporter();
+    if (!mailSetup) {
+      console.warn('Bỏ qua gửi thông báo đơn gia hạn: chưa cấu hình SMTP');
+      return;
+    }
+    const { transporter, user, adminNotificationEmail, prisma } = mailSetup;
+
+    const adminUsers = await prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: { email: true }
+    });
+
+    const recipientSet = new Set<string>();
+    if (adminNotificationEmail) {
+      adminNotificationEmail.split(',').map((e: string) => e.trim()).filter(Boolean).forEach((e: string) => recipientSet.add(e));
+    }
+    adminUsers.forEach((u: { email: string }) => {
+      if (u.email && u.email.includes('@')) recipientSet.add(u.email);
+    });
+    if (recipientSet.size === 0 && user && user.includes('@')) {
+      recipientSet.add(user);
+    }
+    if (recipientSet.size === 0) return;
+
+    const timeStr = new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' });
+    const formattedAmount = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.amount);
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+  .header { background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding: 26px 24px; text-align: center; color: #ffffff; }
+  .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+  .badge { display: inline-block; background: #fef3c7; color: #b45309; font-weight: 700; font-size: 13px; padding: 4px 12px; border-radius: 9999px; margin-top: 10px; }
+  .content { padding: 30px 28px; }
+  .table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #f8fafc; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+  .table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #e2e8f0; }
+  .table tr:last-child td { border-bottom: none; }
+  .label { font-weight: 600; color: #64748b; width: 35%; }
+  .val { color: #1e293b; font-weight: 600; }
+  .code { font-family: monospace; font-size: 16px; color: #dc2626; font-weight: 800; background: #fee2e2; padding: 2px 8px; border-radius: 4px; }
+  .btn { display: inline-block; background: #059669; color: #ffffff !important; font-weight: 600; font-size: 14px; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 15px; }
+  .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>💰 Yêu Cầu Gia Hạn Gói Mới</h1>
+      <span class="badge">Đang chờ xác nhận chuyển khoản</span>
+    </div>
+    <div class="content">
+      <p style="font-size: 15px; color: #334155; margin-top: 0;">
+        Kính gửi Quản trị viên, vừa có một yêu cầu gia hạn dịch vụ từ người dùng:
+      </p>
+
+      <table class="table">
+        <tr>
+          <td class="label">Người dùng:</td>
+          <td class="val">${userObj.name ? `${userObj.name} (${userObj.email})` : userObj.email}</td>
+        </tr>
+        <tr>
+          <td class="label">Gói đăng ký:</td>
+          <td class="val"><strong style="color: #2563eb;">${order.planTitle}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Số tiền:</td>
+          <td class="val"><strong style="color: #059669; font-size: 16px;">${formattedAmount}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Mã nội dung CK:</td>
+          <td class="val"><span class="code">${order.transferCode}</span></td>
+        </tr>
+        <tr>
+          <td class="label">Thời gian tạo:</td>
+          <td class="val">${timeStr}</td>
+        </tr>
+      </table>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="https://tienich.ite.id.vn/admin" class="btn" target="_blank">
+          Kiểm tra & Phê duyệt tại Trang Quản Trị →
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      RCHG Studio &bull; Thông báo đơn gia hạn tự động
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    await transporter.sendMail({
+      from: `"RCHG Studio - Thông Báo Đơn Hàng" <${user}>`,
+      to: Array.from(recipientSet).join(', '),
+      subject: `[RCHG Studio] Yêu cầu gia hạn mới: ${order.transferCode} - ${order.planTitle} (${userObj.email})`,
+      html
+    });
+  } catch (err: any) {
+    console.error('Lỗi khi gửi email thông báo đơn gia hạn mới tới admin:', err.message);
+  }
+}
+
+/**
+ * Gửi email cho người dùng khi Quản trị viên đã duyệt gia hạn thành công
+ */
+export async function sendSubscriptionSuccessEmail(userObj: {
+  email: string;
+  name?: string | null;
+}, planTitle: string, expiresAt: Date | null, isLifetime: boolean) {
+  try {
+    const mailSetup = await getMailTransporter();
+    if (!mailSetup) return;
+    const { transporter, user } = mailSetup;
+
+    const expiresStr = isLifetime 
+      ? 'Vĩnh viễn (Trọn đời)' 
+      : (expiresAt ? new Date(expiresAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Không giới hạn');
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+  .header { background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%); padding: 32px 24px; text-align: center; color: #ffffff; }
+  .header h1 { margin: 0; font-size: 24px; font-weight: 700; }
+  .badge { display: inline-block; background: #ecfdf5; color: #047857; font-weight: 700; font-size: 13px; padding: 4px 14px; border-radius: 9999px; margin-top: 10px; }
+  .content { padding: 32px 28px; }
+  .table { width: 100%; border-collapse: collapse; margin: 20px 0; background: #f8fafc; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+  .table td { padding: 12px 16px; font-size: 14px; border-bottom: 1px solid #e2e8f0; }
+  .table tr:last-child td { border-bottom: none; }
+  .label { font-weight: 600; color: #64748b; width: 35%; }
+  .val { color: #1e293b; font-weight: 600; }
+  .btn { display: inline-block; background: #2563eb; color: #ffffff !important; font-weight: 700; font-size: 15px; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin-top: 15px; }
+  .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🎉 Gia Hạn Thành Công!</h1>
+      <span class="badge">Đã Kích Hoạt Tài Khoản</span>
+    </div>
+    <div class="content">
+      <p style="font-size: 15px; color: #334155; margin-top: 0;">
+        Xin chào <strong>${userObj.name || userObj.email}</strong>,
+      </p>
+      <p style="font-size: 15px; color: #334155; line-height: 1.6;">
+        Hệ thống RCHG Studio đã nhận được chuyển khoản và Quản trị viên đã kích hoạt thành công gói dịch vụ cho tài khoản của bạn.
+      </p>
+
+      <table class="table">
+        <tr>
+          <td class="label">Tài khoản:</td>
+          <td class="val">${userObj.email}</td>
+        </tr>
+        <tr>
+          <td class="label">Gói kích hoạt:</td>
+          <td class="val"><strong style="color: #2563eb;">${planTitle}</strong></td>
+        </tr>
+        <tr>
+          <td class="label">Thời hạn sử dụng:</td>
+          <td class="val"><strong style="color: #059669; font-size: 16px;">${expiresStr}</strong></td>
+        </tr>
+      </table>
+
+      <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+        Bạn hiện có thể đăng nhập và truy cập toàn bộ các công cụ số, tiện ích giảng dạy, thi trắc nghiệm và tải dữ liệu không giới hạn.
+      </p>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="https://tienich.ite.id.vn/dashboard" class="btn" target="_blank">
+          Trải Nghiệm Tiện Ích Ngay →
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      Cảm ơn bạn đã đồng hành cùng RCHG Studio &bull; Chúc bạn làm việc & giảng dạy hiệu quả!
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    await transporter.sendMail({
+      from: `"RCHG Studio" <${user}>`,
+      to: userObj.email,
+      subject: `[RCHG Studio] Kích hoạt gia hạn thành công - Gói ${planTitle}`,
+      html
+    });
+  } catch (err: any) {
+    console.error('Lỗi khi gửi email thông báo gia hạn thành công:', err.message);
+  }
+}
+
+/**
+ * Gửi email cảnh báo sắp hết hạn (trước 20 ngày, trước 10 ngày, hoặc đã hết hạn)
+ */
+export async function sendExpirationWarningEmail(userObj: {
+  email: string;
+  name?: string | null;
+}, daysLeft: number, expiresAt: Date | null) {
+  try {
+    const mailSetup = await getMailTransporter();
+    if (!mailSetup) return;
+    const { transporter, user } = mailSetup;
+
+    const expiresDateStr = expiresAt ? new Date(expiresAt).toLocaleDateString('vi-VN') : '';
+    let title = '';
+    let headline = '';
+    let alertColor = '#f59e0b';
+    let alertBg = '#fffbeb';
+
+    if (daysLeft === 0) {
+      title = 'Tài Khoản Đã Hết Hạn Dịch Vụ';
+      headline = 'Thời hạn sử dụng tài khoản của bạn tại RCHG Studio đã chính thức kết thúc vào hôm nay.';
+      alertColor = '#dc2626';
+      alertBg = '#fef2f2';
+    } else {
+      title = `Tài Khoản Sắp Hết Hạn (Còn ${daysLeft} Ngày)`;
+      headline = `Thời hạn sử dụng tài khoản của bạn tại RCHG Studio sẽ kết thúc vào ngày ${expiresDateStr} (còn lại ${daysLeft} ngày).`;
+    }
+
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f1f5f9; margin: 0; padding: 0; }
+  .container { max-width: 600px; margin: 30px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); border: 1px solid #e2e8f0; }
+  .header { background: ${daysLeft === 0 ? 'linear-gradient(135deg, #b91c1c 0%, #dc2626 100%)' : 'linear-gradient(135deg, #d97706 0%, #f59e0b 100%)'}; padding: 30px 24px; text-align: center; color: #ffffff; }
+  .header h1 { margin: 0; font-size: 22px; font-weight: 700; }
+  .content { padding: 32px 28px; }
+  .alert-box { background: ${alertBg}; border: 1.5px solid ${alertColor}; border-radius: 10px; padding: 16px; color: ${alertColor}; font-weight: 600; font-size: 14px; margin: 20px 0; }
+  .btn { display: inline-block; background: #2563eb; color: #ffffff !important; font-weight: 700; font-size: 15px; padding: 14px 28px; border-radius: 8px; text-decoration: none; margin-top: 15px; }
+  .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 13px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>⏰ ${title}</h1>
+    </div>
+    <div class="content">
+      <p style="font-size: 15px; color: #334155; margin-top: 0;">
+        Xin chào <strong>${userObj.name || userObj.email}</strong>,
+      </p>
+      
+      <div class="alert-box">
+        ${headline}
+      </div>
+
+      <p style="font-size: 14px; color: #475569; line-height: 1.6;">
+        ${daysLeft === 0 
+          ? 'Để tiếp tục truy cập các công cụ yêu cầu đăng nhập, lưu trữ đề thi và xuất dữ liệu, vui lòng thực hiện gia hạn thời gian sử dụng tài khoản.'
+          : 'Để quá trình sử dụng và giảng dạy không bị gián đoạn, bạn có thể thực hiện gia hạn ngay hôm nay.'}
+      </p>
+
+      <div style="text-align: center; margin-top: 24px;">
+        <a href="https://tienich.ite.id.vn/dashboard" class="btn" target="_blank">
+          👉 Gia Hạn Thời Gian Sử Dụng Ngay
+        </a>
+      </div>
+    </div>
+    <div class="footer">
+      RCHG Studio &bull; Hỗ trợ tận tâm & liên tục
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    await transporter.sendMail({
+      from: `"RCHG Studio" <${user}>`,
+      to: userObj.email,
+      subject: `[RCHG Studio] ${title}`,
+      html
+    });
+  } catch (err: any) {
+    console.error(`Lỗi khi gửi email cảnh báo hết hạn (${daysLeft} ngày):`, err.message);
+  }
+}
+

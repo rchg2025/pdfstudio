@@ -195,6 +195,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      // Gửi email thông báo cho Admin (bất đồng bộ để không chặn phản hồi của user)
+      (async () => {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.userId },
+            select: { email: true, name: true }
+          });
+          if (dbUser) {
+            const { sendNewOrderAdminNotification } = await import('./_lib/email.js');
+            await sendNewOrderAdminNotification(order, dbUser);
+          }
+        } catch (err: any) {
+          console.error('Lỗi khi kích hoạt gửi email thông báo đơn mới:', err.message);
+        }
+      })();
+
       // Tạo link VietQR chuẩn QuickLink
       const encodedContent = encodeURIComponent(transferCode);
       const encodedAccountName = encodeURIComponent(bankAccountName);
@@ -209,6 +225,56 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           bankAccountName
         },
         qrUrl
+      });
+    }
+
+    // 4. Kiểm tra và gửi email cảnh báo hết hạn (trước 20 ngày, trước 10 ngày, và ngày hết hạn)
+    if (action === 'check-expirations') {
+      const now = new Date();
+      const users = await prisma.user.findMany({
+        where: {
+          role: { not: 'ADMIN' },
+          isLifetime: false,
+          subscriptionExpiresAt: { not: null }
+        },
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          subscriptionExpiresAt: true
+        }
+      });
+
+      const { sendExpirationWarningEmail } = await import('./_lib/email.js');
+      let sentCount = 0;
+
+      for (const u of users) {
+        if (!u.subscriptionExpiresAt) continue;
+        const diffMs = new Date(u.subscriptionExpiresAt).getTime() - now.getTime();
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        // Kiểm tra đúng mốc 20 ngày, 10 ngày hoặc 0 ngày (đã hết hạn)
+        if (diffDays === 20 || diffDays === 10 || diffDays === 0) {
+          // Lưu tracking vào Setting để không gửi trùng lặp trong ngày
+          const dateStr = now.toISOString().split('T')[0];
+          const trackKey = `warn_email_${u.id}_${diffDays}d_${dateStr}`;
+          const existingTrack = await prisma.setting.findUnique({
+            where: { key: trackKey }
+          });
+
+          if (!existingTrack) {
+            await sendExpirationWarningEmail(u, diffDays, u.subscriptionExpiresAt);
+            await prisma.setting.create({
+              data: { key: trackKey, value: new Date().toISOString() }
+            });
+            sentCount++;
+          }
+        }
+      }
+
+      return res.status(200).json({
+        message: `Đã kiểm tra thời hạn và gửi ${sentCount} email cảnh báo.`,
+        sentCount
       });
     }
 

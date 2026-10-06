@@ -115,6 +115,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             isLifetime: true
           }
         });
+
+        if (extendDays !== undefined && Number(extendDays) > 0) {
+          (async () => {
+            try {
+              const { sendSubscriptionSuccessEmail } = await import('../_lib/email.js');
+              await sendSubscriptionSuccessEmail(user, `Gia hạn ${extendDays} ngày`, user.subscriptionExpiresAt, user.isLifetime);
+            } catch (err: any) {
+              console.error('Lỗi gửi email gia hạn thủ công:', err.message);
+            }
+          })();
+        }
+
         return res.status(200).json(user);
       }
     }
@@ -322,6 +334,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             where: { id },
             data: { status: 'APPROVED', note: note || order.note }
           });
+
+          // Gửi email thông báo gia hạn thành công cho người dùng
+          (async () => {
+            try {
+              const { sendSubscriptionSuccessEmail } = await import('../_lib/email.js');
+              await sendSubscriptionSuccessEmail(currentUser, order.planTitle, newExpiresAt, isLifetime);
+            } catch (err: any) {
+              console.error('Lỗi khi gửi email thông báo gia hạn thành công:', err.message);
+            }
+          })();
 
           return res.status(200).json({
             message: 'Đã phê duyệt đơn và kích hoạt gia hạn thành công cho người dùng!',
