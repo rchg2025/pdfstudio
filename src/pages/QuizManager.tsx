@@ -192,6 +192,10 @@ export default function QuizManager() {
   const [aiCount, setAiCount] = useState(5);
   const [aiDifficulty, setAiDifficulty] = useState<Difficulty | 'mixed'>('mixed');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [customAiKey, setCustomAiKey] = useState(() => {
+    return localStorage.getItem('rchg_gemini_api_key') || '';
+  });
+  const [showKeySetting, setShowKeySetting] = useState(false);
 
   // Modal nạp câu hỏi nhanh (Bulk Text Import)
   const [showBulkModal, setShowBulkModal] = useState(false);
@@ -379,7 +383,7 @@ export default function QuizManager() {
     showToast('Đã xóa câu hỏi khỏi bộ đề.', 'info');
   };
 
-  // AI Tự Động Sinh Câu Hỏi Trắc Nghiệm
+  // AI Tự Động Sinh Câu Hỏi Trắc Nghiệm Qua Gemini API với cơ chế xoay vòng model
   const handleGenerateAiQuestions = async () => {
     if (!aiTopic.trim()) {
       showToast('Vui lòng nhập chủ đề bài học để AI tạo câu hỏi!', 'warning');
@@ -387,54 +391,40 @@ export default function QuizManager() {
     }
     setIsGeneratingAi(true);
     try {
-      const prompt = `Bạn là chuyên gia khảo thí sư phạm. Hãy tạo ${aiCount} câu hỏi trắc nghiệm và đánh giá về chủ đề: "${aiTopic.trim()}".
-Yêu cầu độ khó: ${aiDifficulty === 'mixed' ? 'Hỗn hợp các mức Dễ, Trung bình, Khó' : aiDifficulty}.
-BẮT BUỘC trả về đúng định dạng JSON thuần túy (không markdown \`\`\`json, không lời dẫn):
-[
-  {
-    "type": "choice",
-    "difficulty": "easy",
-    "question": "Nội dung câu hỏi...",
-    "options": ["Phương án A", "Phương án B", "Phương án C", "Phương án D"],
-    "correctAnswer": "Phương án đúng chính xác",
-    "explanation": "Giải thích chi tiết vì sao đúng...",
-    "points": 1
-  }
-]`;
-
-      const res = await fetch(`https://text.pollinations.ai/${encodeURIComponent(prompt)}?json=true`);
-      if (!res.ok) throw new Error('Máy chủ AI bận');
-      const text = await res.text();
-      let parsed: any[] = [];
-      try {
-        const cleaned = text.replace(/```json/g, '').replace(/```/g, '').trim();
-        parsed = JSON.parse(cleaned);
-      } catch (err) {
-        const m = text.match(/\[[\s\S]*\]/);
-        if (m) parsed = JSON.parse(m[0]);
+      if (customAiKey.trim()) {
+        localStorage.setItem('rchg_gemini_api_key', customAiKey.trim());
       }
 
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const newQs: QuizQuestion[] = parsed.map((item, idx) => ({
-          id: `ai-q-${Date.now()}-${idx}`,
-          type: item.type || 'choice',
-          difficulty: (item.difficulty as Difficulty) || 'medium',
-          question: item.question || `Câu hỏi AI ${idx + 1}`,
-          options: item.options || ['A', 'B', 'C', 'D'],
-          correctAnswer: item.correctAnswer || (item.options ? item.options[0] : 'A'),
-          explanation: item.explanation || 'Lời giải thích của câu hỏi.',
-          points: item.points || 1
-        }));
+      const res = await fetch('/api/quiz-api?action=generate-ai-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: aiTopic.trim(),
+          count: aiCount,
+          difficulty: aiDifficulty,
+          customApiKey: customAiKey.trim() || undefined
+        })
+      });
 
-        updateActiveQuiz({ questions: [...activeQuiz.questions, ...newQs] });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Lỗi khi tạo câu hỏi AI');
+      }
+
+      if (Array.isArray(data.questions) && data.questions.length > 0) {
+        updateActiveQuiz({ questions: [...activeQuiz.questions, ...data.questions] });
         setShowAiModal(false);
         setAiTopic('');
-        showToast(`AI đã tạo thành công ${newQs.length} câu hỏi vào ngân hàng!`, 'success');
+        showToast(`AI (${data.modelUsed || 'Gemini'}) đã tạo thành công ${data.questions.length} câu hỏi vào ngân hàng!`, 'success');
       } else {
-        throw new Error('Dữ liệu AI không đúng cấu trúc JSON');
+        throw new Error('Dữ liệu AI trả về không có câu hỏi hợp lệ.');
       }
     } catch (err: any) {
-      showToast('Không thể tạo câu hỏi AI: ' + (err.message || 'Lỗi mạng'), 'error');
+      showToast(err.message || 'Không thể tạo câu hỏi AI', 'error');
+      // Nếu là lỗi thiếu API key, tự mở form nhập key cho người dùng
+      if ((err.message || '').includes('Chưa cấu hình Google Gemini API Key')) {
+        setShowKeySetting(true);
+      }
     } finally {
       setIsGeneratingAi(false);
     }
@@ -1565,6 +1555,54 @@ BẮT BUỘC trả về đúng định dạng JSON thuần túy (không markdown
                   </select>
                 </div>
               </div>
+
+              {/* Gemini Key Config Toggle */}
+              <div style={{ marginTop: '1rem', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-xs"
+                    onClick={() => setShowKeySetting(!showKeySetting)}
+                    style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}
+                  >
+                    ⚙️ {showKeySetting ? 'Ẩn cấu hình Gemini API Key' : 'Tùy chỉnh Gemini API Key cá nhân'}
+                  </button>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                    Mặc định dùng key từ Quản trị viên
+                  </span>
+                </div>
+
+                {showKeySetting && (
+                  <div style={{ marginTop: '0.75rem', background: 'var(--bg-primary)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                    <label className="qm-label" style={{ fontSize: '0.82rem' }}>
+                      Gemini API Key (Tùy chọn ghi đè):
+                    </label>
+                    <input 
+                      type="password" 
+                      className="qm-input" 
+                      placeholder="AIzaSy... (Để trống nếu dùng cấu hình chung của Admin)"
+                      value={customAiKey}
+                      onChange={(e) => setCustomAiKey(e.target.value)}
+                      style={{ fontSize: '0.85rem', marginTop: '0.25rem' }}
+                    />
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                      Lấy miễn phí tại <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Google AI Studio</a>. Key này sẽ lưu tại máy bạn.
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {isGeneratingAi && (
+                <div style={{ marginTop: '1rem', padding: '0.75rem 1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(99, 102, 241, 0.25)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <Sparkles size={20} color="var(--primary)" style={{ animation: 'spin 2s linear infinite' }} />
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)' }}>
+                    <strong>Đang kết nối Google Gemini AI...</strong>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                      Hệ thống tự động xoay vòng qua các model (2.5 Flash, 2.0 Flash, 1.5 Flash, 1.5 Flash 8B, 1.5 Pro) để đảm bảo có kết quả.
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowAiModal(false)} disabled={isGeneratingAi}>Đóng</button>

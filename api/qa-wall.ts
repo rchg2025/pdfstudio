@@ -386,6 +386,181 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, submissions: queryRes.rows });
     }
 
+    // 11. LẤY TRẠNG THÁI CẤU HÌNH AI
+    if (req.method === 'GET' && action === 'get-ai-config') {
+      const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const hasKey = Boolean(keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY);
+      return res.status(200).json({
+        success: true,
+        hasKey,
+        customModel: modelRes.rows[0]?.value || 'auto'
+      });
+    }
+
+    // 12. KIỂM TRA KẾT NỐI GEMINI API
+    if (req.method === 'POST' && action === 'test-gemini') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      let apiKey = body?.apiKey;
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa có Gemini API Key để kiểm tra.' });
+      }
+
+      const testModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+      for (const m of testModels) {
+        try {
+          const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: 'Trả lời đúng 1 chữ: OK' }] }]
+            })
+          });
+          if (testRes.ok) {
+            return res.status(200).json({ success: true, model: m, message: `Kết nối thành công với model ${m}!` });
+          }
+        } catch {}
+      }
+      return res.status(502).json({ error: 'Không thể kết nối tới Google Gemini API với khóa này. Vui lòng kiểm tra lại API Key.' });
+    }
+
+    // 13. TẠO CÂU HỎI TRẮC NGHIỆM BẰNG AI (TỰ ĐỘNG THAY ĐỔI CÁC MODEL KHI GẶP LỖI)
+    if (req.method === 'POST' && action === 'generate-ai-quiz') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { topic, count, difficulty, customApiKey } = body || {};
+      if (!topic || !topic.trim()) {
+        return res.status(400).json({ error: 'Chủ đề bài thi không được để trống' });
+      }
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({
+          error: 'Chưa cấu hình Google Gemini API Key trong hệ thống! Vui lòng vào trang Quản trị > Cấu hình hệ thống > Cấu hình AI (Gemini) để lưu API key (hoặc nhập trực tiếp vào hộp thoại).'
+        });
+      }
+
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+
+      // Danh sách các model Gemini ưu tiên xoay vòng theo thứ tự
+      const BASE_MODELS = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-pro'
+      ];
+
+      const modelQueue = preferredModel && preferredModel !== 'auto'
+        ? [preferredModel, ...BASE_MODELS.filter(m => m !== preferredModel)]
+        : [...BASE_MODELS];
+
+      const qCount = Number(count) || 5;
+      const diffLabel = difficulty === 'easy' ? 'Dễ (Nhận biết cơ bản)' : (difficulty === 'hard' ? 'Khó (Vận dụng nâng cao)' : 'Hỗn hợp các mức Dễ, Trung bình, Khó');
+
+      const prompt = `Bạn là chuyên gia khảo thí sư phạm. Hãy tạo chính xác ${qCount} câu hỏi trắc nghiệm về chủ đề: "${topic.trim()}".
+Yêu cầu độ khó: ${diffLabel}.
+BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown, không có chữ dẫn \`\`\`json ở đầu cuối):
+[
+  {
+    "type": "choice",
+    "difficulty": "easy",
+    "question": "Nội dung câu hỏi...",
+    "options": ["Phương án A", "Phương án B", "Phương án C", "Phương án D"],
+    "correctAnswer": "Phương án đúng",
+    "explanation": "Lời giải thích vì sao đáp án này đúng...",
+    "points": 1
+  }
+]`;
+
+      let successfulQuestions = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                responseMimeType: 'application/json'
+              }
+            })
+          });
+
+          if (!gRes.ok) {
+            const errBody = await gRes.text();
+            attemptErrors.push(`[${m}]: HTTP ${gRes.status}`);
+            console.warn(`[AI Quiz] Model ${m} trả về lỗi HTTP ${gRes.status}, chuyển sang model kế tiếp...`);
+            continue;
+          }
+
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          let parsed: any[] = [];
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\[[\s\S]*\]/);
+            if (match) parsed = JSON.parse(match[0]);
+          }
+
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            successfulQuestions = parsed.map((item, idx) => ({
+              id: `ai-q-${Date.now()}-${idx}`,
+              type: item.type || 'choice',
+              difficulty: item.difficulty || 'medium',
+              question: item.question || `Câu hỏi ${idx + 1}`,
+              options: Array.isArray(item.options) && item.options.length >= 2 ? item.options : ['A', 'B', 'C', 'D'],
+              correctAnswer: item.correctAnswer || (item.options ? item.options[0] : 'A'),
+              explanation: item.explanation || 'Lời giải thích của câu hỏi.',
+              points: item.points || 1
+            }));
+            usedModel = m;
+            break; // THÀNH CÔNG!
+          } else {
+            attemptErrors.push(`[${m}]: Cấu trúc JSON không hợp lệ`);
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message || 'Lỗi kết nối'}`);
+          console.warn(`[AI Quiz] Model ${m} ngoại lệ: ${err.message}`);
+        }
+      }
+
+      if (!successfulQuestions || successfulQuestions.length === 0) {
+        return res.status(502).json({
+          error: `Đã thử tất cả các model Gemini (${modelQueue.join(', ')}) nhưng đều gặp lỗi: ${attemptErrors.join(' | ')}. Vui lòng kiểm tra lại API Key hoặc hạn mức Google Cloud của bạn.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        questions: successfulQuestions,
+        modelUsed: usedModel
+      });
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);

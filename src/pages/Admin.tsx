@@ -39,12 +39,14 @@ export default function Admin() {
   const [settings, setSettings] = useState({
     smtpHost: '', smtpPort: '', smtpUser: '', smtpPass: '',
     googleClientId: '', googleClientSecret: '',
-    googleDriveFolderId: '', googleDriveServiceJson: ''
+    googleDriveFolderId: '', googleDriveServiceJson: '',
+    geminiApiKey: '', geminiCustomModel: 'auto'
   });
   const [loadingSettings, setLoadingSettings] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
   const [testingDrive, setTestingDrive] = useState(false);
   const [testingSmtp, setTestingSmtp] = useState(false);
+  const [testingGemini, setTestingGemini] = useState(false);
   const [activeSettingsTab, setActiveSettingsTab] = useState('google');
 
   const itemsPerPage = 10;
@@ -338,6 +340,27 @@ export default function Admin() {
       showToast('Lỗi kết nối API', 'error');
     } finally {
       setTestingSmtp(false);
+    }
+  };
+
+  const handleTestGemini = async () => {
+    setTestingGemini(true);
+    try {
+      const res = await fetch('/api/quiz-api?action=test-gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: settings.geminiApiKey })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Kết nối Gemini thành công! (Model: ${data.model})`, 'success');
+      } else {
+        showToast(data.error || 'Kiểm tra kết nối thất bại!', 'error');
+      }
+    } catch {
+      showToast('Lỗi khi kiểm tra kết nối Gemini', 'error');
+    } finally {
+      setTestingGemini(false);
     }
   };
 
@@ -886,7 +909,8 @@ export default function Admin() {
                 {[
                   { id: 'google', label: 'Đăng Nhập Google' },
                   { id: 'drive', label: 'Google Drive' },
-                  { id: 'email', label: 'Cấu hình Email (SMTP)' }
+                  { id: 'email', label: 'Cấu hình Email (SMTP)' },
+                  { id: 'gemini', label: 'Cấu hình AI (Gemini)' }
                 ].map(tab => (
                   <button
                     key={tab.id}
@@ -973,6 +997,68 @@ export default function Admin() {
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Mật khẩu ứng dụng (Password)</label>
                         <input type="password" value={settings.smtpPass} onChange={e => handleSettingChange('smtpPass', e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} placeholder="Mật khẩu ứng dụng Gmail 16 số" />
+                      </div>
+                    </div>
+                  </div>
+                  )}
+
+                  {/* Gemini AI Section */}
+                  {activeSettingsTab === 'gemini' && (
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                      <div>
+                        <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'var(--primary)', margin: 0 }}>Cấu hình Google Gemini AI</h3>
+                        <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                          Sử dụng cho tính năng Tạo câu hỏi thi trắc nghiệm bằng AI, tự động đổi model khi gặp lỗi.
+                        </p>
+                      </div>
+                      <button 
+                        type="button" 
+                        onClick={handleTestGemini} 
+                        disabled={testingGemini} 
+                        className="btn" 
+                        style={{ background: '#dbeafe', color: '#1d4ed8', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.5rem', fontWeight: 600, fontSize: '0.875rem' }}
+                      >
+                        {testingGemini ? 'Đang kiểm tra...' : 'Kiểm tra kết nối'}
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                          Google Gemini API Key *
+                        </label>
+                        <input 
+                          type="password" 
+                          value={settings.geminiApiKey} 
+                          onChange={e => handleSettingChange('geminiApiKey', e.target.value)} 
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} 
+                          placeholder="AIzaSy..." 
+                        />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
+                          Lấy khóa API miễn phí từ <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Google AI Studio</a>.
+                        </span>
+                      </div>
+
+                      <div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                          Chiến lược Model AI
+                        </label>
+                        <select
+                          value={settings.geminiCustomModel || 'auto'}
+                          onChange={e => handleSettingChange('geminiCustomModel', e.target.value)}
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
+                        >
+                          <option value="auto">Tự động xoay vòng model thông minh (Khuyên dùng)</option>
+                          <option value="gemini-2.5-flash">Ưu tiên Gemini 2.5 Flash</option>
+                          <option value="gemini-2.0-flash">Ưu tiên Gemini 2.0 Flash</option>
+                          <option value="gemini-1.5-flash">Ưu tiên Gemini 1.5 Flash</option>
+                          <option value="gemini-1.5-flash-8b">Ưu tiên Gemini 1.5 Flash 8B</option>
+                          <option value="gemini-1.5-pro">Ưu tiên Gemini 1.5 Pro</option>
+                        </select>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
+                          Hệ thống sẽ tự động thử lần lượt các model khác nếu gặp lỗi Rate Limit (429) hoặc Máy chủ bận (503).
+                        </span>
                       </div>
                     </div>
                   </div>
