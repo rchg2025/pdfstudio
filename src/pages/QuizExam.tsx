@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Clock, 
@@ -9,11 +9,15 @@ import {
   CheckCircle2, 
   AlertCircle, 
   RotateCcw,
-  Sparkles
+  Sparkles,
+  LayoutGrid,
+  Music,
+  X,
+  Play
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import type { QuizPackage, QuizQuestion, StudentSubmission } from '../types/quiz';
-import { quizAudio } from '../utils/quizAudio';
+import { quizAudio, type MusicTrack } from '../utils/quizAudio';
 import './QuizExam.css';
 
 export default function QuizExam() {
@@ -39,12 +43,21 @@ export default function QuizExam() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [timeLeft, setTimeLeft] = useState<number>(0);
   const [isMusicOn, setIsMusicOn] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState<MusicTrack>('lofi');
+  const [volume, setVolume] = useState<number>(() => Math.round(quizAudio.getVolume() * 100));
+  const [showAudioModal, setShowAudioModal] = useState(false);
+  const [showGridModal, setShowGridModal] = useState(false);
+
   const [submissionResult, setSubmissionResult] = useState<StudentSubmission | null>(null);
   const [reviewList, setReviewList] = useState<{ q: QuizQuestion; userAns: any; isCorrect: boolean }[]>([]);
+
+  const activeBtnRef = useRef<HTMLButtonElement | null>(null);
+  const ribbonRef = useRef<HTMLDivElement | null>(null);
 
   // Tải dữ liệu đề thi
   useEffect(() => {
     const loadQuizData = async () => {
+      setLoading(true);
       try {
         // 1. Kiểm tra localStorage trước
         const local = localStorage.getItem('rchg_quiz_packages');
@@ -53,6 +66,9 @@ export default function QuizExam() {
           const found = list.find(q => q.id === quizId || q.code === quizId);
           if (found) {
             setQuiz(found);
+            if (found.settings?.bgMusicType && found.settings.bgMusicType !== 'none') {
+              setSelectedTrack(found.settings.bgMusicType);
+            }
             setLoading(false);
             return;
           }
@@ -64,6 +80,9 @@ export default function QuizExam() {
           const data = await res.json();
           if (data.quiz) {
             setQuiz(data.quiz);
+            if (data.quiz.settings?.bgMusicType && data.quiz.settings.bgMusicType !== 'none') {
+              setSelectedTrack(data.quiz.settings.bgMusicType);
+            }
             setLoading(false);
             return;
           }
@@ -111,21 +130,66 @@ export default function QuizExam() {
     return () => clearInterval(timer);
   }, [step, timeLeft]);
 
-  // Bật/tắt nhạc nền
-  const toggleMusic = () => {
-    if (!quiz) return;
+  // Cuộn nút câu hỏi đang chọn vào giữa thanh ribbon trên Mobile
+  useEffect(() => {
+    if (activeBtnRef.current && ribbonRef.current) {
+      activeBtnRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+  }, [currentIdx]);
+
+  // Bật/tắt hoặc đổi track nhạc nền
+  const handleToggleMusic = async () => {
     if (isMusicOn) {
       quizAudio.stopMusic();
       setIsMusicOn(false);
+      showToast('Đã tắt nhạc nền.', 'info');
     } else {
-      const track = quiz.settings.bgMusicType === 'none' ? 'lofi' : quiz.settings.bgMusicType;
-      quizAudio.startMusic(track);
+      const trackToPlay = selectedTrack === 'none' ? 'lofi' : selectedTrack;
+      setSelectedTrack(trackToPlay);
+      await quizAudio.startMusic(trackToPlay);
       setIsMusicOn(true);
+      showToast('Đã bật nhạc nền thư giãn.', 'success');
+    }
+  };
+
+  const handleSelectTrack = async (track: MusicTrack) => {
+    setSelectedTrack(track);
+    if (track === 'none') {
+      quizAudio.stopMusic();
+      setIsMusicOn(false);
+      showToast('Đã tắt nhạc nền.', 'info');
+    } else {
+      await quizAudio.startMusic(track);
+      setIsMusicOn(true);
+      showToast(`Đang phát nhạc: ${getTrackLabel(track)}`, 'success');
+    }
+  };
+
+  const handleVolumeChange = (newVol: number) => {
+    setVolume(newVol);
+    quizAudio.setVolume(newVol / 100);
+  };
+
+  const handleTestAudio = async () => {
+    const ok = await quizAudio.testSound();
+    if (ok) {
+      showToast('Đã phát âm thanh thử nghiệm qua loa!', 'success');
+    } else {
+      showToast('Trình duyệt chưa cho phép phát âm thanh. Vui lòng bấm chạm màn hình!', 'warning');
+    }
+  };
+
+  const getTrackLabel = (track: MusicTrack) => {
+    switch (track) {
+      case 'lofi': return 'Lofi Hip-Hop Chill ☕';
+      case 'piano': return 'Piano Thư Giãn 🎹';
+      case 'ambient': return 'Âm Hưởng Tự Nhiên 🌊';
+      default: return 'Không phát nhạc 🔇';
     }
   };
 
   // Bắt đầu làm bài thi
-  const handleStartExam = (e: React.FormEvent) => {
+  const handleStartExam = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!studentName.trim() || !studentId.trim()) {
       showToast('Vui lòng nhập họ tên và mã số / lớp!', 'warning');
@@ -138,9 +202,12 @@ export default function QuizExam() {
       return;
     }
 
+    // Khởi tạo AudioContext từ user gesture
+    await quizAudio.initContext();
+
     // Chọn câu hỏi theo chiến lược cấu hình
     let pool = [...quiz.questions];
-    if (quiz.settings.questionSelectionMode === 'custom_difficulty' && quiz.settings.difficultyDistribution) {
+    if (quiz.settings?.questionSelectionMode === 'custom_difficulty' && quiz.settings?.difficultyDistribution) {
       const easyPool = pool.filter(q => q.difficulty === 'easy');
       const medPool = pool.filter(q => q.difficulty === 'medium');
       const hardPool = pool.filter(q => q.difficulty === 'hard');
@@ -154,21 +221,35 @@ export default function QuizExam() {
       pool = selected.length > 0 ? selected : pool;
     }
 
-    if (quiz.settings.shuffleQuestions) {
+    if (quiz.settings?.shuffleQuestions) {
       pool = pool.sort(() => 0.5 - Math.random());
     }
 
     setActiveQuestions(pool);
-    setTimeLeft((quiz.settings.timeLimitMinutes || 0) * 60);
+    setTimeLeft((quiz.settings?.timeLimitMinutes || 0) * 60);
     setStep('exam');
     setCurrentIdx(0);
     setAnswers({});
 
-    // Bật nhạc nền tự động nếu được cấu hình
-    if (quiz.settings.bgMusicType !== 'none') {
-      quizAudio.startMusic(quiz.settings.bgMusicType);
+    // Bật nhạc nền nếu được cài đặt
+    const targetTrack = quiz.settings?.bgMusicType && quiz.settings.bgMusicType !== 'none'
+      ? quiz.settings.bgMusicType
+      : selectedTrack;
+    
+    if (targetTrack && targetTrack !== 'none') {
+      setSelectedTrack(targetTrack);
+      await quizAudio.startMusic(targetTrack);
       setIsMusicOn(true);
+    } else {
+      quizAudio.playNavSound();
     }
+  };
+
+  // Chuyển câu hỏi
+  const goToQuestion = (idx: number) => {
+    if (idx < 0 || idx >= activeQuestions.length) return;
+    setCurrentIdx(idx);
+    quizAudio.playNavSound();
   };
 
   // Nộp bài thi & Chấm điểm tự động
@@ -184,6 +265,7 @@ export default function QuizExam() {
 
     quizAudio.stopMusic();
     setIsMusicOn(false);
+    quizAudio.playSuccessSound();
 
     let earned = 0;
     let total = 0;
@@ -198,46 +280,54 @@ export default function QuizExam() {
       if (q.type === 'choice') {
         isCorrect = userAns === q.correctAnswer;
       } else if (q.type === 'multiple_choice') {
-        const u = (userAns || []).sort().join('|');
-        const c = (q.correctAnswers || []).sort().join('|');
-        isCorrect = u === c;
+        if (Array.isArray(userAns) && Array.isArray(q.correctAnswers)) {
+          const s1 = [...userAns].sort().join('|');
+          const s2 = [...q.correctAnswers].sort().join('|');
+          isCorrect = s1 === s2;
+        }
       } else if (q.type === 'fill_blank') {
-        const cleanUser = (userAns || '').trim().toLowerCase();
-        const cleanCorrect = (q.correctAnswer || '').split(/[;/]+/).map(s => s.trim().toLowerCase());
-        isCorrect = cleanCorrect.includes(cleanUser);
+        const correctList = (q.correctAnswer || '').split(';').map(s => s.trim().toLowerCase());
+        const userTrim = (userAns || '').trim().toLowerCase();
+        isCorrect = correctList.includes(userTrim);
       } else if (q.type === 'matching') {
-        let allMatch = true;
-        (q.matchingPairs || []).forEach(p => {
-          if ((userAns || {})[p.left] !== p.right) allMatch = false;
-        });
-        isCorrect = allMatch && (q.matchingPairs || []).length > 0;
+        if (typeof userAns === 'object' && userAns !== null && q.matchingPairs) {
+          isCorrect = q.matchingPairs.every(p => userAns[p.left] === p.right);
+        }
       } else if (q.type === 'essay') {
-        const keywords = (q.correctAnswer || '').toLowerCase().split(/[,;]+/).map(s => s.trim());
+        const keywords = (q.correctAnswer || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
         const userText = (userAns || '').toLowerCase();
-        isCorrect = keywords.some(k => k && userText.includes(k));
+        if (keywords.length > 0) {
+          const matchCount = keywords.filter(k => userText.includes(k)).length;
+          isCorrect = matchCount >= Math.ceil(keywords.length / 2);
+        } else {
+          isCorrect = (userAns || '').trim().length > 10;
+        }
       }
 
       if (isCorrect) earned += pts;
       rev.push({ q, userAns, isCorrect });
     });
 
-    const score10 = Math.round((earned / (total || 1)) * 100) / 10;
-    const percentage = Math.round((earned / (total || 1)) * 100);
-    const passed = percentage >= (quiz?.settings.passingScorePercent || 50);
+    const finalScore = total > 0 ? Number(((earned / total) * 10).toFixed(1)) : 0;
+    const passThreshold = quiz?.settings?.passingScorePercent || 50;
+    const isPassed = ((finalScore / 10) * 100) >= passThreshold;
+
+    const totalLimitSec = (quiz?.settings?.timeLimitMinutes || 0) * 60;
+    const spentSec = totalLimitSec > 0 ? Math.max(1, totalLimitSec - timeLeft) : 60;
 
     const sub: StudentSubmission = {
       id: `sub-${Date.now()}`,
       quizId: quiz?.id || '',
-      quizTitle: quiz?.title || '',
+      quizTitle: quiz?.title || 'Bài thi trắc nghiệm',
       studentName: studentName.trim(),
       studentId: studentId.trim(),
-      className: className.trim(),
+      className: className.trim() || 'Tự do',
       email: studentEmail.trim() || undefined,
-      score: score10,
-      totalPoints: 10,
-      percentage,
-      passed,
-      timeSpentSeconds: ((quiz?.settings.timeLimitMinutes || 0) * 60) - timeLeft,
+      score: finalScore,
+      totalPoints: total,
+      percentage: Math.round((finalScore / 10) * 100),
+      passed: isPassed,
+      timeSpentSeconds: spentSec,
       submittedAt: new Date().toISOString(),
       answers
     };
@@ -248,91 +338,113 @@ export default function QuizExam() {
 
     // Lưu vào localStorage
     try {
-      const stored = localStorage.getItem('rchg_quiz_submissions');
-      const list = stored ? JSON.parse(stored) : [];
+      const prev = localStorage.getItem('rchg_quiz_submissions');
+      const list = prev ? JSON.parse(prev) : [];
       list.unshift(sub);
       localStorage.setItem('rchg_quiz_submissions', JSON.stringify(list));
     } catch {}
 
-    // Lưu lên API Backend
-    fetch('/api/quiz-api?action=submit-exam', {
+    // Lưu vào Neon Postgres
+    fetch('/api/quiz-api?action=save-submission', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(sub)
     }).catch(() => {});
-
-    quizAudio.playSuccessSound();
-    showToast(`Nộp bài thành công! Điểm số: ${score10}/10 điểm (${percentage}%)`, passed ? 'success' : 'info');
   };
+
+  const formatTimer = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const answeredCount = activeQuestions.filter(q => answers[q.id] !== undefined && answers[q.id] !== '').length;
+  const progressPercent = activeQuestions.length > 0 ? Math.round((answeredCount / activeQuestions.length) * 100) : 0;
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', color: 'var(--text-secondary)' }}>
-        Đang tải dữ liệu đề thi...
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1rem' }}>
+        <div className="spinner" style={{ width: 44, height: 44, border: '4px solid rgba(99, 102, 241, 0.2)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>Đang nạp đề thi trực tuyến...</p>
       </div>
     );
   }
 
   if (!quiz) {
     return (
-      <div className="exam-page-container" style={{ textAlign: 'center', padding: '4rem 1rem' }}>
-        <AlertCircle size={48} color="var(--danger)" style={{ margin: '0 auto 1rem' }} />
-        <h2 style={{ color: 'var(--text-primary)' }}>Không tìm thấy phòng thi</h2>
-        <p style={{ color: 'var(--text-secondary)' }}>Mã phòng thi không tồn tại hoặc đã bị xóa.</p>
-        <button type="button" className="btn btn-primary" onClick={() => navigate('/quan-ly-thi-trac-nghiem')}>
-          Về trang Quản lý đề thi
-        </button>
+      <div className="exam-page-container">
+        <div className="exam-panel" style={{ textAlign: 'center', padding: '3rem 1.5rem' }}>
+          <AlertCircle size={48} color="var(--danger)" style={{ margin: '0 auto 1rem' }} />
+          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>Không tìm thấy đề thi!</h2>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Đề thi có thể đã bị xóa hoặc đường dẫn không chính xác.</p>
+          <button className="btn btn-primary" onClick={() => navigate('/quan-ly-thi-trac-nghiem')}>
+            Về Trang Quản Trị
+          </button>
+        </div>
       </div>
     );
   }
 
-  const formatTimer = (sec: number) => {
-    const m = Math.floor(sec / 60);
-    const s = sec % 60;
-    return `${m < 10 ? '0' + m : m}:${s < 10 ? '0' + s : s}`;
-  };
-
   const currentQ = activeQuestions[currentIdx];
 
   return (
-    <div className="exam-page-container animate-fade-in">
-      {/* Top Header */}
+    <div className="exam-page-container">
+      {/* HEADER PHÒNG THI */}
       <header className="exam-header">
-        <div>
-          <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+        <div className="exam-header-left">
+          <h1 className="exam-title-text" title={quiz.title}>
             {quiz.title}
           </h1>
-          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.2rem 0 0' }}>
-            {quiz.subject} • {activeQuestions.length || quiz.questions.length} câu hỏi
+          <p className="exam-sub-text">
+            <span>{quiz.subject}</span> • <span>{activeQuestions.length || quiz.questions.length} câu hỏi</span>
           </p>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="exam-header-right">
           {step === 'exam' && timeLeft > 0 && (
             <div className={`exam-timer-box ${timeLeft < 60 ? 'urgent' : ''}`}>
-              <Clock size={16} /> {formatTimer(timeLeft)}
+              <Clock size={15} /> <span>{formatTimer(timeLeft)}</span>
             </div>
           )}
 
+          {/* Nút Xem Lưới Câu Hỏi trên Mobile */}
+          {step === 'exam' && (
+            <button
+              type="button"
+              className="btn btn-outline btn-icon-round"
+              onClick={() => setShowGridModal(true)}
+              title="Danh sách câu hỏi"
+            >
+              <LayoutGrid size={16} />
+            </button>
+          )}
+
+          {/* Nút Âm Thanh / Nhạc Nền */}
           <button 
             type="button" 
-            className="btn btn-outline btn-sm"
-            onClick={toggleMusic}
-            title={isMusicOn ? 'Tắt nhạc nền' : 'Bật nhạc thư giãn'}
-            style={{ borderRadius: '50%', width: '38px', height: '38px', padding: 0 }}
+            className={`btn btn-outline btn-icon-round ${isMusicOn ? 'active-audio' : ''}`}
+            onClick={() => setShowAudioModal(true)}
+            title="Cài đặt âm thanh & nhạc nền"
           >
             {isMusicOn ? <Volume2 size={16} color="var(--primary)" /> : <VolumeX size={16} />}
           </button>
         </div>
       </header>
 
+      {/* THANH TIẾN ĐỘ LÀM BÀI TRÊN MOBILE */}
+      {step === 'exam' && (
+        <div className="exam-progress-bar-wrap">
+          <div className="exam-progress-bar-fill" style={{ width: `${progressPercent}%` }} />
+        </div>
+      )}
+
       {/* BƯỚC 1: ĐIỀN THÔNG TIN THÍ SINH */}
       {step === 'register' && (
         <div className="exam-panel animate-fade-in">
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Sparkles size={20} color="var(--primary)" /> Thông Tin Thí Sinh & Quy Chế Thi
+          <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Sparkles size={18} color="var(--primary)" /> Thông Tin Thí Sinh & Quy Chế Thi
           </h2>
-          <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+          <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginBottom: '1.25rem' }}>
             {quiz.description || 'Chào mừng bạn tham gia bài thi. Vui lòng nhập đầy đủ thông tin bên dưới để bắt đầu.'}
           </p>
 
@@ -362,7 +474,7 @@ export default function QuizExam() {
               </div>
 
               <div className="exam-form-group">
-                <label className="exam-label">Mã sinh viên (MSSV) *</label>
+                <label className="exam-label">Mã sinh viên (MSSV / SBD) *</label>
                 <input 
                   type="text" 
                   className="exam-input" 
@@ -386,18 +498,18 @@ export default function QuizExam() {
             </div>
 
             <div className="exam-rules-box">
-              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                 📋 Tóm tắt quy chế thi:
               </div>
-              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                <li>Thời gian làm bài: <strong>{quiz.settings.timeLimitMinutes > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
-                <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings.passingScorePercent}%</strong> trở lên.</li>
-                <li>Hệ thống tự động chấm điểm và công bố kết quả ngay khi bấm nộp bài hoặc hết thời gian.</li>
+              <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <li>Thời gian làm bài: <strong>{(quiz.settings?.timeLimitMinutes || 0) > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
+                <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings?.passingScorePercent || 50}%</strong> trở lên.</li>
+                <li>Hệ thống tự động chấm điểm và công bố kết quả ngay khi nộp bài.</li>
               </ul>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
-              <button type="submit" className="btn btn-primary btn-lg">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button type="submit" className="btn btn-primary btn-lg" style={{ width: '100%', maxWidth: '320px' }}>
                 🚀 Bắt Đầu Làm Bài Thi
               </button>
             </div>
@@ -407,27 +519,43 @@ export default function QuizExam() {
 
       {/* BƯỚC 2: MÀN HÌNH LÀM BÀI THI */}
       {step === 'exam' && currentQ && (
-        <div className="exam-panel animate-fade-in">
-          {/* Palette câu hỏi */}
-          <div className="exam-palette">
-            {activeQuestions.map((q, idx) => {
-              const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
-              const isCur = idx === currentIdx;
-              return (
-                <button
-                  key={q.id}
-                  type="button"
-                  className={`exam-palette-btn ${isCur ? 'active' : ''} ${isAnswered ? 'answered' : ''}`}
-                  onClick={() => setCurrentIdx(idx)}
-                >
-                  {idx + 1}
-                </button>
-              );
-            })}
+        <div className="exam-panel exam-question-box animate-fade-in">
+          {/* Thanh cuộn ngang các câu hỏi (Mobile Ribbon) */}
+          <div className="exam-palette-container">
+            <div className="exam-palette-header">
+              <span className="exam-palette-count">
+                Đã hoàn thành: <strong>{answeredCount}/{activeQuestions.length}</strong> câu ({progressPercent}%)
+              </span>
+              <button 
+                type="button" 
+                className="exam-palette-view-all-btn"
+                onClick={() => setShowGridModal(true)}
+              >
+                <LayoutGrid size={13} /> Danh sách 30 câu
+              </button>
+            </div>
+
+            <div className="exam-palette-ribbon" ref={ribbonRef}>
+              {activeQuestions.map((q, idx) => {
+                const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
+                const isCur = idx === currentIdx;
+                return (
+                  <button
+                    key={q.id}
+                    ref={isCur ? activeBtnRef : null}
+                    type="button"
+                    className={`exam-palette-btn ${isCur ? 'active' : ''} ${isAnswered ? 'answered' : ''}`}
+                    onClick={() => goToQuestion(idx)}
+                  >
+                    {idx + 1}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {/* Chi tiết câu hỏi */}
-          <div>
+          <div className="exam-q-content">
             <div className="exam-q-meta">
               <span className="exam-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                 Câu {currentIdx + 1}/{activeQuestions.length}
@@ -461,7 +589,7 @@ export default function QuizExam() {
                       }}
                     >
                       <span className="exam-opt-char">{char}</span>
-                      <span>{opt}</span>
+                      <span className="exam-opt-text">{opt}</span>
                     </div>
                   );
                 })}
@@ -488,7 +616,7 @@ export default function QuizExam() {
                       }}
                     >
                       <span className="exam-opt-char">{char}</span>
-                      <span>{opt}</span>
+                      <span className="exam-opt-text">{opt}</span>
                     </div>
                   );
                 })}
@@ -521,8 +649,12 @@ export default function QuizExam() {
                         className="exam-select"
                         value={userMatches[pair.left] || ''}
                         onChange={(e) => {
-                          const updated = { ...userMatches, [pair.left]: e.target.value };
-                          setAnswers(prev => ({ ...prev, [currentQ.id]: updated }));
+                          const val = e.target.value;
+                          setAnswers(prev => ({
+                            ...prev,
+                            [currentQ.id]: { ...(prev[currentQ.id] || {}), [pair.left]: val }
+                          }));
+                          quizAudio.playClickSound();
                         }}
                       >
                         <option value="">-- Chọn ghép nối --</option>
@@ -550,13 +682,13 @@ export default function QuizExam() {
             )}
           </div>
 
-          {/* Thanh điều hướng câu hỏi */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.75rem' }}>
+          {/* THANH ĐIỀU HƯỚNG CÂU HỎI TRÊN DESKTOP */}
+          <div className="exam-nav-desktop">
             <button 
               type="button" 
               className="btn btn-outline"
               disabled={currentIdx === 0}
-              onClick={() => setCurrentIdx(prev => prev - 1)}
+              onClick={() => goToQuestion(currentIdx - 1)}
             >
               <ArrowLeft size={16} /> Câu trước
             </button>
@@ -574,11 +706,42 @@ export default function QuizExam() {
               type="button" 
               className="btn btn-outline"
               disabled={currentIdx === activeQuestions.length - 1}
-              onClick={() => setCurrentIdx(prev => prev + 1)}
+              onClick={() => goToQuestion(currentIdx + 1)}
             >
               Câu sau <ArrowRight size={16} />
             </button>
           </div>
+        </div>
+      )}
+
+      {/* THANH ĐIỀU HƯỚNG CỐ ĐỊNH Ở ĐÁY MÀN HÌNH CHO MOBILE (STICKY BOTTOM BAR) */}
+      {step === 'exam' && (
+        <div className="exam-bottom-sticky-bar">
+          <button 
+            type="button" 
+            className="btn btn-outline exam-mobile-btn"
+            disabled={currentIdx === 0}
+            onClick={() => goToQuestion(currentIdx - 1)}
+          >
+            <ArrowLeft size={16} /> Trước
+          </button>
+
+          <button 
+            type="button" 
+            className="btn btn-primary exam-mobile-btn-submit"
+            onClick={() => handleSubmitExam(false)}
+          >
+            <CheckCircle2 size={16} /> Nộp bài
+          </button>
+
+          <button 
+            type="button" 
+            className="btn btn-outline exam-mobile-btn"
+            disabled={currentIdx === activeQuestions.length - 1}
+            onClick={() => goToQuestion(currentIdx + 1)}
+          >
+            Sau <ArrowRight size={16} />
+          </button>
         </div>
       )}
 
@@ -589,19 +752,19 @@ export default function QuizExam() {
             {submissionResult.score}
           </div>
 
-          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
+          <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
             {submissionResult.passed ? '🎉 CHÚC MỪNG: BẠN ĐÃ ĐẠT!' : '⚠️ KẾT QUẢ CHƯA ĐẠT CHUẨN'}
           </h2>
 
-          <div style={{ display: 'inline-block', background: 'var(--bg-primary)', padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', border: '1px solid var(--border)' }}>
-            Thí sinh: <strong>{submissionResult.studentName}</strong> • Lớp/MSSV: <strong>{submissionResult.studentId}</strong>
+          <div style={{ display: 'inline-block', background: 'var(--bg-primary)', padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', border: '1px solid var(--border)' }}>
+            Thí sinh: <strong>{submissionResult.studentName}</strong> • SBD: <strong>{submissionResult.studentId}</strong>
           </div>
 
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', margin: '0 0 2rem' }}>
-            Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings.passingScorePercent}%.
+          <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0 0 1.75rem' }}>
+            Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings?.passingScorePercent || 50}%.
           </p>
 
-          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-primary" onClick={() => setStep('register')}>
               <RotateCcw size={16} /> Làm Lại Bài Thi
             </button>
@@ -612,7 +775,7 @@ export default function QuizExam() {
 
           {/* Chi tiết lời giải & đối chiếu đáp án */}
           <div style={{ textAlign: 'left' }}>
-            <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
               📋 Chi Tiết Từng Câu Hỏi:
             </h3>
 
@@ -624,25 +787,154 @@ export default function QuizExam() {
 
               return (
                 <div key={item.q.id} className={`exam-review-card ${item.isCorrect ? 'is-correct' : 'is-wrong'}`}>
-                  <div style={{ fontWeight: 600, fontSize: '0.98rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                     Câu {idx + 1}: {item.q.question}
                   </div>
-                  <div style={{ fontSize: '0.88rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
+                  <div style={{ fontSize: '0.85rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
                     {item.isCorrect ? '✅ Bạn đã trả lời chính xác!' : `❌ Câu trả lời của bạn: ${typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời')}`}
                   </div>
                   {!item.isCorrect && (
-                    <div style={{ fontSize: '0.88rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
                       💡 Đáp án đúng: <strong>{correctDisplay}</strong>
                     </div>
                   )}
                   {item.q.explanation && (
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.35rem' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.3rem' }}>
                       Giải thích: {item.q.explanation}
                     </div>
                   )}
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CÀI ĐẶT ÂM THANH & NHẠC NỀN */}
+      {showAudioModal && (
+        <div className="exam-modal-overlay" onClick={() => setShowAudioModal(false)}>
+          <div className="exam-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="exam-modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                <Music size={18} color="var(--primary)" /> Âm Thanh & Nhạc Nền Thư Giãn
+              </h3>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-icon-round"
+                style={{ width: 32, height: 32 }}
+                onClick={() => setShowAudioModal(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="exam-modal-body">
+              <div style={{ marginBottom: '1.25rem' }}>
+                <label className="exam-label" style={{ marginBottom: '0.6rem' }}>Chọn bản nhạc nền:</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  {(['lofi', 'piano', 'ambient', 'none'] as MusicTrack[]).map(t => {
+                    const isCur = selectedTrack === t && (t === 'none' ? !isMusicOn : isMusicOn);
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        className={`exam-track-btn ${isCur ? 'active' : ''}`}
+                        onClick={() => handleSelectTrack(t)}
+                      >
+                        <span>{getTrackLabel(t)}</span>
+                        {isCur && <span style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 700 }}>Đang phát</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div style={{ marginBottom: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.4rem' }}>
+                  <label className="exam-label" style={{ margin: 0 }}>Âm lượng nhạc & hiệu ứng:</label>
+                  <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--primary)' }}>{volume}%</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" 
+                  max="100" 
+                  value={volume}
+                  onChange={(e) => handleVolumeChange(Number(e.target.value))}
+                  style={{ width: '100%', accentColor: 'var(--primary)' }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  style={{ flex: 1, fontSize: '0.88rem' }}
+                  onClick={handleTestAudio}
+                >
+                  <Play size={14} /> Thử loa (Test)
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${isMusicOn ? 'btn-outline' : 'btn-primary'}`}
+                  style={{ flex: 1, fontSize: '0.88rem' }}
+                  onClick={handleToggleMusic}
+                >
+                  {isMusicOn ? 'Tắt nhạc' : 'Bật nhạc ngay'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XEM TOÀN BỘ 30 CÂU HỎI TRÊN MOBILE */}
+      {showGridModal && (
+        <div className="exam-modal-overlay" onClick={() => setShowGridModal(false)}>
+          <div className="exam-modal-card exam-modal-grid-card" onClick={e => e.stopPropagation()}>
+            <div className="exam-modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                <LayoutGrid size={18} color="var(--primary)" /> Danh Sách Câu Hỏi ({activeQuestions.length})
+              </h3>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-icon-round"
+                style={{ width: 32, height: 32 }}
+                onClick={() => setShowGridModal(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="exam-modal-body">
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem', fontSize: '0.85rem' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: '#10b981', display: 'inline-block' }} /> Đã làm ({answeredCount})
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span style={{ width: 12, height: 12, borderRadius: 3, background: 'var(--bg-primary)', border: '1.5px solid var(--border)', display: 'inline-block' }} /> Chưa làm ({activeQuestions.length - answeredCount})
+                </span>
+              </div>
+
+              <div className="exam-full-grid">
+                {activeQuestions.map((q, idx) => {
+                  const isAnswered = answers[q.id] !== undefined && answers[q.id] !== '';
+                  const isCur = idx === currentIdx;
+                  return (
+                    <button
+                      key={q.id}
+                      type="button"
+                      className={`exam-grid-btn ${isCur ? 'active' : ''} ${isAnswered ? 'answered' : ''}`}
+                      onClick={() => {
+                        goToQuestion(idx);
+                        setShowGridModal(false);
+                      }}
+                    >
+                      {idx + 1}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}

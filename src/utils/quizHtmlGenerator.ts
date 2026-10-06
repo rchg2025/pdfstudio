@@ -243,7 +243,7 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
 
         const start = audioCtx.currentTime + (idx * 0.05);
         gain.gain.setValueAtTime(0.001, start);
-        gain.gain.linearRampToValueAtTime(0.04, start + 0.2);
+        gain.gain.linearRampToValueAtTime(0.18, start + 0.2);
         gain.gain.exponentialRampToValueAtTime(0.0001, start + 3.2);
 
         osc.connect(filter);
@@ -253,6 +253,24 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
         osc.stop(start + 3.5);
       });
       if (isMusicOn) setTimeout(playAmbientLoop, 3200);
+    }
+
+    function playClick() {
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(750, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(420, audioCtx.currentTime + 0.07);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.07);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.08);
+      } catch(e) {}
     }
 
     function selectQuestions() {
