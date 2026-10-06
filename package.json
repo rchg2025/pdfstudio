@@ -43,7 +43,8 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-easy-crop": "^6.2.0",
-    "react-router-dom": "^7.18.0"
+    "react-router-dom": "^7.18.0",
+    "xlsx": "^0.18.5"
   },
   "overrides": {
     "ajv": "^8.17.1",

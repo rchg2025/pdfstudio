@@ -17,6 +17,7 @@ export interface QuizQuestion {
   correctAnswers?: string[]; // Dùng cho 'multiple_choice'
   matchingPairs?: MatchingPair[]; // Dùng cho 'matching'
   explanation?: string;
+  imageUrl?: string; // Ảnh đính kèm câu hỏi (Google Drive hoặc URL ảnh)
   points: number; // Điểm của câu (mặc định 1)
 }
 

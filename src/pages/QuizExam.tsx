@@ -573,12 +573,25 @@ export default function QuizExam() {
 
             <div className="exam-q-title">{currentQ.question}</div>
 
+            {/* Hiển thị hình ảnh câu hỏi nếu có */}
+            {currentQ.imageUrl && (
+              <div className="exam-q-image-wrap">
+                <img 
+                  src={currentQ.imageUrl} 
+                  alt="Hình ảnh câu hỏi" 
+                  className="exam-q-image" 
+                  onClick={() => window.open(currentQ.imageUrl, '_blank')} 
+                />
+                <span className="exam-q-image-hint">🔍 Nhấp vào ảnh để xem kích thước lớn</span>
+              </div>
+            )}
+
             {/* Trắc nghiệm ABCD */}
             {currentQ.type === 'choice' && currentQ.options && (
               <div className="exam-options-grid">
                 {currentQ.options.map((opt, idx) => {
                   const isSelected = answers[currentQ.id] === opt;
-                  const char = ['A', 'B', 'C', 'D', 'E', 'F'][idx] || idx + 1;
+                  const char = String.fromCharCode(65 + idx);
                   return (
                     <div 
                       key={idx}
@@ -602,7 +615,7 @@ export default function QuizExam() {
                 {currentQ.options.map((opt, idx) => {
                   const currentSelected = answers[currentQ.id] || [];
                   const isSelected = currentSelected.includes(opt);
-                  const char = ['A', 'B', 'C', 'D', 'E', 'F'][idx] || idx + 1;
+                  const char = String.fromCharCode(65 + idx);
                   return (
                     <div 
                       key={idx}

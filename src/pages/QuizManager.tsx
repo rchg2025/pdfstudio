@@ -31,8 +31,13 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  FileUp
+  FileUp,
+  Image as ImageIcon,
+  Cloud,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import type { 
@@ -145,20 +150,29 @@ const DEFAULT_QUIZ: QuizPackage = {
 };
 
 export default function QuizManager() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
 
-  // Danh sách các bộ đề thi
+  // Storage key riêng biệt cho từng người dùng
+  const storageKey = user ? `rchg_quiz_packages_${user.id}` : 'rchg_quiz_packages_guest';
+  const subStorageKey = user ? `rchg_quiz_submissions_${user.id}` : 'rchg_quiz_submissions_guest';
+
+  // Danh sách các bộ đề thi (cô lập theo từng người dùng)
   const [quizzes, setQuizzes] = useState<QuizPackage[]>(() => {
     try {
-      const saved = localStorage.getItem('rchg_quiz_packages');
+      const saved = localStorage.getItem(storageKey);
       if (saved) return JSON.parse(saved);
     } catch {}
-    return [DEFAULT_QUIZ];
+    return [{
+      ...DEFAULT_QUIZ,
+      userId: user?.id
+    }];
   });
 
-  const [activeQuizId, setActiveQuizId] = useState<string>(DEFAULT_QUIZ.id);
+  const [activeQuizId, setActiveQuizId] = useState<string>(() => {
+    return quizzes[0]?.id || DEFAULT_QUIZ.id;
+  });
   const [activeTab, setActiveTab] = useState<'quizzes' | 'questions' | 'settings' | 'submissions'>('quizzes');
 
   // Lọc ngân hàng câu hỏi
@@ -181,6 +195,11 @@ export default function QuizManager() {
   const [formQExpl, setFormQExpl] = useState('');
   const [formQOptions, setFormQOptions] = useState<string[]>(['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D']);
   const [formQCorrectAnswer, setFormQCorrectAnswer] = useState('Đáp án A');
+  const [formQCorrectAnswers, setFormQCorrectAnswers] = useState<string[]>(['Đáp án A']);
+  const [formQImageUrl, setFormQImageUrl] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
+
   const [formQMatchingPairs, setFormQMatchingPairs] = useState<{ left: string; right: string }[]>([
     { left: 'Khái niệm 1', right: 'Định nghĩa 1' },
     { left: 'Khái niệm 2', right: 'Định nghĩa 2' }
@@ -223,7 +242,7 @@ export default function QuizManager() {
   // Danh sách bài nộp của sinh viên
   const [submissions, setSubmissions] = useState<StudentSubmission[]>(() => {
     try {
-      const saved = localStorage.getItem('rchg_quiz_submissions');
+      const saved = localStorage.getItem(subStorageKey);
       if (saved) return JSON.parse(saved);
     } catch {}
     return [];
@@ -231,35 +250,50 @@ export default function QuizManager() {
 
   const activeQuiz = quizzes.find(q => q.id === activeQuizId) || quizzes[0] || DEFAULT_QUIZ;
 
-  // Lưu vào localStorage khi có thay đổi
+  // Lưu vào localStorage theo tài khoản người dùng
   useEffect(() => {
+    if (!user) return;
     try {
-      localStorage.setItem('rchg_quiz_packages', JSON.stringify(quizzes));
+      localStorage.setItem(`rchg_quiz_packages_${user.id}`, JSON.stringify(quizzes));
     } catch {}
-  }, [quizzes]);
+  }, [quizzes, user]);
 
   useEffect(() => {
+    if (!user) return;
     try {
-      localStorage.setItem('rchg_quiz_submissions', JSON.stringify(submissions));
+      localStorage.setItem(`rchg_quiz_submissions_${user.id}`, JSON.stringify(submissions));
     } catch {}
-  }, [submissions]);
+  }, [submissions, user]);
 
-  // Đồng bộ với API Backend Neon Postgres
+  // Đồng bộ với API Backend Neon Postgres (Chỉ tải bộ đề của chính user này)
   useEffect(() => {
     const fetchApiQuizzes = async () => {
+      if (!user) return;
       try {
-        const res = await fetch(`/api/quiz-api?action=get-quizzes${user ? `&userId=${user.id}` : ''}`);
+        const res = await fetch(`/api/quiz-api?action=get-quizzes&userId=${user.id}`);
         if (res.ok) {
           const data = await res.json();
-          if (data.quizzes && data.quizzes.length > 0) {
-            setQuizzes(data.quizzes);
+          if (Array.isArray(data.quizzes)) {
+            if (data.quizzes.length > 0) {
+              setQuizzes(data.quizzes);
+              setActiveQuizId(data.quizzes[0].id);
+            } else {
+              // Người dùng mới chưa có bộ đề nào
+              const initialUserQuiz: QuizPackage = {
+                ...DEFAULT_QUIZ,
+                id: `qz-${user.id}-${Date.now()}`,
+                userId: user.id
+              };
+              setQuizzes([initialUserQuiz]);
+              setActiveQuizId(initialUserQuiz.id);
+            }
           }
         }
-        // Tải submissions
-        const subRes = await fetch('/api/quiz-api?action=get-submissions');
+        // Tải submissions cho các bộ đề của user này
+        const subRes = await fetch(`/api/quiz-api?action=get-submissions&userId=${user.id}`);
         if (subRes.ok) {
           const subData = await subRes.json();
-          if (subData.submissions && subData.submissions.length > 0) {
+          if (Array.isArray(subData.submissions)) {
             setSubmissions(subData.submissions);
           }
         }
@@ -267,6 +301,69 @@ export default function QuizManager() {
     };
     fetchApiQuizzes();
   }, [user]);
+
+  // Tải ảnh câu hỏi lên Google Drive qua /api/upload
+  const handleUploadQuestionImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Vui lòng chọn tệp hình ảnh (PNG, JPG, WEBP)!', 'warning');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      showToast('Kích thước ảnh tối đa là 8MB!', 'warning');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const base64Data = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      // Tải lên Google Drive qua /api/upload nếu có token
+      if (token) {
+        try {
+          const res = await fetch('/api/upload', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              imageBase64: base64Data,
+              filename: `quiz-q-${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+            })
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+            if (data.url) {
+              setFormQImageUrl(data.url);
+              showToast('Đã tải và đồng bộ ảnh lên Google Drive thành công!', 'success');
+              return;
+            }
+          }
+        } catch (uploadErr) {
+          console.warn('Drive upload error:', uploadErr);
+        }
+      }
+
+      // Fallback lưu ảnh dạng Data URL nếu không tải được lên Drive
+      setFormQImageUrl(base64Data);
+      showToast('Đã lưu ảnh cho câu hỏi!', 'info');
+    } catch (err: any) {
+      showToast('Lỗi khi đọc file ảnh: ' + (err.message || 'Lỗi không xác định'), 'error');
+    } finally {
+      setIsUploadingImage(false);
+      if (e.target) e.target.value = '';
+    }
+  };
 
   // Cập nhật bộ đề active
   const updateActiveQuiz = (updated: Partial<QuizPackage>) => {
@@ -340,11 +437,12 @@ export default function QuizManager() {
       type: formQType,
       difficulty: formQDiff,
       question: formQText.trim(),
+      imageUrl: formQImageUrl.trim() || undefined,
       points: Number(formQPoints) || 1,
       explanation: formQExpl.trim() || undefined,
       options: (formQType === 'choice' || formQType === 'multiple_choice') ? formQOptions.filter(o => o.trim()) : undefined,
       correctAnswer: (formQType === 'choice' || formQType === 'fill_blank' || formQType === 'essay') ? formQCorrectAnswer.trim() : undefined,
-      correctAnswers: formQType === 'multiple_choice' ? [formQCorrectAnswer.trim()] : undefined,
+      correctAnswers: formQType === 'multiple_choice' ? (formQCorrectAnswers.length > 0 ? formQCorrectAnswers : [formQCorrectAnswer.trim()]) : undefined,
       matchingPairs: formQType === 'matching' ? formQMatchingPairs.map((p, idx) => ({ id: `m-${idx}`, left: p.left.trim(), right: p.right.trim() })) : undefined
     };
 
@@ -360,6 +458,7 @@ export default function QuizManager() {
     updateActiveQuiz({ questions: updatedQuestions });
     setShowQuestionModal(false);
     setEditingQuestion(null);
+    setFormQImageUrl('');
   };
 
   // Mở modal sửa câu hỏi
@@ -370,10 +469,124 @@ export default function QuizManager() {
     setFormQText(q.question);
     setFormQPoints(q.points || 1);
     setFormQExpl(q.explanation || '');
-    setFormQOptions(q.options || ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D']);
+    setFormQOptions(q.options && q.options.length > 0 ? [...q.options] : ['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D']);
     setFormQCorrectAnswer(q.correctAnswer || (q.correctAnswers ? q.correctAnswers[0] : ''));
+    setFormQCorrectAnswers(q.correctAnswers || (q.correctAnswer ? [q.correctAnswer] : ['Đáp án A']));
+    setFormQImageUrl(q.imageUrl || '');
     setFormQMatchingPairs(q.matchingPairs ? q.matchingPairs.map(p => ({ left: p.left, right: p.right })) : [{ left: '', right: '' }]);
     setShowQuestionModal(true);
+  };
+
+  // Mở modal tạo câu hỏi mới
+  const handleOpenNewQuestion = () => {
+    setEditingQuestion(null);
+    setFormQType('choice');
+    setFormQDiff('medium');
+    setFormQText('');
+    setFormQPoints(1);
+    setFormQExpl('');
+    setFormQOptions(['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D']);
+    setFormQCorrectAnswer('Đáp án A');
+    setFormQCorrectAnswers(['Đáp án A']);
+    setFormQImageUrl('');
+    setFormQMatchingPairs([{ left: 'Khái niệm 1', right: 'Định nghĩa 1' }, { left: 'Khái niệm 2', right: 'Định nghĩa 2' }]);
+    setShowQuestionModal(true);
+  };
+
+  // Thêm phương án trắc nghiệm (cho phép linh hoạt 2, 3, 4, 5, 6... đáp án)
+  const handleAddOption = () => {
+    if (formQOptions.length >= 10) {
+      showToast('Tối đa 10 phương án lựa chọn!', 'warning');
+      return;
+    }
+    const nextChar = String.fromCharCode(65 + formQOptions.length);
+    setFormQOptions(prev => [...prev, `Đáp án ${nextChar}`]);
+  };
+
+  // Xóa bớt phương án trắc nghiệm
+  const handleDeleteOption = (indexToRemove: number) => {
+    if (formQOptions.length <= 2) {
+      showToast('Cần có ít nhất 2 phương án lựa chọn!', 'warning');
+      return;
+    }
+    const removedOpt = formQOptions[indexToRemove];
+    const newOpts = formQOptions.filter((_, idx) => idx !== indexToRemove);
+    setFormQOptions(newOpts);
+    if (formQCorrectAnswer === removedOpt) {
+      setFormQCorrectAnswer(newOpts[0] || '');
+    }
+    setFormQCorrectAnswers(prev => prev.filter(a => a !== removedOpt));
+  };
+
+  // Xuất bảng điểm chi tiết dạng Excel (.xlsx)
+  const handleExportExcel = () => {
+    if (activeQuizSubmissions.length === 0) {
+      showToast('Chưa có dữ liệu bài nộp để xuất Excel!', 'warning');
+      return;
+    }
+
+    const headerInfo = [
+      ['BẢNG ĐIỂM CHI TIẾT BÀI THI TRẮC NGHIỆM'],
+      ['Tên bộ đề:', activeQuiz.title],
+      ['Môn học:', activeQuiz.subject],
+      ['Mã phòng thi:', activeQuiz.code],
+      ['Số lượng câu hỏi:', activeQuiz.questions.length],
+      ['Thời gian làm bài:', `${activeQuiz.settings.timeLimitMinutes} phút`],
+      ['Tổng số lượt nộp:', activeQuizSubmissions.length],
+      ['Tỷ lệ đạt:', `${passRate}%`],
+      ['Điểm trung bình:', `${avgScore}/10`],
+      ['Thời điểm xuất file:', new Date().toLocaleString('vi-VN')],
+      []
+    ];
+
+    const tableHeader = [
+      'STT',
+      'Họ và tên thí sinh',
+      'MSSV / Mã SV',
+      'Lớp / Đơn vị',
+      'Điểm số (/10)',
+      'Tổng điểm đạt',
+      'Tỷ lệ %',
+      'Xếp loại',
+      'Thời gian làm bài (giây)',
+      'Thời gian nộp bài'
+    ];
+
+    const tableRows = activeQuizSubmissions.map((s, idx) => [
+      idx + 1,
+      s.studentName,
+      s.studentId || '',
+      s.className || '',
+      s.score,
+      `${s.score}/${s.totalPoints}`,
+      `${s.percentage}%`,
+      s.passed ? 'ĐẠT' : 'CHƯA ĐẠT',
+      s.timeSpentSeconds || 0,
+      new Date(s.submittedAt).toLocaleString('vi-VN')
+    ]);
+
+    const worksheetData = [...headerInfo, tableHeader, ...tableRows];
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    ws['!cols'] = [
+      { wch: 6 },
+      { wch: 26 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 14 },
+      { wch: 15 },
+      { wch: 12 },
+      { wch: 14 },
+      { wch: 22 },
+      { wch: 22 }
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Bảng Điểm');
+
+    const fileName = `BangDiem_${activeQuiz.code}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    showToast('Đã xuất file Excel bảng điểm thành công!', 'success');
   };
 
   // Xóa câu hỏi khỏi ngân hàng
@@ -668,25 +881,53 @@ export default function QuizManager() {
     ? Math.round((passCount / activeQuizSubmissions.length) * 100) 
     : 0;
 
+  if (!user) {
+    return (
+      <div className="quiz-manager-container animate-fade-in" style={{ maxWidth: 640, margin: '60px auto', padding: '1rem' }}>
+        <div style={{
+          background: 'var(--surface)',
+          padding: '2.5rem 2rem',
+          borderRadius: 'var(--radius-xl)',
+          border: '1px solid var(--border)',
+          boxShadow: 'var(--shadow-lg)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: 68,
+            height: 68,
+            borderRadius: '50%',
+            background: 'rgba(99, 102, 241, 0.12)',
+            color: 'var(--primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.5rem',
+            border: '2px solid rgba(99, 102, 241, 0.25)'
+          }}>
+            <ShieldCheck size={36} />
+          </div>
+          <h2 style={{ fontSize: '1.45rem', fontWeight: 700, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
+            Yêu Cầu Đăng Nhập Hệ Thống
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+            Hệ thống Quản lý Khảo thí & Bộ đề trắc nghiệm yêu cầu bạn đăng nhập tài khoản để bảo mật dữ liệu. 
+            Mỗi người dùng sẽ chỉ có quyền xem, chỉnh sửa và quản lý ngân hàng câu hỏi cùng bảng điểm của chính mình.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/login" className="btn btn-primary" style={{ padding: '0.75rem 1.75rem', fontWeight: 600 }}>
+              <LogIn size={18} /> Đăng Nhập Ngay
+            </Link>
+            <Link to="/" className="btn btn-outline" style={{ padding: '0.75rem 1.5rem' }}>
+              Về Trang Chủ
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="quiz-manager-container animate-fade-in">
-      {/* Auth Banner if not logged in */}
-      {!user && (
-        <div style={{ background: 'rgba(99, 102, 241, 0.1)', border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 'var(--radius-xl)', padding: '1rem 1.5rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-            <LogIn size={22} color="var(--primary)" />
-            <div>
-              <strong style={{ color: 'var(--text-primary)' }}>Bạn đang sử dụng ở chế độ Khách (Guest Demo)</strong>
-              <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Đăng nhập tài khoản để đồng bộ ngân hàng câu hỏi vĩnh viễn và lưu trữ điểm số thi của sinh viên trên đám mây.
-              </p>
-            </div>
-          </div>
-          <Link to="/login" className="btn btn-primary btn-sm">
-            <LogIn size={15} /> Đăng nhập ngay
-          </Link>
-        </div>
-      )}
 
       {/* Main Header */}
       <header className="qm-header">
@@ -932,7 +1173,7 @@ export default function QuizManager() {
               <button 
                 type="button" 
                 className="btn btn-primary btn-sm"
-                onClick={() => { setEditingQuestion(null); setFormQText(''); setShowQuestionModal(true); }}
+                onClick={handleOpenNewQuestion}
               >
                 <Plus size={15} /> Thêm Câu Hỏi
               </button>
@@ -1050,6 +1291,19 @@ export default function QuizManager() {
                         </button>
                       </div>
                     </div>
+
+                    {/* Hiển thị hình ảnh minh họa câu hỏi nếu có */}
+                    {q.imageUrl && (
+                      <div style={{ margin: '0.65rem 0', maxWidth: '340px' }}>
+                        <img 
+                          src={q.imageUrl} 
+                          alt="Ảnh câu hỏi" 
+                          style={{ maxHeight: '180px', width: 'auto', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.08)', cursor: 'pointer', display: 'block' }}
+                          onClick={() => window.open(q.imageUrl, '_blank')}
+                          title="Bấm để mở ảnh gốc trong tab mới"
+                        />
+                      </div>
+                    )}
 
                     {/* Options display */}
                     {(q.type === 'choice' || q.type === 'multiple_choice') && q.options && (
@@ -1380,30 +1634,40 @@ export default function QuizManager() {
                 Đã ghi nhận {activeQuizSubmissions.length} lượt nộp bài. Tỷ lệ đạt: {passRate}% • Điểm trung bình: {avgScore}/10.
               </p>
             </div>
-            <button 
-              type="button" 
-              className="btn btn-outline btn-sm"
-              onClick={() => {
-                if (activeQuizSubmissions.length === 0) {
-                  showToast('Chưa có dữ liệu bài nộp để xuất!', 'warning');
-                  return;
-                }
-                const csvHeader = 'Họ tên,MSSV / Lớp,Điểm số,Tổng điểm,Tỷ lệ %,Kết quả,Thời gian nộp\n';
-                const rows = activeQuizSubmissions.map(s => 
-                  `"${s.studentName}","${s.studentId || s.className}","${s.score}","${s.totalPoints}","${s.percentage}%","${s.passed ? 'Đạt' : 'Chưa đạt'}","${new Date(s.submittedAt).toLocaleString('vi-VN')}"`
-                ).join('\n');
-                const blob = new Blob([csvHeader + rows], { type: 'text/csv;charset=utf-8;' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `bang-diem-${activeQuiz.code}-${Date.now()}.csv`;
-                a.click();
-                URL.revokeObjectURL(url);
-                showToast('Đã xuất bảng điểm CSV thành công!', 'success');
-              }}
-            >
-              <FileSpreadsheet size={16} /> Xuất Bảng Điểm CSV
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary btn-sm"
+                onClick={handleExportExcel}
+                style={{ background: '#10b981', borderColor: '#10b981' }}
+              >
+                <FileSpreadsheet size={16} /> Xuất Bảng Điểm Excel (.xlsx)
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
+                onClick={() => {
+                  if (activeQuizSubmissions.length === 0) {
+                    showToast('Chưa có dữ liệu bài nộp để xuất!', 'warning');
+                    return;
+                  }
+                  const csvHeader = 'Họ tên,MSSV / Lớp,Điểm số,Tổng điểm,Tỷ lệ %,Kết quả,Thời gian nộp\n';
+                  const rows = activeQuizSubmissions.map(s => 
+                    `"${s.studentName}","${s.studentId || s.className}","${s.score}","${s.totalPoints}","${s.percentage}%","${s.passed ? 'Đạt' : 'Chưa đạt'}","${new Date(s.submittedAt).toLocaleString('vi-VN')}"`
+                  ).join('\n');
+                  const blob = new Blob([csvHeader + rows], { type: 'text/csv;charset=utf-8;' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `bang-diem-${activeQuiz.code}-${Date.now()}.csv`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  showToast('Đã xuất bảng điểm CSV thành công!', 'success');
+                }}
+              >
+                <Download size={15} /> Xuất CSV
+              </button>
+            </div>
           </div>
 
           <div className="qm-table-wrap">
@@ -1717,35 +1981,215 @@ export default function QuizManager() {
                 />
               </div>
 
-              {/* Options for ABCD */}
+              {/* Hình ảnh minh họa cho câu hỏi & Đồng bộ Google Drive */}
+              <div className="qm-form-group" style={{ background: 'var(--bg-tertiary)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <label className="qm-label" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <ImageIcon size={15} color="var(--primary)" /> Hình ảnh minh họa câu hỏi (Tùy chọn)
+                  </label>
+                  {formQImageUrl && (
+                    <span style={{ fontSize: '0.78rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      <Cloud size={13} /> {formQImageUrl.includes('drive.google.com') ? 'Đã đồng bộ Google Drive' : 'Đã có ảnh'}
+                    </span>
+                  )}
+                </div>
+
+                <input 
+                  type="file" 
+                  ref={imageFileInputRef} 
+                  accept="image/*" 
+                  style={{ display: 'none' }} 
+                  onChange={handleUploadQuestionImage} 
+                />
+
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-sm" 
+                    onClick={() => imageFileInputRef.current?.click()}
+                    disabled={isUploadingImage}
+                  >
+                    <Cloud size={15} /> {isUploadingImage ? 'Đang tải lên Drive...' : 'Tải ảnh & Đồng bộ Google Drive'}
+                  </button>
+                  <div style={{ flex: 1, minWidth: '220px' }}>
+                    <input 
+                      type="text" 
+                      className="qm-input" 
+                      placeholder="Hoặc dán URL ảnh trực tiếp..."
+                      value={formQImageUrl}
+                      onChange={(e) => setFormQImageUrl(e.target.value)}
+                      style={{ fontSize: '0.82rem' }}
+                    />
+                  </div>
+                  {formQImageUrl && (
+                    <button 
+                      type="button" 
+                      className="btn btn-outline btn-sm" 
+                      style={{ color: 'var(--danger)' }}
+                      onClick={() => setFormQImageUrl('')}
+                      title="Gỡ ảnh khỏi câu hỏi"
+                    >
+                      <Trash2 size={14} /> Xóa ảnh
+                    </button>
+                  )}
+                </div>
+
+                {formQImageUrl && (
+                  <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <img 
+                      src={formQImageUrl} 
+                      alt="Xem trước ảnh câu hỏi" 
+                      style={{ maxHeight: '140px', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.06)' }} 
+                    />
+                    <a 
+                      href={formQImageUrl} 
+                      target="_blank" 
+                      rel="noreferrer" 
+                      className="btn btn-outline btn-xs"
+                      style={{ height: 'fit-content' }}
+                    >
+                      <ExternalLink size={12} /> Mở ảnh gốc
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Options for ABCD / Dynamic options */}
               {(formQType === 'choice' || formQType === 'multiple_choice') && (
                 <div className="qm-form-group">
-                  <label className="qm-label">Các phương án lựa chọn:</label>
-                  {formQOptions.map((opt, oIdx) => (
-                    <div key={oIdx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.4rem', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 700, width: '24px', color: 'var(--text-secondary)' }}>
-                        {['A', 'B', 'C', 'D', 'E', 'F'][oIdx] || oIdx + 1}.
-                      </span>
-                      <input 
-                        type="text" 
-                        className="qm-input" 
-                        value={opt}
-                        onChange={(e) => {
-                          const newOpts = [...formQOptions];
-                          newOpts[oIdx] = e.target.value;
-                          setFormQOptions(newOpts);
-                        }}
-                      />
-                      <input 
-                        type="radio" 
-                        name="correctOpt" 
-                        checked={formQCorrectAnswer === opt}
-                        onChange={() => setFormQCorrectAnswer(opt)}
-                        title="Đánh dấu đáp án đúng"
-                      />
-                    </div>
-                  ))}
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>* Bấm vào nút tròn bên phải phương án để chọn đáp án đúng.</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                    <label className="qm-label" style={{ margin: 0 }}>
+                      Các phương án lựa chọn ({formQOptions.length} phương án):
+                    </label>
+                    <button 
+                      type="button" 
+                      className="btn btn-outline btn-xs"
+                      onClick={handleAddOption}
+                      style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                    >
+                      <Plus size={13} /> Thêm phương án ({String.fromCharCode(65 + formQOptions.length)})
+                    </button>
+                  </div>
+
+                  {formQOptions.map((opt, oIdx) => {
+                    const charLabel = String.fromCharCode(65 + oIdx);
+                    const isMultiple = formQType === 'multiple_choice';
+                    const isChecked = isMultiple ? formQCorrectAnswers.includes(opt) : formQCorrectAnswer === opt;
+
+                    return (
+                      <div key={oIdx} style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.45rem', alignItems: 'center' }}>
+                        <span style={{ fontWeight: 700, width: '24px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+                          {charLabel}.
+                        </span>
+                        <input 
+                          type="text" 
+                          className="qm-input" 
+                          value={opt}
+                          placeholder={`Nội dung phương án ${charLabel}...`}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const oldVal = formQOptions[oIdx];
+                            const newOpts = [...formQOptions];
+                            newOpts[oIdx] = val;
+                            setFormQOptions(newOpts);
+                            if (formQCorrectAnswer === oldVal) {
+                              setFormQCorrectAnswer(val);
+                            }
+                            if (formQCorrectAnswers.includes(oldVal)) {
+                              setFormQCorrectAnswers(prev => prev.map(a => a === oldVal ? val : a));
+                            }
+                          }}
+                        />
+
+                        {isMultiple ? (
+                          <label 
+                            style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '0.35rem', 
+                              cursor: 'pointer', 
+                              padding: '0.4rem 0.6rem', 
+                              borderRadius: 'var(--radius-sm)', 
+                              background: isChecked ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)',
+                              border: isChecked ? '1px solid #10b981' : '1px solid var(--border)',
+                              fontSize: '0.8rem',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title="Tích chọn nếu là đáp án đúng"
+                          >
+                            <input 
+                              type="checkbox" 
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormQCorrectAnswers(prev => [...prev, opt]);
+                                } else {
+                                  setFormQCorrectAnswers(prev => prev.filter(a => a !== opt));
+                                }
+                              }}
+                            />
+                            <span style={{ color: isChecked ? '#10b981' : 'var(--text-secondary)', fontWeight: isChecked ? 600 : 400 }}>
+                              {isChecked ? 'Đúng' : 'Chọn'}
+                            </span>
+                          </label>
+                        ) : (
+                          <label 
+                            style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              gap: '0.35rem', 
+                              cursor: 'pointer', 
+                              padding: '0.4rem 0.6rem', 
+                              borderRadius: 'var(--radius-sm)', 
+                              background: isChecked ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-tertiary)',
+                              border: isChecked ? '1px solid #10b981' : '1px solid var(--border)',
+                              fontSize: '0.8rem',
+                              whiteSpace: 'nowrap'
+                            }}
+                            title="Chọn làm đáp án đúng duy nhất"
+                          >
+                            <input 
+                              type="radio" 
+                              name="correctOpt" 
+                              checked={isChecked}
+                              onChange={() => setFormQCorrectAnswer(opt)}
+                            />
+                            <span style={{ color: isChecked ? '#10b981' : 'var(--text-secondary)', fontWeight: isChecked ? 600 : 400 }}>
+                              {isChecked ? 'Đúng' : 'Chọn'}
+                            </span>
+                          </label>
+                        )}
+
+                        {formQOptions.length > 2 && (
+                          <button 
+                            type="button" 
+                            className="btn btn-outline btn-xs" 
+                            style={{ color: 'var(--danger)', padding: '0.4rem 0.5rem' }}
+                            onClick={() => handleDeleteOption(oIdx)}
+                            title="Xóa phương án này"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      {formQType === 'choice' 
+                        ? '* Chọn nút tròn "Đúng" ở phương án chính xác duy nhất.' 
+                        : '* Tích chọn các ô "Đúng" cho một hoặc nhiều phương án đúng.'}
+                    </span>
+                    <button 
+                      type="button" 
+                      className="btn btn-outline btn-xs"
+                      onClick={handleAddOption}
+                      style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+                    >
+                      <Plus size={13} /> Thêm phương án ({String.fromCharCode(65 + formQOptions.length)})
+                    </button>
+                  </div>
                 </div>
               )}
 

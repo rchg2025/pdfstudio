@@ -358,19 +358,41 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
       typeBadge.innerText = q.type === 'choice' ? 'TRẮC NGHIỆM' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN')));
 
       document.getElementById('q-title').innerText = q.question;
+
+      // Hiển thị ảnh câu hỏi nếu có
+      let imgWrap = document.getElementById('q-image-wrap');
+      if (q.imageUrl) {
+        if (!imgWrap) {
+          imgWrap = document.createElement('div');
+          imgWrap.id = 'q-image-wrap';
+          imgWrap.style.margin = '10px 0 18px';
+          imgWrap.style.textAlign = 'center';
+          imgWrap.style.background = '#0b0f19';
+          imgWrap.style.padding = '8px';
+          imgWrap.style.borderRadius = '12px';
+          imgWrap.style.border = '1px solid #1f2937';
+          document.getElementById('q-title').after(imgWrap);
+        }
+        imgWrap.style.display = 'block';
+        imgWrap.innerHTML = '<img src="' + q.imageUrl + '" style="max-width:100%;max-height:360px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" /><div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">🔍 Bấm vào ảnh để xem kích thước lớn</div>';
+      } else if (imgWrap) {
+        imgWrap.style.display = 'none';
+      }
+
       const container = document.getElementById('q-options-container');
       container.innerHTML = '';
 
       if (q.type === 'choice' || q.type === 'multiple_choice') {
         const grid = document.createElement('div');
         grid.className = 'options-grid';
-        const chars = ['A', 'B', 'C', 'D', 'E', 'F'];
         (q.options || []).forEach((opt, idx) => {
+          const char = String.fromCharCode(65 + idx);
           const isSelected = q.type === 'choice' ? answers[q.id] === opt : (answers[q.id] || []).includes(opt);
           const label = document.createElement('div');
           label.className = 'opt-label' + (isSelected ? ' selected' : '');
-          label.innerHTML = '<span class="opt-char">' + (chars[idx] || idx + 1) + '</span><span>' + opt + '</span>';
+          label.innerHTML = '<span class="opt-char">' + char + '</span><span>' + opt + '</span>';
           label.onclick = () => {
+            playClick();
             if (q.type === 'choice') {
               answers[q.id] = opt;
             } else {

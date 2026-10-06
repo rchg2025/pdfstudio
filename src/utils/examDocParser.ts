@@ -191,6 +191,10 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
         }
       }
 
+      // Kiểm tra xem trong li có ảnh hay không
+      const imgEl = li.querySelector('img');
+      const detectedImageUrl = imgEl ? (imgEl.getAttribute('src') || '') : '';
+
       // Lấy nội dung câu hỏi: clone thẻ li và loại bỏ các thẻ ul, ol, table
       const cloneLi = li.cloneNode(true) as HTMLElement;
       cloneLi.querySelectorAll('ul, ol, table').forEach(n => n.remove());
@@ -221,6 +225,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
           type: 'choice',
           difficulty: assignSmartDifficulty(qNum, directLis.length),
           question: qText,
+          imageUrl: detectedImageUrl || undefined,
           options,
           correctAnswer,
           points: 1,
@@ -275,6 +280,9 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
           });
         }
 
+        const imgEl = qDiv.querySelector('img');
+        const detectedImageUrl = imgEl ? (imgEl.getAttribute('src') || '') : '';
+
         if (questionText && options.length >= 2) {
           const correctLetter = answerMap[qNum];
           let correctAnswer = options[0];
@@ -290,6 +298,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
             type: 'choice',
             difficulty: assignSmartDifficulty(qNum, questionDivs.length),
             question: questionText,
+            imageUrl: detectedImageUrl || undefined,
             options,
             correctAnswer,
             points: 1,

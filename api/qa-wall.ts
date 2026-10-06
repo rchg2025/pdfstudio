@@ -258,9 +258,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // ------------------- QUIZ ASSESSMENT ACTIONS -------------------
     await ensureQuizTables(pool);
 
-    // 6. LẤY DANH SÁCH BỘ ĐỀ QUIZ
+    // 6. LẤY DANH SÁCH BỘ ĐỀ QUIZ (CÔ LẬP THEO USERID)
     if (req.method === 'GET' && action === 'get-quizzes') {
       const { userId, code, id } = req.query;
+      // Dành cho phòng thi học sinh làm bài: tìm theo id hoặc mã phòng thi (code)
       if (id) {
         const queryRes = await pool.query('SELECT * FROM "QuizPackage" WHERE id = $1 LIMIT 1', [String(id)]);
         return res.status(200).json({ success: true, quiz: queryRes.rows[0] || null });
@@ -269,12 +270,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const queryRes = await pool.query('SELECT * FROM "QuizPackage" WHERE code = $1 LIMIT 1', [String(code)]);
         return res.status(200).json({ success: true, quiz: queryRes.rows[0] || null });
       }
-      let queryRes;
-      if (userId) {
-        queryRes = await pool.query('SELECT * FROM "QuizPackage" WHERE "userId" = $1 ORDER BY "updatedAt" DESC', [String(userId)]);
-      } else {
-        queryRes = await pool.query('SELECT * FROM "QuizPackage" ORDER BY "updatedAt" DESC LIMIT 50');
+      
+      // Dành cho trang quản lý bộ đề: BẮT BUỘC có userId để cô lập dữ liệu người dùng
+      if (!userId || String(userId).trim() === '') {
+        return res.status(200).json({ success: true, quizzes: [] });
       }
+
+      const queryRes = await pool.query(
+        'SELECT * FROM "QuizPackage" WHERE "userId" = $1 ORDER BY "updatedAt" DESC', 
+        [String(userId)]
+      );
       return res.status(200).json({ success: true, quizzes: queryRes.rows });
     }
 
@@ -376,12 +381,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // 10. LẤY BÀI NỘP CỦA BỘ ĐỀ QUIZ
     if (req.method === 'GET' && action === 'get-submissions') {
-      const { quizId } = req.query;
+      const { quizId, userId } = req.query;
       let queryRes;
       if (quizId) {
         queryRes = await pool.query('SELECT * FROM "QuizSubmission" WHERE "quizId" = $1 ORDER BY "submittedAt" DESC', [String(quizId)]);
+      } else if (userId) {
+        queryRes = await pool.query(`
+          SELECT s.* FROM "QuizSubmission" s
+          INNER JOIN "QuizPackage" q ON s."quizId" = q.id
+          WHERE q."userId" = $1
+          ORDER BY s."submittedAt" DESC
+        `, [String(userId)]);
       } else {
-        queryRes = await pool.query('SELECT * FROM "QuizSubmission" ORDER BY "submittedAt" DESC LIMIT 100');
+        queryRes = { rows: [] };
       }
       return res.status(200).json({ success: true, submissions: queryRes.rows });
     }
