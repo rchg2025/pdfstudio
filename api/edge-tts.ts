@@ -1,11 +1,27 @@
 import { Communicate } from 'edge-tts-universal';
+import { requireActiveSubscription } from './_lib/auth.js';
 
-export default async function handler(req, res) {
+export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
+    try {
+      await requireActiveSubscription(req);
+    } catch (authErr: any) {
+      if (authErr.message === 'Unauthorized') {
+        return res.status(401).json({ error: 'Vui lòng đăng nhập để sử dụng tính năng Đọc Văn Bản' });
+      }
+      if (authErr.message === 'SUBSCRIPTION_EXPIRED' || authErr.code === 'SUBSCRIPTION_EXPIRED') {
+        return res.status(403).json({ error: 'Tài khoản của bạn đã hết hạn sử dụng. Vui lòng gia hạn để tiếp tục.' });
+      }
+      if (authErr.message === 'DISABLED_ACCOUNT') {
+        return res.status(403).json({ error: 'Tài khoản của bạn đang bị tạm khóa.' });
+      }
+      return res.status(401).json({ error: 'Yêu cầu đăng nhập tài khoản hợp lệ.' });
+    }
+
     const { text, voice = 'vi-VN-HoaiMyNeural', rate = '+0%', pitch = '+0Hz' } = req.body;
     
     if (!text || !text.trim()) {

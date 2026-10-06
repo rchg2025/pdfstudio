@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Scissors, Merge, Music, Trash2, GripVertical, Download, Loader2 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import FileUploadZone from '../components/FileUploadZone';
+import AuthGate from '../components/AuthGate';
 import './AudioEditor.css';
 
 // Hàm helper xuất AudioBuffer ra file WAV (chuẩn pcm 16-bit)
@@ -237,13 +238,18 @@ export default function AudioEditor() {
   };
 
   return (
-    <div className="audio-editor-container">
-      <div className="tool-header text-center mb-8">
-        <h1 className="text-gradient text-3xl mb-2">Cắt Ghép Âm Thanh</h1>
-        <p className="text-secondary">Chỉnh sửa file âm thanh trực tiếp trên trình duyệt, an toàn và nhanh chóng.</p>
-      </div>
+    <AuthGate
+      featureTitle="Cắt Ghép Âm Thanh"
+      featureDescription="Tính năng Cắt & Ghép file âm thanh yêu cầu bạn đăng nhập tài khoản để xử lý âm thanh không giới hạn."
+      returnUrl="/cat-ghep-am-thanh"
+    >
+      <div className="audio-editor-container">
+        <div className="tool-header text-center mb-8">
+          <h1 className="text-gradient text-3xl mb-2">Cắt Ghép Âm Thanh</h1>
+          <p className="text-secondary">Chỉnh sửa file âm thanh trực tiếp trên trình duyệt, an toàn và nhanh chóng.</p>
+        </div>
 
-      <div className="glass-card">
+        <div className="glass-card">
         <div className="audio-tabs">
           <button 
             className={`audio-tab ${activeTab === 'cut' ? 'active' : ''}`}
@@ -345,5 +351,6 @@ export default function AudioEditor() {
         )}
       </div>
     </div>
+    </AuthGate>
   );
 }

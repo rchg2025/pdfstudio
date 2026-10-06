@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Play, Square, Settings2, Mic, Volume2, Cloud, Download, Loader2, FileAudio } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
+import { useAuth } from '../contexts/AuthContext';
+import AuthGate from '../components/AuthGate';
 import './TextToSpeech.css';
 
 type Mode = 'browser' | 'edge';
@@ -125,6 +127,7 @@ const EDGE_VOICES: EdgeVoice[] = [
 ];
 
 export default function TextToSpeech() {
+  const { token } = useAuth();
   const [mode, setMode] = useState<Mode>('edge');
   const [text, setText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -321,7 +324,10 @@ export default function TextToSpeech() {
           try {
             response = await fetch('/api/edge-tts', {
               method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
+              headers: { 
+                'Content-Type': 'application/json',
+                ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+              },
               body: JSON.stringify({
                 text: chunkText,
                 voice: selectedEdgeVoice,
@@ -388,13 +394,18 @@ export default function TextToSpeech() {
   };
 
   return (
-    <div className="tts-container">
-      <div className="tool-header text-center mb-8">
-        <h1 className="text-gradient text-3xl mb-2">Đọc Văn Bản (Text To Speech)</h1>
-        <p className="text-secondary">Sử dụng Microsoft Edge AI để tạo file MP3 giọng Nam/Nữ chuẩn xác nhất, hoàn toàn miễn phí.</p>
-      </div>
+    <AuthGate
+      featureTitle="Đọc Văn Bản (Text To Speech)"
+      featureDescription="Tính năng Chuyển văn bản thành giọng đọc AI (Microsoft Edge AI & Web Speech) yêu cầu bạn đăng nhập tài khoản để sử dụng."
+      returnUrl="/doc-van-ban"
+    >
+      <div className="tts-container">
+        <div className="tool-header text-center mb-8">
+          <h1 className="text-gradient text-3xl mb-2">Đọc Văn Bản (Text To Speech)</h1>
+          <p className="text-secondary">Sử dụng Microsoft Edge AI để tạo file MP3 giọng Nam/Nữ chuẩn xác nhất, hoàn toàn miễn phí.</p>
+        </div>
 
-      <div className="glass-card">
+        <div className="glass-card">
         {/* TAB NAVIGATION */}
         <div className="flex gap-4 mb-6 border-b border-gray-200 pb-2">
           <button 
@@ -714,5 +725,6 @@ export default function TextToSpeech() {
 
       </div>
     </div>
+    </AuthGate>
   );
 }
