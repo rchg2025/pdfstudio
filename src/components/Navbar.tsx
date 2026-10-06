@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Layers, Menu, X, ChevronLeft, ChevronRight, Crown } from 'lucide-react';
+import { Layers, Menu, X, ChevronLeft, ChevronRight, Crown, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SubscriptionModal from './SubscriptionModal';
 import './Navbar.css';
@@ -219,7 +219,10 @@ const Navbar = () => {
           {user && (
             <div className="mobile-auth-footer">
               <div className="nav-divider" style={{ margin: '0.75rem 0' }}></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
+                <NavLink to="/thong-tin-ca-nhan" onClick={() => setIsMobileMenuOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
+                  <User size={15} style={{ marginRight: '0.35rem' }} /> Cá nhân
+                </NavLink>
                 {user.role === 'ADMIN' && (
                   <NavLink to="/admin" onClick={() => setIsMobileMenuOpen(false)} className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>
                     Quản trị
@@ -243,7 +246,7 @@ const Navbar = () => {
         </nav>
 
         {/* Auth Links - Desktop Only */}
-        <div className="desktop-auth-links" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div className="desktop-auth-links" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           {user ? (
             <>
               {/* Subscription Pill */}
@@ -263,12 +266,22 @@ const Navbar = () => {
                   border: isExpired ? '1px solid #f87171' : user.isLifetime ? '1px solid #34d399' : '1px solid #93c5fd',
                   background: isExpired ? '#fef2f2' : user.isLifetime ? '#ecfdf5' : '#eff6ff',
                   color: isExpired ? '#dc2626' : user.isLifetime ? '#059669' : '#1d4ed8',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  whiteSpace: 'nowrap'
                 }}
               >
                 <Crown size={15} />
                 {user.isLifetime ? 'Vĩnh Viễn' : isExpired ? 'Hết hạn (Gia hạn)' : `Còn ${remainingDays} ngày`}
               </button>
+
+              <NavLink 
+                to="/thong-tin-ca-nhan" 
+                className={({isActive}) => isActive ? "nav-link active" : "nav-link"}
+                title="Xem hồ sơ, thời hạn sử dụng và đổi mật khẩu"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}
+              >
+                <User size={15} /> Cá nhân
+              </NavLink>
 
               {user.role === 'ADMIN' && <NavLink to="/admin" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Quản trị</NavLink>}
               {(!user.role || user.role === 'USER') && <NavLink to="/dashboard" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảng điều khiển</NavLink>}

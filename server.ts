@@ -103,6 +103,7 @@ if (fs.existsSync(distPath)) {
     '/',
     '/dashboard',
     '/admin',
+    '/thong-tin-ca-nhan',
     '/login',
     '/register',
     '/tao-khung',

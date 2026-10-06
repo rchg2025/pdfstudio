@@ -61,6 +61,89 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ user });
       }
+      case 'update-profile': {
+        if (req.method !== 'POST') {
+          return res.status(405).json({ message: 'Method not allowed' });
+        }
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+          return res.status(401).json({ message: 'Unauthorized' });
+        }
+        const token = authHeader.split(' ')[1];
+        const jwtModule = await import('jsonwebtoken');
+        const jwt = jwtModule.default || jwtModule;
+        const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+        let decoded: any;
+        try {
+          decoded = jwt.verify(token, secret);
+        } catch {
+          return res.status(401).json({ message: 'Token không hợp lệ hoặc đã hết hạn' });
+        }
+
+        const { name, currentPassword, newPassword } = req.body || {};
+        const prismaModule = await import('../_lib/prisma.js');
+        const prisma = prismaModule.prisma;
+
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId }
+        });
+
+        if (!user) {
+          return res.status(404).json({ message: 'Không tìm thấy tài khoản người dùng.' });
+        }
+
+        if (user.role === 'DISABLED') {
+          return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa.' });
+        }
+
+        const updateData: any = {};
+        if (typeof name === 'string' && name.trim()) {
+          updateData.name = name.trim();
+        }
+
+        // Nếu muốn đổi mật khẩu
+        if (newPassword) {
+          if (newPassword.length < 6) {
+            return res.status(400).json({ message: 'Mật khẩu mới phải có ít nhất 6 ký tự.' });
+          }
+
+          const bcryptModule = await import('bcryptjs');
+          const bcrypt = bcryptModule.default || bcryptModule;
+
+          // Nếu tài khoản đã có passwordHash thì bắt buộc nhập đúng currentPassword
+          if (user.passwordHash) {
+            if (!currentPassword) {
+              return res.status(400).json({ message: 'Vui lòng nhập mật khẩu hiện tại để xác nhận thay đổi.' });
+            }
+            const isMatch = await bcrypt.compare(currentPassword, user.passwordHash);
+            if (!isMatch) {
+              return res.status(400).json({ message: 'Mật khẩu hiện tại không chính xác.' });
+            }
+          }
+
+          updateData.passwordHash = await bcrypt.hash(newPassword, 10);
+        }
+
+        const updatedUser = await prisma.user.update({
+          where: { id: user.id },
+          data: updateData,
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            role: true,
+            subscriptionPlan: true,
+            subscriptionExpiresAt: true,
+            isLifetime: true,
+            createdAt: true
+          }
+        });
+
+        return res.status(200).json({
+          message: 'Cập nhật thông tin thành công!',
+          user: updatedUser
+        });
+      }
       case 'activate': {
         const email = req.query.email as string;
         const token = req.query.token as string;

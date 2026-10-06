@@ -15,6 +15,7 @@
   align-items: center;
   justify-content: space-between;
   height: 4rem;
+  padding: 0 1.25rem;
 }
 
 .navbar-brand {
