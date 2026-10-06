@@ -417,6 +417,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, submissions: queryRes.rows });
     }
 
+    // 10B. XOÁ 1 HOẶC NHIỀU BÀI NỘP / THÔNG TIN SINH VIÊN
+    if (req.method === 'POST' && action === 'delete-submissions') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { ids, submissionId } = body || {};
+      const targetIds: string[] = [];
+      if (Array.isArray(ids)) {
+        targetIds.push(...ids.map((id: any) => String(id)));
+      } else if (submissionId) {
+        targetIds.push(String(submissionId));
+      }
+
+      if (targetIds.length === 0) {
+        return res.status(400).json({ error: 'Không tìm thấy ID bài nộp cần xoá' });
+      }
+
+      await pool.query('DELETE FROM "QuizSubmission" WHERE id = ANY($1::text[])', [targetIds]);
+      return res.status(200).json({ success: true, count: targetIds.length });
+    }
+
     // 11. LẤY TRẠNG THÁI CẤU HÌNH AI
     if (req.method === 'GET' && action === 'get-ai-config') {
       const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);

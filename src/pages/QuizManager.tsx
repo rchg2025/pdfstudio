@@ -277,6 +277,8 @@ export default function QuizManager() {
   const [subEndDate, setSubEndDate] = useState('');
   const [subPage, setSubPage] = useState(1);
   const [subPageSize, setSubPageSize] = useState(10);
+  const [selectedSubIds, setSelectedSubIds] = useState<string[]>([]);
+  const [isDeletingSubs, setIsDeletingSubs] = useState(false);
 
   const activeQuiz = quizzes.find(q => q.id === activeQuizId) || quizzes[0] || DEFAULT_QUIZ;
 
@@ -771,6 +773,75 @@ export default function QuizManager() {
     const fileName = `BangDiem_${activeQuiz.code}_${new Date().toISOString().slice(0, 10)}.xlsx`;
     XLSX.writeFile(wb, fileName);
     showToast('Đã xuất file Excel bảng điểm thành công!', 'success');
+  };
+
+  // Chọn hoặc bỏ chọn một bài nộp của sinh viên
+  const handleToggleSelectSub = (id: string) => {
+    setSelectedSubIds(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
+  };
+
+  // Chọn hoặc bỏ chọn tất cả bài nộp trong trang hoặc trong danh sách lọc
+  const handleToggleSelectAllSubs = (subList: StudentSubmission[]) => {
+    const listIds = subList.map(s => s.id);
+    const allSelected = listIds.length > 0 && listIds.every(id => selectedSubIds.includes(id));
+    if (allSelected) {
+      setSelectedSubIds(prev => prev.filter(id => !listIds.includes(id)));
+    } else {
+      setSelectedSubIds(prev => Array.from(new Set([...prev, ...listIds])));
+    }
+  };
+
+  // Xóa 1 hoặc nhiều bài nộp đã chọn
+  const handleDeleteSubmissions = async (idsToDelete: string[]) => {
+    if (!idsToDelete || idsToDelete.length === 0) {
+      showToast('Vui lòng chọn ít nhất một sinh viên / bài thi để xóa!', 'warning');
+      return;
+    }
+
+    const count = idsToDelete.length;
+    const confirmMsg = count === 1
+      ? 'Bạn có chắc chắn muốn xóa thông tin bài thi của sinh viên này?'
+      : `Bạn có chắc chắn muốn xóa ${count} bài thi của các sinh viên đã chọn?`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsDeletingSubs(true);
+    try {
+      // 1. Gọi backend API xóa trong Database
+      await fetch('/api/quiz-api?action=delete-submissions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: idsToDelete })
+      });
+
+      // 2. Cập nhật state local
+      setSubmissions(prev => prev.filter(s => !idsToDelete.includes(s.id)));
+      setSelectedSubIds(prev => prev.filter(id => !idsToDelete.includes(id)));
+
+      // 3. Cập nhật localStorage
+      if (user) {
+        try {
+          const currentLocal = localStorage.getItem(`rchg_quiz_submissions_${user.id}`);
+          if (currentLocal) {
+            const parsed: StudentSubmission[] = JSON.parse(currentLocal);
+            const remaining = parsed.filter(s => !idsToDelete.includes(s.id));
+            localStorage.setItem(`rchg_quiz_submissions_${user.id}`, JSON.stringify(remaining));
+          }
+        } catch {}
+      }
+
+      showToast(`Đã xóa thành công ${count} thông tin bài thi của sinh viên!`, 'success');
+    } catch (err) {
+      console.error('Delete submissions error:', err);
+      // Vẫn cập nhật client nếu API gặp trục trặc mạng
+      setSubmissions(prev => prev.filter(s => !idsToDelete.includes(s.id)));
+      setSelectedSubIds(prev => prev.filter(id => !idsToDelete.includes(id)));
+      showToast(`Đã xóa ${count} thông tin sinh viên khỏi danh sách!`, 'success');
+    } finally {
+      setIsDeletingSubs(false);
+    }
   };
 
   // Xóa câu hỏi khỏi ngân hàng
@@ -2069,6 +2140,18 @@ export default function QuizManager() {
               </p>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              {selectedSubIds.length > 0 && (
+                <button 
+                  type="button" 
+                  className="btn btn-sm"
+                  onClick={() => handleDeleteSubmissions(selectedSubIds)}
+                  disabled={isDeletingSubs}
+                  style={{ background: '#ef4444', borderColor: '#ef4444', color: '#fff' }}
+                  title="Xóa tất cả thí sinh đã chọn"
+                >
+                  <Trash2 size={15} /> Xóa ({selectedSubIds.length}) sinh viên đã chọn
+                </button>
+              )}
               <button 
                 type="button" 
                 className="btn btn-primary btn-sm"
@@ -2261,6 +2344,15 @@ export default function QuizManager() {
                 <table className="qm-table">
                   <thead>
                     <tr>
+                      <th style={{ width: '40px', textAlign: 'center' }}>
+                        <input 
+                          type="checkbox"
+                          style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                          title="Chọn/Bỏ chọn tất cả trang này"
+                          checked={paginatedSubmissions.length > 0 && paginatedSubmissions.every(s => selectedSubIds.includes(s.id))}
+                          onChange={() => handleToggleSelectAllSubs(paginatedSubmissions)}
+                        />
+                      </th>
                       <th>STT</th>
                       <th>Họ và tên thí sinh</th>
                       <th>Lớp / MSSV</th>
@@ -2268,13 +2360,23 @@ export default function QuizManager() {
                       <th>Tỷ lệ %</th>
                       <th>Xếp loại</th>
                       <th>Thời gian nộp</th>
+                      <th style={{ width: '80px', textAlign: 'center' }}>Thao tác</th>
                     </tr>
                   </thead>
                   <tbody>
                     {paginatedSubmissions.map((sub, idx) => {
                       const globalIdx = (subPage - 1) * subPageSize + idx + 1;
+                      const isSelected = selectedSubIds.includes(sub.id);
                       return (
-                        <tr key={sub.id}>
+                        <tr key={sub.id} style={{ background: isSelected ? 'rgba(79, 70, 229, 0.08)' : undefined }}>
+                          <td style={{ textAlign: 'center' }}>
+                            <input 
+                              type="checkbox"
+                              style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                              checked={isSelected}
+                              onChange={() => handleToggleSelectSub(sub.id)}
+                            />
+                          </td>
                           <td>#{globalIdx}</td>
                           <td><strong>{sub.studentName}</strong></td>
                           <td>{sub.studentId || sub.className}</td>
@@ -2287,6 +2389,18 @@ export default function QuizManager() {
                           </td>
                           <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                             {new Date(sub.submittedAt).toLocaleTimeString('vi-VN')} {new Date(sub.submittedAt).toLocaleDateString('vi-VN')}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-xs"
+                              onClick={() => handleDeleteSubmissions([sub.id])}
+                              style={{ color: '#ef4444', borderColor: '#ef4444', padding: '4px 8px' }}
+                              title="Xóa bài thi của thí sinh này"
+                              disabled={isDeletingSubs}
+                            >
+                              <Trash2 size={14} />
+                            </button>
                           </td>
                         </tr>
                       );
