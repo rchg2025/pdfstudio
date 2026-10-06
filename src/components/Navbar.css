@@ -216,6 +216,10 @@
   display: none;
 }
 
+.navbar-links-mobile {
+  display: none;
+}
+
 @media (max-width: 1024px) {
   .navbar-content {
     padding: 0 1rem;
