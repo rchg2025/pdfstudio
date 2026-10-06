@@ -43,7 +43,9 @@ import {
   Smartphone,
   RotateCcw,
   AlertCircle,
-  Crown
+  Crown,
+  Calendar,
+  Filter
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -266,6 +268,15 @@ export default function QuizManager() {
     } catch {}
     return [];
   });
+
+  // Tìm kiếm thông minh & Lọc bảng điểm sinh viên
+  const [subSearchQuery, setSubSearchQuery] = useState('');
+  const [subResultFilter, setSubResultFilter] = useState<'all' | 'passed' | 'failed'>('all');
+  const [subDateFilter, setSubDateFilter] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
+  const [subStartDate, setSubStartDate] = useState('');
+  const [subEndDate, setSubEndDate] = useState('');
+  const [subPage, setSubPage] = useState(1);
+  const [subPageSize, setSubPageSize] = useState(10);
 
   const activeQuiz = quizzes.find(q => q.id === activeQuizId) || quizzes[0] || DEFAULT_QUIZ;
 
@@ -688,10 +699,15 @@ export default function QuizManager() {
 
   // Xuất bảng điểm chi tiết dạng Excel (.xlsx)
   const handleExportExcel = () => {
-    if (activeQuizSubmissions.length === 0) {
+    const targetSubmissions = filteredSubmissions.length > 0 ? filteredSubmissions : activeQuizSubmissions;
+    if (targetSubmissions.length === 0) {
       showToast('Chưa có dữ liệu bài nộp để xuất Excel!', 'warning');
       return;
     }
+
+    const exportPassCount = targetSubmissions.filter(s => s.passed).length;
+    const exportPassRate = targetSubmissions.length > 0 ? Math.round((exportPassCount / targetSubmissions.length) * 100) : 0;
+    const exportAvg = targetSubmissions.length > 0 ? (targetSubmissions.reduce((acc, cur) => acc + cur.score, 0) / targetSubmissions.length).toFixed(1) : '0';
 
     const headerInfo = [
       ['BẢNG ĐIỂM CHI TIẾT BÀI THI TRẮC NGHIỆM'],
@@ -700,9 +716,9 @@ export default function QuizManager() {
       ['Mã phòng thi:', activeQuiz.code],
       ['Số lượng câu hỏi:', activeQuiz.questions.length],
       ['Thời gian làm bài:', `${activeQuiz.settings.timeLimitMinutes} phút`],
-      ['Tổng số lượt nộp:', activeQuizSubmissions.length],
-      ['Tỷ lệ đạt:', `${passRate}%`],
-      ['Điểm trung bình:', `${avgScore}/10`],
+      ['Tổng số lượt nộp:', `${targetSubmissions.length} lượt${filteredSubmissions.length !== activeQuizSubmissions.length ? ' (Đã áp dụng bộ lọc)' : ''}`],
+      ['Tỷ lệ đạt:', `${exportPassRate}%`],
+      ['Điểm trung bình:', `${exportAvg}/10`],
       ['Thời điểm xuất file:', new Date().toLocaleString('vi-VN')],
       []
     ];
@@ -720,7 +736,7 @@ export default function QuizManager() {
       'Thời gian nộp bài'
     ];
 
-    const tableRows = activeQuizSubmissions.map((s, idx) => [
+    const tableRows = targetSubmissions.map((s, idx) => [
       idx + 1,
       s.studentName,
       s.studentId || '',
@@ -1034,7 +1050,7 @@ export default function QuizManager() {
   const startIndex = filteredQuestions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, filteredQuestions.length);
 
-  // Tính toán thống kê
+  // Tính toán thống kê toàn bộ bài nộp của bộ đề đang chọn
   const activeQuizSubmissions = submissions.filter(s => s.quizId === activeQuiz.id);
   const avgScore = activeQuizSubmissions.length > 0 
     ? (activeQuizSubmissions.reduce((acc, cur) => acc + cur.score, 0) / activeQuizSubmissions.length).toFixed(1)
@@ -1043,6 +1059,62 @@ export default function QuizManager() {
   const passRate = activeQuizSubmissions.length > 0 
     ? Math.round((passCount / activeQuizSubmissions.length) * 100) 
     : 0;
+
+  // Lọc thông minh danh sách bài nộp & sinh viên
+  const filteredSubmissions = activeQuizSubmissions.filter(s => {
+    // 1. Lọc theo kết quả Đạt / Chưa đạt
+    if (subResultFilter === 'passed' && !s.passed) return false;
+    if (subResultFilter === 'failed' && s.passed) return false;
+
+    // 2. Lọc theo khoảng thời gian
+    const subDate = new Date(s.submittedAt);
+    const now = new Date();
+
+    if (subDateFilter === 'today') {
+      const isToday = subDate.toDateString() === now.toDateString();
+      if (!isToday) return false;
+    } else if (subDateFilter === '7days') {
+      const diffDays = (now.getTime() - subDate.getTime()) / (1000 * 3600 * 24);
+      if (diffDays > 7) return false;
+    } else if (subDateFilter === '30days') {
+      const diffDays = (now.getTime() - subDate.getTime()) / (1000 * 3600 * 24);
+      if (diffDays > 30) return false;
+    } else if (subDateFilter === 'custom') {
+      if (subStartDate) {
+        const start = new Date(`${subStartDate}T00:00:00`);
+        if (subDate < start) return false;
+      }
+      if (subEndDate) {
+        const end = new Date(`${subEndDate}T23:59:59.999`);
+        if (subDate > end) return false;
+      }
+    }
+
+    // 3. Tìm kiếm thông minh theo từ khóa (Tên sinh viên, MSSV, Lớp, Điểm)
+    if (subSearchQuery.trim()) {
+      const queryNorm = removeAccents(subSearchQuery);
+      const nameMatch = removeAccents(s.studentName).includes(queryNorm);
+      const idMatch = removeAccents(s.studentId || '').includes(queryNorm);
+      const classMatch = removeAccents(s.className || '').includes(queryNorm);
+      const scoreMatch = String(s.score).includes(subSearchQuery.trim());
+      const emailMatch = removeAccents(s.email || '').includes(queryNorm);
+
+      if (!nameMatch && !idMatch && !classMatch && !scoreMatch && !emailMatch) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Tự động reset trang bảng điểm về 1 khi điều kiện lọc thay đổi
+  useEffect(() => {
+    setSubPage(1);
+  }, [subSearchQuery, subResultFilter, subDateFilter, subStartDate, subEndDate, activeQuizId, subPageSize]);
+
+  // Phân trang danh sách bài nộp
+  const totalSubPages = Math.max(1, Math.ceil(filteredSubmissions.length / subPageSize));
+  const paginatedSubmissions = filteredSubmissions.slice((subPage - 1) * subPageSize, subPage * subPageSize);
 
   if (!user) {
     return (
@@ -1965,13 +2037,18 @@ export default function QuizManager() {
       {/* TAB 4: BẢNG ĐIỂM & SINH VIÊN */}
       {activeTab === 'submissions' && (
         <div className="qm-panel animate-fade-in">
-          <div className="qm-panel-header">
+          <div className="qm-panel-header" style={{ marginBottom: '1.25rem' }}>
             <div>
               <h2 className="qm-panel-title">
                 <Users size={20} color="var(--primary)" /> Bảng Điểm & Lịch Sử Bài Thi: {activeQuiz.title}
               </h2>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-                Đã ghi nhận {activeQuizSubmissions.length} lượt nộp bài. Tỷ lệ đạt: {passRate}% • Điểm trung bình: {avgScore}/10.
+                Tổng cộng {activeQuizSubmissions.length} lượt nộp bài • Tỷ lệ đạt chuẩn: {passRate}% • Điểm trung bình: {avgScore}/10.
+                {filteredSubmissions.length !== activeQuizSubmissions.length && (
+                  <span style={{ color: 'var(--primary)', fontWeight: 600, marginLeft: '0.5rem' }}>
+                    (Đang hiển thị {filteredSubmissions.length} kết quả khớp bộ lọc)
+                  </span>
+                )}
               </p>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
@@ -1980,6 +2057,7 @@ export default function QuizManager() {
                 className="btn btn-primary btn-sm"
                 onClick={handleExportExcel}
                 style={{ background: '#10b981', borderColor: '#10b981' }}
+                title="Tải bảng điểm Excel của danh sách đang hiển thị"
               >
                 <FileSpreadsheet size={16} /> Xuất Bảng Điểm Excel (.xlsx)
               </button>
@@ -1987,12 +2065,13 @@ export default function QuizManager() {
                 type="button" 
                 className="btn btn-outline btn-sm"
                 onClick={() => {
-                  if (activeQuizSubmissions.length === 0) {
+                  const targetList = filteredSubmissions.length > 0 ? filteredSubmissions : activeQuizSubmissions;
+                  if (targetList.length === 0) {
                     showToast('Chưa có dữ liệu bài nộp để xuất!', 'warning');
                     return;
                   }
                   const csvHeader = 'Họ tên,MSSV / Lớp,Điểm số,Tổng điểm,Tỷ lệ %,Kết quả,Thời gian nộp\n';
-                  const rows = activeQuizSubmissions.map(s => 
+                  const rows = targetList.map(s => 
                     `"${s.studentName}","${s.studentId || s.className}","${s.score}","${s.totalPoints}","${s.percentage}%","${s.passed ? 'Đạt' : 'Chưa đạt'}","${new Date(s.submittedAt).toLocaleString('vi-VN')}"`
                   ).join('\n');
                   const blob = new Blob([csvHeader + rows], { type: 'text/csv;charset=utf-8;' });
@@ -2010,6 +2089,125 @@ export default function QuizManager() {
             </div>
           </div>
 
+          {/* BỘ CÔNG CỤ TÌM KIẾM THÔNG MINH & BỘ LỌC KHOẢNG THỜI GIAN */}
+          <div style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-lg)',
+            padding: '1rem 1.25rem',
+            marginBottom: '1.25rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.85rem'
+          }}>
+            {/* Hàng 1: Ô tìm kiếm thông minh + Lọc kết quả */}
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ flex: 1, minWidth: '260px', position: 'relative' }}>
+                <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                <input 
+                  type="text"
+                  className="qm-input"
+                  style={{ paddingLeft: '2.4rem', height: '40px', fontSize: '0.88rem' }}
+                  placeholder="Tìm kiếm thông minh: Tên sinh viên, MSSV, Lớp học, Điểm số..."
+                  value={subSearchQuery}
+                  onChange={(e) => setSubSearchQuery(e.target.value)}
+                />
+                {subSearchQuery && (
+                  <button 
+                    type="button"
+                    onClick={() => setSubSearchQuery('')}
+                    style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: 0 }}
+                  >
+                    <X size={15} />
+                  </button>
+                )}
+              </div>
+
+              {/* Lọc theo Kết quả thi */}
+              <div style={{ minWidth: '160px' }}>
+                <select 
+                  className="qm-select"
+                  style={{ height: '40px', fontSize: '0.88rem' }}
+                  value={subResultFilter}
+                  onChange={(e) => setSubResultFilter(e.target.value as any)}
+                >
+                  <option value="all">Tất cả xếp loại</option>
+                  <option value="passed">✅ Đạt chuẩn (Pass)</option>
+                  <option value="failed">❌ Chưa đạt (Fail)</option>
+                </select>
+              </div>
+
+              {/* Lọc nhanh theo Mốc thời gian */}
+              <div style={{ minWidth: '170px' }}>
+                <select 
+                  className="qm-select"
+                  style={{ height: '40px', fontSize: '0.88rem' }}
+                  value={subDateFilter}
+                  onChange={(e) => setSubDateFilter(e.target.value as any)}
+                >
+                  <option value="all">Tất cả thời gian</option>
+                  <option value="today">Hôm nay</option>
+                  <option value="7days">7 ngày qua</option>
+                  <option value="30days">30 ngày qua</option>
+                  <option value="custom">Tùy chọn khoảng ngày...</option>
+                </select>
+              </div>
+
+              {(subSearchQuery || subResultFilter !== 'all' || subDateFilter !== 'all') && (
+                <button 
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  style={{ height: '40px' }}
+                  onClick={() => {
+                    setSubSearchQuery('');
+                    setSubResultFilter('all');
+                    setSubDateFilter('all');
+                    setSubStartDate('');
+                    setSubEndDate('');
+                  }}
+                  title="Đặt lại toàn bộ bộ lọc"
+                >
+                  <RotateCcw size={14} /> Xóa bộ lọc
+                </button>
+              )}
+            </div>
+
+            {/* Hàng 2: Chọn khoảng thời gian tùy chỉnh (Từ ngày - Đến ngày) nếu chọn custom */}
+            {subDateFilter === 'custom' && (
+              <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                paddingTop: '0.5rem',
+                borderTop: '1px dashed var(--border)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  <Calendar size={15} color="var(--primary)" />
+                  <span>Khoảng ngày nộp bài:</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Từ ngày:</label>
+                  <input 
+                    type="date"
+                    className="qm-input"
+                    style={{ width: '160px', height: '36px', fontSize: '0.85rem', padding: '0.35rem 0.6rem' }}
+                    value={subStartDate}
+                    onChange={(e) => setSubStartDate(e.target.value)}
+                  />
+                  <label style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginLeft: '0.5rem' }}>Đến ngày:</label>
+                  <input 
+                    type="date"
+                    className="qm-input"
+                    style={{ width: '160px', height: '36px', fontSize: '0.85rem', padding: '0.35rem 0.6rem' }}
+                    value={subEndDate}
+                    onChange={(e) => setSubEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="qm-table-wrap">
             {activeQuizSubmissions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
@@ -2019,39 +2217,123 @@ export default function QuizManager() {
                   <Play size={15} /> Làm bài thi thử ngay
                 </button>
               </div>
+            ) : filteredSubmissions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-secondary)' }}>
+                <Filter size={36} style={{ margin: '0 auto 0.6rem', opacity: 0.4 }} />
+                <p style={{ margin: '0 0 0.5rem', fontWeight: 600 }}>Không tìm thấy lượt nộp bài nào khớp với điều kiện lọc!</p>
+                <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                  Hãy thử thay đổi từ khóa tìm kiếm hoặc mở rộng khoảng thời gian.
+                </p>
+                <button 
+                  type="button" 
+                  className="btn btn-outline btn-xs" 
+                  style={{ marginTop: '0.85rem' }}
+                  onClick={() => {
+                    setSubSearchQuery('');
+                    setSubResultFilter('all');
+                    setSubDateFilter('all');
+                    setSubStartDate('');
+                    setSubEndDate('');
+                  }}
+                >
+                  <RotateCcw size={12} /> Bỏ lọc và xem tất cả
+                </button>
+              </div>
             ) : (
-              <table className="qm-table">
-                <thead>
-                  <tr>
-                    <th>STT</th>
-                    <th>Họ và tên thí sinh</th>
-                    <th>Lớp / MSSV</th>
-                    <th>Điểm số</th>
-                    <th>Tỷ lệ %</th>
-                    <th>Xếp loại</th>
-                    <th>Thời gian nộp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {activeQuizSubmissions.map((sub, idx) => (
-                    <tr key={sub.id}>
-                      <td>#{idx + 1}</td>
-                      <td><strong>{sub.studentName}</strong></td>
-                      <td>{sub.studentId || sub.className}</td>
-                      <td><span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>{sub.score}/{sub.totalPoints}</span></td>
-                      <td>{sub.percentage}%</td>
-                      <td>
-                        <span className="qm-badge" style={{ background: sub.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub.passed ? '#10b981' : '#ef4444' }}>
-                          {sub.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-                        {new Date(sub.submittedAt).toLocaleTimeString('vi-VN')} {new Date(sub.submittedAt).toLocaleDateString('vi-VN')}
-                      </td>
+              <>
+                <table className="qm-table">
+                  <thead>
+                    <tr>
+                      <th>STT</th>
+                      <th>Họ và tên thí sinh</th>
+                      <th>Lớp / MSSV</th>
+                      <th>Điểm số</th>
+                      <th>Tỷ lệ %</th>
+                      <th>Xếp loại</th>
+                      <th>Thời gian nộp</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedSubmissions.map((sub, idx) => {
+                      const globalIdx = (subPage - 1) * subPageSize + idx + 1;
+                      return (
+                        <tr key={sub.id}>
+                          <td>#{globalIdx}</td>
+                          <td><strong>{sub.studentName}</strong></td>
+                          <td>{sub.studentId || sub.className}</td>
+                          <td><span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>{sub.score}/{sub.totalPoints}</span></td>
+                          <td>{sub.percentage}%</td>
+                          <td>
+                            <span className="qm-badge" style={{ background: sub.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub.passed ? '#10b981' : '#ef4444' }}>
+                              {sub.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
+                            </span>
+                          </td>
+                          <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                            {new Date(sub.submittedAt).toLocaleTimeString('vi-VN')} {new Date(sub.submittedAt).toLocaleDateString('vi-VN')}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+
+                {/* Thanh Phân Trang Bảng Điểm */}
+                <div style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  padding: '1rem 0.5rem 0.25rem',
+                  borderTop: '1px solid var(--border)',
+                  marginTop: '0.75rem',
+                  flexWrap: 'wrap',
+                  gap: '0.75rem'
+                }}>
+                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                    Hiển thị <strong>{filteredSubmissions.length === 0 ? 0 : (subPage - 1) * subPageSize + 1} - {Math.min(subPage * subPageSize, filteredSubmissions.length)}</strong> trên tổng số <strong>{filteredSubmissions.length}</strong> bài nộp
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      <span>Hiển thị:</span>
+                      <select 
+                        className="qm-select qm-select-compact"
+                        style={{ padding: '0.2rem 0.5rem', fontSize: '0.82rem' }}
+                        value={subPageSize}
+                        onChange={(e) => { setSubPageSize(Number(e.target.value)); setSubPage(1); }}
+                      >
+                        <option value={10}>10 / trang</option>
+                        <option value={25}>25 / trang</option>
+                        <option value={50}>50 / trang</option>
+                        <option value={100}>100 / trang</option>
+                      </select>
+                    </div>
+
+                    {totalSubPages > 1 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-xs"
+                          disabled={subPage <= 1}
+                          onClick={() => setSubPage(prev => Math.max(prev - 1, 1))}
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 600, padding: '0 0.4rem', color: 'var(--text-primary)' }}>
+                          Trang {subPage} / {totalSubPages}
+                        </span>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-xs"
+                          disabled={subPage >= totalSubPages}
+                          onClick={() => setSubPage(prev => Math.min(prev + 1, totalSubPages))}
+                        >
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
             )}
           </div>
         </div>
