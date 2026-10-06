@@ -385,6 +385,18 @@ export default function QuizExam() {
     );
   }
 
+  // Tính số câu hỏi của bài thi thực tế mà thí sinh sẽ làm
+  const examQuestionCount = activeQuestions.length > 0 
+    ? activeQuestions.length 
+    : (quiz?.settings?.questionSelectionMode === 'custom_difficulty' && quiz.settings?.difficultyDistribution)
+      ? Math.min(
+          ((Number(quiz.settings.difficultyDistribution.easyCount) || 0) +
+           (Number(quiz.settings.difficultyDistribution.mediumCount) || 0) +
+           (Number(quiz.settings.difficultyDistribution.hardCount) || 0)) || (quiz.questions.length || 0),
+          quiz.questions.length || 0
+        )
+      : (quiz?.questions.length || 0);
+
   const currentQ = activeQuestions[currentIdx];
 
   return (
@@ -396,7 +408,7 @@ export default function QuizExam() {
             {quiz.title}
           </h1>
           <p className="exam-sub-text">
-            <span>{quiz.subject}</span> • <span>{activeQuestions.length || quiz.questions.length} câu hỏi</span>
+            <span>{quiz.subject}</span> • <span>{examQuestionCount} câu hỏi</span>
           </p>
         </div>
 
@@ -502,6 +514,7 @@ export default function QuizExam() {
                 📋 Tóm tắt quy chế thi:
               </div>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                <li>Số lượng câu hỏi làm bài: <strong>{examQuestionCount} câu</strong>.</li>
                 <li>Thời gian làm bài: <strong>{(quiz.settings?.timeLimitMinutes || 0) > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
                 <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings?.passingScorePercent || 50}%</strong> trở lên.</li>
                 <li>Hệ thống tự động chấm điểm và công bố kết quả ngay khi nộp bài.</li>
@@ -531,7 +544,7 @@ export default function QuizExam() {
                 className="exam-palette-view-all-btn"
                 onClick={() => setShowGridModal(true)}
               >
-                <LayoutGrid size={13} /> Danh sách 30 câu
+                <LayoutGrid size={13} /> Danh sách {activeQuestions.length} câu
               </button>
             </div>
 

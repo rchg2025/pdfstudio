@@ -3,6 +3,15 @@ import type { QuizPackage } from '../types/quiz';
 export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
   const quizJson = JSON.stringify(quiz).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
 
+  const examTotalCount = (quiz.settings?.questionSelectionMode === 'custom_difficulty' && quiz.settings?.difficultyDistribution)
+    ? Math.min(
+        ((Number(quiz.settings.difficultyDistribution.easyCount) || 0) +
+         (Number(quiz.settings.difficultyDistribution.mediumCount) || 0) +
+         (Number(quiz.settings.difficultyDistribution.hardCount) || 0)) || quiz.questions.length,
+        quiz.questions.length
+      )
+    : quiz.questions.length;
+
   return `<!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -116,7 +125,7 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
     <header class="top-header">
       <div class="header-info">
         <h1>${quiz.title}</h1>
-        <p>${quiz.subject} • ${quiz.questions.length} câu hỏi</p>
+        <p id="header-subtitle">${quiz.subject} • ${examTotalCount} câu hỏi</p>
       </div>
       <div class="header-controls">
         <div id="timer-badge" class="timer-badge" style="display: none;">
@@ -304,6 +313,8 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
       if (!studentInfo.name || !studentInfo.id) return;
 
       selectQuestions();
+      const subEl = document.getElementById('header-subtitle');
+      if (subEl) subEl.textContent = QUIZ.subject + ' • ' + activeQuestions.length + ' câu hỏi';
       document.getElementById('screen-reg').style.display = 'none';
       document.getElementById('screen-exam').style.display = 'block';
 
