@@ -148,8 +148,8 @@ if (fs.existsSync(distPath)) {
     }
   });
 
-  // Catch-all for other paths
-  app.get('*', (_req, res) => {
+  // Catch-all fallback for SPA client-side routing
+  app.use((_req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 } else {
