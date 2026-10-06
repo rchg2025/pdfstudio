@@ -60,7 +60,7 @@ import type {
 } from '../types/quiz';
 import { generateStandaloneQuizHtml } from '../utils/quizHtmlGenerator';
 import { parseExamFile, type ParsedExamResult } from '../utils/examDocParser';
-import { getSafeImageUrl, handleImageError } from '../utils/imageUrl';
+import { getSafeImageUrl, handleImageError, extractQuestionImage } from '../utils/imageUrl';
 import './QuizManager.css';
 
 const DEFAULT_QUIZ: QuizPackage = {
@@ -543,12 +543,13 @@ export default function QuizManager() {
       showToast('Vui lòng nhập nội dung câu hỏi!', 'warning');
       return;
     }
+    const { cleanText, imageUrl: extractedImg } = extractQuestionImage(formQText.trim(), formQImageUrl.trim() || undefined);
     const qData: QuizQuestion = {
       id: editingQuestion ? editingQuestion.id : `q-${Date.now()}`,
       type: formQType,
       difficulty: formQDiff,
-      question: formQText.trim(),
-      imageUrl: formQImageUrl.trim() || undefined,
+      question: cleanText,
+      imageUrl: extractedImg,
       points: Number(formQPoints) || 1,
       explanation: formQExpl.trim() || undefined,
       options: (formQType === 'choice' || formQType === 'multiple_choice') ? formQOptions.filter(o => o.trim()) : undefined,
@@ -929,11 +930,13 @@ export default function QuizManager() {
         });
 
         if (qTitle && options.length >= 2) {
+          const { cleanText: finalQTitle, imageUrl: finalImgUrl } = extractQuestionImage(qTitle);
           parsedQuestions.push({
             id: `bulk-${Date.now()}-${idx}`,
             type: 'choice',
             difficulty: 'medium',
-            question: qTitle,
+            question: finalQTitle,
+            imageUrl: finalImgUrl || undefined,
             options,
             correctAnswer: correct || options[0],
             explanation: expl || undefined,
@@ -1661,6 +1664,8 @@ export default function QuizManager() {
             ) : (
               paginatedQuestions.map((q, idx) => {
                 const globalIdx = (currentPage - 1) * pageSize + idx + 1;
+                const { cleanText, imageUrl: resolvedImageUrl } = extractQuestionImage(q.question, q.imageUrl);
+
                 return (
                   <div key={q.id} className="qm-q-card">
                     <div className="qm-q-header">
@@ -1673,14 +1678,30 @@ export default function QuizManager() {
                           <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                             {q.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
                           </span>
-                          {q.imageUrl && (
+                          {resolvedImageUrl && (
                             <span className="qm-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
                               <ImageIcon size={11} /> Có ảnh đính kèm
                             </span>
                           )}
                           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({q.points || 1} điểm)</span>
                         </div>
-                        <div className="qm-q-title">{q.question}</div>
+
+                        {/* HIỂN THỊ HÌNH ẢNH Ở PHÍA TRÊN NỘI DUNG CÂU HỎI */}
+                        {resolvedImageUrl && (
+                          <div className="qm-q-image-container" style={{ margin: '0.65rem 0', maxWidth: '340px' }}>
+                            <img 
+                              src={getSafeImageUrl(resolvedImageUrl)} 
+                              alt="Ảnh câu hỏi" 
+                              referrerPolicy="no-referrer"
+                              onError={(e) => handleImageError(e, resolvedImageUrl)}
+                              style={{ maxHeight: '180px', width: 'auto', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.08)', cursor: 'pointer', display: 'block' }}
+                              onClick={() => window.open(resolvedImageUrl, '_blank')}
+                              title="Bấm để mở ảnh gốc trong tab mới"
+                            />
+                          </div>
+                        )}
+
+                        <div className="qm-q-title">{cleanText}</div>
                       </div>
 
                       <div className="qm-q-actions">
@@ -1688,12 +1709,12 @@ export default function QuizManager() {
                           type="button" 
                           className="btn btn-outline btn-xs" 
                           style={{ color: 'var(--primary)', borderColor: 'rgba(99, 102, 241, 0.4)' }}
-                          onClick={() => handleOpenPreviewQuestion(q)}
+                          onClick={() => handleOpenPreviewQuestion({ ...q, question: cleanText, imageUrl: resolvedImageUrl })}
                           title="Xem trước nội dung và cách hiển thị khi thí sinh làm bài"
                         >
                           <Eye size={13} /> Xem trước
                         </button>
-                        <button type="button" className="btn btn-outline btn-xs" onClick={() => handleOpenEditQuestion(q)}>
+                        <button type="button" className="btn btn-outline btn-xs" onClick={() => handleOpenEditQuestion({ ...q, question: cleanText, imageUrl: resolvedImageUrl })}>
                           <Edit3 size={13} /> Sửa
                         </button>
                         <button type="button" className="btn btn-outline btn-xs" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteQuestion(q.id)}>
@@ -1701,21 +1722,6 @@ export default function QuizManager() {
                         </button>
                       </div>
                     </div>
-
-                    {/* Hiển thị hình ảnh minh họa câu hỏi nếu có */}
-                    {q.imageUrl && (
-                      <div className="qm-q-image-container" style={{ margin: '0.65rem 0', maxWidth: '340px' }}>
-                        <img 
-                          src={getSafeImageUrl(q.imageUrl)} 
-                          alt="Ảnh câu hỏi" 
-                          referrerPolicy="no-referrer"
-                          onError={(e) => handleImageError(e, q.imageUrl)}
-                          style={{ maxHeight: '180px', width: 'auto', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.08)', cursor: 'pointer', display: 'block' }}
-                          onClick={() => window.open(q.imageUrl, '_blank')}
-                          title="Bấm để mở ảnh gốc trong tab mới"
-                        />
-                      </div>
-                    )}
 
                     {/* Options display */}
                     {(q.type === 'choice' || q.type === 'multiple_choice') && q.options && (
@@ -3277,6 +3283,7 @@ export default function QuizManager() {
       {showPreviewModal && activeQuiz.questions && activeQuiz.questions.length > 0 && (() => {
         const currentQ = activeQuiz.questions[previewQuestionIndex] || activeQuiz.questions[0];
         const totalQ = activeQuiz.questions.length;
+        const { cleanText: previewCleanText, imageUrl: previewImageUrl } = extractQuestionImage(currentQ.question, currentQ.imageUrl);
 
         return (
           <div className="modal-overlay" onClick={() => setShowPreviewModal(false)} style={{ zIndex: 1200, padding: '1rem' }}>
@@ -3464,6 +3471,38 @@ export default function QuizManager() {
                     </div>
                   </div>
 
+                  {/* HIỂN THỊ HÌNH ẢNH Ở PHÍA TRÊN NỘI DUNG CÂU HỎI (NẾU CÓ) */}
+                  {previewImageUrl && (
+                    <div style={{
+                      textAlign: 'center',
+                      margin: '0.5rem 0 1rem',
+                      background: 'rgba(0,0,0,0.04)',
+                      padding: '0.5rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <img
+                        src={getSafeImageUrl(previewImageUrl)}
+                        alt="Hình ảnh minh họa câu hỏi"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => handleImageError(e, previewImageUrl)}
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: previewDevice === 'mobile' ? '200px' : '320px',
+                          height: 'auto',
+                          borderRadius: '0.35rem',
+                          objectFit: 'contain',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(previewImageUrl, '_blank')}
+                        title="Bấm để phóng to ảnh trong tab mới"
+                      />
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                        🔍 Bấm vào ảnh để xem kích thước gốc
+                      </div>
+                    </div>
+                  )}
+
                   {/* Question Prompt */}
                   <div style={{
                     fontSize: previewDevice === 'mobile' ? '1rem' : '1.15rem',
@@ -3473,40 +3512,8 @@ export default function QuizManager() {
                     marginBottom: '1rem',
                     whiteSpace: 'pre-line'
                   }}>
-                    {currentQ.question}
+                    {previewCleanText}
                   </div>
-
-                  {/* Question Image (if any) */}
-                  {currentQ.imageUrl && (
-                    <div style={{
-                      textAlign: 'center',
-                      margin: '1rem 0 1.25rem',
-                      background: 'rgba(0,0,0,0.04)',
-                      padding: '0.5rem',
-                      borderRadius: '0.5rem',
-                      border: '1px solid var(--border)'
-                    }}>
-                      <img
-                        src={getSafeImageUrl(currentQ.imageUrl)}
-                        alt="Hình ảnh minh họa câu hỏi"
-                        referrerPolicy="no-referrer"
-                        onError={(e) => handleImageError(e, currentQ.imageUrl)}
-                        style={{
-                          maxWidth: '100%',
-                          maxHeight: previewDevice === 'mobile' ? '200px' : '320px',
-                          height: 'auto',
-                          borderRadius: '0.35rem',
-                          objectFit: 'contain',
-                          cursor: 'pointer'
-                        }}
-                        onClick={() => window.open(currentQ.imageUrl, '_blank')}
-                        title="Bấm để phóng to ảnh trong tab mới"
-                      />
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                        🔍 Bấm vào ảnh để xem kích thước gốc
-                      </div>
-                    </div>
-                  )}
 
                   {/* Interactive Question Types Simulation */}
                   <div style={{ marginTop: '1rem' }}>

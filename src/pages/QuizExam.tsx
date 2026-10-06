@@ -18,7 +18,7 @@ import {
 import { useNotification } from '../contexts/NotificationContext';
 import type { QuizPackage, QuizQuestion, StudentSubmission } from '../types/quiz';
 import { quizAudio, type MusicTrack } from '../utils/quizAudio';
-import { getSafeImageUrl, handleImageError } from '../utils/imageUrl';
+import { getSafeImageUrl, handleImageError, extractQuestionImage } from '../utils/imageUrl';
 import './QuizExam.css';
 
 export default function QuizExam() {
@@ -572,38 +572,42 @@ export default function QuizExam() {
           </div>
 
           {/* Chi tiết câu hỏi */}
-          <div className="exam-q-content">
-            <div className="exam-q-meta">
-              <span className="exam-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                Câu {currentIdx + 1}/{activeQuestions.length}
-              </span>
-              <span className={`exam-badge exam-badge-${currentQ.difficulty}`}>
-                {currentQ.difficulty === 'easy' ? 'DỄ' : (currentQ.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
-              </span>
-              <span className="exam-badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
-                {currentQ.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (currentQ.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (currentQ.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (currentQ.type === 'matching' ? 'GHÉP NỐI' : 'TỰ LUẬN')))}
-              </span>
-              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                ({currentQ.points || 1} điểm)
-              </span>
-            </div>
+          {(() => {
+            const { cleanText, imageUrl: resolvedImageUrl } = extractQuestionImage(currentQ.question, currentQ.imageUrl);
 
-            <div className="exam-q-title">{currentQ.question}</div>
+            return (
+              <div className="exam-q-content">
+                <div className="exam-q-meta">
+                  <span className="exam-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                    Câu {currentIdx + 1}/{activeQuestions.length}
+                  </span>
+                  <span className={`exam-badge exam-badge-${currentQ.difficulty}`}>
+                    {currentQ.difficulty === 'easy' ? 'DỄ' : (currentQ.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
+                  </span>
+                  <span className="exam-badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
+                    {currentQ.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (currentQ.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (currentQ.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (currentQ.type === 'matching' ? 'GHÉP NỐI' : 'TỰ LUẬN')))}
+                  </span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                    ({currentQ.points || 1} điểm)
+                  </span>
+                </div>
 
-            {/* Hiển thị hình ảnh câu hỏi nếu có */}
-            {currentQ.imageUrl && (
-              <div className="exam-q-image-wrap">
-                <img 
-                  src={getSafeImageUrl(currentQ.imageUrl)} 
-                  alt="Hình ảnh câu hỏi" 
-                  className="exam-q-image" 
-                  referrerPolicy="no-referrer"
-                  onError={(e) => handleImageError(e, currentQ.imageUrl)}
-                  onClick={() => window.open(currentQ.imageUrl, '_blank')} 
-                />
-                <span className="exam-q-image-hint">🔍 Nhấp vào ảnh để xem kích thước lớn</span>
-              </div>
-            )}
+                {/* HIỂN THỊ HÌNH ẢNH Ở PHÍA TRÊN NỘI DUNG CÂU HỎI */}
+                {resolvedImageUrl && (
+                  <div className="exam-q-image-wrap">
+                    <img 
+                      src={getSafeImageUrl(resolvedImageUrl)} 
+                      alt="Hình ảnh câu hỏi" 
+                      className="exam-q-image" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e, resolvedImageUrl)}
+                      onClick={() => window.open(resolvedImageUrl, '_blank')} 
+                    />
+                    <span className="exam-q-image-hint">🔍 Nhấp vào ảnh để xem kích thước lớn</span>
+                  </div>
+                )}
+
+                <div className="exam-q-title">{cleanText}</div>
 
             {/* Trắc nghiệm ABCD */}
             {currentQ.type === 'choice' && currentQ.options && (
@@ -713,6 +717,8 @@ export default function QuizExam() {
               </div>
             )}
           </div>
+        );
+      })()}
 
           {/* THANH ĐIỀU HƯỚNG CÂU HỎI TRÊN DESKTOP */}
           <div className="exam-nav-desktop">

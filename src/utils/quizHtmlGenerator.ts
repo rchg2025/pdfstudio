@@ -405,27 +405,38 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
       const typeBadge = document.getElementById('q-type-badge');
       typeBadge.innerText = q.type === 'choice' ? 'TRẮC NGHIỆM' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN')));
 
-      document.getElementById('q-title').innerText = q.question;
+      // Xử lý tự động tách link ảnh nếu nằm trong nội dung câu hỏi
+      let qText = q.question || '';
+      let qImg = q.imageUrl || '';
+      const urlRegex = /(https?:\/\/[^\s"']+\.(?:png|jpg|jpeg|webp|gif|svg)(?:\?[^\s"']*)?)|(https?:\/\/(?:drive|docs)\.google\.com\/[^\s"']+)/i;
+      const m = qText.match(urlRegex);
+      if (m) {
+        if (!qImg) qImg = m[0];
+        qText = qText.replace(m[0], '').replace(/(?:\[?\s*(?:Hình ảnh|Ảnh|Image|Hình minh họa)[:.]?\s*\]?)\s*$/i, '').trim();
+      }
 
-      // Hiển thị ảnh câu hỏi nếu có
+      // Hiển thị ảnh câu hỏi ở PHÍA TRÊN TIÊU ĐỀ CÂU HỎI
       let imgWrap = document.getElementById('q-image-wrap');
-      if (q.imageUrl) {
+      if (qImg) {
         if (!imgWrap) {
           imgWrap = document.createElement('div');
           imgWrap.id = 'q-image-wrap';
-          imgWrap.style.margin = '10px 0 18px';
+          imgWrap.style.margin = '10px 0 16px';
           imgWrap.style.textAlign = 'center';
           imgWrap.style.background = '#f1f5f9';
-          imgWrap.style.padding = '10px';
+          imgWrap.style.padding = '8px';
           imgWrap.style.borderRadius = '12px';
           imgWrap.style.border = '1px solid #e2e8f0';
-          document.getElementById('q-title').after(imgWrap);
+          const qTitleEl = document.getElementById('q-title');
+          qTitleEl.parentNode.insertBefore(imgWrap, qTitleEl);
         }
         imgWrap.style.display = 'block';
-        imgWrap.innerHTML = '<img src="' + q.imageUrl + '" referrerpolicy="no-referrer" style="max-width:100%;max-height:360px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" /><div style="font-size:0.78rem;color:#64748b;margin-top:6px;font-weight:500;">🔍 Bấm vào ảnh để xem kích thước lớn</div>';
+        imgWrap.innerHTML = '<img src="' + qImg + '" referrerpolicy="no-referrer" style="max-width:100%;max-height:300px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" /><div style="font-size:0.78rem;color:#64748b;margin-top:4px;font-weight:500;">🔍 Bấm vào ảnh để xem kích thước lớn</div>';
       } else if (imgWrap) {
         imgWrap.style.display = 'none';
       }
+
+      document.getElementById('q-title').innerText = qText;
 
       const container = document.getElementById('q-options-container');
       container.innerHTML = '';

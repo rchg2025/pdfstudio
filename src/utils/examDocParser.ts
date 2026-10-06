@@ -1,5 +1,6 @@
 import mammoth from 'mammoth';
 import type { QuizQuestion, Difficulty } from '../types/quiz';
+import { extractQuestionImage } from './imageUrl';
 
 export interface ParsedExamResult {
   title: string;
@@ -211,6 +212,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
       }
 
       if (qText && options.length >= 2) {
+        const { cleanText: finalQText, imageUrl: finalImgUrl } = extractQuestionImage(qText, detectedImageUrl);
         const correctLetter = answerMap[qNum] || detectedAnswerLetter;
         let correctAnswer = options[0];
         if (correctLetter) {
@@ -224,8 +226,8 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
           id: `imp-${Date.now()}-${qNum}`,
           type: 'choice',
           difficulty: assignSmartDifficulty(qNum, directLis.length),
-          question: qText,
-          imageUrl: detectedImageUrl || undefined,
+          question: finalQText,
+          imageUrl: finalImgUrl || undefined,
           options,
           correctAnswer,
           points: 1,
@@ -284,6 +286,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
         const detectedImageUrl = imgEl ? (imgEl.getAttribute('src') || '') : '';
 
         if (questionText && options.length >= 2) {
+          const { cleanText: finalQText, imageUrl: finalImgUrl } = extractQuestionImage(questionText, detectedImageUrl);
           const correctLetter = answerMap[qNum];
           let correctAnswer = options[0];
           if (correctLetter) {
@@ -297,8 +300,8 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
             id: `imp-${Date.now()}-${qNum}`,
             type: 'choice',
             difficulty: assignSmartDifficulty(qNum, questionDivs.length),
-            question: questionText,
-            imageUrl: detectedImageUrl || undefined,
+            question: finalQText,
+            imageUrl: finalImgUrl || undefined,
             options,
             correctAnswer,
             points: 1,
@@ -322,6 +325,7 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
 
     const finalizeCurrent = () => {
       if (currentQText && currentOptions.length >= 2) {
+        const { cleanText: finalQText, imageUrl: finalImgUrl } = extractQuestionImage(currentQText);
         const qNum = currentQNum || questions.length + 1;
         const correctLetter = answerMap[qNum] || detectedAnswer;
         let correctAnswer = currentOptions[0];
@@ -336,7 +340,8 @@ export function parseExamFromHtmlString(rawContent: string, defaultName = 'Đề
           id: `imp-${Date.now()}-${qNum}`,
           type: 'choice',
           difficulty: assignSmartDifficulty(qNum, Math.max(10, questions.length + 1)),
-          question: currentQText,
+          question: finalQText,
+          imageUrl: finalImgUrl || undefined,
           options: [...currentOptions],
           correctAnswer,
           points: 1,

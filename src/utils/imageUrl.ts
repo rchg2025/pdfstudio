@@ -53,3 +53,50 @@ export function handleImageError(e: React.SyntheticEvent<HTMLImageElement, Event
     }
   }
 }
+
+/**
+ * Tách và làm sạch câu hỏi nếu trong nội dung câu hỏi có chứa URL hình ảnh hoặc thẻ Markdown/HTML img
+ * Trả về: { cleanText: string, imageUrl?: string }
+ */
+export function extractQuestionImage(text: string, existingImageUrl?: string): { cleanText: string; imageUrl?: string } {
+  if (!text) return { cleanText: '', imageUrl: existingImageUrl };
+
+  let imageUrl = existingImageUrl || '';
+  let cleanText = text;
+
+  // 1. Kiểm tra Markdown image: ![...](url)
+  const mdMatch = cleanText.match(/!\[.*?\]\((https?:\/\/[^\s)]+)\)/i);
+  if (mdMatch) {
+    if (!imageUrl) imageUrl = mdMatch[1];
+    cleanText = cleanText.replace(mdMatch[0], '').trim();
+  }
+
+  // 2. Kiểm tra thẻ HTML img: <img ... src="url" ... />
+  const htmlImgMatch = cleanText.match(/<img[^>]+src=["'](https?:\/\/[^"']+)["'][^>]*>/i);
+  if (htmlImgMatch) {
+    if (!imageUrl) imageUrl = htmlImgMatch[1];
+    cleanText = cleanText.replace(htmlImgMatch[0], '').trim();
+  }
+
+  // 3. Kiểm tra link hình ảnh trực tiếp (đứng riêng hoặc nằm trong câu hỏi):
+  // URL kết thúc bằng .png, .jpg, .jpeg, .webp, .gif hoặc link drive.google.com / docs.google.com
+  const directUrlRegex = /(https?:\/\/[^\s"']+\.(?:png|jpg|jpeg|webp|gif|svg)(?:\?[^\s"']*)?)|(https?:\/\/(?:drive|docs)\.google\.com\/[^\s"']+)/i;
+  const urlMatch = cleanText.match(directUrlRegex);
+  if (urlMatch) {
+    const foundUrl = urlMatch[0];
+    if (!imageUrl) imageUrl = foundUrl;
+    // Bỏ link ảnh ra khỏi văn bản câu hỏi để không bị hiển thị chuỗi link thô
+    cleanText = cleanText.replace(foundUrl, '').trim();
+  }
+
+  // Làm sạch các ký tự dư thừa sau khi gỡ link (ví dụ: [Ảnh: ], Hình ảnh: , v.v.)
+  cleanText = cleanText
+    .replace(/(?:\[?\s*(?:Hình ảnh|Ảnh|Image|Hình minh họa)[:.]?\s*\]?)\s*$/i, '')
+    .replace(/^\s*(?:\[?\s*(?:Hình ảnh|Ảnh|Image|Hình minh họa)[:.]?\s*\]?)\s*/i, '')
+    .trim();
+
+  return {
+    cleanText: cleanText || text,
+    imageUrl: imageUrl || undefined
+  };
+}
