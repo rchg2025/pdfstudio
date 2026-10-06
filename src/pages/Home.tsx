@@ -35,7 +35,8 @@ import {
   Boxes,
   Calculator,
   Timer,
-  MessageSquare
+  MessageSquare,
+  CheckSquare
 } from 'lucide-react';
 import './Home.css';
 
@@ -259,6 +260,12 @@ const edTechTools = [
     icon: <MessageSquare size={24} />,
     title: 'Bức Tường Câu Hỏi Vô Danh & Hộp Thắc Mắc',
     desc: 'Quét mã QR đặt câu hỏi ẩn danh, bình chọn (Upvote) thắc mắc chung và chiếu trực tiếp lên bảng/máy chiếu lớp học.'
+  },
+  {
+    path: '/quan-ly-thi-trac-nghiem',
+    icon: <CheckSquare size={24} />,
+    title: 'Khảo Thí & Ngân Hàng Câu Hỏi Trắc Nghiệm',
+    desc: 'Quản lý ngân hàng câu hỏi, tạo đề thi bằng AI, phân độ khó, nhạc nền thư giãn và tự động chấm điểm trên LMS.'
   }
 ];
 
