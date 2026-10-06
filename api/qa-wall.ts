@@ -34,6 +34,9 @@ async function ensureQuizTables(pool: any) {
         "updatedAt" TIMESTAMP DEFAULT NOW()
       );
 
+      ALTER TABLE "QuizPackage" ADD COLUMN IF NOT EXISTS "userId" VARCHAR(64);
+      CREATE INDEX IF NOT EXISTS "idx_quiz_userId" ON "QuizPackage"("userId");
+
       CREATE TABLE IF NOT EXISTS "QuizSubmission" (
         id VARCHAR(64) PRIMARY KEY,
         "quizId" VARCHAR(64) NOT NULL,
@@ -301,9 +304,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         INSERT INTO "QuizPackage" (id, "userId", title, subject, description, code, "isOpen", questions, settings, "createdAt", "updatedAt")
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         ON CONFLICT (id) DO UPDATE SET
+          "userId" = COALESCE(EXCLUDED."userId", "QuizPackage"."userId"),
           title = EXCLUDED.title,
           subject = EXCLUDED.subject,
           description = EXCLUDED.description,
+          code = EXCLUDED.code,
           "isOpen" = EXCLUDED."isOpen",
           questions = EXCLUDED.questions,
           settings = EXCLUDED.settings,

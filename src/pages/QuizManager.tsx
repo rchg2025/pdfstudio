@@ -35,7 +35,9 @@ import {
   Image as ImageIcon,
   Cloud,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  Save,
+  Loader2
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -250,7 +252,45 @@ export default function QuizManager() {
 
   const activeQuiz = quizzes.find(q => q.id === activeQuizId) || quizzes[0] || DEFAULT_QUIZ;
 
-  // Lưu vào localStorage theo tài khoản người dùng
+  // Trạng thái lưu trữ PostgreSQL
+  const [isSavingDb, setIsSavingDb] = useState(false);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+
+  // Hàm đồng bộ và lưu bộ đề trực tiếp vào PostgreSQL
+  const saveQuizToBackend = async (quizToSave: QuizPackage, showSuccessToast = false) => {
+    if (!user) return null;
+    setIsSavingDb(true);
+    try {
+      const payload = {
+        ...quizToSave,
+        userId: user.id
+      };
+      const res = await fetch('/api/quiz-api?action=save-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLastSavedTime(new Date().toLocaleTimeString('vi-VN'));
+        if (showSuccessToast) {
+          showToast('Đã lưu thành công bộ đề vào cơ sở dữ liệu!', 'success');
+        }
+        return data.quiz;
+      } else {
+        const err = await res.json().catch(() => ({}));
+        showToast(`Không thể lưu vào database: ${err.error || 'Lỗi máy chủ'}`, 'error');
+      }
+    } catch (err: any) {
+      console.error('Lỗi khi lưu quiz vào database:', err);
+      showToast('Lỗi kết nối cơ sở dữ liệu khi lưu bộ đề!', 'error');
+    } finally {
+      setIsSavingDb(false);
+    }
+    return null;
+  };
+
+  // Lưu vào localStorage dự phòng theo tài khoản người dùng
   useEffect(() => {
     if (!user) return;
     try {
@@ -276,16 +316,36 @@ export default function QuizManager() {
           if (Array.isArray(data.quizzes)) {
             if (data.quizzes.length > 0) {
               setQuizzes(data.quizzes);
-              setActiveQuizId(data.quizzes[0].id);
+              setActiveQuizId(prev => {
+                const exists = data.quizzes.some((q: any) => q.id === prev);
+                return exists ? prev : data.quizzes[0].id;
+              });
             } else {
-              // Người dùng mới chưa có bộ đề nào
-              const initialUserQuiz: QuizPackage = {
-                ...DEFAULT_QUIZ,
-                id: `qz-${user.id}-${Date.now()}`,
-                userId: user.id
-              };
-              setQuizzes([initialUserQuiz]);
-              setActiveQuizId(initialUserQuiz.id);
+              // Kiểm tra xem trong localStorage của user này đã có bộ đề nào trước đó chưa
+              const localSaved = localStorage.getItem(`rchg_quiz_packages_${user.id}`);
+              let localList: QuizPackage[] = [];
+              try {
+                if (localSaved) localList = JSON.parse(localSaved);
+              } catch {}
+
+              if (Array.isArray(localList) && localList.length > 0) {
+                // Tự động đẩy dữ liệu từ localStorage lên database cho user này
+                setQuizzes(localList);
+                setActiveQuizId(localList[0].id);
+                for (const lq of localList) {
+                  saveQuizToBackend(lq);
+                }
+              } else {
+                // Người dùng mới chưa có bộ đề nào: Tạo bộ đề đầu tiên và lưu vào database
+                const initialUserQuiz: QuizPackage = {
+                  ...DEFAULT_QUIZ,
+                  id: `qz-${user.id}-${Date.now()}`,
+                  userId: user.id
+                };
+                setQuizzes([initialUserQuiz]);
+                setActiveQuizId(initialUserQuiz.id);
+                saveQuizToBackend(initialUserQuiz);
+              }
             }
           }
         }
@@ -365,13 +425,31 @@ export default function QuizManager() {
     }
   };
 
-  // Cập nhật bộ đề active
-  const updateActiveQuiz = (updated: Partial<QuizPackage>) => {
-    setQuizzes(prev => prev.map(q => q.id === activeQuiz.id ? { ...q, ...updated, updatedAt: new Date().toISOString() } : q));
+  // Cập nhật bộ đề active và tự động đồng bộ ngay vào Database
+  const updateActiveQuiz = (updated: Partial<QuizPackage>, autoSave = true) => {
+    setQuizzes(prev => {
+      let targetUpdated: QuizPackage | null = null;
+      const next = prev.map(q => {
+        if (q.id === activeQuiz.id) {
+          targetUpdated = {
+            ...q,
+            ...updated,
+            userId: user?.id || q.userId,
+            updatedAt: new Date().toISOString()
+          };
+          return targetUpdated;
+        }
+        return q;
+      });
+      if (autoSave && targetUpdated) {
+        saveQuizToBackend(targetUpdated);
+      }
+      return next;
+    });
   };
 
   // Tạo bộ đề mới
-  const handleCreateQuiz = () => {
+  const handleCreateQuiz = async () => {
     if (!newQuizTitle.trim()) {
       showToast('Vui lòng nhập tiêu đề bộ đề thi!', 'warning');
       return;
@@ -396,33 +474,36 @@ export default function QuizManager() {
     setNewQuizSubject('');
     setNewQuizDesc('');
     setActiveTab('questions');
-    showToast('Đã tạo bộ đề thi mới thành công!', 'success');
-
-    // Lưu vào backend
-    fetch('/api/quiz-api?action=save-quiz', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newQ)
-    }).catch(() => {});
+    showToast('Đang tạo và lưu bộ đề mới vào cơ sở dữ liệu...', 'info');
+    await saveQuizToBackend(newQ, true);
   };
 
   // Xóa bộ đề thi
-  const handleDeleteQuiz = (id: string, e: React.MouseEvent) => {
+  const handleDeleteQuiz = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (quizzes.length <= 1) {
       showToast('Cần giữ lại ít nhất 1 bộ đề trong hệ thống!', 'warning');
       return;
     }
-    if (confirm('Bạn có chắc chắn muốn xóa bộ đề này và các câu hỏi đi kèm?')) {
+    if (confirm('Bạn có chắc chắn muốn xóa bộ đề này và các câu hỏi đi kèm khỏi hệ thống?')) {
       const filtered = quizzes.filter(q => q.id !== id);
       setQuizzes(filtered);
       if (activeQuizId === id) setActiveQuizId(filtered[0].id);
-      showToast('Đã xóa bộ đề thi.', 'info');
-      fetch('/api/quiz-api?action=delete-quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      }).catch(() => {});
+      showToast('Đang xóa bộ đề khỏi database...', 'info');
+      try {
+        const res = await fetch('/api/quiz-api?action=delete-quiz', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id })
+        });
+        if (res.ok) {
+          showToast('Đã xóa bộ đề thi thành công!', 'success');
+        } else {
+          showToast('Lỗi khi xóa bộ đề trên database.', 'error');
+        }
+      } catch {
+        showToast('Lỗi kết nối khi xóa bộ đề.', 'error');
+      }
     }
   };
 
@@ -779,10 +860,11 @@ export default function QuizManager() {
     }
   };
 
-  const handleApplyDocAsNewQuiz = () => {
+  const handleApplyDocAsNewQuiz = async () => {
     if (!parsedDocResult) return;
     const newQuiz: QuizPackage = {
       id: `qz-${Date.now()}`,
+      userId: user?.id,
       title: editDocTitle.trim() || 'Bộ Đề Thi Mới',
       subject: editDocSubject.trim() || 'Chung',
       description: `Đề thi nhập tự động từ tệp. Đã phân tích ${parsedDocResult.questions.length} câu hỏi.`,
@@ -807,14 +889,8 @@ export default function QuizManager() {
     setShowDocImportModal(false);
     setParsedDocResult(null);
     setActiveTab('questions');
-    showToast(`Đã tạo bộ đề mới "${newQuiz.title}" với ${newQuiz.questions.length} câu hỏi!`, 'success');
-
-    // Lưu backend
-    fetch('/api/quiz-api?action=save-quiz', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newQuiz)
-    }).catch(() => {});
+    showToast(`Đang lưu bộ đề mới "${newQuiz.title}" (${newQuiz.questions.length} câu hỏi) vào database...`, 'info');
+    await saveQuizToBackend(newQuiz, true);
   };
 
   const handleAppendDocToActiveQuiz = () => {
@@ -944,6 +1020,32 @@ export default function QuizManager() {
         </div>
 
         <div className="qm-header-actions">
+          <button 
+            type="button" 
+            className="btn btn-sm"
+            disabled={isSavingDb}
+            onClick={() => saveQuizToBackend(activeQuiz, true)}
+            style={{
+              background: isSavingDb ? 'rgba(99, 102, 241, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+              color: isSavingDb ? 'var(--primary)' : '#10b981',
+              border: `1px solid ${isSavingDb ? 'var(--primary)' : '#10b981'}`,
+              fontWeight: 600,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.4rem'
+            }}
+            title={lastSavedTime ? `Đã đồng bộ lên Database lúc ${lastSavedTime}` : 'Bấm để đồng bộ và lưu bộ đề vào Database'}
+          >
+            {isSavingDb ? (
+              <>
+                <Loader2 className="animate-spin" size={15} /> Đang lưu DB...
+              </>
+            ) : (
+              <>
+                <Save size={15} /> {lastSavedTime ? `Đã lưu DB (${lastSavedTime})` : 'Lưu Vào Database'}
+              </>
+            )}
+          </button>
           <button 
             type="button" 
             className="btn btn-outline btn-sm"
@@ -1439,13 +1541,58 @@ export default function QuizManager() {
             <button 
               type="button" 
               className="btn btn-primary btn-sm"
-              onClick={() => showToast('Đã lưu cấu hình phòng thi thành công!', 'success')}
+              disabled={isSavingDb}
+              onClick={() => saveQuizToBackend(activeQuiz, true)}
             >
-              <CheckCircle2 size={16} /> Lưu Cài Đặt
+              {isSavingDb ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle2 size={16} />} Lưu Cấu Hình Vào Database
             </button>
           </div>
 
           <div className="qm-settings-grid">
+            {/* Thông tin cơ bản bộ đề thi */}
+            <div style={{ gridColumn: '1 / -1', background: 'var(--surface)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Edit3 size={18} color="var(--primary)" /> Thông Tin Bộ Đề Thi (Tự động đồng bộ Database)
+                </h3>
+                <span style={{ fontSize: '0.82rem', color: lastSavedTime ? '#10b981' : 'var(--text-muted)', fontWeight: 500 }}>
+                  {isSavingDb ? '⏳ Đang lưu...' : (lastSavedTime ? `✓ Đã lưu DB lúc ${lastSavedTime}` : '• Chưa lưu')}
+                </span>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                <div className="qm-form-group" style={{ margin: 0 }}>
+                  <label className="qm-label">Tên bộ đề thi *</label>
+                  <input
+                    type="text"
+                    className="qm-input"
+                    value={activeQuiz.title}
+                    onChange={(e) => updateActiveQuiz({ title: e.target.value })}
+                    placeholder="Nhập tên bộ đề thi..."
+                  />
+                </div>
+                <div className="qm-form-group" style={{ margin: 0 }}>
+                  <label className="qm-label">Môn học / Chuyên mục</label>
+                  <input
+                    type="text"
+                    className="qm-input"
+                    value={activeQuiz.subject}
+                    onChange={(e) => updateActiveQuiz({ subject: e.target.value })}
+                    placeholder="Ví dụ: Công nghệ chế tạo máy, Toán, Tin học..."
+                  />
+                </div>
+                <div className="qm-form-group" style={{ margin: 0, gridColumn: '1 / -1' }}>
+                  <label className="qm-label">Mô tả / Hướng dẫn thi cho thí sinh</label>
+                  <textarea
+                    rows={2}
+                    className="qm-textarea"
+                    value={activeQuiz.description}
+                    onChange={(e) => updateActiveQuiz({ description: e.target.value })}
+                    placeholder="Mô tả tóm tắt nội dung bài thi hoặc hướng dẫn cho thí sinh trước khi bấm bắt đầu..."
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Cột trái: Thời gian & Rút đề */}
             <div>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
