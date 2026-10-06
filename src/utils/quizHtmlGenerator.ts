@@ -385,7 +385,7 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
           document.getElementById('q-title').after(imgWrap);
         }
         imgWrap.style.display = 'block';
-        imgWrap.innerHTML = '<img src="' + q.imageUrl + '" style="max-width:100%;max-height:360px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" /><div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">🔍 Bấm vào ảnh để xem kích thước lớn</div>';
+        imgWrap.innerHTML = '<img src="' + q.imageUrl + '" referrerpolicy="no-referrer" style="max-width:100%;max-height:360px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" /><div style="font-size:0.75rem;color:#9ca3af;margin-top:4px;">🔍 Bấm vào ảnh để xem kích thước lớn</div>';
       } else if (imgWrap) {
         imgWrap.style.display = 'none';
       }

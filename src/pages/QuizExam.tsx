@@ -18,6 +18,7 @@ import {
 import { useNotification } from '../contexts/NotificationContext';
 import type { QuizPackage, QuizQuestion, StudentSubmission } from '../types/quiz';
 import { quizAudio, type MusicTrack } from '../utils/quizAudio';
+import { getSafeImageUrl, handleImageError } from '../utils/imageUrl';
 import './QuizExam.css';
 
 export default function QuizExam() {
@@ -590,9 +591,11 @@ export default function QuizExam() {
             {currentQ.imageUrl && (
               <div className="exam-q-image-wrap">
                 <img 
-                  src={currentQ.imageUrl} 
+                  src={getSafeImageUrl(currentQ.imageUrl)} 
                   alt="Hình ảnh câu hỏi" 
                   className="exam-q-image" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => handleImageError(e, currentQ.imageUrl)}
                   onClick={() => window.open(currentQ.imageUrl, '_blank')} 
                 />
                 <span className="exam-q-image-hint">🔍 Nhấp vào ảnh để xem kích thước lớn</span>
@@ -817,6 +820,19 @@ export default function QuizExam() {
                     <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
                       Câu {idx + 1}: {item.q.question}
                     </div>
+                    {item.q.imageUrl && (
+                      <div style={{ margin: '0.5rem 0', maxWidth: '320px' }}>
+                        <img 
+                          src={getSafeImageUrl(item.q.imageUrl)} 
+                          alt="Ảnh minh họa" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => handleImageError(e, item.q.imageUrl)}
+                          style={{ maxHeight: '150px', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.06)', cursor: 'pointer' }}
+                          onClick={() => window.open(item.q.imageUrl, '_blank')}
+                          title="Bấm để phóng to ảnh"
+                        />
+                      </div>
+                    )}
                     <div style={{ fontSize: '0.85rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
                       {item.isCorrect ? '✅ Bạn đã trả lời chính xác!' : `❌ Câu trả lời của bạn: ${typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời')}`}
                     </div>

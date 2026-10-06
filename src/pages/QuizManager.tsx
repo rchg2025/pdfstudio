@@ -58,6 +58,7 @@ import type {
 } from '../types/quiz';
 import { generateStandaloneQuizHtml } from '../utils/quizHtmlGenerator';
 import { parseExamFile, type ParsedExamResult } from '../utils/examDocParser';
+import { getSafeImageUrl, handleImageError } from '../utils/imageUrl';
 import './QuizManager.css';
 
 const DEFAULT_QUIZ: QuizPackage = {
@@ -1557,8 +1558,10 @@ export default function QuizManager() {
                     {q.imageUrl && (
                       <div style={{ margin: '0.65rem 0', maxWidth: '340px' }}>
                         <img 
-                          src={q.imageUrl} 
+                          src={getSafeImageUrl(q.imageUrl)} 
                           alt="Ảnh câu hỏi" 
+                          referrerPolicy="no-referrer"
+                          onError={(e) => handleImageError(e, q.imageUrl)}
                           style={{ maxHeight: '180px', width: 'auto', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.08)', cursor: 'pointer', display: 'block' }}
                           onClick={() => window.open(q.imageUrl, '_blank')}
                           title="Bấm để mở ảnh gốc trong tab mới"
@@ -2381,8 +2384,10 @@ export default function QuizManager() {
                 {formQImageUrl && (
                   <div style={{ marginTop: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <img 
-                      src={formQImageUrl} 
+                      src={getSafeImageUrl(formQImageUrl)} 
                       alt="Xem trước ảnh câu hỏi" 
+                      referrerPolicy="no-referrer"
+                      onError={(e) => handleImageError(e, formQImageUrl)}
                       style={{ maxHeight: '140px', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', background: 'rgba(0,0,0,0.06)' }} 
                     />
                     <a 
@@ -3059,8 +3064,10 @@ export default function QuizManager() {
                       border: '1px solid var(--border)'
                     }}>
                       <img
-                        src={currentQ.imageUrl}
+                        src={getSafeImageUrl(currentQ.imageUrl)}
                         alt="Hình ảnh minh họa câu hỏi"
+                        referrerPolicy="no-referrer"
+                        onError={(e) => handleImageError(e, currentQ.imageUrl)}
                         style={{
                           maxWidth: '100%',
                           maxHeight: previewDevice === 'mobile' ? '200px' : '320px',
