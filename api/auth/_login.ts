@@ -35,17 +35,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (e: any) { throw new Error("Lỗi khởi tạo Prisma DB: " + e.message); }
     
     const user = await prisma.user.findUnique({ where: { email } });
-    if (!user || !user.passwordHash) {
+    if (!user) {
       return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không chính xác.' });
+    }
+
+    if (user.role === 'DISABLED') {
+      return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
+    }
+
+    if (!user.passwordHash) {
+      return res.status(400).json({ message: 'Tài khoản này được đăng ký bằng Google. Vui lòng bấm Đăng nhập bằng Google.' });
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
       return res.status(400).json({ message: 'Tài khoản hoặc mật khẩu không chính xác.' });
-    }
-
-    if (user.role === 'DISABLED') {
-      return res.status(403).json({ message: 'Tài khoản của bạn đã bị vô hiệu hóa bởi Quản trị viên. Vui lòng liên hệ quản trị hệ thống để được hỗ trợ.' });
     }
 
     const secret = process.env.JWT_SECRET || 'fallback_secret_key';

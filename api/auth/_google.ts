@@ -77,7 +77,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     
     if (user) {
       if (user.role === 'DISABLED') {
-        return res.status(403).json({ message: 'Tài khoản của bạn đã bị vô hiệu hóa bởi Quản trị viên. Vui lòng liên hệ quản trị hệ thống để được hỗ trợ.' });
+        return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
       }
 
       if (!user.googleId) {

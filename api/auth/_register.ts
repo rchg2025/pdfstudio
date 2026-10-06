@@ -23,6 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const prisma = prismaModule.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
+        if (existingUser.role === 'DISABLED') {
+          return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
+        }
         return res.status(400).json({ message: 'Email đã tồn tại trong hệ thống' });
       }
 
@@ -60,6 +63,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const prisma = prismaModule.prisma;
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) {
+        if (existingUser.role === 'DISABLED') {
+          return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
+        }
         return res.status(400).json({ message: 'Email đã tồn tại trong hệ thống' });
       }
 

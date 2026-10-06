@@ -37,7 +37,12 @@ import {
   ExternalLink,
   ShieldCheck,
   Save,
-  Loader2
+  Loader2,
+  Eye,
+  Monitor,
+  Smartphone,
+  RotateCcw,
+  AlertCircle
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -240,6 +245,14 @@ export default function QuizManager() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedIframe, setCopiedIframe] = useState(false);
+
+  // Xem trước câu hỏi và giao diện thi
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewQuestionIndex, setPreviewQuestionIndex] = useState(0);
+  const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
+  const [previewShowCorrect, setPreviewShowCorrect] = useState(false);
+  const [previewUserAnswer, setPreviewUserAnswer] = useState<any>(null);
+  const [previewAnswerChecked, setPreviewAnswerChecked] = useState<boolean | null>(null);
 
   // Danh sách bài nộp của sinh viên
   const [submissions, setSubmissions] = useState<StudentSubmission[]>(() => {
@@ -597,6 +610,76 @@ export default function QuizManager() {
       setFormQCorrectAnswer(newOpts[0] || '');
     }
     setFormQCorrectAnswers(prev => prev.filter(a => a !== removedOpt));
+  };
+
+  // Mở modal xem trước từng câu hỏi
+  const handleOpenPreviewQuestion = (q: QuizQuestion) => {
+    const idx = activeQuiz.questions.findIndex(item => item.id === q.id);
+    setPreviewQuestionIndex(idx >= 0 ? idx : 0);
+    setPreviewShowCorrect(false);
+    setPreviewUserAnswer(null);
+    setPreviewAnswerChecked(null);
+    setShowPreviewModal(true);
+  };
+
+  // Mở modal xem trước toàn bộ đề thi (bắt đầu từ câu 1)
+  const handleOpenPreviewExam = () => {
+    if (!activeQuiz.questions || activeQuiz.questions.length === 0) {
+      showToast('Bộ đề hiện chưa có câu hỏi nào để xem trước!', 'warning');
+      return;
+    }
+    setPreviewQuestionIndex(0);
+    setPreviewShowCorrect(false);
+    setPreviewUserAnswer(null);
+    setPreviewAnswerChecked(null);
+    setShowPreviewModal(true);
+  };
+
+  // Chọn câu hỏi trong modal xem trước
+  const handleSelectPreviewQuestion = (idx: number) => {
+    if (idx < 0 || idx >= activeQuiz.questions.length) return;
+    setPreviewQuestionIndex(idx);
+    setPreviewShowCorrect(false);
+    setPreviewUserAnswer(null);
+    setPreviewAnswerChecked(null);
+  };
+
+  // Thử nghiệm kiểm tra đáp án trong modal xem trước
+  const handleTestPreviewAnswer = (currentQ: QuizQuestion) => {
+    if (previewUserAnswer === null || previewUserAnswer === undefined || previewUserAnswer === '') {
+      showToast('Vui lòng chọn hoặc nhập đáp án để thử nghiệm!', 'warning');
+      return;
+    }
+
+    let isCorrect = false;
+    if (currentQ.type === 'choice') {
+      isCorrect = previewUserAnswer === currentQ.correctAnswer;
+    } else if (currentQ.type === 'multiple_choice') {
+      const userArr: string[] = Array.isArray(previewUserAnswer) ? previewUserAnswer : [];
+      const correctArr: string[] = currentQ.correctAnswers && currentQ.correctAnswers.length > 0
+        ? currentQ.correctAnswers
+        : (currentQ.correctAnswer ? [currentQ.correctAnswer] : []);
+      isCorrect = userArr.length === correctArr.length && 
+        userArr.every(ans => correctArr.includes(ans)) && 
+        correctArr.every(ans => userArr.includes(ans));
+    } else if (currentQ.type === 'fill_blank') {
+      const userText = (previewUserAnswer || '').toString().trim().toLowerCase();
+      const targetText = (currentQ.correctAnswer || '').toString().trim().toLowerCase();
+      isCorrect = userText === targetText;
+    } else if (currentQ.type === 'matching') {
+      const userMatches = previewUserAnswer || {};
+      const pairs = currentQ.matchingPairs || [];
+      if (pairs.length === 0) isCorrect = true;
+      else {
+        isCorrect = pairs.every(p => userMatches[p.left] === p.right);
+      }
+    } else if (currentQ.type === 'essay') {
+      const keywords = (currentQ.correctAnswer || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+      const userText = (previewUserAnswer || '').toString().toLowerCase();
+      isCorrect = keywords.length > 0 ? keywords.some(kw => userText.includes(kw)) : true;
+    }
+
+    setPreviewAnswerChecked(isCorrect);
   };
 
   // Xuất bảng điểm chi tiết dạng Excel (.xlsx)
@@ -1252,6 +1335,15 @@ export default function QuizManager() {
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
+                onClick={handleOpenPreviewExam}
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                title="Xem trước toàn bộ câu hỏi và giao diện làm bài"
+              >
+                <Eye size={15} /> Xem Trước Đề Thi
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
                 onClick={() => { setParsedDocResult(null); setShowDocImportModal(true); }}
                 style={{ borderColor: '#10b981', color: '#10b981' }}
               >
@@ -1384,7 +1476,16 @@ export default function QuizManager() {
                         <div className="qm-q-title">{q.question}</div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <button 
+                          type="button" 
+                          className="btn btn-outline btn-xs" 
+                          style={{ color: 'var(--primary)', borderColor: 'rgba(99, 102, 241, 0.4)' }}
+                          onClick={() => handleOpenPreviewQuestion(q)}
+                          title="Xem trước nội dung và cách hiển thị khi thí sinh làm bài"
+                        >
+                          <Eye size={13} /> Xem trước
+                        </button>
                         <button type="button" className="btn btn-outline btn-xs" onClick={() => handleOpenEditQuestion(q)}>
                           <Edit3 size={13} /> Sửa
                         </button>
@@ -2690,6 +2791,649 @@ export default function QuizManager() {
           </div>
         </div>
       )}
+
+      {/* MODAL XEM TRƯỚC NỘI DUNG VÀ CÁCH HIỂN THỊ CÂU HỎI */}
+      {showPreviewModal && activeQuiz.questions && activeQuiz.questions.length > 0 && (() => {
+        const currentQ = activeQuiz.questions[previewQuestionIndex] || activeQuiz.questions[0];
+        const totalQ = activeQuiz.questions.length;
+
+        return (
+          <div className="modal-overlay" onClick={() => setShowPreviewModal(false)} style={{ zIndex: 1200, padding: '1rem' }}>
+            <div 
+              className="modal-content" 
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: previewDevice === 'mobile' ? '460px' : '840px',
+                width: '100%',
+                maxHeight: '92vh',
+                display: 'flex',
+                flexDirection: 'column',
+                padding: '0',
+                overflow: 'hidden',
+                borderRadius: '1.25rem',
+                border: '1px solid var(--border)',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.45)',
+                transition: 'max-width 0.25s ease'
+              }}
+            >
+              {/* Header */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.85rem 1.25rem',
+                borderBottom: '1px solid var(--border)',
+                background: 'var(--bg-secondary)',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <div style={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: '8px',
+                    background: 'rgba(99, 102, 241, 0.15)',
+                    color: 'var(--primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <Eye size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Xem Trước Giao Diện & Câu Hỏi
+                    </h3>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                      Câu {previewQuestionIndex + 1} / {totalQ} • {activeQuiz.title}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {/* Device View Mode Switch */}
+                  <div style={{
+                    display: 'flex',
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.5rem',
+                    padding: '2px'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDevice('desktop')}
+                      className="btn"
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        fontSize: '0.78rem',
+                        borderRadius: '0.35rem',
+                        border: 'none',
+                        background: previewDevice === 'desktop' ? 'var(--primary)' : 'transparent',
+                        color: previewDevice === 'desktop' ? '#fff' : 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        cursor: 'pointer'
+                      }}
+                      title="Chế độ màn hình Máy tính (Desktop)"
+                    >
+                      <Monitor size={14} /> Desktop
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPreviewDevice('mobile')}
+                      className="btn"
+                      style={{
+                        padding: '0.35rem 0.65rem',
+                        fontSize: '0.78rem',
+                        borderRadius: '0.35rem',
+                        border: 'none',
+                        background: previewDevice === 'mobile' ? 'var(--primary)' : 'transparent',
+                        color: previewDevice === 'mobile' ? '#fff' : 'var(--text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        cursor: 'pointer'
+                      }}
+                      title="Mô phỏng màn hình Điện thoại (Mobile)"
+                    >
+                      <Smartphone size={14} /> Mobile
+                    </button>
+                  </div>
+
+                  <button 
+                    type="button" 
+                    className="modal-close" 
+                    onClick={() => setShowPreviewModal(false)}
+                    style={{ margin: 0, padding: '0.35rem' }}
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Body Content */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: previewDevice === 'mobile' ? '1.25rem 0.75rem' : '1.5rem',
+                background: previewDevice === 'mobile' ? 'rgba(0,0,0,0.08)' : 'var(--bg-primary)',
+                display: 'flex',
+                justifyContent: 'center'
+              }}>
+                <div style={{
+                  width: '100%',
+                  maxWidth: previewDevice === 'mobile' ? '375px' : '100%',
+                  background: 'var(--bg-primary)',
+                  borderRadius: previewDevice === 'mobile' ? '28px' : '0.85rem',
+                  border: previewDevice === 'mobile' ? '6px solid #1e293b' : '1px solid var(--border)',
+                  boxShadow: previewDevice === 'mobile' ? '0 12px 32px rgba(0,0,0,0.3)' : 'var(--shadow-sm)',
+                  padding: previewDevice === 'mobile' ? '1.25rem 1rem 1.75rem' : '1.5rem',
+                  boxSizing: 'border-box',
+                  position: 'relative'
+                }}>
+                  {/* Simulated Mobile Speaker & Camera Bar */}
+                  {previewDevice === 'mobile' && (
+                    <div style={{
+                      width: '90px',
+                      height: '14px',
+                      background: '#1e293b',
+                      borderRadius: '10px',
+                      margin: '-0.5rem auto 1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}>
+                      <div style={{ width: '40px', height: '4px', background: '#334155', borderRadius: '2px' }}></div>
+                      <div style={{ width: '5px', height: '5px', background: '#475569', borderRadius: '50%' }}></div>
+                    </div>
+                  )}
+
+                  {/* Question Meta Badges */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.5rem',
+                    marginBottom: '1rem',
+                    paddingBottom: '0.75rem',
+                    borderBottom: '1px solid var(--border)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <span className="qm-badge" style={{ background: 'var(--primary)', color: '#fff', fontWeight: 700 }}>
+                        Câu #{previewQuestionIndex + 1}
+                      </span>
+                      <span className={`qm-badge qm-badge-${currentQ.difficulty}`}>
+                        {currentQ.difficulty === 'easy' ? 'DỄ' : (currentQ.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
+                      </span>
+                      <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                        {currentQ.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (currentQ.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (currentQ.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (currentQ.type === 'matching' ? 'KÉO THẢ / NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
+                      </span>
+                    </div>
+
+                    <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                      {currentQ.points || 1} điểm
+                    </div>
+                  </div>
+
+                  {/* Question Prompt */}
+                  <div style={{
+                    fontSize: previewDevice === 'mobile' ? '1rem' : '1.15rem',
+                    fontWeight: 600,
+                    lineHeight: 1.6,
+                    color: 'var(--text-primary)',
+                    marginBottom: '1rem',
+                    whiteSpace: 'pre-line'
+                  }}>
+                    {currentQ.question}
+                  </div>
+
+                  {/* Question Image (if any) */}
+                  {currentQ.imageUrl && (
+                    <div style={{
+                      textAlign: 'center',
+                      margin: '1rem 0 1.25rem',
+                      background: 'rgba(0,0,0,0.04)',
+                      padding: '0.5rem',
+                      borderRadius: '0.5rem',
+                      border: '1px solid var(--border)'
+                    }}>
+                      <img
+                        src={currentQ.imageUrl}
+                        alt="Hình ảnh minh họa câu hỏi"
+                        style={{
+                          maxWidth: '100%',
+                          maxHeight: previewDevice === 'mobile' ? '200px' : '320px',
+                          height: 'auto',
+                          borderRadius: '0.35rem',
+                          objectFit: 'contain',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => window.open(currentQ.imageUrl, '_blank')}
+                        title="Bấm để phóng to ảnh trong tab mới"
+                      />
+                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                        🔍 Bấm vào ảnh để xem kích thước gốc
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Interactive Question Types Simulation */}
+                  <div style={{ marginTop: '1rem' }}>
+                    {/* Choice ABCD */}
+                    {currentQ.type === 'choice' && currentQ.options && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        {currentQ.options.map((opt, oIdx) => {
+                          const char = String.fromCharCode(65 + oIdx);
+                          const isSelected = previewUserAnswer === opt;
+                          const isCorrectTarget = currentQ.correctAnswer === opt;
+                          
+                          let bg = 'var(--bg-secondary)';
+                          let border = '1px solid var(--border)';
+                          let color = 'var(--text-primary)';
+
+                          if (previewShowCorrect && isCorrectTarget) {
+                            bg = 'rgba(16, 185, 129, 0.15)';
+                            border = '1.5px solid #10b981';
+                          } else if (previewShowCorrect && isSelected && !isCorrectTarget) {
+                            bg = 'rgba(239, 68, 68, 0.15)';
+                            border = '1.5px solid #ef4444';
+                          } else if (isSelected) {
+                            bg = 'rgba(99, 102, 241, 0.12)';
+                            border = '1.5px solid var(--primary)';
+                          }
+
+                          return (
+                            <div
+                              key={oIdx}
+                              onClick={() => {
+                                setPreviewUserAnswer(opt);
+                                setPreviewAnswerChecked(null);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                padding: previewDevice === 'mobile' ? '0.7rem 0.85rem' : '0.85rem 1.1rem',
+                                borderRadius: '0.65rem',
+                                background: bg,
+                                border: border,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                color: color,
+                                userSelect: 'none'
+                              }}
+                            >
+                              <div style={{
+                                width: 28,
+                                height: 28,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                flexShrink: 0,
+                                background: isSelected ? 'var(--primary)' : 'var(--bg-tertiary)',
+                                color: isSelected ? '#ffffff' : 'var(--text-secondary)'
+                              }}>
+                                {char}
+                              </div>
+                              <div style={{ flex: 1, fontSize: '0.92rem', lineHeight: 1.45 }}>
+                                {opt}
+                              </div>
+                              {previewShowCorrect && isCorrectTarget && (
+                                <span style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem' }}>✓ Đáp án đúng</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Multiple Choice (Checkboxes) */}
+                    {currentQ.type === 'multiple_choice' && currentQ.options && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: '0.2rem' }}>
+                          💡 Chọn một hoặc nhiều đáp án bên dưới:
+                        </div>
+                        {currentQ.options.map((opt, oIdx) => {
+                          const char = String.fromCharCode(65 + oIdx);
+                          const currentArr: string[] = Array.isArray(previewUserAnswer) ? previewUserAnswer : [];
+                          const isSelected = currentArr.includes(opt);
+                          const correctArr: string[] = currentQ.correctAnswers && currentQ.correctAnswers.length > 0 
+                            ? currentQ.correctAnswers 
+                            : (currentQ.correctAnswer ? [currentQ.correctAnswer] : []);
+                          const isCorrectTarget = correctArr.includes(opt);
+
+                          let bg = 'var(--bg-secondary)';
+                          let border = '1px solid var(--border)';
+
+                          if (previewShowCorrect && isCorrectTarget) {
+                            bg = 'rgba(16, 185, 129, 0.15)';
+                            border = '1.5px solid #10b981';
+                          } else if (previewShowCorrect && isSelected && !isCorrectTarget) {
+                            bg = 'rgba(239, 68, 68, 0.15)';
+                            border = '1.5px solid #ef4444';
+                          } else if (isSelected) {
+                            bg = 'rgba(99, 102, 241, 0.12)';
+                            border = '1.5px solid var(--primary)';
+                          }
+
+                          return (
+                            <div
+                              key={oIdx}
+                              onClick={() => {
+                                const nextArr = isSelected ? currentArr.filter(x => x !== opt) : [...currentArr, opt];
+                                setPreviewUserAnswer(nextArr);
+                                setPreviewAnswerChecked(null);
+                              }}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                padding: previewDevice === 'mobile' ? '0.7rem 0.85rem' : '0.85rem 1.1rem',
+                                borderRadius: '0.65rem',
+                                background: bg,
+                                border: border,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                                userSelect: 'none'
+                              }}
+                            >
+                              <div style={{
+                                width: 24,
+                                height: 24,
+                                borderRadius: '4px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                flexShrink: 0,
+                                border: isSelected ? 'none' : '1.5px solid var(--border)',
+                                background: isSelected ? 'var(--primary)' : 'var(--bg-primary)',
+                                color: isSelected ? '#ffffff' : 'var(--text-secondary)'
+                              }}>
+                                {isSelected ? '✓' : ''}
+                              </div>
+                              <span style={{ fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.85rem' }}>{char}.</span>
+                              <div style={{ flex: 1, fontSize: '0.92rem', lineHeight: 1.45 }}>
+                                {opt}
+                              </div>
+                              {previewShowCorrect && isCorrectTarget && (
+                                <span style={{ color: '#10b981', fontWeight: 700, fontSize: '0.8rem' }}>✓ Đáp án đúng</span>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {/* Fill in the blank */}
+                    {currentQ.type === 'fill_blank' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          Nhập từ/cụm từ điền vào chỗ trống:
+                        </label>
+                        <input
+                          type="text"
+                          className="qm-input"
+                          style={{
+                            padding: '0.85rem 1rem',
+                            fontSize: '0.95rem',
+                            borderRadius: '0.6rem',
+                            border: '1.5px solid var(--border)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)'
+                          }}
+                          placeholder="Nhập câu trả lời của bạn..."
+                          value={previewUserAnswer || ''}
+                          onChange={(e) => {
+                            setPreviewUserAnswer(e.target.value);
+                            setPreviewAnswerChecked(null);
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    {/* Matching Pairs */}
+                    {currentQ.type === 'matching' && currentQ.matchingPairs && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          💡 Ghép cặp các vế tương ứng bên dưới:
+                        </div>
+                        {(() => {
+                          const userMatches = previewUserAnswer || {};
+                          const rightOptions = currentQ.matchingPairs.map(p => p.right);
+                          return currentQ.matchingPairs.map((pair, pIdx) => (
+                            <div
+                              key={pIdx}
+                              style={{
+                                display: 'flex',
+                                flexDirection: previewDevice === 'mobile' ? 'column' : 'row',
+                                alignItems: previewDevice === 'mobile' ? 'stretch' : 'center',
+                                justifyContent: 'space-between',
+                                gap: '0.5rem',
+                                padding: '0.75rem 1rem',
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border)',
+                                borderRadius: '0.6rem'
+                              }}
+                            >
+                              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
+                                {pair.left}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>➔</span>
+                                <select
+                                  className="qm-select"
+                                  value={userMatches[pair.left] || ''}
+                                  onChange={(e) => {
+                                    setPreviewUserAnswer({ ...userMatches, [pair.left]: e.target.value });
+                                    setPreviewAnswerChecked(null);
+                                  }}
+                                  style={{ padding: '0.5rem 0.75rem', fontSize: '0.85rem', flex: 1 }}
+                                >
+                                  <option value="">-- Chọn ghép nối --</option>
+                                  {rightOptions.map((r, rIdx) => (
+                                    <option key={rIdx} value={r}>{r}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </div>
+                          ));
+                        })()}
+                      </div>
+                    )}
+
+                    {/* Essay */}
+                    {currentQ.type === 'essay' && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                          Nhập câu trả lời tự luận ngắn:
+                        </label>
+                        <textarea
+                          rows={4}
+                          className="qm-textarea"
+                          style={{
+                            padding: '0.75rem 1rem',
+                            fontSize: '0.95rem',
+                            borderRadius: '0.6rem',
+                            border: '1.5px solid var(--border)',
+                            background: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            resize: 'vertical'
+                          }}
+                          placeholder="Nhập nội dung trả lời..."
+                          value={previewUserAnswer || ''}
+                          onChange={(e) => {
+                            setPreviewUserAnswer(e.target.value);
+                            setPreviewAnswerChecked(null);
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Feedback / Result of checking */}
+                  {previewAnswerChecked !== null && (
+                    <div style={{
+                      marginTop: '1.25rem',
+                      padding: '0.85rem 1.1rem',
+                      borderRadius: '0.65rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.65rem',
+                      background: previewAnswerChecked ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                      border: `1.5px solid ${previewAnswerChecked ? '#10b981' : '#ef4444'}`,
+                      color: previewAnswerChecked ? '#047857' : '#b91c1c',
+                      fontSize: '0.9rem',
+                      fontWeight: 600
+                    }}>
+                      {previewAnswerChecked ? (
+                        <>
+                          <CheckCircle2 size={18} color="#10b981" />
+                          <span>Chính xác! Thí sinh sẽ đạt trọn vẹn điểm câu này ({currentQ.points || 1} điểm).</span>
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle size={18} color="#ef4444" />
+                          <span>Chưa chính xác! Thí sinh sẽ không đạt điểm với câu trả lời này.</span>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Revealed Answer & Explanation */}
+                  {previewShowCorrect && (
+                    <div style={{
+                      marginTop: '1.25rem',
+                      padding: '1rem',
+                      borderRadius: '0.65rem',
+                      background: 'rgba(99, 102, 241, 0.08)',
+                      border: '1px dashed var(--primary)',
+                      fontSize: '0.88rem'
+                    }}>
+                      <div style={{ fontWeight: 700, color: 'var(--primary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <CheckCircle2 size={16} /> Đáp án chuẩn & Hướng dẫn chấm:
+                      </div>
+                      <div style={{ color: 'var(--text-primary)', marginBottom: '0.5rem', fontWeight: 600 }}>
+                        {currentQ.type === 'choice' && `Đáp án đúng: ${currentQ.correctAnswer}`}
+                        {currentQ.type === 'multiple_choice' && `Các đáp án đúng: ${(currentQ.correctAnswers || [currentQ.correctAnswer]).join(', ')}`}
+                        {currentQ.type === 'fill_blank' && `Đáp án được chấp nhận: ${currentQ.correctAnswer}`}
+                        {currentQ.type === 'matching' && (
+                          <div>
+                            Cặp nối chính xác:
+                            <ul style={{ margin: '0.35rem 0 0', paddingLeft: '1.25rem' }}>
+                              {currentQ.matchingPairs?.map((p, idx) => (
+                                <li key={idx}><strong>{p.left}</strong> ➔ {p.right}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        {currentQ.type === 'essay' && `Từ khóa chấm điểm: ${currentQ.correctAnswer}`}
+                      </div>
+
+                      {currentQ.explanation ? (
+                        <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', fontStyle: 'italic', borderTop: '1px solid rgba(99,102,241,0.2)', paddingTop: '0.4rem' }}>
+                          💡 Giải thích chi tiết: {currentQ.explanation}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                          (Chưa có nội dung giải thích chi tiết cho câu hỏi này)
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Modal Footer Controls */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '0.85rem 1.25rem',
+                borderTop: '1px solid var(--border)',
+                background: 'var(--bg-secondary)',
+                flexWrap: 'wrap',
+                gap: '0.75rem'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    disabled={previewQuestionIndex === 0}
+                    onClick={() => handleSelectPreviewQuestion(previewQuestionIndex - 1)}
+                  >
+                    <ChevronLeft size={15} /> Câu trước
+                  </button>
+
+                  <select
+                    className="qm-select qm-select-compact"
+                    style={{ padding: '0.35rem 0.6rem', fontSize: '0.82rem' }}
+                    value={previewQuestionIndex}
+                    onChange={(e) => handleSelectPreviewQuestion(Number(e.target.value))}
+                  >
+                    {activeQuiz.questions.map((_, qIdx) => (
+                      <option key={qIdx} value={qIdx}>
+                        Câu #{qIdx + 1}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    disabled={previewQuestionIndex >= totalQ - 1}
+                    onClick={() => handleSelectPreviewQuestion(previewQuestionIndex + 1)}
+                  >
+                    Câu sau <ChevronRight size={15} />
+                  </button>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => handleTestPreviewAnswer(currentQ)}
+                    style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  >
+                    <Play size={14} /> Thử trả lời
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => setPreviewShowCorrect(!previewShowCorrect)}
+                    style={{
+                      borderColor: previewShowCorrect ? '#10b981' : 'var(--border)',
+                      color: previewShowCorrect ? '#10b981' : 'var(--text-secondary)'
+                    }}
+                  >
+                    <Eye size={14} /> {previewShowCorrect ? 'Ẩn đáp án' : 'Hiện đáp án & Lời giải'}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    onClick={() => {
+                      setPreviewUserAnswer(null);
+                      setPreviewAnswerChecked(null);
+                    }}
+                    title="Đặt lại câu trả lời thử nghiệm"
+                  >
+                    <RotateCcw size={14} /> Làm lại
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

@@ -23,6 +23,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (!existingUser) {
         return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
       }
+      if (existingUser.role === 'DISABLED') {
+        return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
+      }
 
       // Xóa các mã OTP cũ
       await prisma.verificationToken.deleteMany({
@@ -59,6 +62,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (!existingUser) {
         return res.status(400).json({ message: 'Email không tồn tại trong hệ thống' });
+      }
+      if (existingUser.role === 'DISABLED') {
+        return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
       }
 
       const otpRecord = await prisma.verificationToken.findFirst({
