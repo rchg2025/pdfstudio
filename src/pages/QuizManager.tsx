@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   GraduationCap, 
@@ -24,7 +24,14 @@ import {
   Music,
   Shuffle,
   FileSpreadsheet,
-  LogIn
+  LogIn,
+  Search,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  FileUp
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -36,6 +43,7 @@ import type {
   StudentSubmission 
 } from '../types/quiz';
 import { generateStandaloneQuizHtml } from '../utils/quizHtmlGenerator';
+import { parseExamFile, type ParsedExamResult } from '../utils/examDocParser';
 import './QuizManager.css';
 
 const DEFAULT_QUIZ: QuizPackage = {
@@ -188,6 +196,20 @@ export default function QuizManager() {
   // Modal nạp câu hỏi nhanh (Bulk Text Import)
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [bulkText, setBulkText] = useState('');
+
+  // Tìm kiếm thông minh và Phân trang câu hỏi
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
+  // Modal Import File Word / Docx / HTML
+  const [showDocImportModal, setShowDocImportModal] = useState(false);
+  const [isParsingDoc, setIsParsingDoc] = useState(false);
+  const [parsedDocResult, setParsedDocResult] = useState<ParsedExamResult | null>(null);
+  const [editDocTitle, setEditDocTitle] = useState('');
+  const [editDocSubject, setEditDocSubject] = useState('');
+  const [editDocTime, setEditDocTime] = useState(60);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
 
   // Modal Export Iframe & Link
   const [showExportModal, setShowExportModal] = useState(false);
@@ -530,12 +552,121 @@ BẮT BUỘC trả về đúng định dạng JSON thuần túy (không markdown
     } catch {}
   };
 
-  // Lọc câu hỏi hiển thị
+  // Xử lý tệp đề thi Word / HTML / Text
+  const handleDocFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsParsingDoc(true);
+    try {
+      const res = await parseExamFile(file);
+      if (!res.questions || res.questions.length === 0) {
+        showToast('Không nhận diện được câu hỏi nào từ tệp. Vui lòng kiểm tra định dạng!', 'error');
+        return;
+      }
+      setParsedDocResult(res);
+      setEditDocTitle(res.title || file.name.replace(/\.[^/.]+$/, ''));
+      setEditDocSubject(res.subject || 'Chung');
+      setEditDocTime(res.timeLimitMinutes || 60);
+      showToast(`Đã nhận diện thành công ${res.questions.length} câu hỏi từ tệp!`, 'success');
+    } catch (err: any) {
+      showToast('Lỗi khi đọc file: ' + (err.message || 'Không thể giải mã tệp'), 'error');
+    } finally {
+      setIsParsingDoc(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const handleApplyDocAsNewQuiz = () => {
+    if (!parsedDocResult) return;
+    const newQuiz: QuizPackage = {
+      id: `qz-${Date.now()}`,
+      title: editDocTitle.trim() || 'Bộ Đề Thi Mới',
+      subject: editDocSubject.trim() || 'Chung',
+      description: `Đề thi nhập tự động từ tệp. Đã phân tích ${parsedDocResult.questions.length} câu hỏi.`,
+      code: Math.floor(100000 + Math.random() * 900000).toString(),
+      isOpen: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      settings: {
+        ...DEFAULT_QUIZ.settings,
+        timeLimitMinutes: editDocTime || 60,
+        difficultyDistribution: {
+          easyCount: parsedDocResult.questions.filter(q => q.difficulty === 'easy').length,
+          mediumCount: parsedDocResult.questions.filter(q => q.difficulty === 'medium').length,
+          hardCount: parsedDocResult.questions.filter(q => q.difficulty === 'hard').length
+        }
+      },
+      questions: parsedDocResult.questions
+    };
+
+    setQuizzes(prev => [newQuiz, ...prev]);
+    setActiveQuizId(newQuiz.id);
+    setShowDocImportModal(false);
+    setParsedDocResult(null);
+    setActiveTab('questions');
+    showToast(`Đã tạo bộ đề mới "${newQuiz.title}" với ${newQuiz.questions.length} câu hỏi!`, 'success');
+
+    // Lưu backend
+    fetch('/api/quiz-api?action=save-quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newQuiz)
+    }).catch(() => {});
+  };
+
+  const handleAppendDocToActiveQuiz = () => {
+    if (!parsedDocResult) return;
+    const updated = [...activeQuiz.questions, ...parsedDocResult.questions];
+    updateActiveQuiz({ questions: updated });
+    setShowDocImportModal(false);
+    setParsedDocResult(null);
+    setActiveTab('questions');
+    showToast(`Đã bổ sung ${parsedDocResult.questions.length} câu hỏi vào bộ đề "${activeQuiz.title}"!`, 'success');
+  };
+
+  // Helper xóa dấu tiếng Việt phục vụ tìm kiếm thông minh
+  const removeAccents = (str: string) => {
+    return (str || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/đ/g, 'd')
+      .replace(/Đ/g, 'D')
+      .toLowerCase()
+      .trim();
+  };
+
+  // Lọc câu hỏi hiển thị & Tìm kiếm thông minh
   const filteredQuestions = activeQuiz.questions.filter(q => {
     if (filterDifficulty !== 'all' && q.difficulty !== filterDifficulty) return false;
     if (filterType !== 'all' && q.type !== filterType) return false;
+
+    if (searchQuery.trim()) {
+      const qNorm = removeAccents(searchQuery);
+      const questionMatch = removeAccents(q.question).includes(qNorm);
+      const optionsMatch = (q.options || []).some(opt => removeAccents(opt).includes(qNorm));
+      const answerMatch = removeAccents(String(q.correctAnswer || '')).includes(qNorm);
+      const explanationMatch = removeAccents(q.explanation || '').includes(qNorm);
+      const matchingMatch = (q.matchingPairs || []).some(
+        p => removeAccents(p.left).includes(qNorm) || removeAccents(p.right).includes(qNorm)
+      );
+
+      if (!questionMatch && !optionsMatch && !answerMatch && !explanationMatch && !matchingMatch) {
+        return false;
+      }
+    }
     return true;
   });
+
+  // Tự động trở về trang 1 khi thay đổi điều kiện tìm kiếm hoặc phân loại
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterDifficulty, filterType, pageSize, activeQuizId]);
+
+  // Phân trang
+  const totalPages = Math.max(1, Math.ceil(filteredQuestions.length / pageSize));
+  const paginatedQuestions = filteredQuestions.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const startIndex = filteredQuestions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, filteredQuestions.length);
 
   // Tính toán thống kê
   const activeQuizSubmissions = submissions.filter(s => s.quizId === activeQuiz.id);
@@ -692,9 +823,19 @@ BẮT BUỘC trả về đúng định dạng JSON thuần túy (không markdown
                 Chọn bộ đề đang soạn để thêm câu hỏi, chỉnh sửa cài đặt hoặc lấy mã nhúng cho lớp học.
               </p>
             </div>
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowNewQuizModal(true)}>
-              <Plus size={16} /> Tạo Bộ Đề Mới
-            </button>
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm" 
+                onClick={() => { setParsedDocResult(null); setShowDocImportModal(true); }}
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+              >
+                <Upload size={15} /> Nhập File Word / Doc
+              </button>
+              <button type="button" className="btn btn-primary btn-sm" onClick={() => setShowNewQuizModal(true)}>
+                <Plus size={16} /> Tạo Bộ Đề Mới
+              </button>
+            </div>
           </div>
 
           <div className="qm-quiz-grid">
@@ -778,143 +919,264 @@ BẮT BUỘC trả về đúng định dạng JSON thuần túy (không markdown
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
+                onClick={() => { setParsedDocResult(null); setShowDocImportModal(true); }}
+                style={{ borderColor: '#10b981', color: '#10b981' }}
+              >
+                <Upload size={15} /> Import File Word / Doc
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
                 style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
                 onClick={() => setShowAiModal(true)}
               >
-                <Sparkles size={16} /> Tạo Bằng AI
+                <Sparkles size={15} /> Tạo Bằng AI
               </button>
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
                 onClick={() => setShowBulkModal(true)}
               >
-                <Upload size={16} /> Nạp Nhanh Text
+                <FileText size={15} /> Nạp Nhanh Text
               </button>
               <button 
                 type="button" 
                 className="btn btn-primary btn-sm"
                 onClick={() => { setEditingQuestion(null); setFormQText(''); setShowQuestionModal(true); }}
               >
-                <Plus size={16} /> Thêm Câu Hỏi
+                <Plus size={15} /> Thêm Câu Hỏi
               </button>
             </div>
           </div>
 
-          {/* Filters Bar */}
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center', marginBottom: '1.25rem', padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="qm-label">Độ khó:</span>
-              <select 
-                className="qm-select" 
-                style={{ width: 'auto', padding: '0.35rem 0.65rem', fontSize: '0.85rem' }}
-                value={filterDifficulty}
-                onChange={(e) => setFilterDifficulty(e.target.value)}
-              >
-                <option value="all">Tất cả ({activeQuiz.questions.length})</option>
-                <option value="easy">Dễ ({activeQuiz.questions.filter(q => q.difficulty === 'easy').length})</option>
-                <option value="medium">Trung bình ({activeQuiz.questions.filter(q => q.difficulty === 'medium').length})</option>
-                <option value="hard">Khó ({activeQuiz.questions.filter(q => q.difficulty === 'hard').length})</option>
-              </select>
+          {/* Smart Search & Filters Bar */}
+          <div className="qm-filters-bar">
+            {/* Search Input */}
+            <div className="qm-search-wrapper">
+              <Search size={16} className="qm-search-icon" />
+              <input
+                type="text"
+                className="qm-search-input"
+                placeholder="Tìm kiếm thông minh: nội dung câu hỏi, phương án, đáp án đúng..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="qm-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  title="Xóa tìm kiếm"
+                >
+                  <X size={14} />
+                </button>
+              )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="qm-label">Hình thức:</span>
-              <select 
-                className="qm-select" 
-                style={{ width: 'auto', padding: '0.35rem 0.65rem', fontSize: '0.85rem' }}
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                <option value="all">Tất cả hình thức</option>
-                <option value="choice">Trắc nghiệm 1 đáp án (ABCD)</option>
-                <option value="multiple_choice">Chọn nhiều đáp án</option>
-                <option value="fill_blank">Điền khuyết</option>
-                <option value="matching">Kéo thả / Nối cặp</option>
-                <option value="essay">Tự luận ngắn</option>
-              </select>
+            <div className="qm-filter-controls">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span className="qm-label-inline">Độ khó:</span>
+                <select 
+                  className="qm-select qm-select-compact" 
+                  value={filterDifficulty}
+                  onChange={(e) => setFilterDifficulty(e.target.value)}
+                >
+                  <option value="all">Tất cả ({activeQuiz.questions.length})</option>
+                  <option value="easy">Dễ ({activeQuiz.questions.filter(q => q.difficulty === 'easy').length})</option>
+                  <option value="medium">Trung bình ({activeQuiz.questions.filter(q => q.difficulty === 'medium').length})</option>
+                  <option value="hard">Khó ({activeQuiz.questions.filter(q => q.difficulty === 'hard').length})</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span className="qm-label-inline">Hình thức:</span>
+                <select 
+                  className="qm-select qm-select-compact" 
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <option value="all">Tất cả hình thức</option>
+                  <option value="choice">Trắc nghiệm ABCD</option>
+                  <option value="multiple_choice">Chọn nhiều đáp án</option>
+                  <option value="fill_blank">Điền khuyết</option>
+                  <option value="matching">Kéo thả / Nối cặp</option>
+                  <option value="essay">Tự luận ngắn</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <span className="qm-label-inline">Hiển thị:</span>
+                <select 
+                  className="qm-select qm-select-compact" 
+                  value={pageSize}
+                  onChange={(e) => setPageSize(Number(e.target.value))}
+                >
+                  <option value={5}>5 câu / trang</option>
+                  <option value={10}>10 câu / trang</option>
+                  <option value={20}>20 câu / trang</option>
+                  <option value={50}>50 câu / trang</option>
+                </select>
+              </div>
             </div>
           </div>
 
           {/* List of Questions */}
           <div className="qm-q-list">
-            {filteredQuestions.length === 0 ? (
+            {paginatedQuestions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
                 <HelpCircle size={40} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
-                <p>Không có câu hỏi nào khớp với bộ lọc. Hãy bấm <strong>Tạo Bằng AI</strong> hoặc <strong>Thêm Câu Hỏi</strong> để bổ sung!</p>
+                <p>
+                  {searchQuery 
+                    ? `Không tìm thấy câu hỏi nào phù hợp với từ khóa "${searchQuery}".` 
+                    : 'Không có câu hỏi nào khớp với bộ lọc. Hãy bấm Tạo Bằng AI hoặc Import File để bổ sung!'}
+                </p>
               </div>
             ) : (
-              filteredQuestions.map((q, idx) => (
-                <div key={q.id} className="qm-q-card">
-                  <div className="qm-q-header">
-                    <div>
-                      <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
-                        <span className="qm-badge" style={{ background: '#374151', color: '#fff' }}>Câu #{idx + 1}</span>
-                        <span className={`qm-badge qm-badge-${q.difficulty}`}>
-                          {q.difficulty === 'easy' ? 'DỄ' : (q.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
-                        </span>
-                        <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                          {q.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
-                        </span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({q.points || 1} điểm)</span>
+              paginatedQuestions.map((q, idx) => {
+                const globalIdx = (currentPage - 1) * pageSize + idx + 1;
+                return (
+                  <div key={q.id} className="qm-q-card">
+                    <div className="qm-q-header">
+                      <div>
+                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+                          <span className="qm-badge" style={{ background: '#374151', color: '#fff' }}>Câu #{globalIdx}</span>
+                          <span className={`qm-badge qm-badge-${q.difficulty}`}>
+                            {q.difficulty === 'easy' ? 'DỄ' : (q.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
+                          </span>
+                          <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                            {q.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
+                          </span>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>({q.points || 1} điểm)</span>
+                        </div>
+                        <div className="qm-q-title">{q.question}</div>
                       </div>
-                      <div className="qm-q-title">{q.question}</div>
+
+                      <div style={{ display: 'flex', gap: '0.4rem' }}>
+                        <button type="button" className="btn btn-outline btn-xs" onClick={() => handleOpenEditQuestion(q)}>
+                          <Edit3 size={13} /> Sửa
+                        </button>
+                        <button type="button" className="btn btn-outline btn-xs" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteQuestion(q.id)}>
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.4rem' }}>
-                      <button type="button" className="btn btn-outline btn-xs" onClick={() => handleOpenEditQuestion(q)}>
-                        <Edit3 size={13} /> Sửa
-                      </button>
-                      <button type="button" className="btn btn-outline btn-xs" style={{ color: 'var(--danger)' }} onClick={() => handleDeleteQuestion(q.id)}>
-                        <Trash2 size={13} />
-                      </button>
-                    </div>
+                    {/* Options display */}
+                    {(q.type === 'choice' || q.type === 'multiple_choice') && q.options && (
+                      <div className="qm-q-options">
+                        {q.options.map((opt, oIdx) => {
+                          const isCorrect = q.type === 'choice' ? q.correctAnswer === opt : (q.correctAnswers || []).includes(opt);
+                          return (
+                            <div key={oIdx} className={`qm-q-opt-item ${isCorrect ? 'is-correct' : ''}`}>
+                              {isCorrect ? '✓ ' : '○ '} {opt}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+
+                    {q.type === 'fill_blank' && (
+                      <div style={{ fontSize: '0.88rem', color: '#10b981' }}>
+                        Đáp án đúng chấp nhận: <strong>{q.correctAnswer}</strong>
+                      </div>
+                    )}
+
+                    {q.type === 'matching' && q.matchingPairs && (
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        {q.matchingPairs.map((p, pIdx) => (
+                          <span key={pIdx} className="qm-q-opt-item">
+                            <strong>{p.left}</strong> ➔ {p.right}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {q.type === 'essay' && (
+                      <div style={{ fontSize: '0.88rem', color: '#38bdf8' }}>
+                        Từ khóa chấm điểm: <em>{q.correctAnswer}</em>
+                      </div>
+                    )}
+
+                    {q.explanation && (
+                      <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px dashed var(--border)', paddingTop: '0.4rem' }}>
+                        💡 Giải thích: {q.explanation}
+                      </div>
+                    )}
                   </div>
-
-                  {/* Options display */}
-                  {(q.type === 'choice' || q.type === 'multiple_choice') && q.options && (
-                    <div className="qm-q-options">
-                      {q.options.map((opt, oIdx) => {
-                        const isCorrect = q.type === 'choice' ? q.correctAnswer === opt : (q.correctAnswers || []).includes(opt);
-                        return (
-                          <div key={oIdx} className={`qm-q-opt-item ${isCorrect ? 'is-correct' : ''}`}>
-                            {isCorrect ? '✓ ' : '○ '} {opt}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {q.type === 'fill_blank' && (
-                    <div style={{ fontSize: '0.88rem', color: '#10b981' }}>
-                      Đáp án đúng chấp nhận: <strong>{q.correctAnswer}</strong>
-                    </div>
-                  )}
-
-                  {q.type === 'matching' && q.matchingPairs && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                      {q.matchingPairs.map((p, pIdx) => (
-                        <span key={pIdx} className="qm-q-opt-item">
-                          <strong>{p.left}</strong> ➔ {p.right}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {q.type === 'essay' && (
-                    <div style={{ fontSize: '0.88rem', color: '#38bdf8' }}>
-                      Từ khóa chấm điểm: <em>{q.correctAnswer}</em>
-                    </div>
-                  )}
-
-                  {q.explanation && (
-                    <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', fontStyle: 'italic', borderTop: '1px dashed var(--border)', paddingTop: '0.4rem' }}>
-                      💡 Giải thích: {q.explanation}
-                    </div>
-                  )}
-                </div>
-              ))
+                );
+              })
             )}
           </div>
+
+          {/* Pagination Bar */}
+          {filteredQuestions.length > 0 && (
+            <div className="qm-pagination-bar">
+              <div className="qm-pagination-info">
+                Hiển thị <strong>{startIndex} - {endIndex}</strong> trong tổng số <strong>{filteredQuestions.length}</strong> câu hỏi
+                {searchQuery && ` (theo từ khóa "${searchQuery}")`}
+              </div>
+
+              <div className="qm-pagination-actions">
+                <button
+                  type="button"
+                  className="qm-page-btn"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(1)}
+                  title="Về trang đầu"
+                >
+                  <ChevronsLeft size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="qm-page-btn"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  title="Trang trước"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 2)
+                  .map((p, pIdx, arr) => {
+                    const prevP = arr[pIdx - 1];
+                    const hasGap = prevP && p - prevP > 1;
+                    return (
+                      <span key={p} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                        {hasGap && <span className="qm-page-ellipsis">...</span>}
+                        <button
+                          type="button"
+                          className={`qm-page-btn ${p === currentPage ? 'active' : ''}`}
+                          onClick={() => setCurrentPage(p)}
+                        >
+                          {p}
+                        </button>
+                      </span>
+                    );
+                  })}
+
+                <button
+                  type="button"
+                  className="qm-page-btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  title="Trang sau"
+                >
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  type="button"
+                  className="qm-page-btn"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage(totalPages)}
+                  title="Đến trang cuối"
+                >
+                  <ChevronsRight size={16} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1569,6 +1831,193 @@ BẮT BUỘC trả về đúng định dạng JSON thuần túy (không markdown
               <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate(`/phong-thi/${activeQuiz.id}`)}>
                 <Play size={14} /> Mở Trang Thi Thử
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IMPORT FILE WORD / DOC / HTML */}
+      {showDocImportModal && (
+        <div className="modal-overlay" onClick={() => !isParsingDoc && setShowDocImportModal(false)}>
+          <div className="modal-content" style={{ maxWidth: '800px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>
+                <FileUp size={20} color="var(--primary)" /> Nhập Đề Thi Từ File Word / Docx / HTML
+              </h3>
+              <button 
+                type="button" 
+                className="modal-close-btn" 
+                onClick={() => !isParsingDoc && setShowDocImportModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <input
+                type="file"
+                ref={docFileInputRef}
+                accept=".docx,.doc,.html,.htm,.txt"
+                style={{ display: 'none' }}
+                onChange={handleDocFileUpload}
+              />
+
+              {!parsedDocResult ? (
+                <div>
+                  <div 
+                    className="qm-dropzone" 
+                    onClick={() => docFileInputRef.current?.click()}
+                  >
+                    <FileUp size={44} color="var(--primary)" style={{ opacity: 0.8 }} />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
+                        {isParsingDoc ? 'Đang phân tích cấu trúc đề thi...' : 'Bấm vào đây để tải lên hoặc kéo thả tệp vào'}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Hỗ trợ file Microsoft Word (.docx, .doc), HTML hoặc Text (.txt)
+                      </div>
+                    </div>
+                    <button type="button" className="btn btn-primary btn-sm" disabled={isParsingDoc}>
+                      {isParsingDoc ? 'Đang xử lý...' : 'Chọn Tệp Đề Thi'}
+                    </button>
+                  </div>
+
+                  <div style={{ marginTop: '1.25rem', padding: '1rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                      💡 Cấu trúc tệp được hỗ trợ tự động:
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                      <li><strong>Tiêu đề & Môn học:</strong> Tự động nhận diện từ thẻ tiêu đề (Đề thi..., Môn học...).</li>
+                      <li><strong>Thời gian làm bài:</strong> Tự động phát hiện (ví dụ: <em>"Thời gian làm bài: 90 phút"</em>).</li>
+                      <li><strong>Câu hỏi trắc nghiệm:</strong> Nhận dạng các câu hỏi <code>Câu 1:</code>, <code>Câu 2:</code> kèm các phương án <code>A.</code>, <code>B.</code>, <code>C.</code>, <code>D.</code></li>
+                      <li><strong>Bảng đáp án:</strong> Tự động nhận diện bảng đáp án dạng <code>STT | Đáp án</code> ở cuối đề thi và gán đáp án chính xác cho từng câu!</li>
+                    </ul>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {/* Metadata Editor */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
+                    <div className="qm-form-group">
+                      <label className="qm-label">Tên đề thi *</label>
+                      <input
+                        type="text"
+                        className="qm-input"
+                        value={editDocTitle}
+                        onChange={(e) => setEditDocTitle(e.target.value)}
+                      />
+                    </div>
+                    <div className="qm-form-group">
+                      <label className="qm-label">Môn học</label>
+                      <input
+                        type="text"
+                        className="qm-input"
+                        value={editDocSubject}
+                        onChange={(e) => setEditDocSubject(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span className="qm-label" style={{ margin: 0 }}>Thời gian:</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={180}
+                        className="qm-input"
+                        style={{ width: '90px' }}
+                        value={editDocTime}
+                        onChange={(e) => setEditDocTime(Number(e.target.value))}
+                      />
+                      <span style={{ fontSize: '0.88rem', color: 'var(--text-secondary)' }}>phút</span>
+                    </div>
+
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.5rem' }}>
+                      <span className="qm-badge" style={{ background: '#10b981', color: '#fff', padding: '6px 12px', fontSize: '0.85rem' }}>
+                        ✓ Đã bóc tách {parsedDocResult.questions.length} câu hỏi
+                      </span>
+                      {Object.keys(parsedDocResult.answerMap).length > 0 && (
+                        <span className="qm-badge" style={{ background: 'var(--primary)', color: '#fff', padding: '6px 12px', fontSize: '0.85rem' }}>
+                          ✓ Khớp {Object.keys(parsedDocResult.answerMap).length} đáp án từ bảng cuối đề
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Preview list */}
+                  <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                    Xem trước danh sách câu hỏi ({parsedDocResult.questions.length} câu):
+                  </div>
+                  <div className="qm-doc-preview-list">
+                    {parsedDocResult.questions.map((q, idx) => (
+                      <div key={q.id} className="qm-doc-preview-item">
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--primary)' }}>
+                            Câu {idx + 1}:
+                          </span>
+                          <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)' }}>
+                            {q.question}
+                          </span>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '0.4rem', fontSize: '0.82rem' }}>
+                          {q.options?.map((opt, oIdx) => {
+                            const isCorrect = q.correctAnswer === opt;
+                            return (
+                              <div 
+                                key={oIdx} 
+                                style={{ 
+                                  color: isCorrect ? '#10b981' : 'var(--text-secondary)',
+                                  fontWeight: isCorrect ? 700 : 400
+                                }}
+                              >
+                                {['A', 'B', 'C', 'D'][oIdx] || oIdx + 1}. {opt} {isCorrect && '✓ (Đúng)'}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm" 
+                onClick={() => { setShowDocImportModal(false); setParsedDocResult(null); }}
+              >
+                Hủy
+              </button>
+
+              {parsedDocResult && (
+                <>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-sm" 
+                    onClick={() => { setParsedDocResult(null); docFileInputRef.current?.click(); }}
+                  >
+                    Chọn file khác
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-outline btn-sm"
+                    style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                    onClick={handleAppendDocToActiveQuiz}
+                  >
+                    Bổ Sung Vào Đề Hiện Tại
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn btn-primary btn-sm"
+                    onClick={handleApplyDocAsNewQuiz}
+                  >
+                    Tạo Bộ Đề Mới Tự Động
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

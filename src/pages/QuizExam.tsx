@@ -337,12 +337,12 @@ export default function QuizExam() {
           </p>
 
           <form onSubmit={handleStartExam}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1rem' }}>
-              <div>
-                <label className="qm-label">Họ và tên thí sinh *</label>
+            <div className="exam-form-grid">
+              <div className="exam-form-group">
+                <label className="exam-label">Họ và tên thí sinh *</label>
                 <input 
                   type="text" 
-                  className="qm-input" 
+                  className="exam-input" 
                   required
                   placeholder="Ví dụ: Nguyễn Văn A"
                   value={studentName}
@@ -350,22 +350,22 @@ export default function QuizExam() {
                 />
               </div>
 
-              <div>
-                <label className="qm-label">Lớp / Khóa học</label>
+              <div className="exam-form-group">
+                <label className="exam-label">Lớp / Khóa học</label>
                 <input 
                   type="text" 
-                  className="qm-input" 
+                  className="exam-input" 
                   placeholder="Ví dụ: DƯỢC-K18"
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                 />
               </div>
 
-              <div>
-                <label className="qm-label">Mã sinh viên (MSSV) *</label>
+              <div className="exam-form-group">
+                <label className="exam-label">Mã sinh viên (MSSV) *</label>
                 <input 
                   type="text" 
-                  className="qm-input" 
+                  className="exam-input" 
                   required
                   placeholder="Ví dụ: 20240199 hoặc SBD"
                   value={studentId}
@@ -373,11 +373,11 @@ export default function QuizExam() {
                 />
               </div>
 
-              <div>
-                <label className="qm-label">Email sinh viên (Tùy chọn)</label>
+              <div className="exam-form-group">
+                <label className="exam-label">Email sinh viên (Tùy chọn)</label>
                 <input 
                   type="email" 
-                  className="qm-input" 
+                  className="exam-input" 
                   placeholder="name@student.edu.vn"
                   value={studentEmail}
                   onChange={(e) => setStudentEmail(e.target.value)}
@@ -385,19 +385,19 @@ export default function QuizExam() {
               </div>
             </div>
 
-            <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', marginBottom: '1.5rem' }}>
-              <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+            <div className="exam-rules-box">
+              <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 📋 Tóm tắt quy chế thi:
               </div>
-              <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
                 <li>Thời gian làm bài: <strong>{quiz.settings.timeLimitMinutes > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
                 <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings.passingScorePercent}%</strong> trở lên.</li>
                 <li>Hệ thống tự động chấm điểm và công bố kết quả ngay khi bấm nộp bài hoặc hết thời gian.</li>
               </ul>
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="submit" className="btn btn-primary">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button type="submit" className="btn btn-primary btn-lg">
                 🚀 Bắt Đầu Làm Bài Thi
               </button>
             </div>
@@ -500,7 +500,7 @@ export default function QuizExam() {
               <div>
                 <input 
                   type="text" 
-                  className="qm-input" 
+                  className="exam-input" 
                   placeholder="Gõ câu trả lời của bạn vào đây..."
                   value={answers[currentQ.id] || ''}
                   onChange={(e) => setAnswers(prev => ({ ...prev, [currentQ.id]: e.target.value }))}
@@ -518,7 +518,7 @@ export default function QuizExam() {
                     <div key={pIdx} className="exam-match-row">
                       <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{pair.left}</div>
                       <select 
-                        className="qm-select"
+                        className="exam-select"
                         value={userMatches[pair.left] || ''}
                         onChange={(e) => {
                           const updated = { ...userMatches, [pair.left]: e.target.value };
@@ -540,7 +540,7 @@ export default function QuizExam() {
             {currentQ.type === 'essay' && (
               <div>
                 <textarea 
-                  className="qm-textarea" 
+                  className="exam-textarea" 
                   rows={4}
                   placeholder="Nhập câu trả lời tự luận ngắn của bạn..."
                   value={answers[currentQ.id] || ''}
@@ -551,32 +551,32 @@ export default function QuizExam() {
           </div>
 
           {/* Thanh điều hướng câu hỏi */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem', paddingTop: '1.25rem', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border)', flexWrap: 'wrap', gap: '0.75rem' }}>
             <button 
               type="button" 
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline"
               disabled={currentIdx === 0}
               onClick={() => setCurrentIdx(prev => prev - 1)}
             >
-              <ArrowLeft size={15} /> Câu trước
+              <ArrowLeft size={16} /> Câu trước
             </button>
 
             <button 
               type="button" 
-              className="btn btn-primary btn-sm"
-              style={{ background: '#10b981', border: 'none' }}
+              className="btn btn-primary"
+              style={{ background: '#10b981', border: 'none', padding: '0.75rem 2rem' }}
               onClick={() => handleSubmitExam(false)}
             >
-              <CheckCircle2 size={16} /> Nộp Bài Thi
+              <CheckCircle2 size={18} /> Nộp Bài Thi
             </button>
 
             <button 
               type="button" 
-              className="btn btn-outline btn-sm"
+              className="btn btn-outline"
               disabled={currentIdx === activeQuestions.length - 1}
               onClick={() => setCurrentIdx(prev => prev + 1)}
             >
-              Câu sau <ArrowRight size={15} />
+              Câu sau <ArrowRight size={16} />
             </button>
           </div>
         </div>
@@ -601,11 +601,11 @@ export default function QuizExam() {
             Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings.passingScorePercent}%.
           </p>
 
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '2.5rem' }}>
-            <button type="button" className="btn btn-primary btn-sm" onClick={() => setStep('register')}>
-              <RotateCcw size={15} /> Làm Lại Bài Thi
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginBottom: '2.5rem', flexWrap: 'wrap' }}>
+            <button type="button" className="btn btn-primary" onClick={() => setStep('register')}>
+              <RotateCcw size={16} /> Làm Lại Bài Thi
             </button>
-            <button type="button" className="btn btn-outline btn-sm" onClick={() => navigate('/quan-ly-thi-trac-nghiem')}>
+            <button type="button" className="btn btn-outline" onClick={() => navigate('/quan-ly-thi-trac-nghiem')}>
               Về Trang Quản Trị
             </button>
           </div>
