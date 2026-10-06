@@ -510,23 +510,27 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
       document.getElementById('student-badge').innerText = 'Thí sinh: ' + studentInfo.name + ' • Lớp/MSSV: ' + studentInfo.id;
       document.getElementById('result-desc').innerText = 'Đúng: ' + earnedPoints + '/' + totalPoints + ' điểm (' + pct + '%) • Chuẩn qua môn: ' + (QUIZ.settings.passingScorePercent || 50) + '%';
 
-      // Render review
+      // Render review nếu giáo viên cho phép (mặc định tắt)
       const revBox = document.getElementById('review-container');
-      revBox.innerHTML = '<h3 style="margin-bottom: 16px; color: #fff;">📋 Chi tiết bài làm:</h3>';
-      reviewDetails.forEach((item, idx) => {
-        const div = document.createElement('div');
-        div.className = 'review-item ' + (item.isCorrect ? 'is-correct' : 'is-wrong');
-        let correctDisplay = item.question.correctAnswer || (item.question.correctAnswers || []).join(', ');
-        if (item.question.type === 'matching') {
-          correctDisplay = (item.question.matchingPairs || []).map(p => p.left + ' → ' + p.right).join(' | ');
-        }
-        div.innerHTML = '<div class="review-q-title">Câu ' + (idx + 1) + ': ' + item.question.question + '</div>' +
-          '<div class="review-detail" style="color: ' + (item.isCorrect ? 'var(--success)' : 'var(--danger)') + ';">' +
-          (item.isCorrect ? '✅ Bạn trả lời đúng' : '❌ Bạn trả lời: ' + (typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời'))) + '</div>' +
-          (!item.isCorrect ? '<div class="review-detail" style="color: #60a5fa;">💡 Đáp án đúng: <strong>' + correctDisplay + '</strong></div>' : '') +
-          (item.question.explanation ? '<div class="review-detail" style="color: var(--text-muted); font-style: italic;">Giải thích: ' + item.question.explanation + '</div>' : '');
-        revBox.appendChild(div);
-      });
+      if (QUIZ.settings && QUIZ.settings.showCorrectAnswersAfterSubmit) {
+        revBox.innerHTML = '<h3 style="margin-bottom: 16px; color: #fff;">📋 Chi tiết bài làm:</h3>';
+        reviewDetails.forEach((item, idx) => {
+          const div = document.createElement('div');
+          div.className = 'review-item ' + (item.isCorrect ? 'is-correct' : 'is-wrong');
+          let correctDisplay = item.question.correctAnswer || (item.question.correctAnswers || []).join(', ');
+          if (item.question.type === 'matching') {
+            correctDisplay = (item.question.matchingPairs || []).map(p => p.left + ' → ' + p.right).join(' | ');
+          }
+          div.innerHTML = '<div class="review-q-title">Câu ' + (idx + 1) + ': ' + item.question.question + '</div>' +
+            '<div class="review-detail" style="color: ' + (item.isCorrect ? 'var(--success)' : 'var(--danger)') + ';">' +
+            (item.isCorrect ? '✅ Bạn trả lời đúng' : '❌ Bạn trả lời: ' + (typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời'))) + '</div>' +
+            (!item.isCorrect ? '<div class="review-detail" style="color: #60a5fa;">💡 Đáp án đúng: <strong>' + correctDisplay + '</strong></div>' : '') +
+            (item.question.explanation ? '<div class="review-detail" style="color: var(--text-muted); font-style: italic;">Giải thích: ' + item.question.explanation + '</div>' : '');
+          revBox.appendChild(div);
+        });
+      } else {
+        revBox.innerHTML = '<div style="margin-top: 24px; padding: 18px 20px; background: rgba(255,255,255,0.03); border: 1px solid #374151; border-radius: 12px; color: #9ca3af; font-size: 0.9rem; text-align: center;"><div style="font-size:1.5rem;margin-bottom:6px;">🔒</div><strong style="color:#e5e7eb;display:block;margin-bottom:4px;">Không hiển thị chi tiết bài làm</strong>Giáo viên đã cấu hình không hiển thị chi tiết các câu hỏi và đáp án cho bài thi này.</div>';
+      }
     }
   </script>
 </body>

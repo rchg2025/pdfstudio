@@ -786,40 +786,61 @@ export default function QuizExam() {
             </button>
           </div>
 
-          {/* Chi tiết lời giải & đối chiếu đáp án */}
-          <div style={{ textAlign: 'left' }}>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
-              📋 Chi Tiết Từng Câu Hỏi:
-            </h3>
+          {/* Chi tiết lời giải & đối chiếu đáp án (Chỉ hiển thị khi giáo viên cho phép) */}
+          {quiz.settings?.showCorrectAnswersAfterSubmit ? (
+            <div style={{ textAlign: 'left' }}>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '1rem' }}>
+                📋 Chi Tiết Từng Câu Hỏi:
+              </h3>
 
-            {reviewList.map((item, idx) => {
-              let correctDisplay = item.q.correctAnswer || (item.q.correctAnswers || []).join(', ');
-              if (item.q.type === 'matching' && item.q.matchingPairs) {
-                correctDisplay = item.q.matchingPairs.map(p => `${p.left} ➔ ${p.right}`).join(' | ');
-              }
+              {reviewList.map((item, idx) => {
+                let correctDisplay = item.q.correctAnswer || (item.q.correctAnswers || []).join(', ');
+                if (item.q.type === 'matching' && item.q.matchingPairs) {
+                  correctDisplay = item.q.matchingPairs.map(p => `${p.left} ➔ ${p.right}`).join(' | ');
+                }
 
-              return (
-                <div key={item.q.id} className={`exam-review-card ${item.isCorrect ? 'is-correct' : 'is-wrong'}`}>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
-                    Câu {idx + 1}: {item.q.question}
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
-                    {item.isCorrect ? '✅ Bạn đã trả lời chính xác!' : `❌ Câu trả lời của bạn: ${typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời')}`}
-                  </div>
-                  {!item.isCorrect && (
-                    <div style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
-                      💡 Đáp án đúng: <strong>{correctDisplay}</strong>
+                return (
+                  <div key={item.q.id} className={`exam-review-card ${item.isCorrect ? 'is-correct' : 'is-wrong'}`}>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
+                      Câu {idx + 1}: {item.q.question}
                     </div>
-                  )}
-                  {item.q.explanation && (
-                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.3rem' }}>
-                      Giải thích: {item.q.explanation}
+                    <div style={{ fontSize: '0.85rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
+                      {item.isCorrect ? '✅ Bạn đã trả lời chính xác!' : `❌ Câu trả lời của bạn: ${typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời')}`}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {!item.isCorrect && (
+                      <div style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
+                        💡 Đáp án đúng: <strong>{correctDisplay}</strong>
+                      </div>
+                    )}
+                    {item.q.explanation && (
+                      <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.3rem' }}>
+                        Giải thích: {item.q.explanation}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div style={{ 
+              margin: '1.5rem auto 0', 
+              padding: '1.25rem 1.5rem', 
+              background: 'var(--bg-primary)', 
+              borderRadius: 'var(--radius-lg)', 
+              border: '1px solid var(--border)',
+              maxWidth: '540px',
+              textAlign: 'center',
+              color: 'var(--text-secondary)'
+            }}>
+              <div style={{ fontSize: '1.6rem', marginBottom: '0.35rem' }}>🔒</div>
+              <strong style={{ fontSize: '0.95rem', color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
+                Không hiển thị chi tiết bài làm
+              </strong>
+              <p style={{ margin: 0, fontSize: '0.85rem', lineHeight: 1.5 }}>
+                Giáo viên đã cấu hình không hiển thị chi tiết các câu hỏi và đáp án cho bài thi này để bảo mật đề thi.
+              </p>
+            </div>
+          )}
         </div>
       )}
 

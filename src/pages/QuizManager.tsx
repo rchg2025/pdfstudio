@@ -81,7 +81,7 @@ const DEFAULT_QUIZ: QuizPackage = {
     bgMusicType: 'lofi',
     enableSounds: true,
     showResultsImmediately: true,
-    showCorrectAnswersAfterSubmit: true
+    showCorrectAnswersAfterSubmit: false
   },
   questions: [
     {
@@ -1594,6 +1594,32 @@ export default function QuizManager() {
                     />
                     Địa chỉ Email sinh viên
                   </label>
+                </div>
+              </div>
+
+              {/* Phản hồi kết quả sau khi thi */}
+              <div className="qm-form-group">
+                <label className="qm-label">Quyền xem lại bài làm sau khi nộp</label>
+                <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={Boolean(activeQuiz.settings.showCorrectAnswersAfterSubmit)} 
+                      onChange={(e) => updateActiveQuiz({ settings: { ...activeQuiz.settings, showCorrectAnswersAfterSubmit: e.target.checked } })}
+                    />
+                    <span>Cho phép thí sinh xem chi tiết bài làm & đáp án đúng</span>
+                  </label>
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)', paddingLeft: '1.6rem', lineHeight: 1.5 }}>
+                    {activeQuiz.settings.showCorrectAnswersAfterSubmit ? (
+                      <span style={{ color: '#10b981', fontWeight: 500 }}>
+                        ✓ Đang bật: Sau khi nộp bài, thí sinh sẽ xem được chi tiết từng câu hỏi, đáp án đã chọn, đáp án đúng và lời giải thích.
+                      </span>
+                    ) : (
+                      <span>
+                        🔒 <strong>Mặc định tắt</strong>: Sau khi nộp bài, thí sinh chỉ xem được tổng điểm và xếp loại Đạt/Chưa đạt (hoàn toàn không lộ đề thi và đáp án).
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
 
