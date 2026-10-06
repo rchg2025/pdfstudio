@@ -5,7 +5,7 @@ import forgotPasswordHandler from './_forgot-password.js';
 import googleHandler from './_google.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { action } = req.query;
+  const action = req.query?.action || (req as any).params?.action;
 
   try {
     switch (action) {

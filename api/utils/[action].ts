@@ -5,7 +5,7 @@ import proxyImageHandler from './_proxy-image.js';
 import googleConfigHandler from './_google.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { action } = req.query;
+  const action = req.query?.action || (req as any).params?.action;
 
   try {
     switch (action) {

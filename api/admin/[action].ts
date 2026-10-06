@@ -7,7 +7,7 @@ import nodemailer from 'nodemailer';
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     requireAdmin(req);
-    const { action } = req.query;
+    const action = req.query?.action || (req as any).params?.action;
     
     if (!action || typeof action !== 'string') {
       return res.status(404).json({ message: 'Action not found' });
