@@ -405,17 +405,17 @@ button {
     max-height: 98vh;
   }
 
-  /* Nút bấm trên mobile: Nhỏ gọn hơn, cho phép co giãn hoặc xuống dòng tự nhiên */
+  /* Nút bấm trên mobile: Nhỏ gọn hơn, chữ nguyên từ, không bị gãy từng chữ cái */
   .btn {
-    padding: 0.45rem 0.85rem !important;
+    padding: 0.45rem 0.8rem !important;
     font-size: 0.82rem !important;
     gap: 0.35rem !important;
     border-radius: var(--radius-sm) !important;
-    white-space: normal !important;
-    word-break: break-word !important;
+    white-space: nowrap !important;
+    word-break: normal !important;
     text-align: center;
-    line-height: 1.25 !important;
-    flex-shrink: 1 !important;
+    line-height: 1.2 !important;
+    flex-shrink: 0 !important;
   }
 
   .btn svg {
@@ -425,6 +425,12 @@ button {
   .btn-sm {
     padding: 0.35rem 0.65rem !important;
     font-size: 0.78rem !important;
+  }
+
+  .btn-xs {
+    padding: 0.25rem 0.5rem !important;
+    font-size: 0.72rem !important;
+    white-space: nowrap !important;
   }
 
   .btn-lg {

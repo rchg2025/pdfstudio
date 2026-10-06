@@ -1533,7 +1533,7 @@ export default function QuizManager() {
                 Tổng cộng {activeQuiz.questions.length} câu hỏi. Hỗ trợ trắc nghiệm ABCD, kéo thả, điền khuyết và tự luận ngắn.
               </p>
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <div className="qm-panel-actions">
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
@@ -1664,8 +1664,8 @@ export default function QuizManager() {
                 return (
                   <div key={q.id} className="qm-q-card">
                     <div className="qm-q-header">
-                      <div>
-                        <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center', marginBottom: '0.35rem' }}>
+                      <div className="qm-q-main">
+                        <div className="qm-q-badges-row">
                           <span className="qm-badge" style={{ background: '#374151', color: '#fff' }}>Câu #{globalIdx}</span>
                           <span className={`qm-badge qm-badge-${q.difficulty}`}>
                             {q.difficulty === 'easy' ? 'DỄ' : (q.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
@@ -1683,7 +1683,7 @@ export default function QuizManager() {
                         <div className="qm-q-title">{q.question}</div>
                       </div>
 
-                      <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <div className="qm-q-actions">
                         <button 
                           type="button" 
                           className="btn btn-outline btn-xs" 
@@ -1704,7 +1704,7 @@ export default function QuizManager() {
 
                     {/* Hiển thị hình ảnh minh họa câu hỏi nếu có */}
                     {q.imageUrl && (
-                      <div style={{ margin: '0.65rem 0', maxWidth: '340px' }}>
+                      <div className="qm-q-image-container" style={{ margin: '0.65rem 0', maxWidth: '340px' }}>
                         <img 
                           src={getSafeImageUrl(q.imageUrl)} 
                           alt="Ảnh câu hỏi" 

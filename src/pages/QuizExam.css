@@ -360,8 +360,49 @@
   font-size: 1.22rem;
   font-weight: 700;
   color: var(--text-primary);
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
   line-height: 1.6;
+}
+
+/* Question Image Container */
+.exam-q-image-wrap {
+  margin: 0.5rem 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--bg-primary);
+  padding: 0.75rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+}
+
+.exam-q-image {
+  max-height: 280px;
+  width: auto;
+  max-width: 100%;
+  border-radius: var(--radius-md);
+  object-fit: contain;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.exam-q-image:hover {
+  transform: scale(1.01);
+}
+
+.exam-q-image-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+@media (max-width: 768px) {
+  .exam-q-image {
+    max-height: 220px;
+  }
 }
 
 /* Options */
