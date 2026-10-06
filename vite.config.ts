@@ -15,6 +15,10 @@ export default defineConfig({
             if (id.includes('@imgly')) return 'vendor-imgly';
             if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) return 'vendor-react';
             if (id.includes('pdf-lib') || id.includes('jspdf')) return 'vendor-pdf';
+            if (id.includes('xlsx')) return 'vendor-xlsx';
+            if (id.includes('mammoth') || id.includes('docx-preview')) return 'vendor-docx';
+            if (id.includes('html2canvas') || id.includes('html2pdf')) return 'vendor-html2canvas';
+            if (id.includes('lucide-react')) return 'vendor-icons';
             return 'vendor';
           }
         }

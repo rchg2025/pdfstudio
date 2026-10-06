@@ -5,19 +5,29 @@ const dbUrl = process.env.DATABASE_URL ||
   process.env.POSTGRES_URL || 
   "postgresql://neondb_owner:npg_Yvd4phsckal3@ep-quiet-king-atdwf3ey-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
-// Pool kết nối PostgreSQL an toàn cho Serverless
+const globalPool = globalThis as unknown as {
+  qaDbPool: any;
+  quizTablesEnsured: boolean;
+};
+
+// Pool kết nối PostgreSQL an toàn và tái sử dụng (Singleton)
 function getDbPool() {
-  return createPool({
-    connectionString: dbUrl,
-  });
+  if (!globalPool.qaDbPool) {
+    globalPool.qaDbPool = createPool({
+      connectionString: dbUrl,
+      max: 10,
+    });
+  }
+  return globalPool.qaDbPool;
 }
 
 function generateCuidLike() {
   return 'c' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 }
 
-// Auto-create tables for Quiz if not exists
+// Auto-create tables for Quiz if not exists (chỉ chạy 1 lần duy nhất khi khởi động)
 async function ensureQuizTables(pool: any) {
+  if (globalPool.quizTablesEnsured) return;
   try {
     await pool.query(`
       CREATE TABLE IF NOT EXISTS "QuizPackage" (
@@ -36,6 +46,7 @@ async function ensureQuizTables(pool: any) {
 
       ALTER TABLE "QuizPackage" ADD COLUMN IF NOT EXISTS "userId" VARCHAR(64);
       CREATE INDEX IF NOT EXISTS "idx_quiz_userId" ON "QuizPackage"("userId");
+      CREATE INDEX IF NOT EXISTS "idx_quiz_code" ON "QuizPackage"(code);
 
       CREATE TABLE IF NOT EXISTS "QuizSubmission" (
         id VARCHAR(64) PRIMARY KEY,
@@ -53,7 +64,9 @@ async function ensureQuizTables(pool: any) {
         answers JSONB DEFAULT '{}'::jsonb,
         "submittedAt" TIMESTAMP DEFAULT NOW()
       );
+      CREATE INDEX IF NOT EXISTS "idx_submission_quizId" ON "QuizSubmission"("quizId");
     `);
+    globalPool.quizTablesEnsured = true;
   } catch (e) {
     console.error('Lỗi khởi tạo bảng Quiz:', e);
   }
@@ -384,18 +397,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json({ success: true, submission: result.rows[0] });
     }
 
-    // 10. LẤY BÀI NỘP CỦA BỘ ĐỀ QUIZ
+    // 10. LẤY BÀI NỘP CỦA BỘ ĐỀ QUIZ (Giới hạn 100 bài mới nhất để tối ưu tốc độ và bộ nhớ)
     if (req.method === 'GET' && action === 'get-submissions') {
       const { quizId, userId } = req.query;
       let queryRes;
       if (quizId) {
-        queryRes = await pool.query('SELECT * FROM "QuizSubmission" WHERE "quizId" = $1 ORDER BY "submittedAt" DESC', [String(quizId)]);
+        queryRes = await pool.query('SELECT * FROM "QuizSubmission" WHERE "quizId" = $1 ORDER BY "submittedAt" DESC LIMIT 100', [String(quizId)]);
       } else if (userId) {
         queryRes = await pool.query(`
           SELECT s.* FROM "QuizSubmission" s
           INNER JOIN "QuizPackage" q ON s."quizId" = q.id
           WHERE q."userId" = $1
           ORDER BY s."submittedAt" DESC
+          LIMIT 100
         `, [String(userId)]);
       } else {
         queryRes = { rows: [] };

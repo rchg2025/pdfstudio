@@ -90,7 +90,12 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath, {
     maxAge: '1y',
     immutable: true,
-    index: false
+    index: false,
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      }
+    }
   }));
 
   // Handle SPA routes

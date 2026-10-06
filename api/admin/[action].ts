@@ -13,8 +13,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ message: 'Action not found' });
     }
 
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const { prisma } = await import('../_lib/prisma.js');
 
     // -------------------------------------------------------------
     // USERS

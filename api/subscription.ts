@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { requireAuth, getUserFromRequest } from './_lib/auth.js';
 
+let cachedPricingAndBank: { data: any; expiry: number } | null = null;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const { action } = req.query;
 
@@ -8,8 +10,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const prismaModule = await import('./_lib/prisma.js');
     const prisma = prismaModule.prisma;
 
-    // 1. Lấy thông tin cấu hình tài khoản ngân hàng & bảng giá các gói
+    // 1. Lấy thông tin cấu hình tài khoản ngân hàng & bảng giá các gói (Cached 60s)
     if (action === 'pricing-and-bank' && req.method === 'GET') {
+      const now = Date.now();
+      if (cachedPricingAndBank && cachedPricingAndBank.expiry > now) {
+        return res.status(200).json(cachedPricingAndBank.data);
+      }
       const settings = await prisma.setting.findMany({
         where: {
           key: {
@@ -67,14 +73,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       ];
 
-      return res.status(200).json({
+      const responseData = {
         bank: {
           bankId: config.bankId || 'MB',
           bankAccountNo: config.bankAccountNo || '0988888888',
           bankAccountName: config.bankAccountName || 'NGUYEN VAN LUYEN'
         },
         plans
-      });
+      };
+
+      cachedPricingAndBank = {
+        data: responseData,
+        expiry: now + 60 * 1000 // Cache 60s
+      };
+
+      return res.status(200).json(responseData);
     }
 
     // 2. Lấy thông tin hạn dùng của User hiện tại & lịch sử đơn hàng
