@@ -37,7 +37,7 @@ export default function Admin() {
 
   // States cho Cấu hình
   const [settings, setSettings] = useState({
-    smtpHost: '', smtpPort: '', smtpUser: '', smtpPass: '',
+    smtpHost: '', smtpPort: '', smtpUser: '', smtpPass: '', adminNotificationEmail: '',
     googleClientId: '', googleClientSecret: '',
     googleDriveFolderId: '', googleDriveServiceJson: '',
     geminiApiKey: '', geminiCustomModel: 'auto'
@@ -997,6 +997,21 @@ export default function Admin() {
                       <div>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Mật khẩu ứng dụng (Password)</label>
                         <input type="password" value={settings.smtpPass} onChange={e => handleSettingChange('smtpPass', e.target.value)} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} placeholder="Mật khẩu ứng dụng Gmail 16 số" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                          Email nhận thông báo Admin khi có người đăng ký mới (Tùy chọn)
+                        </label>
+                        <input 
+                          type="text" 
+                          value={settings.adminNotificationEmail} 
+                          onChange={e => handleSettingChange('adminNotificationEmail', e.target.value)} 
+                          style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }} 
+                          placeholder="Mặc định gửi cho tất cả Admin. Nhập thêm email phụ phân cách bằng dấu phẩy (,)" 
+                        />
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                          Khi có thành viên mới kích hoạt tài khoản qua Google hoặc Đăng ký thông thường, hệ thống sẽ tự động gửi email thông báo chi tiết đến danh sách này.
+                        </div>
                       </div>
                     </div>
                   </div>

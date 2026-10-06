@@ -1,14 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
   
   const { credential, action, otp, email: tempEmail, name: tempName, googleId: tempGoogleId } = req.body;
 
   try {
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const prismaModule = await import('../_lib/prisma.js');
+    const prisma = prismaModule.prisma;
     
     const clientIdSetting = await prisma.setting.findUnique({ where: { key: 'googleClientId' } });
     const clientId = clientIdSetting?.value;
@@ -16,6 +15,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (!clientId) {
       return res.status(500).json({ message: 'Tính năng đăng nhập Google chưa được cấu hình bởi Admin.' });
     }
+
+    // Gửi lại mã OTP kích hoạt Google
+    if (action === 'RESEND_OTP') {
+      if (!tempEmail) {
+        return res.status(400).json({ message: 'Thiếu thông tin email' });
+      }
+
+      await prisma.verificationToken.deleteMany({ where: { email: tempEmail, type: 'GOOGLE_REGISTER' } });
+
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+      await prisma.verificationToken.create({
+        data: {
+          email: tempEmail,
+          token: generatedOtp,
+          type: 'GOOGLE_REGISTER',
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000),
+        }
+      });
+
+      const emailModule = await import('../_lib/email.js');
+      await emailModule.sendOtpEmail(tempEmail, generatedOtp, 'GOOGLE_REGISTER');
+
+      return res.status(200).json({ message: 'Đã gửi lại mã kích hoạt đến email của bạn.' });
+    }
+
+    // Xác nhận mã OTP kích hoạt tài khoản Google lần đầu
     if (action === 'VERIFY_OTP') {
       if (!otp || !tempEmail || !tempGoogleId) {
         return res.status(400).json({ message: 'Thiếu thông tin xác thực' });
@@ -40,6 +65,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      // Thông báo cho Quản trị viên (Admin) khi có người dùng mới kích hoạt tài khoản
+      try {
+        const emailModule = await import('../_lib/email.js');
+        await emailModule.sendAdminNewUserNotification({
+          email: newUser.email,
+          name: newUser.name,
+          role: newUser.role,
+          type: 'GOOGLE'
+        });
+      } catch (notifyErr: any) {
+        console.error('Lỗi khi gửi email thông báo Admin:', notifyErr.message);
+      }
+
       const jwtModule = await import('jsonwebtoken');
       const jwt = jwtModule.default || jwtModule;
       const secret = process.env.JWT_SECRET || 'fallback_secret_key';
@@ -50,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       );
 
       return res.status(201).json({
-        message: 'Đăng ký thành công',
+        message: 'Kích hoạt tài khoản và đăng nhập thành công',
         token,
         user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role }
       });
@@ -102,16 +140,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         user: { id: user.id, email: user.email, name: user.name, role: user.role }
       });
     } else {
-      // User doesn't exist, send OTP for Google Registration
+      // Người dùng mới chưa có tài khoản: bắt buộc gửi mã xác nhận kích hoạt tài khoản qua email trước khi cho phép đăng nhập lần đầu
       await prisma.verificationToken.deleteMany({ where: { email, type: 'GOOGLE_REGISTER' } });
 
-      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digits
+      const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString(); // 6 chữ số
       await prisma.verificationToken.create({
         data: {
           email,
           token: generatedOtp,
           type: 'GOOGLE_REGISTER',
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+          expiresAt: new Date(Date.now() + 15 * 60 * 1000), // 15 phút
         }
       });
 
@@ -120,7 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       await sendOtpEmail(email, generatedOtp, 'GOOGLE_REGISTER');
       
       return res.status(202).json({ 
-        message: 'Yêu cầu xác nhận OTP', 
+        message: 'Tài khoản chưa được kích hoạt. Vui lòng kiểm tra email Google của bạn để lấy mã xác nhận kích hoạt tài khoản trước khi đăng nhập lần đầu tiên.', 
         requireOtp: true,
         tempData: { email, name, googleId }
       });

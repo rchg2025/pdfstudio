@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Mail } from 'lucide-react';
 import { GoogleLogin } from '@react-oauth/google';
 import { useNotification } from '../contexts/NotificationContext';
 
@@ -16,12 +16,24 @@ export default function Login() {
   const [showGoogleOtp, setShowGoogleOtp] = useState(false);
   const [googleOtp, setGoogleOtp] = useState('');
   const [googleTempData, setGoogleTempData] = useState<any>(null);
+  const [resendingOtp, setResendingOtp] = useState(false);
 
   const { login } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
   const returnUrl = location.state?.returnUrl;
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const activated = params.get('activated');
+    if (activated === 'success') {
+      showToast('Tài khoản của bạn đã được kích hoạt thành công! Bạn có thể đăng nhập ngay.', 'success');
+    } else if (activated === 'error') {
+      const msg = params.get('message') || 'Liên kết kích hoạt không hợp lệ hoặc đã hết hạn.';
+      showToast(msg, 'error');
+    }
+  }, [location.search, showToast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -166,25 +178,83 @@ export default function Login() {
       </div>
 
       {showGoogleOtp && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="glass-card" style={{ padding: '2rem', width: '100%', maxWidth: '400px', background: 'var(--bg-primary)' }}>
-            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--text-primary)', textAlign: 'center' }}>Xác nhận OTP Google</h3>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '1.5rem', textAlign: 'center' }}>
-              Vui lòng kiểm tra email Google của bạn và nhập mã OTP.
-            </p>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)', padding: '1rem' }}>
+          <div className="glass-card" style={{ padding: '2rem', width: '100%', maxWidth: '440px', background: 'var(--bg-primary)', borderRadius: '1rem', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.3)' }}>
+            <div style={{ textAlign: 'center', marginBottom: '1.25rem' }}>
+              <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(99, 102, 241, 0.15)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                <Mail size={24} />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.5rem', color: 'var(--text-primary)' }}>
+                Kích Hoạt Tài Khoản Google
+              </h3>
+              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                Bạn đang đăng ký bằng Google lần đầu tiên. Hệ thống đã gửi mã xác nhận kích hoạt đến email:
+              </p>
+              <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem', marginTop: '0.35rem' }}>
+                {googleTempData?.email}
+              </div>
+            </div>
+
+            <div style={{ background: 'var(--bg-secondary)', padding: '0.75rem 1rem', borderRadius: '0.5rem', marginBottom: '1.25rem', fontSize: '0.8rem', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}>
+              💡 Bạn có thể nhập mã OTP 6 số bên dưới hoặc mở email và nhấn vào <strong>nút kích hoạt trực tiếp</strong>.
+            </div>
+
             <input 
               type="text" 
               value={googleOtp}
               onChange={e => setGoogleOtp(e.target.value)}
               placeholder="Nhập 6 số mã OTP"
-              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', textAlign: 'center', fontSize: '1.25rem', letterSpacing: '4px', fontWeight: 'bold', marginBottom: '1.5rem' }}
+              style={{ width: '100%', padding: '0.85rem 1rem', borderRadius: '0.5rem', border: '1.5px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', textAlign: 'center', fontSize: '1.4rem', letterSpacing: '6px', fontWeight: 'bold', marginBottom: '0.75rem', outline: 'none' }}
               maxLength={6}
+              autoFocus
             />
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button onClick={() => setShowGoogleOtp(false)} className="btn" style={{ flex: 1, background: 'transparent', color: 'var(--text-secondary)' }}>Hủy</button>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+              <button
+                type="button"
+                disabled={resendingOtp}
+                onClick={async () => {
+                  if (!googleTempData?.email) return;
+                  setResendingOtp(true);
+                  try {
+                    const res = await fetch('/api/auth/google', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ action: 'RESEND_OTP', email: googleTempData.email })
+                    });
+                    const d = await res.json();
+                    if (res.ok) {
+                      showToast(d.message || 'Đã gửi lại mã kích hoạt!', 'success');
+                    } else {
+                      showToast(d.message || 'Không thể gửi lại mã', 'error');
+                    }
+                  } catch {
+                    showToast('Lỗi kết nối máy chủ', 'error');
+                  } finally {
+                    setResendingOtp(false);
+                  }
+                }}
+                style={{ background: 'none', border: 'none', color: 'var(--primary)', fontSize: '0.82rem', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+              >
+                {resendingOtp ? 'Đang gửi lại...' : 'Chưa nhận được? Gửi lại mã'}
+              </button>
+
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Hiệu lực 15 phút</span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button 
-                className="btn btn-primary" 
+                type="button"
+                onClick={() => { setShowGoogleOtp(false); setGoogleOtp(''); }} 
+                className="btn btn-outline" 
                 style={{ flex: 1 }}
+              >
+                Hủy
+              </button>
+              <button 
+                type="button"
+                className="btn btn-primary" 
+                style={{ flex: 1.5 }}
                 disabled={loading || !googleOtp}
                 onClick={async () => {
                   setLoading(true);
@@ -202,11 +272,11 @@ export default function Login() {
                     });
                     const data = await res.json();
                     if (res.ok) {
-                      showToast(data.message, 'success');
+                      showToast(data.message || 'Kích hoạt tài khoản thành công!', 'success');
                       login(data.token, data.user);
                       navigate(data.user.role === 'ADMIN' ? '/admin' : (returnUrl || '/dashboard'));
                     } else {
-                      showToast(data.message || 'OTP không đúng', 'error');
+                      showToast(data.message || 'Mã OTP không đúng hoặc đã hết hạn', 'error');
                     }
                   } catch (e: any) {
                     showToast('Lỗi máy chủ', 'error');
@@ -215,7 +285,7 @@ export default function Login() {
                   }
                 }}
               >
-                {loading ? 'Đang xử lý...' : 'Xác nhận'}
+                {loading ? 'Đang kích hoạt...' : 'Kích hoạt & Đăng nhập'}
               </button>
             </div>
           </div>

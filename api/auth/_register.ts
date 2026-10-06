@@ -97,6 +97,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      // Thông báo cho Quản trị viên (Admin)
+      try {
+        const { sendAdminNewUserNotification } = await import('../_lib/email.js');
+        await sendAdminNewUserNotification({
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          type: 'STANDARD'
+        });
+      } catch (err: any) {
+        console.warn('Không thể gửi email thông báo Admin:', err.message);
+      }
+
       // Tạo token
       const jwtModule = await import('jsonwebtoken');
       const jwt = jwtModule.default || jwtModule;

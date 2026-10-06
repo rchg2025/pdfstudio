@@ -53,6 +53,70 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         return res.status(200).json({ user });
       }
+      case 'activate': {
+        const email = req.query.email as string;
+        const token = req.query.token as string;
+        const appUrl = process.env.APP_URL || 'https://tienich.ite.id.vn';
+
+        if (!email || !token) {
+          return res.redirect(`${appUrl}/login?activated=error&message=${encodeURIComponent('Thông tin liên kết kích hoạt không hợp lệ.')}`);
+        }
+
+        const prismaModule = await import('../_lib/prisma.js');
+        const prisma = prismaModule.prisma;
+
+        const otpRecord = await prisma.verificationToken.findFirst({
+          where: { 
+            email, 
+            token, 
+            type: { in: ['GOOGLE_REGISTER', 'REGISTER'] } 
+          },
+          orderBy: { createdAt: 'desc' }
+        });
+
+        if (!otpRecord) {
+          return res.redirect(`${appUrl}/login?activated=error&message=${encodeURIComponent('Mã kích hoạt không chính xác hoặc đã được sử dụng.')}`);
+        }
+
+        if (new Date() > otpRecord.expiresAt) {
+          return res.redirect(`${appUrl}/login?activated=error&message=${encodeURIComponent('Liên kết kích hoạt đã hết hạn. Vui lòng đăng ký lại.')}`);
+        }
+
+        // Delete used tokens
+        await prisma.verificationToken.deleteMany({
+          where: { email, type: otpRecord.type }
+        });
+
+        // Check if user exists
+        let user = await prisma.user.findUnique({ where: { email } });
+        let isNew = false;
+        if (!user) {
+          user = await prisma.user.create({
+            data: {
+              email,
+              name: email.split('@')[0],
+              role: 'USER'
+            }
+          });
+          isNew = true;
+        }
+
+        if (isNew) {
+          try {
+            const { sendAdminNewUserNotification } = await import('../_lib/email.js');
+            await sendAdminNewUserNotification({
+              email: user.email,
+              name: user.name,
+              role: user.role,
+              type: otpRecord.type === 'GOOGLE_REGISTER' ? 'GOOGLE' : 'STANDARD'
+            });
+          } catch (err: any) {
+            console.error('Lỗi gửi email thông báo Admin:', err.message);
+          }
+        }
+
+        return res.redirect(`${appUrl}/login?activated=success&email=${encodeURIComponent(email)}`);
+      }
       default:
         return res.status(404).json({ message: 'API Route Not Found' });
     }
