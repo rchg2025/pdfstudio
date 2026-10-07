@@ -60,23 +60,35 @@ export default function QuizExam() {
     const loadQuizData = async () => {
       setLoading(true);
       try {
-        // 1. Kiểm tra localStorage trước
-        const local = localStorage.getItem('rchg_quiz_packages');
-        if (local) {
-          const list: QuizPackage[] = JSON.parse(local);
-          const found = list.find(q => q.id === quizId || q.code === quizId);
-          if (found) {
-            setQuiz(found);
-            if (found.settings?.bgMusicType && found.settings.bgMusicType !== 'none') {
-              setSelectedTrack(found.settings.bgMusicType);
-            }
-            setLoading(false);
-            return;
+        // 1. Quét tất cả các key localStorage (bao gồm rchg_quiz_packages_* của từng user)
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('rchg_quiz_packages')) {
+            try {
+              const val = localStorage.getItem(key);
+              if (val) {
+                const list: QuizPackage[] = JSON.parse(val);
+                const found = list.find(q => q.id === quizId || q.code === quizId);
+                if (found) {
+                  setQuiz(found);
+                  if (found.settings?.bgMusicType && found.settings.bgMusicType !== 'none') {
+                    setSelectedTrack(found.settings.bgMusicType);
+                  }
+                  setLoading(false);
+                  return;
+                }
+              }
+            } catch {}
           }
         }
 
-        // 2. Tải từ API Backend
-        const res = await fetch(`/api/quiz-api?action=get-quizzes&id=${quizId}`);
+        // 2. Tải từ API Backend (Neon Postgres) bằng id hoặc mã code phòng thi
+        const isCodeParam = quizId && /^\d{6}$/.test(quizId);
+        const endpoint = isCodeParam 
+          ? `/api/quiz-api?action=get-quizzes&code=${encodeURIComponent(quizId)}`
+          : `/api/quiz-api?action=get-quizzes&id=${encodeURIComponent(quizId || '')}`;
+        
+        const res = await fetch(endpoint);
         if (res.ok) {
           const data = await res.json();
           if (data.quiz) {
@@ -88,20 +100,10 @@ export default function QuizExam() {
             return;
           }
         }
-      } catch {}
-
-      // Fallback nếu không tìm thấy
-      const fallbackList = localStorage.getItem('rchg_quiz_packages');
-      if (fallbackList) {
-        try {
-          const list: QuizPackage[] = JSON.parse(fallbackList);
-          if (list[0]) {
-            setQuiz(list[0]);
-            setLoading(false);
-            return;
-          }
-        } catch {}
+      } catch (err) {
+        console.error('Lỗi khi nạp dữ liệu đề thi:', err);
       }
+
       setLoading(false);
     };
 

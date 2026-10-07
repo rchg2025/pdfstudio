@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createPool } from '@vercel/postgres';
+import pg from 'pg';
+const { Pool } = pg;
 
-const dbUrl = process.env.DATABASE_URL || 
+const dbUrl = process.env.POSTGRES_PRISMA_URL || 
+  process.env.DATABASE_URL || 
   process.env.POSTGRES_URL || 
   "postgresql://neondb_owner:npg_Yvd4phsckal3@ep-quiet-king-atdwf3ey-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require";
 
@@ -10,12 +12,15 @@ const globalPool = globalThis as unknown as {
   quizTablesEnsured: boolean;
 };
 
-// Pool kết nối PostgreSQL an toàn và tái sử dụng (Singleton)
+// Pool kết nối PostgreSQL an toàn và tái sử dụng (Dùng standard pg.Pool tương thích hoàn hảo trên Linux VPS)
 function getDbPool() {
   if (!globalPool.qaDbPool) {
-    globalPool.qaDbPool = createPool({
+    globalPool.qaDbPool = new Pool({
       connectionString: dbUrl,
+      ssl: dbUrl.includes('neon.tech') ? { rejectUnauthorized: false } : undefined,
       max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 10000,
     });
   }
   return globalPool.qaDbPool;
