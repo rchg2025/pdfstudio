@@ -129,6 +129,7 @@ if (fs.existsSync(distPath)) {
     '/buc-tuong-cau-hoi',
     '/phieu-bai-tap-tuong-tac',
     '/quan-ly-thi-trac-nghiem',
+    '/soan-de-thi-ai',
     '/phong-thi',
     '/phong-thi/:id',
     '/embed-player'

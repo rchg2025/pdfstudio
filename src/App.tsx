@@ -52,6 +52,7 @@ const ClassroomActivityTimer = React.lazy(() => import('./pages/ClassroomActivit
 const AnonymousQaWall = React.lazy(() => import('./pages/AnonymousQaWall'));
 const QuizManager = React.lazy(() => import('./pages/QuizManager'));
 const QuizExam = React.lazy(() => import('./pages/QuizExam'));
+const SyllabusExamGenerator = React.lazy(() => import('./pages/SyllabusExamGenerator'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -203,6 +204,9 @@ function App() {
             } />
             <Route path="quan-ly-thi-trac-nghiem" element={
               <Suspense fallback={<FallbackLoader />}><QuizManager /></Suspense>
+            } />
+            <Route path="soan-de-thi-ai" element={
+              <Suspense fallback={<FallbackLoader />}><SyllabusExamGenerator /></Suspense>
             } />
             <Route path="phong-thi/:quizId" element={
               <Suspense fallback={<FallbackLoader />}><QuizExam /></Suspense>

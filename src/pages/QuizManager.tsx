@@ -45,7 +45,8 @@ import {
   AlertCircle,
   Crown,
   Calendar,
-  Filter
+  Filter,
+  BookOpen
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,6 +62,7 @@ import type {
 import { generateStandaloneQuizHtml } from '../utils/quizHtmlGenerator';
 import { parseExamFile, type ParsedExamResult } from '../utils/examDocParser';
 import { getSafeImageUrl, handleImageError, extractQuestionImage } from '../utils/imageUrl';
+import { downloadExamDocFile } from '../utils/wordExport';
 import './QuizManager.css';
 
 const DEFAULT_QUIZ: QuizPackage = {
@@ -1448,8 +1450,17 @@ export default function QuizManager() {
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm" 
+                onClick={() => navigate('/soan-de-thi-ai')}
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.08)' }}
+                title="Soạn đề thi tự động từ giáo trình, tài liệu Word/PDF, drive hoặc link web theo cây mục lục"
+              >
+                <BookOpen size={15} /> Soạn Đề Từ Giáo Trình AI
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm" 
                 onClick={() => { setParsedDocResult(null); setShowDocImportModal(true); }}
-                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                style={{ borderColor: '#10b981', color: '#10b981' }}
               >
                 <Upload size={15} /> Nhập File Word / Doc
               </button>
@@ -1540,8 +1551,38 @@ export default function QuizManager() {
               <button 
                 type="button" 
                 className="btn btn-outline btn-sm"
+                onClick={() => navigate('/soan-de-thi-ai')}
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)', background: 'rgba(99, 102, 241, 0.08)' }}
+                title="Soạn đề thi tự động từ giáo trình, tài liệu Word/PDF, drive hoặc link web theo cây mục lục"
+              >
+                <BookOpen size={15} /> Soạn Đề Giáo Trình AI
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
+                onClick={() => {
+                  if (activeQuiz.questions.length === 0) {
+                    showToast('Bộ đề hiện chưa có câu hỏi nào để xuất Word!', 'warning');
+                    return;
+                  }
+                  downloadExamDocFile(activeQuiz.questions, {
+                    title: activeQuiz.title,
+                    subject: activeQuiz.subject,
+                    timeLimitMinutes: activeQuiz.settings.timeLimitMinutes || 60,
+                    examCode: activeQuiz.code
+                  }, `DeThi_${activeQuiz.code}_${activeQuiz.title.replace(/\s+/g, '_')}.doc`);
+                  showToast('Đã xuất file Word thành công!', 'success');
+                }}
+                style={{ borderColor: '#2563eb', color: '#2563eb' }}
+                title="Xuất bộ đề hiện tại ra file Word (.doc) đúng chuẩn để in hoặc lưu trữ"
+              >
+                <Download size={15} /> Xuất Word
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
                 onClick={handleOpenPreviewExam}
-                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                style={{ borderColor: 'var(--text-secondary)' }}
                 title="Xem trước toàn bộ câu hỏi và giao diện làm bài"
               >
                 <Eye size={15} /> Xem Trước Đề Thi
@@ -1552,7 +1593,7 @@ export default function QuizManager() {
                 onClick={() => { setParsedDocResult(null); setShowDocImportModal(true); }}
                 style={{ borderColor: '#10b981', color: '#10b981' }}
               >
-                <Upload size={15} /> Import File Word / Doc
+                <Upload size={15} /> Import File Word
               </button>
               <button 
                 type="button" 

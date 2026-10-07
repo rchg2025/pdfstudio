@@ -266,6 +266,12 @@ const edTechTools = [
     icon: <CheckSquare size={24} />,
     title: 'Khảo Thí & Ngân Hàng Câu Hỏi Trắc Nghiệm',
     desc: 'Quản lý ngân hàng câu hỏi, tạo đề thi bằng AI, phân độ khó, nhạc nền thư giãn và tự động chấm điểm trên LMS.'
+  },
+  {
+    path: '/soan-de-thi-ai',
+    icon: <BookOpen size={24} />,
+    title: 'Soạn Đề Thi Giáo Trình AI & Cây Mục Lục',
+    desc: 'Bóc tách đề mục (Chương/Bài/Sub) từ Word/PDF/Drive/Web, sinh đề trắc nghiệm & tự luận theo phạm vi chọn lọc, xuất Word chuẩn mẫu.'
   }
 ];
 

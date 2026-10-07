@@ -1,0 +1,322 @@
+.syl-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+}
+
+.syl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.syl-header-left h1 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0 0 0.35rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.syl-header-left p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.syl-header-right {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+/* Stepper Bar */
+.syl-stepper {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.syl-step-item {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.85rem 1rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.syl-step-item.active {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.08);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.syl-step-item.completed {
+  border-color: #10b981;
+}
+
+.syl-step-num {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.syl-step-item.active .syl-step-num {
+  background: var(--primary);
+  color: #fff;
+}
+
+.syl-step-item.completed .syl-step-num {
+  background: #10b981;
+  color: #fff;
+}
+
+.syl-step-text-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--text-primary);
+}
+
+.syl-step-text-desc {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Step 1: Input source card */
+.syl-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+.syl-tabs {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.syl-tab-btn {
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: all 0.15s ease;
+}
+
+.syl-tab-btn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.syl-tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* Dropzone */
+.syl-dropzone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-tertiary);
+}
+
+.syl-dropzone:hover {
+  border-color: var(--primary);
+  background: rgba(99, 102, 241, 0.03);
+}
+
+/* Step 3 Layout: 2 Columns Grid (Left: Config & Tree, Right: Exam Preview) */
+.syl-editor-grid {
+  display: grid;
+  grid-template-columns: 460px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .syl-editor-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.syl-config-pane {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+}
+
+.syl-preview-pane {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.25rem;
+  min-height: 600px;
+}
+
+/* Hierarchy Tree */
+.syl-tree-box {
+  max-height: 380px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 0.75rem;
+  background: var(--bg-primary);
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.syl-tree-node {
+  margin: 0.35rem 0;
+  line-height: 1.4;
+}
+
+.syl-tree-node-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.3rem 0.4rem;
+  border-radius: var(--radius-sm);
+  transition: background 0.15s ease;
+}
+
+.syl-tree-node-row:hover {
+  background: var(--bg-tertiary);
+}
+
+.syl-tree-node-row input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+.syl-tree-node-label {
+  cursor: pointer;
+  user-select: none;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.syl-tree-level-0 .syl-tree-node-label {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.syl-tree-level-1 {
+  margin-left: 1.4rem;
+}
+
+.syl-tree-level-2 {
+  margin-left: 2.8rem;
+}
+
+.syl-tree-level-3 {
+  margin-left: 4rem;
+}
+
+/* Exam Preview Sheet */
+.syl-exam-sheet {
+  background: #ffffff;
+  color: #1e293b;
+  border: 1px solid #cbd5e1;
+  border-radius: var(--radius-md);
+  padding: 2.5rem 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Times New Roman', Times, serif;
+  line-height: 1.45;
+  font-size: 15px;
+}
+
+.syl-exam-sheet h2, 
+.syl-exam-sheet h3, 
+.syl-exam-sheet h4 {
+  font-family: 'Times New Roman', Times, serif;
+  color: #0f172a;
+}
+
+.syl-exam-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5rem 1rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.syl-exam-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.4;
+}
+
+/* Buttons in Header Preview */
+.syl-preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.syl-preview-title {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.syl-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.syl-badge-saved-drive {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 4px 10px;
+  background: rgba(16, 185, 129, 0.12);
+  color: #10b981;
+  border-radius: 9999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}

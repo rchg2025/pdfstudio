@@ -17,9 +17,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const prisma = prismaModule.prisma;
 
     if (req.method === 'POST') {
-      const { imageBase64, filename } = req.body;
-      if (!imageBase64 || !imageBase64.startsWith('data:image')) {
-        return res.status(400).json({ message: 'Invalid imageBase64 data' });
+      const { imageBase64, fileBase64, filename, mimeType: customMime } = req.body;
+      const rawData = fileBase64 || imageBase64;
+      if (!rawData) {
+        return res.status(400).json({ message: 'Invalid file data' });
       }
 
       const settings = await prisma.setting.findMany({
@@ -61,13 +62,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const yearFolderId = await getOrCreateFolder(yearStr, folderIdSetting.value);
         const monthFolderId = await getOrCreateFolder(monthStr, yearFolderId);
 
-        const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "");
+        const base64Data = rawData.replace(/^data:[^;]+;base64,/, "");
         const buffer = Buffer.from(base64Data, 'base64');
         const stream = new Readable();
         stream.push(buffer);
         stream.push(null);
 
-        const safeFilename = filename || `upload-${Date.now()}.png`;
+        const safeFilename = filename || (imageBase64 ? `upload-${Date.now()}.png` : `document-${Date.now()}.docx`);
+        const fileMime = customMime || (imageBase64 ? 'image/png' : 'application/octet-stream');
 
         const fileMetadata = {
           name: safeFilename,
@@ -75,14 +77,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         };
 
         const media = {
-          mimeType: 'image/png',
+          mimeType: fileMime,
           body: stream,
         };
 
         const uploadedFile = await drive.files.create({
           requestBody: fileMetadata,
           media: media,
-          fields: 'id',
+          fields: 'id, webViewLink, webContentLink',
           supportsAllDrives: true,
         });
 
@@ -95,10 +97,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           supportsAllDrives: true,
         });
 
-        return res.status(200).json({ url: `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000` });
+        const driveUrl = fileMime.startsWith('image/')
+          ? `https://drive.google.com/thumbnail?id=${fileId}&sz=w2000`
+          : `https://drive.google.com/file/d/${fileId}/view`;
+
+        return res.status(200).json({
+          url: driveUrl,
+          fileId: fileId,
+          fileName: safeFilename,
+          webViewLink: uploadedFile.data.webViewLink || driveUrl,
+          webContentLink: uploadedFile.data.webContentLink
+        });
       } catch (err: any) {
         console.error("Google Drive Upload Error:", err);
-        return res.status(500).json({ message: 'Lỗi khi upload ảnh lên Google Drive: ' + err.message });
+        return res.status(500).json({ message: 'Lỗi khi upload lên Google Drive: ' + err.message });
       }
     }
 

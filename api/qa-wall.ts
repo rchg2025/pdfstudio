@@ -614,6 +614,284 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       });
     }
 
+    // 14. TRÍCH XUẤT CÂY ĐỀ MỤC GIÁO TRÌNH (Chương, Bài, Mục con)
+    if (req.method === 'POST' && action === 'extract-syllabus-tree') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { content, customApiKey } = body || {};
+      if (!content || !content.trim()) {
+        return res.status(400).json({ error: 'Nội dung giáo trình / đề cương không được để trống' });
+      }
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa cấu hình Google Gemini API Key!' });
+      }
+
+      const BASE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+      const prompt = `Bạn là chuyên gia sư phạm và cấu trúc giáo trình đại học/cao đẳng. 
+Dưới đây là một phần hoặc mục lục của tài liệu/giáo trình/khung chương trình:
+"""
+${content.slice(0, 16000)}
+"""
+
+Nhiệm vụ của bạn: Hãy phân tích và trích xuất toàn bộ cấu trúc các Chương, Bài, Mục lớn, Mục con (sub) của tài liệu thành cấu trúc cây JSON phân cấp rõ ràng.
+Quy tắc:
+1. Mỗi node có:
+   - "id": chuỗi duy nhất (ví dụ "ch-1", "ch-1-sec-1", "sub-1-1-1")
+   - "title": Tên chương/bài/mục (ví dụ: "Chương I. Hiểu biết về công nghệ thông tin cơ bản", "sub,2.1. Kiến thức cơ bản về máy tính")
+   - "children": mảng các mục con cấp dưới (nếu có, không có thì để mảng rỗng [])
+2. Nếu tài liệu không chia rõ theo chữ "Chương", hãy nhóm hợp lý theo các chủ đề hoặc bài học chính.
+3. BẮT BUỘC chỉ trả về JSON thuần túy, không có chữ dẫn \`\`\`json ở đầu cuối:
+[
+  {
+    "id": "ch-1",
+    "title": "Chương I. Hiểu biết về công nghệ thông tin cơ bản",
+    "children": [
+      {
+        "id": "sub-1-1",
+        "title": "sub,2.1. Kiến thức cơ bản về máy tính",
+        "children": [
+          { "id": "sub-1-1-1", "title": "sub,2.1.1. Thông tin và xử lý thông tin", "children": [] },
+          { "id": "sub-1-1-2", "title": "sub,2.1.2. Phần cứng", "children": [] }
+        ]
+      }
+    ]
+  }
+]`;
+
+      let parsedTree = null;
+      let usedModel = '';
+      for (const m of BASE_MODELS) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
+            })
+          });
+          if (!gRes.ok) continue;
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          let parsed: any[] = [];
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\[[\s\S]*\]/);
+            if (match) parsed = JSON.parse(match[0]);
+          }
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            parsedTree = parsed;
+            usedModel = m;
+            break;
+          }
+        } catch (e) {
+          console.warn(`Lỗi model ${m} khi trích xuất cây giáo trình:`, e);
+        }
+      }
+
+      if (!parsedTree) {
+        return res.status(502).json({ error: 'Không thể trích xuất mục lục giáo trình từ tài liệu này.' });
+      }
+
+      return res.status(200).json({ success: true, tree: parsedTree, modelUsed: usedModel });
+    }
+
+    // 15. TẠO BỘ ĐỀ THI TỪ PHẠM VI GIÁO TRÌNH ĐƯỢC CHỌN (Trắc nghiệm, Tự luận, hoặc Kết hợp)
+    if (req.method === 'POST' && action === 'generate-syllabus-quiz') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const {
+        selectedTopics, // Mảng tiêu đề các chương/mục được tick chọn
+        examType, // 'choice' | 'essay' | 'mixed'
+        choiceCount, // Số câu trắc nghiệm
+        essayCount, // Số câu tự luận/thực hành
+        difficulty, // 'easy' | 'medium' | 'hard' | 'mixed'
+        sourceContext, // Nội dung trích xuất từ giáo trình/tài liệu
+        customApiKey
+      } = body || {};
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa cấu hình Google Gemini API Key!' });
+      }
+
+      const qChoiceCount = Number(choiceCount) || 0;
+      const qEssayCount = Number(essayCount) || 0;
+      const topicsStr = Array.isArray(selectedTopics) && selectedTopics.length > 0
+        ? selectedTopics.join('\n- ')
+        : 'Toàn bộ nội dung tài liệu';
+
+      const diffLabel = difficulty === 'easy' ? 'Dễ (Nhận biết)' : (difficulty === 'hard' ? 'Khó (Vận dụng cao)' : 'Hỗn hợp cân đối Dễ - Trung bình - Khó');
+
+      const prompt = `Bạn là Trưởng ban Khảo thí và Biên soạn đề thi đại học/cao đẳng chuyên nghiệp.
+Nhiệm vụ: Hãy biên soạn một bộ đề thi hoàn chỉnh bám sát CHÍNH XÁC phạm vi kiến thức sau:
+PHẠM VI ĐƯỢC CHỌN:
+- ${topicsStr}
+
+NGUỒN DỮ LIỆU TÀI LIỆU/GIÁO TRÌNH:
+"""
+${(sourceContext || '').slice(0, 18000)}
+"""
+
+YÊU CẦU CẤU HÌNH ĐỀ THI:
+1. Loại đề thi: ${examType === 'choice' ? 'Chỉ Trắc nghiệm' : (examType === 'essay' ? 'Chỉ Tự luận/Thực hành' : 'Kết hợp cả Trắc nghiệm và Tự luận/Thực hành')}.
+2. Số lượng:
+   - Trắc nghiệm ABCD: ${qChoiceCount} câu.
+   - Tự luận / Tình huống thực hành: ${qEssayCount} câu.
+3. Độ khó: ${diffLabel}.
+4. Nguyên tắc câu hỏi:
+   - Câu hỏi trắc nghiệm phải có 4 phương án rõ ràng (A, B, C, D), không có đáp án "Tất cả các đáp án trên".
+   - Câu hỏi tự luận/thực hành phải có hướng dẫn chấm, từ khóa trọng tâm hoặc barem điểm chi tiết.
+   - Bám sát kiến thức thực tế trong phạm vi đã chọn.
+
+BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown, không có \`\`\`json ở đầu cuối):
+[
+  {
+    "type": "choice",
+    "difficulty": "medium",
+    "question": "Nội dung câu hỏi trắc nghiệm...",
+    "options": ["Phương án A", "Phương án B", "Phương án C", "Phương án D"],
+    "correctAnswer": "Phương án đúng",
+    "explanation": "Giải thích chi tiết vì sao đúng bám sát giáo trình...",
+    "points": 1
+  },
+  {
+    "type": "essay",
+    "difficulty": "medium",
+    "question": "Nội dung câu hỏi tự luận hoặc bài tập tình huống thực hành...",
+    "correctAnswer": "Các từ khóa trọng tâm hoặc ý chính cần đạt trong barem điểm",
+    "explanation": "Barem hướng dẫn chấm chi tiết: Ý 1 (1 điểm), Ý 2 (1 điểm)...",
+    "points": 2
+  }
+]`;
+
+      const BASE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      let successfulQuestions = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of BASE_MODELS) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.6, responseMimeType: 'application/json' }
+            })
+          });
+
+          if (!gRes.ok) {
+            attemptErrors.push(`[${m}]: HTTP ${gRes.status}`);
+            continue;
+          }
+
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          let parsed: any[] = [];
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\[[\s\S]*\]/);
+            if (match) parsed = JSON.parse(match[0]);
+          }
+
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            successfulQuestions = parsed.map((item, idx) => ({
+              id: `syl-q-${Date.now()}-${idx}`,
+              type: item.type || (item.options ? 'choice' : 'essay'),
+              difficulty: item.difficulty || 'medium',
+              question: item.question || `Câu hỏi ${idx + 1}`,
+              options: item.type === 'essay' ? undefined : (Array.isArray(item.options) && item.options.length >= 2 ? item.options : ['A', 'B', 'C', 'D']),
+              correctAnswer: item.correctAnswer || (item.options ? item.options[0] : ''),
+              explanation: item.explanation || 'Hướng dẫn đáp án câu hỏi.',
+              points: item.points || (item.type === 'essay' ? 2 : 1)
+            }));
+            usedModel = m;
+            break;
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message}`);
+        }
+      }
+
+      if (!successfulQuestions || successfulQuestions.length === 0) {
+        return res.status(502).json({
+          error: `Không thể tạo đề thi bằng AI (${attemptErrors.join(' | ')}). Vui lòng thử lại hoặc giảm số lượng câu hỏi.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        questions: successfulQuestions,
+        modelUsed: usedModel
+      });
+    }
+
+    // 16. LẤY NỘI DUNG TỪ LINK INTERNET / TRANG WEB
+    if (req.method === 'POST' && action === 'fetch-url-content') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { url } = body || {};
+      if (!url || !url.trim()) {
+        return res.status(400).json({ error: 'URL không được để trống' });
+      }
+
+      try {
+        const fetchRes = await fetch(url.trim(), {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          }
+        });
+
+        if (!fetchRes.ok) {
+          return res.status(400).json({ error: `Không thể truy cập link (HTTP ${fetchRes.status})` });
+        }
+
+        const html = await fetchRes.text();
+        // Loại bỏ thẻ script, style, header, footer, nav
+        const cleanText = html
+          .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+          .replace(/<nav\b[^<]*(?:(?!<\/nav>)<[^<]*)*<\/nav>/gi, '')
+          .replace(/<footer\b[^<]*(?:(?!<\/footer>)<[^<]*)*<\/footer>/gi, '')
+          .replace(/<header\b[^<]*(?:(?!<\/header>)<[^<]*)*<\/header>/gi, '')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        return res.status(200).json({
+          success: true,
+          content: cleanText.slice(0, 30000)
+        });
+      } catch (err: any) {
+        return res.status(500).json({ error: 'Lỗi khi đọc nội dung link: ' + (err.message || 'Lỗi mạng') });
+      }
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);
