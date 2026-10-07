@@ -301,11 +301,13 @@ BẮT BUỘC trả về đúng định dạng JSON Array thuần túy (không ma
     const b64 = btoa(binary);
     const playerUrl = `${window.location.origin}/embed-player#flashcard:${b64}`;
 
-    return `<!-- MA NHUNG THE GHI NHO FLASHCARD CHO LMS / E-LEARNING -->
-<div style="position:relative;width:100%;max-width:920px;margin:15px auto;padding-top:56.25%;background:#0f172a;border-radius:12px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.3);">
+    return `<!-- MA NHUNG THE GHI NHO FLASHCARD CHO LMS / E-LEARNING (CHUAN 16:9) -->
+<div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;padding-top:0;margin:15px auto;background:#0f172a;border-radius:12px;overflow:hidden;box-shadow:0 10px 25px rgba(0,0,0,0.3);">
   <iframe 
     src="${playerUrl}" 
     style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    width="100%"
+    height="100%"
     allow="fullscreen" 
     allowfullscreen="allowfullscreen">
   </iframe>

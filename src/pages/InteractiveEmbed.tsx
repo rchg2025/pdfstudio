@@ -1139,11 +1139,13 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
     const playerUrl = getPlayerUrl();
     if (!playerUrl) return '';
 
-    return `<!-- MA NHUNG TRINH PHAT TUONG TAC LMS / E-LEARNING (100% HOAT DONG) -->
-<div style="position:relative;width:100%;max-width:960px;margin:15px auto;padding-top:56.25%;background:#000000;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+    return `<!-- MA NHUNG TRINH PHAT TUONG TAC LMS / E-LEARNING (100% HOAT DONG - CHUAN 16:9) -->
+<div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;padding-top:0;margin:15px auto;background:#000000;border-radius:8px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,0.15);">
   <iframe 
     src="${playerUrl}" 
     style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    width="100%"
+    height="100%"
     allow="fullscreen; autoplay; encrypted-media" 
     allowfullscreen="allowfullscreen">
   </iframe>
@@ -1161,11 +1163,12 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
       stops: quizStops
     });
 
-    return `<!-- MA NHUNG TUONG TAC LMS / E-LEARNING (CHUAN HTML TUONG THICH) -->
-<div id="elearn-box-${uid}" style="position:relative;width:100%;max-width:960px;margin:20px auto;font-family:Arial,Helvetica,sans-serif;color:#1e293b;box-sizing:border-box;">
-  <div style="position:relative;width:100%;padding-top:56.25%;background:#000000;border:1px solid #cbd5e1;overflow:hidden;">
+    return `<!-- MA NHUNG TUONG TAC LMS / E-LEARNING (CHUAN HTML TUONG THICH - 16:9) -->
+<div id="elearn-box-${uid}" style="position:relative;width:100%;height:auto;margin:20px auto;font-family:Arial,Helvetica,sans-serif;color:#1e293b;box-sizing:border-box;">
+  <div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;background:#000000;border:1px solid #cbd5e1;overflow:hidden;border-radius:8px;">
     <iframe id="elearn-frame-${uid}" src="${parsedEmbed.iframeSrc}"
       style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;margin:0;padding:0;"
+      width="100%" height="100%"
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 
@@ -1654,12 +1657,13 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
       stops: quizStops
     });
 
-    return `<!-- BẮT ĐẦU: KHUNG NHÚNG TƯƠNG TÁC HTML5 - TẠO BỞI RCHG STUDIO -->
-<div id="interactive-embed-wrapper-${uid}" style="position: relative; width: 100%; max-width: 960px; margin: 1.5rem auto; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; box-sizing: border-box;">
+    return `<!-- BẮT ĐẦU: KHUNG NHÚNG TƯƠNG TÁC HTML5 - TẠO BỞI RCHG STUDIO (CHUẨN 16:9) -->
+<div id="interactive-embed-wrapper-${uid}" style="position: relative; width: 100%; height: auto; margin: 1.5rem auto; font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; box-sizing: border-box;">
   <!-- Khung iframe trình chiếu -->
-  <div style="position: relative; width: 100%; height: 0; padding-top: 56.25%; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.18); background: #0f172a;">
+  <div style="position: relative; width: 100%; height: auto; aspect-ratio: 16/9; border-radius: 12px; overflow: hidden; box-shadow: 0 8px 30px rgba(0,0,0,0.18); background: #0f172a;">
     <iframe id="inter-embed-frame-${uid}" src="${parsedEmbed.iframeSrc}" 
       style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; margin: 0; padding: 0;"
+      width="100%" height="100%"
       allowfullscreen="allowfullscreen" allow="fullscreen; autoplay; encrypted-media">
     </iframe>
 

@@ -328,11 +328,13 @@ export default function BeforeAfterCompare() {
     }
     const b64 = btoa(binary);
 
-    return `<!-- MA NHUNG DOI CHIEU TRUOC SAU CHO LMS -->
-<div style="position:relative;width:100%;max-width:880px;margin:15px auto;padding-top:68%;background:#0f172a;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.35);">
+    return `<!-- MA NHUNG DOI CHIEU TRUOC SAU CHO LMS (CHUAN 16:9) -->
+<div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;padding-top:0;margin:15px auto;background:#0f172a;border-radius:14px;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,0.35);">
   <iframe 
     src="data:text/html;charset=utf-8;base64,${b64}" 
     style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    width="100%"
+    height="100%"
     allow="fullscreen" 
     allowfullscreen="allowfullscreen">
   </iframe>

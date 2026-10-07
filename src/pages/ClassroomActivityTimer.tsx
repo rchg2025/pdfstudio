@@ -557,11 +557,13 @@ export default function ClassroomActivityTimer() {
     }
     const b64 = btoa(binary);
 
-    return `<!-- MA NHUNG DONG HO HOAT DONG & BUZZER CHO LMS -->
-<div style="position:relative;width:100%;max-width:880px;margin:15px auto;padding-top:72%;background:#0f172a;border-radius:16px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,0.4);">
+    return `<!-- MA NHUNG DONG HO HOAT DONG & BUZZER CHO LMS (CHUAN 16:9) -->
+<div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;padding-top:0;margin:15px auto;background:#0f172a;border-radius:16px;overflow:hidden;box-shadow:0 12px 35px rgba(0,0,0,0.4);">
   <iframe 
     src="data:text/html;charset=utf-8;base64,${b64}" 
     style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;" 
+    width="100%"
+    height="100%"
     allow="fullscreen" 
     allowfullscreen="allowfullscreen">
   </iframe>
