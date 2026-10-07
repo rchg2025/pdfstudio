@@ -110,20 +110,42 @@ export default function SyllabusExamGenerator() {
   const [examProgressText, setExamProgressText] = useState('Đang khởi tạo đề thi với Google Gemini AI...');
 
   // Quản lý Môn học lưu theo tài khoản trong Database
-  const [savedSubjects, setSavedSubjects] = useState<SavedSyllabusSubject[]>([]);
+  const [savedSubjects, setSavedSubjects] = useState<SavedSyllabusSubject[]>(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) {
+        const u = JSON.parse(stored);
+        if (u?.id) {
+          const cached = localStorage.getItem(`rchg_saved_syllabus_subjects_${u.id}`);
+          if (cached) return JSON.parse(cached);
+        }
+      }
+    } catch {}
+    return [];
+  });
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
   const [currentSubjectId, setCurrentSubjectId] = useState<string | null>(null);
   const [isSavingSubject, setIsSavingSubject] = useState(false);
 
-  // Tải danh sách môn học đã lưu của người dùng
+  // Tải danh sách môn học đã lưu của người dùng (từ Database và đồng bộ cache)
   const loadSavedSubjects = async () => {
-    if (!user) return;
+    const currentUserId = user?.id || (() => {
+      try {
+        const stored = localStorage.getItem('user');
+        return stored ? JSON.parse(stored)?.id : undefined;
+      } catch { return undefined; }
+    })();
+
+    if (!currentUserId) return;
     setIsLoadingSubjects(true);
     try {
-      const res = await fetch(`/api/quiz-api?action=get-syllabus-subjects&userId=${encodeURIComponent(user.id)}`);
+      const res = await fetch(`/api/quiz-api?action=get-syllabus-subjects&userId=${encodeURIComponent(currentUserId)}`);
       const data = await res.json();
-      if (res.ok && data.subjects) {
+      if (res.ok && Array.isArray(data.subjects)) {
         setSavedSubjects(data.subjects);
+        try {
+          localStorage.setItem(`rchg_saved_syllabus_subjects_${currentUserId}`, JSON.stringify(data.subjects));
+        } catch {}
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách môn học:', err);
@@ -133,9 +155,7 @@ export default function SyllabusExamGenerator() {
   };
 
   useEffect(() => {
-    if (user) {
-      loadSavedSubjects();
-    }
+    loadSavedSubjects();
   }, [user]);
 
   // Lưu môn học hiện tại vào tài khoản
@@ -879,6 +899,23 @@ export default function SyllabusExamGenerator() {
                 <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
                   Môn Học & Giáo Trình Đã Lưu Của Bạn ({savedSubjects.length})
                 </h3>
+                <button
+                  type="button"
+                  onClick={() => loadSavedSubjects()}
+                  className="btn btn-outline btn-xs"
+                  style={{
+                    padding: '2px 8px',
+                    fontSize: '0.75rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    borderColor: 'var(--border)'
+                  }}
+                  title="Tải lại danh sách môn học"
+                >
+                  <RefreshCw size={12} className={isLoadingSubjects ? 'spin' : ''} />
+                  Làm mới
+                </button>
               </div>
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 Bấm vào một môn học để tải lại ngay cấu trúc đề mục và tiếp tục soạn đề
