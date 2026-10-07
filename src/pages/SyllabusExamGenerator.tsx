@@ -664,17 +664,17 @@ export default function SyllabusExamGenerator() {
     showToast('Đã xuất file Word chuẩn mẫu thành công!', 'success');
   };
 
+  // Trạng thái đang chuyển bộ đề sang phòng thi
+  const [isImportingToQuiz, setIsImportingToQuiz] = useState(false);
+
   // Thêm trực tiếp bộ đề này vào Quản lý thi trắc nghiệm (tienich.ite.id.vn/quan-ly-thi-trac-nghiem)
   const handleImportToQuizManager = async () => {
     if (generatedQuestions.length === 0) {
-      showAlert('Chưa có câu hỏi nào để chuyển vào hệ thống thi!', 'Thông báo');
+      showAlert('Chưa có câu hỏi nào để chuyển vào hệ thống thi! Vui lòng bấm "BẮT ĐẦU TẠO ĐỀ KIỂM TRA" trước.', 'Thông báo');
       return;
     }
 
-    const confirm = window.confirm(
-      `Bạn có muốn chuyển bộ đề thi "${examSubject || sourceTitle || 'Bộ đề thi mới'}" vào hệ thống Quản lý thi trắc nghiệm để mở phòng thi không?`
-    );
-    if (!confirm) return;
+    setIsImportingToQuiz(true);
 
     const newQuizId = `qz-${Date.now()}`;
     const newQuizCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -717,18 +717,7 @@ export default function SyllabusExamGenerator() {
     };
 
     try {
-      // 1. Lưu vào Database backend bằng action save-quiz
-      const res = await fetch('/api/quiz-api?action=save-quiz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newQuiz)
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error || 'Lỗi khi lưu bộ đề vào hệ thống.');
-      }
-
-      // 2. Lưu vào LocalStorage đồng bộ cho user và set active quiz
+      // 1. Lưu vào LocalStorage ngay lập tức để QuizManager luôn nhận được kể cả offline
       if (user) {
         try {
           const currentLocal = localStorage.getItem(`rchg_quiz_packages_${user.id}`);
@@ -736,15 +725,27 @@ export default function SyllabusExamGenerator() {
           const updated = [newQuiz, ...parsed.filter(q => q.id !== newQuiz.id)];
           localStorage.setItem(`rchg_quiz_packages_${user.id}`, JSON.stringify(updated));
           localStorage.setItem(`rchg_active_quiz_id_${user.id}`, newQuiz.id);
-        } catch {}
+        } catch (e) {
+          console.error('Lỗi lưu local storage:', e);
+        }
       }
 
-      showToast(`Đã thêm bộ đề thi "${quizTitle}" (Mã: #${newQuizCode}) vào Quản lý thi trắc nghiệm! Đang chuyển hướng...`, 'success');
+      // 2. Gửi lưu vào Database backend (chạy song song và không chặn chuyển trang nếu mạng lag)
+      fetch('/api/quiz-api?action=save-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newQuiz)
+      }).catch(err => console.warn('Lỗi lưu database nền:', err));
+
+      showToast(`Đã chuyển bộ đề thi "${quizTitle}" (Mã: #${newQuizCode}) vào Quản lý thi! Đang mở...`, 'success');
+      
+      // Chuyển ngay đến phòng thi quản lý
       setTimeout(() => {
-        navigate(`/quan-ly-thi-trac-nghiem?quizId=${newQuiz.id}`);
-      }, 1000);
+        window.location.href = `/quan-ly-thi-trac-nghiem?quizId=${newQuiz.id}`;
+      }, 500);
     } catch (err: any) {
-      showAlert('Lỗi khi lưu bộ đề: ' + err.message, 'Lỗi');
+      showAlert('Lỗi khi nạp bộ đề: ' + (err.message || 'Lỗi không xác định'), 'Lỗi');
+      setIsImportingToQuiz(false);
     }
   };
 
@@ -1507,11 +1508,12 @@ export default function SyllabusExamGenerator() {
                   type="button"
                   className="btn btn-outline btn-sm"
                   onClick={handleImportToQuizManager}
-                  disabled={generatedQuestions.length === 0}
+                  disabled={generatedQuestions.length === 0 || isImportingToQuiz}
                   style={{ color: '#10b981', borderColor: '#10b981' }}
                   title="Tạo phòng thi trực tiếp trong trang Quản lý thi trắc nghiệm"
                 >
-                  <PlusCircle size={15} /> Nạp Vào Phòng Thi
+                  {isImportingToQuiz ? <Loader2 size={15} className="spin" /> : <PlusCircle size={15} />}
+                  {isImportingToQuiz ? 'Đang Chuyển...' : 'Nạp Vào Phòng Thi'}
                 </button>
               </div>
             </div>
