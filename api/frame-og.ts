@@ -4,6 +4,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const slug = req.query.slug as string;
     
+    let html = '';
     // Try reading index.html directly from disk if in server environment
     const fs = await import('fs');
     const path = await import('path');
