@@ -34,7 +34,16 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 function adaptVercelHandler(handler: any, extraQuery: Record<string, any> = {}) {
   return async (req: express.Request, res: express.Response) => {
     try {
-      req.query = { ...req.query, ...req.params, ...extraQuery };
+      if (req.params) {
+        for (const [k, v] of Object.entries(req.params)) {
+          (req.query as any)[k] = v;
+        }
+      }
+      if (extraQuery) {
+        for (const [k, v] of Object.entries(extraQuery)) {
+          (req.query as any)[k] = v;
+        }
+      }
       if (req.params && req.params.action) {
         (req.query as any).action = req.params.action;
       }
