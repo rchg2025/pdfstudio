@@ -1030,11 +1030,23 @@ export default function Admin() {
                           uDays = 99999;
                           uExpired = false;
                         } else if (u.subscriptionExpiresAt) {
-                          const diff = new Date(u.subscriptionExpiresAt).getTime() - Date.now();
-                          uDays = Math.ceil(diff / (1000 * 60 * 60 * 24));
-                          if (uDays <= 0) {
+                          const expDate = new Date(u.subscriptionExpiresAt);
+                          const now = new Date();
+                          
+                          // Tính số ngày còn lại theo mốc ngày dương lịch:
+                          // Đưa ngày hiện tại về đầu ngày (00:00:00) và ngày hết hạn về cuối ngày (23:59:59.999)
+                          const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+                          const endOfExpiryDay = new Date(expDate.getFullYear(), expDate.getMonth(), expDate.getDate(), 23, 59, 59, 999).getTime();
+                          
+                          if (expDate.getTime() <= now.getTime()) {
+                            // Đã thực sự quá thời điểm hết hạn
                             uDays = 0;
                             uExpired = true;
+                          } else {
+                            // Số ngày lịch còn lại tính cả ngày hiện tại cho đến ngày hết hạn
+                            const diffDays = Math.ceil((endOfExpiryDay - startOfToday) / (1000 * 60 * 60 * 24)) - 1;
+                            uDays = Math.max(0, diffDays);
+                            uExpired = uDays <= 0 && expDate.getTime() <= now.getTime();
                           }
                         } else {
                           uExpired = true;

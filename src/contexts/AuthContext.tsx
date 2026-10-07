@@ -131,11 +131,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       remainingDays = 99999;
       isExpired = false;
     } else if (user.subscriptionExpiresAt) {
-      const diffMs = new Date(user.subscriptionExpiresAt).getTime() - Date.now();
-      remainingDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-      if (remainingDays <= 0) {
+      const expDate = new Date(user.subscriptionExpiresAt);
+      const now = new Date();
+      
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      const endOfExpiryDay = new Date(expDate.getFullYear(), expDate.getMonth(), expDate.getDate(), 23, 59, 59, 999).getTime();
+
+      if (expDate.getTime() <= now.getTime()) {
         remainingDays = 0;
         isExpired = true;
+      } else {
+        const diffDays = Math.ceil((endOfExpiryDay - startOfToday) / (1000 * 60 * 60 * 24)) - 1;
+        remainingDays = Math.max(0, diffDays);
+        isExpired = remainingDays <= 0 && expDate.getTime() <= now.getTime();
       }
     } else {
       isExpired = true;
