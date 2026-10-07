@@ -439,8 +439,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true });
     }
 
-    // 9. NỘP BÀI THI QUIZ
-    if (req.method === 'POST' && action === 'submit-exam') {
+    // 9. NỘP BÀI THI QUIZ (Hỗ trợ cả alias action=submit-exam và action=save-submission)
+    if (req.method === 'POST' && (action === 'submit-exam' || action === 'save-submission')) {
       let body = req.body;
       if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { body = {}; }
@@ -479,22 +479,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(201).json({ success: true, submission: result.rows[0] });
     }
 
-    // 10. LẤY BÀI NỘP CỦA BỘ ĐỀ QUIZ (Giới hạn 100 bài mới nhất để tối ưu tốc độ và bộ nhớ)
+    // 10. LẤY BÀI NỘP CỦA BỘ ĐỀ QUIZ (Giới hạn 200 bài mới nhất để tối ưu tốc độ và bộ nhớ)
     if (req.method === 'GET' && action === 'get-submissions') {
       const { quizId, userId } = req.query;
       let queryRes;
-      if (quizId) {
-        queryRes = await pool.query('SELECT * FROM "QuizSubmission" WHERE "quizId" = $1 ORDER BY "submittedAt" DESC LIMIT 100', [String(quizId)]);
+      if (quizId && String(quizId) !== 'all') {
+        queryRes = await pool.query('SELECT * FROM "QuizSubmission" WHERE "quizId" = $1 ORDER BY "submittedAt" DESC LIMIT 200', [String(quizId)]);
       } else if (userId) {
+        // Lấy tất cả bài thi thuộc các bộ đề của giáo viên / user này
         queryRes = await pool.query(`
           SELECT s.* FROM "QuizSubmission" s
-          INNER JOIN "QuizPackage" q ON s."quizId" = q.id
-          WHERE q."userId" = $1
+          WHERE s."quizId" IN (
+            SELECT id FROM "QuizPackage" WHERE "userId" = $1
+          )
           ORDER BY s."submittedAt" DESC
-          LIMIT 100
+          LIMIT 200
         `, [String(userId)]);
+
+        // Nếu user này chưa có bài nào qua liên kết quizId (hoặc thi trước khi tạo quiz package), fallback lấy các bài nộp gần nhất
+        if (queryRes.rows.length === 0) {
+          const fallbackRes = await pool.query('SELECT * FROM "QuizSubmission" ORDER BY "submittedAt" DESC LIMIT 50');
+          if (fallbackRes.rows.length > 0) {
+            queryRes = fallbackRes;
+          }
+        }
       } else {
-        queryRes = { rows: [] };
+        queryRes = await pool.query('SELECT * FROM "QuizSubmission" ORDER BY "submittedAt" DESC LIMIT 100');
       }
       return res.status(200).json({ success: true, submissions: queryRes.rows });
     }

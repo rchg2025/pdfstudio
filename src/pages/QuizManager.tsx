@@ -13,6 +13,7 @@ import {
   Sparkles, 
   Layers, 
   Clock, 
+  RefreshCw, 
   FileText, 
   Settings2, 
   Users, 
@@ -274,11 +275,15 @@ export default function QuizManager() {
     try {
       const saved = localStorage.getItem(subStorageKey);
       if (saved) return JSON.parse(saved);
+      const fallbackSaved = localStorage.getItem('rchg_quiz_submissions');
+      if (fallbackSaved) return JSON.parse(fallbackSaved);
     } catch {}
     return [];
   });
 
   // Tìm kiếm thông minh & Lọc bảng điểm sinh viên
+  const [subQuizFilter, setSubQuizFilter] = useState<string>('active'); // 'active' | 'all' | quizId
+  const [isFetchingSubs, setIsFetchingSubs] = useState(false);
   const [subSearchQuery, setSubSearchQuery] = useState('');
   const [subResultFilter, setSubResultFilter] = useState<'all' | 'passed' | 'failed'>('all');
   const [subDateFilter, setSubDateFilter] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
@@ -391,18 +396,58 @@ export default function QuizManager() {
             }
           }
         }
-        // Tải submissions cho các bộ đề của user này
-        const subRes = await fetch(`/api/quiz-api?action=get-submissions&userId=${user.id}`);
-        if (subRes.ok) {
-          const subData = await subRes.json();
-          if (Array.isArray(subData.submissions)) {
-            setSubmissions(subData.submissions);
-          }
-        }
       } catch {}
     };
     fetchApiQuizzes();
+    fetchSubmissions(false);
   }, [user]);
+
+  // Hàm tải danh sách bài nộp từ Server / LocalStorage
+  const fetchSubmissions = async (showToastNotify = false) => {
+    setIsFetchingSubs(true);
+    try {
+      const endpoint = user 
+        ? `/api/quiz-api?action=get-submissions&userId=${user.id}`
+        : `/api/quiz-api?action=get-submissions`;
+      const subRes = await fetch(endpoint);
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        if (Array.isArray(subData.submissions)) {
+          // Gộp bài nộp từ server với bất kỳ bài nộp mới trong localStorage nếu có
+          let merged = [...subData.submissions];
+          try {
+            const raw = localStorage.getItem('rchg_quiz_submissions');
+            if (raw) {
+              const localSubs: StudentSubmission[] = JSON.parse(raw);
+              for (const ls of localSubs) {
+                if (!merged.some(s => s.id === ls.id)) {
+                  merged.unshift(ls);
+                }
+              }
+            }
+          } catch {}
+          setSubmissions(merged);
+          if (showToastNotify) {
+            showToast(`Đã đồng bộ xong! Có ${merged.length} lượt nộp bài.`, 'success');
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Lỗi khi tải bài nộp:', err);
+      if (showToastNotify) {
+        showToast('Không thể kết nối đến máy chủ để làm mới bài nộp!', 'error');
+      }
+    } finally {
+      setIsFetchingSubs(false);
+    }
+  };
+
+  // Tự động làm mới dữ liệu bài nộp khi giáo viên chuyển sang tab 'submissions'
+  useEffect(() => {
+    if (activeTab === 'submissions') {
+      fetchSubmissions(false);
+    }
+  }, [activeTab]);
 
   // Tải ảnh câu hỏi lên Google Drive qua /api/upload
   const handleUploadQuestionImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1136,8 +1181,12 @@ export default function QuizManager() {
   const startIndex = filteredQuestions.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endIndex = Math.min(currentPage * pageSize, filteredQuestions.length);
 
-  // Tính toán thống kê toàn bộ bài nộp của bộ đề đang chọn
-  const activeQuizSubmissions = submissions.filter(s => s.quizId === activeQuiz.id);
+  // Tính toán thống kê toàn bộ bài nộp theo bộ đề đang chọn hoặc tất cả bộ đề
+  const activeQuizSubmissions = submissions.filter(s => {
+    if (subQuizFilter === 'all') return true;
+    if (subQuizFilter === 'active') return s.quizId === activeQuiz.id;
+    return s.quizId === subQuizFilter;
+  });
   const avgScore = activeQuizSubmissions.length > 0 
     ? (activeQuizSubmissions.reduce((acc, cur) => acc + cur.score, 0) / activeQuizSubmissions.length).toFixed(1)
     : '0';
@@ -1184,8 +1233,9 @@ export default function QuizManager() {
       const classMatch = removeAccents(s.className || '').includes(queryNorm);
       const scoreMatch = String(s.score).includes(subSearchQuery.trim());
       const emailMatch = removeAccents(s.email || '').includes(queryNorm);
+      const titleMatch = removeAccents(s.quizTitle || '').includes(queryNorm);
 
-      if (!nameMatch && !idMatch && !classMatch && !scoreMatch && !emailMatch) {
+      if (!nameMatch && !idMatch && !classMatch && !scoreMatch && !emailMatch && !titleMatch) {
         return false;
       }
     }
@@ -1196,7 +1246,7 @@ export default function QuizManager() {
   // Tự động reset trang bảng điểm về 1 khi điều kiện lọc thay đổi
   useEffect(() => {
     setSubPage(1);
-  }, [subSearchQuery, subResultFilter, subDateFilter, subStartDate, subEndDate, activeQuizId, subPageSize]);
+  }, [subSearchQuery, subResultFilter, subDateFilter, subStartDate, subEndDate, activeQuizId, subQuizFilter, subPageSize]);
 
   // Phân trang danh sách bài nộp
   const totalSubPages = Math.max(1, Math.ceil(filteredSubmissions.length / subPageSize));
@@ -2185,7 +2235,7 @@ export default function QuizManager() {
           <div className="qm-panel-header" style={{ marginBottom: '1.25rem' }}>
             <div>
               <h2 className="qm-panel-title">
-                <Users size={20} color="var(--primary)" /> Bảng Điểm & Lịch Sử Bài Thi: {activeQuiz.title}
+                <Users size={20} color="var(--primary)" /> Bảng Điểm & Lịch Sử Bài Thi {subQuizFilter === 'all' ? '(Tất cả bộ đề)' : `: ${activeQuiz.title}`}
               </h2>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                 Tổng cộng {activeQuizSubmissions.length} lượt nộp bài • Tỷ lệ đạt chuẩn: {passRate}% • Điểm trung bình: {avgScore}/10.
@@ -2197,6 +2247,16 @@ export default function QuizManager() {
               </p>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
+                onClick={() => fetchSubmissions(true)}
+                disabled={isFetchingSubs}
+                title="Tải lại danh sách bài nộp mới nhất từ hệ thống"
+                style={{ color: 'var(--primary)', borderColor: 'var(--primary)' }}
+              >
+                <RefreshCw size={15} className={isFetchingSubs ? 'spinner' : ''} /> {isFetchingSubs ? 'Đang tải...' : 'Làm mới / Đồng bộ'}
+              </button>
               {selectedSubIds.length > 0 && (
                 <button 
                   type="button" 
@@ -2227,9 +2287,9 @@ export default function QuizManager() {
                     showToast('Chưa có dữ liệu bài nộp để xuất!', 'warning');
                     return;
                   }
-                  const csvHeader = 'Họ tên,MSSV / Lớp,Điểm số,Tổng điểm,Tỷ lệ %,Kết quả,Thời gian nộp\n';
+                  const csvHeader = 'Họ tên,MSSV / Lớp,Bộ đề thi,Điểm số,Tổng điểm,Tỷ lệ %,Kết quả,Thời gian nộp\n';
                   const rows = targetList.map(s => 
-                    `"${s.studentName}","${s.studentId || s.className}","${s.score}","${s.totalPoints}","${s.percentage}%","${s.passed ? 'Đạt' : 'Chưa đạt'}","${new Date(s.submittedAt).toLocaleString('vi-VN')}"`
+                    `"${s.studentName}","${s.studentId || s.className}","${s.quizTitle || ''}","${s.score}","${s.totalPoints}","${s.percentage}%","${s.passed ? 'Đạt' : 'Chưa đạt'}","${new Date(s.submittedAt).toLocaleString('vi-VN')}"`
                   ).join('\n');
                   const blob = new Blob([csvHeader + rows], { type: 'text/csv;charset=utf-8;' });
                   const url = URL.createObjectURL(blob);
@@ -2257,15 +2317,32 @@ export default function QuizManager() {
             flexDirection: 'column',
             gap: '0.85rem'
           }}>
-            {/* Hàng 1: Ô tìm kiếm thông minh + Lọc kết quả */}
+            {/* Hàng 1: Lọc theo bộ đề + Ô tìm kiếm thông minh + Lọc kết quả */}
             <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-              <div style={{ flex: 1, minWidth: '260px', position: 'relative' }}>
+              {/* Lọc theo Bộ đề thi */}
+              <div style={{ minWidth: '220px' }}>
+                <select 
+                  className="qm-select"
+                  style={{ height: '40px', fontSize: '0.88rem', fontWeight: 600, borderColor: 'var(--primary)', color: 'var(--text-primary)' }}
+                  value={subQuizFilter}
+                  onChange={(e) => setSubQuizFilter(e.target.value)}
+                  title="Chọn bộ đề để lọc bảng điểm"
+                >
+                  <option value="active">📌 Đề đang chọn: {activeQuiz.title}</option>
+                  <option value="all">🌐 Xem tất cả bộ đề ({submissions.length} lượt nộp)</option>
+                  {quizzes.filter(q => q.id !== activeQuiz.id).map(q => (
+                    <option key={q.id} value={q.id}>📄 {q.title} ({q.code})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div style={{ flex: 1, minWidth: '220px', position: 'relative' }}>
                 <Search size={16} style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                 <input 
                   type="text"
                   className="qm-input"
                   style={{ paddingLeft: '2.4rem', height: '40px', fontSize: '0.88rem' }}
-                  placeholder="Tìm kiếm thông minh: Tên sinh viên, MSSV, Lớp học, Điểm số..."
+                  placeholder="Tìm kiếm: Tên thí sinh, MSSV, Lớp, Điểm..."
                   value={subSearchQuery}
                   onChange={(e) => setSubSearchQuery(e.target.value)}
                 />
@@ -2281,7 +2358,7 @@ export default function QuizManager() {
               </div>
 
               {/* Lọc theo Kết quả thi */}
-              <div style={{ minWidth: '160px' }}>
+              <div style={{ minWidth: '150px' }}>
                 <select 
                   className="qm-select"
                   style={{ height: '40px', fontSize: '0.88rem' }}
@@ -2295,7 +2372,7 @@ export default function QuizManager() {
               </div>
 
               {/* Lọc nhanh theo Mốc thời gian */}
-              <div style={{ minWidth: '170px' }}>
+              <div style={{ minWidth: '160px' }}>
                 <select 
                   className="qm-select"
                   style={{ height: '40px', fontSize: '0.88rem' }}
@@ -2310,12 +2387,13 @@ export default function QuizManager() {
                 </select>
               </div>
 
-              {(subSearchQuery || subResultFilter !== 'all' || subDateFilter !== 'all') && (
+              {(subSearchQuery || subResultFilter !== 'all' || subDateFilter !== 'all' || subQuizFilter !== 'active') && (
                 <button 
-                  type="button"
+                  type="button" 
                   className="btn btn-outline btn-sm"
-                  style={{ height: '40px' }}
+                  style={{ height: '40px', color: 'var(--text-muted)', fontSize: '0.85rem' }}
                   onClick={() => {
+                    setSubQuizFilter('active');
                     setSubSearchQuery('');
                     setSubResultFilter('all');
                     setSubDateFilter('all');
@@ -2369,10 +2447,24 @@ export default function QuizManager() {
             {activeQuizSubmissions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '3rem 1rem', color: 'var(--text-secondary)' }}>
                 <Users size={40} style={{ margin: '0 auto 0.75rem', opacity: 0.5 }} />
-                <p>Chưa có sinh viên nào tham gia bài thi này.</p>
-                <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate(`/phong-thi/${activeQuiz.id}`)}>
-                  <Play size={15} /> Làm bài thi thử ngay
-                </button>
+                <p style={{ margin: '0 0 1rem' }}>
+                  {subQuizFilter === 'active' 
+                    ? `Chưa có lượt nộp bài nào cho bộ đề "${activeQuiz.title}".`
+                    : 'Chưa có dữ liệu bài nộp nào trong hệ thống.'}
+                </p>
+                <div style={{ display: 'flex', gap: '0.6rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                  <button type="button" className="btn btn-outline btn-sm" onClick={() => fetchSubmissions(true)} disabled={isFetchingSubs}>
+                    <RefreshCw size={14} className={isFetchingSubs ? 'spinner' : ''} /> {isFetchingSubs ? 'Đang kiểm tra...' : 'Đồng bộ bài nộp mới'}
+                  </button>
+                  {subQuizFilter !== 'all' && submissions.length > 0 && (
+                    <button type="button" className="btn btn-outline btn-sm" onClick={() => setSubQuizFilter('all')}>
+                      🌐 Xem tất cả {submissions.length} bài nộp
+                    </button>
+                  )}
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate(`/phong-thi/${activeQuiz.id}`)}>
+                    <Play size={14} /> Làm bài thi thử ngay
+                  </button>
+                </div>
               </div>
             ) : filteredSubmissions.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-secondary)' }}>
@@ -2413,6 +2505,7 @@ export default function QuizManager() {
                       <th>STT</th>
                       <th>Họ và tên thí sinh</th>
                       <th>Lớp / MSSV</th>
+                      {subQuizFilter === 'all' && <th>Bộ đề thi</th>}
                       <th>Điểm số</th>
                       <th>Tỷ lệ %</th>
                       <th>Xếp loại</th>
@@ -2437,6 +2530,11 @@ export default function QuizManager() {
                           <td>#{globalIdx}</td>
                           <td><strong>{sub.studentName}</strong></td>
                           <td>{sub.studentId || sub.className}</td>
+                          {subQuizFilter === 'all' && (
+                            <td style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 500 }}>
+                              {sub.quizTitle || 'Bài thi trắc nghiệm'}
+                            </td>
+                          )}
                           <td><span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>{sub.score}/{sub.totalPoints}</span></td>
                           <td>{sub.percentage}%</td>
                           <td>

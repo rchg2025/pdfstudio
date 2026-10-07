@@ -342,20 +342,39 @@ export default function QuizExam() {
     setReviewList(rev);
     setStep('result');
 
-    // Lưu vào localStorage
+    // Lưu vào localStorage đa key để bất kể user nào mở trang quản lý đều xem được bài nộp
     try {
       const prev = localStorage.getItem('rchg_quiz_submissions');
       const list = prev ? JSON.parse(prev) : [];
       list.unshift(sub);
       localStorage.setItem('rchg_quiz_submissions', JSON.stringify(list));
+
+      // Quét và cập nhật luôn vào các key rchg_quiz_submissions_* của giáo viên
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('rchg_quiz_submissions_')) {
+          try {
+            const userSubStr = localStorage.getItem(k);
+            const userSubs = userSubStr ? JSON.parse(userSubStr) : [];
+            userSubs.unshift(sub);
+            localStorage.setItem(k, JSON.stringify(userSubs));
+          } catch {}
+        }
+      }
     } catch {}
 
-    // Lưu vào Neon Postgres
-    fetch('/api/quiz-api?action=save-submission', {
+    // Lưu vào Neon Postgres qua backend API
+    fetch('/api/quiz-api?action=submit-exam', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(sub)
-    }).catch(() => {});
+    }).then(async res => {
+      if (!res.ok) {
+        console.warn('Không thể lưu kết quả thi lên server:', await res.text());
+      }
+    }).catch(err => {
+      console.error('Lỗi mạng khi lưu kết quả thi:', err);
+    });
   };
 
   const formatTimer = (seconds: number) => {
