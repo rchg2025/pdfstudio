@@ -2509,6 +2509,7 @@ export default function QuizManager() {
                       <th>Điểm số</th>
                       <th>Tỷ lệ %</th>
                       <th>Xếp loại</th>
+                      <th>Giám sát</th>
                       <th>Thời gian nộp</th>
                       <th style={{ width: '80px', textAlign: 'center' }}>Thao tác</th>
                     </tr>
@@ -2541,6 +2542,21 @@ export default function QuizManager() {
                             <span className="qm-badge" style={{ background: sub.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub.passed ? '#10b981' : '#ef4444' }}>
                               {sub.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
                             </span>
+                          </td>
+                          <td>
+                            {sub.violationCount && sub.violationCount > 0 ? (
+                              <span 
+                                className="qm-badge" 
+                                style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                title={`Phát hiện ${sub.violationCount} lần rời màn hình / chuyển ứng dụng`}
+                              >
+                                ⚠️ {sub.violationCount} lần
+                              </span>
+                            ) : (
+                              <span style={{ color: '#10b981', fontSize: '0.82rem', fontWeight: 500 }}>
+                                ✓ Hợp lệ
+                              </span>
+                            )}
                           </td>
                           <td style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
                             {new Date(sub.submittedAt).toLocaleTimeString('vi-VN')} {new Date(sub.submittedAt).toLocaleDateString('vi-VN')}

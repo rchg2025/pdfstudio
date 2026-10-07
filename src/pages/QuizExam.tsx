@@ -13,7 +13,10 @@ import {
   LayoutGrid,
   Music,
   X,
-  Play
+  Play,
+  ShieldAlert,
+  AlertTriangle,
+  Maximize2
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import type { QuizPackage, QuizQuestion, StudentSubmission } from '../types/quiz';
@@ -51,6 +54,12 @@ export default function QuizExam() {
 
   const [submissionResult, setSubmissionResult] = useState<StudentSubmission | null>(null);
   const [reviewList, setReviewList] = useState<{ q: QuizQuestion; userAns: any; isCorrect: boolean }[]>([]);
+
+  // Chống gian lận / Khóa chuyển tab & ứng dụng
+  const [violationCount, setViolationCount] = useState<number>(0);
+  const [violationReason, setViolationReason] = useState<string>('');
+  const [showViolationModal, setShowViolationModal] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
 
   const activeBtnRef = useRef<HTMLButtonElement | null>(null);
   const ribbonRef = useRef<HTMLDivElement | null>(null);
@@ -194,6 +203,118 @@ export default function QuizExam() {
     }
   };
 
+  // === BẢO MẬT & CHỐNG GIAN LẬN: KHÓA CHUYỂN TRANG / CHUYỂN APP ===
+  const triggerViolation = (reason: string) => {
+    setViolationReason(reason);
+    setViolationCount(prev => prev + 1);
+    setShowViolationModal(true);
+    quizAudio.playWarningSound();
+  };
+
+  const handleRequestFullscreen = async () => {
+    try {
+      const docEl = document.documentElement as any;
+      if (docEl.requestFullscreen) {
+        await docEl.requestFullscreen();
+      } else if (docEl.webkitRequestFullscreen) {
+        await docEl.webkitRequestFullscreen();
+      } else if (docEl.mozRequestFullScreen) {
+        await docEl.mozRequestFullScreen();
+      } else if (docEl.msRequestFullscreen) {
+        await docEl.msRequestFullscreen();
+      }
+      setIsFullscreen(true);
+    } catch (e) {
+      console.warn('Fullscreen request blocked or unsupported:', e);
+    }
+  };
+
+  const handleExitFullscreen = async () => {
+    try {
+      const doc = document as any;
+      if (document.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement) {
+        if (doc.exitFullscreen) {
+          await doc.exitFullscreen();
+        } else if (doc.webkitExitFullscreen) {
+          await doc.webkitExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          await doc.mozCancelFullScreen();
+        }
+      }
+      setIsFullscreen(false);
+    } catch (e) {
+      console.warn('Exit fullscreen error:', e);
+    }
+  };
+
+  const handleResumeExam = async () => {
+    setShowViolationModal(false);
+    await handleRequestFullscreen();
+    quizAudio.playClickSound();
+  };
+
+  // Lắng nghe sự kiện chuyển tab, rời ứng dụng, reload, back history khi đang trong quá trình thi
+  useEffect(() => {
+    if (step !== 'exam') return;
+
+    // 1. Chặn đóng tab / tải lại trang (F5, Ctrl+R, đóng trình duyệt)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = 'Bạn đang trong quá trình làm bài thi! Rời khỏi hoặc tải lại trang có thể làm mất kết quả.';
+      return e.returnValue;
+    };
+
+    // 2. Chặn nút Back / Forward trên trình duyệt
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = (e: PopStateEvent) => {
+      e.preventDefault();
+      window.history.pushState(null, '', window.location.href);
+      triggerViolation('bấm nút quay lại (Back) của trình duyệt');
+    };
+
+    // 3. Bắt sự kiện chuyển tab hoặc ẩn trình duyệt (visibilitychange)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        triggerViolation('chuyển sang tab khác hoặc thu nhỏ trình duyệt');
+      }
+    };
+
+    // 4. Bắt sự kiện mất focus cửa sổ khi chuyển sang app khác (Zalo, Word, trình duyệt khác, v.v.)
+    const handleWindowBlur = () => {
+      // Đợi nhẹ để tránh false positive từ các dropdown native
+      setTimeout(() => {
+        if (document.visibilityState === 'hidden' || !document.hasFocus()) {
+          triggerViolation('rời khỏi cửa sổ bài thi hoặc mở ứng dụng khác');
+        }
+      }, 300);
+    };
+
+    // 5. Kiểm tra thoát chế độ toàn màn hình
+    const handleFullscreenChange = () => {
+      const isFull = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement);
+      setIsFullscreen(isFull);
+      if (!isFull) {
+        triggerViolation('thoát chế độ làm bài toàn màn hình');
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('popstate', handlePopState);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('popstate', handlePopState);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+    };
+  }, [step]);
+
   // Bắt đầu làm bài thi
   const handleStartExam = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -210,6 +331,13 @@ export default function QuizExam() {
 
     // Khởi tạo AudioContext từ user gesture
     await quizAudio.initContext();
+
+    // Bật Fullscreen để khóa không gian thi
+    await handleRequestFullscreen();
+
+    // Reset đếm vi phạm
+    setViolationCount(0);
+    setShowViolationModal(false);
 
     // Chọn câu hỏi theo chiến lược cấu hình
     let pool = [...quiz.questions];
@@ -335,12 +463,15 @@ export default function QuizExam() {
       passed: isPassed,
       timeSpentSeconds: spentSec,
       submittedAt: new Date().toISOString(),
-      answers
+      answers,
+      violationCount
     };
 
     setSubmissionResult(sub);
     setReviewList(rev);
     setStep('result');
+    setShowViolationModal(false);
+    handleExitFullscreen();
 
     // Lưu vào localStorage đa key để bất kể user nào mở trang quản lý đều xem được bài nộp
     try {
@@ -444,6 +575,39 @@ export default function QuizExam() {
             </div>
           )}
 
+          {/* Huy hiệu cảnh báo vi phạm */}
+          {step === 'exam' && violationCount > 0 && (
+            <div 
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                background: 'rgba(239, 68, 68, 0.12)',
+                color: '#ef4444',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                padding: '0.35rem 0.65rem',
+                borderRadius: '30px',
+                fontSize: '0.82rem',
+                fontWeight: 700
+              }}
+              title="Số lần rời khỏi trang thi"
+            >
+              <AlertTriangle size={14} /> <span>{violationCount} vi phạm</span>
+            </div>
+          )}
+
+          {/* Nút Toàn Màn Hình */}
+          {step === 'exam' && (
+            <button
+              type="button"
+              className={`btn btn-outline btn-icon-round ${isFullscreen ? 'active-audio' : ''}`}
+              onClick={isFullscreen ? handleExitFullscreen : handleRequestFullscreen}
+              title={isFullscreen ? 'Thu nhỏ màn hình' : 'Chế độ toàn màn hình'}
+            >
+              <Maximize2 size={16} />
+            </button>
+          )}
+
           {/* Nút Xem Lưới Câu Hỏi trên Mobile */}
           {step === 'exam' && (
             <button
@@ -535,13 +699,16 @@ export default function QuizExam() {
             </div>
 
             <div className="exam-rules-box">
-              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
-                📋 Tóm tắt quy chế thi:
+              <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <ShieldAlert size={16} color="var(--primary)" /> 📋 Quy chế thi & Giám sát phòng thi:
               </div>
               <ul style={{ margin: 0, paddingLeft: '1.2rem', fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 <li>Số lượng câu hỏi làm bài: <strong>{examQuestionCount} câu</strong>.</li>
                 <li>Thời gian làm bài: <strong>{(quiz.settings?.timeLimitMinutes || 0) > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
                 <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings?.passingScorePercent || 50}%</strong> trở lên.</li>
+                <li style={{ color: '#ef4444', fontWeight: 600 }}>
+                  ⚠️ Hệ thống khóa chuyển tab/ứng dụng: Rời khỏi màn hình bài thi hoặc chuyển sang cửa sổ khác sẽ bị ghi nhận vi phạm quy chế.
+                </li>
                 <li>Hệ thống tự động chấm điểm và công bố kết quả ngay khi nộp bài.</li>
               </ul>
             </div>
@@ -819,6 +986,12 @@ export default function QuizExam() {
             Thí sinh: <strong>{submissionResult.studentName}</strong> • SBD: <strong>{submissionResult.studentId}</strong>
           </div>
 
+          {submissionResult.violationCount && submissionResult.violationCount > 0 ? (
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '0.35rem 0.85rem', borderRadius: '16px', fontSize: '0.86rem', fontWeight: 600, marginBottom: '1rem' }}>
+              <AlertTriangle size={15} /> Ghi nhận {submissionResult.violationCount} lần rời khỏi màn hình bài thi
+            </div>
+          ) : null}
+
           <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0 0 1.75rem' }}>
             Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings?.passingScorePercent || 50}%.
           </p>
@@ -1029,6 +1202,76 @@ export default function QuizExam() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CẢNH BÁO VI PHẠM QUY CHẾ THI (KHÓA CHUYỂN TAB / MỞ APP KHÁC) */}
+      {showViolationModal && step === 'exam' && (
+        <div 
+          className="exam-modal-overlay" 
+          style={{ 
+            zIndex: 999999, 
+            background: 'rgba(15, 23, 42, 0.92)', 
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem'
+          }}
+        >
+          <div 
+            className="exam-modal-card animate-scale-up" 
+            style={{ 
+              maxWidth: 480, 
+              width: '100%', 
+              textAlign: 'center', 
+              padding: '2rem 1.75rem',
+              border: '2px solid #ef4444',
+              boxShadow: '0 20px 50px rgba(239, 68, 68, 0.35)',
+              borderRadius: 'var(--radius-xl)',
+              background: 'var(--bg-secondary)'
+            }}
+          >
+            <div 
+              style={{ 
+                width: 68, 
+                height: 68, 
+                borderRadius: '50%', 
+                background: 'rgba(239, 68, 68, 0.15)', 
+                color: '#ef4444',
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                margin: '0 auto 1.25rem',
+                border: '2px solid rgba(239, 68, 68, 0.3)'
+              }}
+            >
+              <ShieldAlert size={36} />
+            </div>
+
+            <h3 style={{ fontSize: '1.35rem', fontWeight: 800, color: '#ef4444', margin: '0 0 0.5rem' }}>
+              CẢNH BÁO VI PHẠM QUY CHẾ
+            </h3>
+
+            <div style={{ display: 'inline-block', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 700, padding: '0.3rem 0.85rem', borderRadius: 20, fontSize: '0.88rem', marginBottom: '1rem' }}>
+              Số lần vi phạm phát hiện: {violationCount}
+            </div>
+
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
+              Hệ thống phát hiện bạn vừa {violationReason ? <strong>{violationReason}</strong> : <strong>rời khỏi màn hình bài thi</strong>}. Hành vi này đã được ghi nhận vào nhật ký bài thi của thí sinh.
+            </p>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <button 
+                type="button" 
+                className="btn btn-primary btn-lg" 
+                style={{ width: '100%', padding: '0.85rem', fontSize: '1rem', fontWeight: 700, background: '#ef4444', borderColor: '#dc2626' }}
+                onClick={handleResumeExam}
+              >
+                Tôi Đã Hiểu - Tiếp Tục Làm Bài
+              </button>
             </div>
           </div>
         </div>

@@ -66,6 +66,7 @@ export interface StudentSubmission {
   timeSpentSeconds: number;
   submittedAt: string;
   answers: Record<string, any>; // questionId -> answer
+  violationCount?: number; // Số lần vi phạm chuyển tab / rời màn hình thi
 }
 
 export interface QuizPackage {

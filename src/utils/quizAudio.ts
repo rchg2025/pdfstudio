@@ -318,6 +318,29 @@ class QuizAudioEngine {
     } catch {}
   }
 
+  // Âm thanh cảnh báo vi phạm quy chế thi (Warning Alarm Beep)
+  public async playWarningSound() {
+    try {
+      await this.initContext();
+      if (!this.ctx || !this.masterGain) return;
+
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+      osc.frequency.setValueAtTime(330, this.ctx.currentTime + 0.15);
+      osc.frequency.setValueAtTime(440, this.ctx.currentTime + 0.3);
+
+      gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.45);
+
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.46);
+    } catch {}
+  }
+
   // Âm thanh hoàn thành nộp bài / Chúc mừng (Fanfare Chime)
   public async playSuccessSound() {
     try {

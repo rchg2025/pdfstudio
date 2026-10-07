@@ -127,8 +127,10 @@ async function ensureQuizTables(pool: any) {
         passed BOOLEAN DEFAULT false,
         "timeSpentSeconds" INT DEFAULT 0,
         answers JSONB DEFAULT '{}'::jsonb,
+        "violationCount" INT DEFAULT 0,
         "submittedAt" TIMESTAMP DEFAULT NOW()
       );
+      ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "violationCount" INT DEFAULT 0;
       CREATE INDEX IF NOT EXISTS "idx_submission_quizId" ON "QuizSubmission"("quizId");
 
       CREATE TABLE IF NOT EXISTS "SyllabusSubject" (
@@ -445,7 +447,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { body = {}; }
       }
-      const { quizId, quizTitle, studentName, studentId, className, email, score, totalPoints, percentage, passed, timeSpentSeconds, answers } = body || {};
+      const { quizId, quizTitle, studentName, studentId, className, email, score, totalPoints, percentage, passed, timeSpentSeconds, answers, violationCount } = body || {};
       if (!quizId || !studentName) {
         return res.status(400).json({ error: 'Thiếu thông tin nộp bài' });
       }
@@ -454,9 +456,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const insertQuery = `
         INSERT INTO "QuizSubmission" (
           id, "quizId", "quizTitle", "studentName", "studentId", "className", email,
-          score, "totalPoints", percentage, passed, "timeSpentSeconds", answers, "submittedAt"
+          score, "totalPoints", percentage, passed, "timeSpentSeconds", answers, "violationCount", "submittedAt"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
         RETURNING *;
       `;
 
@@ -473,7 +475,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Number(percentage) || 0,
         Boolean(passed),
         Number(timeSpentSeconds) || 0,
-        JSON.stringify(answers || {})
+        JSON.stringify(answers || {}),
+        Number(violationCount) || 0
       ]);
 
       return res.status(201).json({ success: true, submission: result.rows[0] });
