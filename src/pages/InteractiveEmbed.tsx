@@ -396,13 +396,9 @@ export default function InteractiveEmbed() {
         setSelectedOptionId(null);
         setAnswerStatus('idle');
 
-        // Freeze Canva iframe in live preview
+        // Gửi lệnh pause postMessage nếu hỗ trợ
         const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
         if (iframe) {
-          if (parsedEmbed?.type === 'canva') {
-            iframe.setAttribute('data-original-src', iframe.src);
-            iframe.src = 'about:blank';
-          }
           try {
             iframe.contentWindow?.postMessage(JSON.stringify({ event: 'command', func: 'pause' }), '*');
             iframe.contentWindow?.postMessage(JSON.stringify({ method: 'pause' }), '*');
@@ -524,12 +520,6 @@ export default function InteractiveEmbed() {
 
         const iframe = document.getElementById('preview-iframe') as HTMLIFrameElement | null;
         if (iframe) {
-          if (parsedEmbed?.iframeSrc) {
-            const originalSrc = iframe.getAttribute('data-original-src') || parsedEmbed.iframeSrc;
-            if (iframe.src.includes('about:blank')) {
-              iframe.src = originalSrc;
-            }
-          }
           if (iframe.contentWindow) {
             try {
               iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'play' }), '*');
@@ -965,10 +955,6 @@ export default function InteractiveEmbed() {
         overlay.style.display = 'block';
         frame.style.pointerEvents = 'none';
         frame.style.opacity = '0.15';
-        if (DATA.type === 'canva') {
-          frame.setAttribute('data-orig-src', frame.src);
-          frame.src = 'about:blank';
-        }
       }
 
       subBtn.onclick = function() {
@@ -989,9 +975,6 @@ export default function InteractiveEmbed() {
             overlay.style.display = 'none';
             frame.style.pointerEvents = 'auto';
             frame.style.opacity = '1';
-            if (frame.src.indexOf('about:blank') !== -1) {
-              frame.src = frame.getAttribute('data-orig-src') || DATA.src;
-            }
             curStop = null;
             playVideo();
           }, 1500);
@@ -1341,10 +1324,6 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
       if(frame){
         frame.style.pointerEvents='none';
         frame.style.opacity='0.2';
-        if(cfg.type==='canva'){
-          frame.setAttribute('data-orig-src', frame.src);
-          frame.src='about:blank';
-        }
       }
     }
 
@@ -1399,9 +1378,6 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
             if(frame){
               frame.style.pointerEvents='auto';
               frame.style.opacity='1';
-              if(frame.src.indexOf('about:blank')!==-1){
-                frame.src=frame.getAttribute('data-orig-src')||cfg.src;
-              }
             }
             curStop=null;
             play();
@@ -1566,10 +1542,6 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
         if (frame) {
           frame.style.pointerEvents = 'none';
           frame.style.opacity = '0.2';
-          if (cfg.type === 'canva') {
-            frame.setAttribute('data-orig-src', frame.src);
-            frame.src = 'about:blank';
-          }
         }
       }
 
@@ -1626,9 +1598,6 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
               if (frame) {
                 frame.style.pointerEvents = 'auto';
                 frame.style.opacity = '1';
-                if (frame.src.indexOf('about:blank') !== -1) {
-                  frame.src = frame.getAttribute('data-orig-src') || cfg.src;
-                }
               }
               curStop = null;
               play();
@@ -1882,10 +1851,6 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
           frame.style.pointerEvents = 'none';
           frame.style.opacity = '0.2';
           frame.style.transition = 'opacity 0.3s ease';
-          if (config.type === 'canva') {
-            frame.setAttribute('data-orig-src', frame.src);
-            frame.src = 'about:blank';
-          }
         }
       }
 
@@ -1939,9 +1904,6 @@ BẮT BUỘC trả về định dạng JSON thuần túy (không kèm markdown \
             if (frame) {
               frame.style.pointerEvents = 'auto';
               frame.style.opacity = '1';
-              if (frame.src.indexOf('about:blank') !== -1) {
-                frame.src = frame.getAttribute('data-orig-src') || config.src;
-              }
             }
             activeStop = null;
             startPlayback();
