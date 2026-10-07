@@ -25,6 +25,60 @@ function generateCuidLike() {
   return 'c' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 }
 
+// Danh sách các model fallback theo thứ tự ưu tiên từ thế hệ mới nhất đến cũ
+const DEFAULT_GEMINI_FALLBACKS = [
+  'gemini-3.8-flash',
+  'gemini-3.0-flash',
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-2.0-flash-lite',
+  'gemini-1.5-pro'
+];
+
+/**
+ * Tự động truy vấn danh sách model hiện khả dụng của chính Google Gemini API Key này.
+ * Nhờ đó API key mới tạo hoặc các model mới nhất (3.8-flash, 3.0-flash, 2.5-flash...) sẽ luôn được chọn đúng.
+ */
+async function resolveGeminiModels(apiKey: string, preferredModel?: string): Promise<string[]> {
+  const modelsSet = new Set<string>();
+
+  if (preferredModel && preferredModel !== 'auto') {
+    modelsSet.add(preferredModel);
+  }
+
+  try {
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (listRes.ok) {
+      const data = await listRes.json();
+      if (Array.isArray(data?.models)) {
+        const supported = data.models
+          .filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+          .map((m: any) => (m.name || '').replace(/^models\//, ''))
+          .filter(Boolean);
+
+        // Ưu tiên các model flash trước, sau đó là pro
+        const flashModels = supported.filter((m: string) => m.includes('flash')).reverse();
+        const otherModels = supported.filter((m: string) => !m.includes('flash')).reverse();
+
+        for (const m of [...flashModels, ...otherModels]) {
+          modelsSet.add(m);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Gemini Models Discovery Error]', err);
+  }
+
+  // Luôn bổ sung thêm fallback defaults đề phòng list models bị giới hạn
+  for (const m of DEFAULT_GEMINI_FALLBACKS) {
+    modelsSet.add(m);
+  }
+
+  return Array.from(modelsSet);
+}
+
 // Auto-create tables for Quiz if not exists (chỉ chạy 1 lần duy nhất khi khởi động)
 async function ensureQuizTables(pool: any) {
   if (globalPool.quizTablesEnsured) return;
@@ -466,15 +520,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Chưa có Gemini API Key để kiểm tra.' });
       }
 
-      const testModels = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-8b',
-        'gemini-2.0-flash-lite',
-        'gemini-1.5-pro'
-      ];
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
 
+      // Tự động lấy danh sách model thực tế được hỗ trợ bởi chính API Key này
+      const testModels = await resolveGeminiModels(apiKey, preferredModel);
       const errors: string[] = [];
 
       for (const m of testModels) {
@@ -541,19 +591,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
       const preferredModel = modelRes.rows[0]?.value?.trim();
 
-      // Danh sách các model Gemini ưu tiên xoay vòng theo thứ tự
-      const BASE_MODELS = [
-        'gemini-2.5-flash',
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-flash-8b',
-        'gemini-2.0-flash-lite',
-        'gemini-1.5-pro'
-      ];
-
-      const modelQueue = preferredModel && preferredModel !== 'auto'
-        ? [preferredModel, ...BASE_MODELS.filter(m => m !== preferredModel)]
-        : [...BASE_MODELS];
+      // Tự động cập nhật model mới nhất và xoay vòng thử tất cả model đến khi thành công
+      const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
 
       const qCount = Number(count) || 5;
       const diffLabel = difficulty === 'easy' ? 'Dễ (Nhận biết cơ bản)' : (difficulty === 'hard' ? 'Khó (Vận dụng nâng cao)' : 'Hỗn hợp các mức Dễ, Trung bình, Khó');
@@ -633,8 +672,8 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       }
 
       if (!successfulQuestions || successfulQuestions.length === 0) {
-        return res.status(502).json({
-          error: `Đã thử tất cả các model Gemini (${modelQueue.join(', ')}) nhưng đều gặp lỗi: ${attemptErrors.join(' | ')}. Vui lòng kiểm tra lại API Key hoặc hạn mức Google Cloud của bạn.`
+        return res.status(400).json({
+          error: `Đã thử tất cả các model Gemini (${modelQueue.slice(0, 6).join(', ')}) nhưng đều gặp lỗi: ${attemptErrors[0] || 'Lỗi kết nối'}. Vui lòng kiểm tra lại API Key hoặc hạn mức Google Cloud của bạn.`
         });
       }
 
@@ -665,7 +704,9 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
         return res.status(400).json({ error: 'Chưa cấu hình Google Gemini API Key!' });
       }
 
-      const BASE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-flash-8b'];
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const BASE_MODELS = await resolveGeminiModels(apiKey, preferredModel);
       const prompt = `Bạn là chuyên gia sư phạm và cấu trúc giáo trình đại học/cao đẳng. 
 Dưới đây là một phần hoặc mục lục của tài liệu/giáo trình/khung chương trình:
 """
@@ -732,7 +773,7 @@ Quy tắc:
       }
 
       if (!parsedTree) {
-        return res.status(502).json({ error: 'Không thể trích xuất mục lục giáo trình từ tài liệu này.' });
+        return res.status(400).json({ error: 'Không thể trích xuất mục lục giáo trình từ tài liệu này. Vui lòng kiểm tra nội dung hoặc API Key.' });
       }
 
       return res.status(200).json({ success: true, tree: parsedTree, modelUsed: usedModel });
@@ -813,7 +854,9 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
   }
 ]`;
 
-      const BASE_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-1.5-pro'];
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const BASE_MODELS = await resolveGeminiModels(apiKey, preferredModel);
       let successfulQuestions = null;
       let usedModel = '';
       const attemptErrors: string[] = [];
@@ -866,8 +909,8 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       }
 
       if (!successfulQuestions || successfulQuestions.length === 0) {
-        return res.status(502).json({
-          error: `Không thể tạo đề thi bằng AI (${attemptErrors.join(' | ')}). Vui lòng thử lại hoặc giảm số lượng câu hỏi.`
+        return res.status(400).json({
+          error: `Không thể tạo đề thi bằng AI (${attemptErrors[0] || 'Lỗi kết nối'}). Vui lòng thử lại hoặc giảm số lượng câu hỏi.`
         });
       }
 

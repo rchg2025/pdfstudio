@@ -1631,7 +1631,9 @@ export default function Admin() {
                           onChange={e => handleSettingChange('geminiCustomModel', e.target.value)}
                           style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '0.5rem', border: '1px solid var(--border)', outline: 'none', background: 'var(--bg-primary)', color: 'var(--text-primary)', fontSize: '0.875rem' }}
                         >
-                          <option value="auto">Tự động xoay vòng model thông minh (Khuyên dùng)</option>
+                          <option value="auto">Tự động chọn model mới nhất & xoay vòng khi lỗi (Khuyên dùng)</option>
+                          <option value="gemini-3.8-flash">Ưu tiên Gemini 3.8 Flash (Thế hệ mới nhất)</option>
+                          <option value="gemini-3.0-flash">Ưu tiên Gemini 3.0 Flash</option>
                           <option value="gemini-2.5-flash">Ưu tiên Gemini 2.5 Flash</option>
                           <option value="gemini-2.0-flash">Ưu tiên Gemini 2.0 Flash</option>
                           <option value="gemini-1.5-flash">Ưu tiên Gemini 1.5 Flash</option>
@@ -1639,7 +1641,7 @@ export default function Admin() {
                           <option value="gemini-1.5-pro">Ưu tiên Gemini 1.5 Pro</option>
                         </select>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block', marginTop: '0.35rem' }}>
-                          Hệ thống sẽ tự động thử lần lượt các model khác nếu gặp lỗi Rate Limit (429) hoặc Máy chủ bận (503).
+                          Hệ thống sẽ tự động quét danh sách model được Google hỗ trợ cho API Key này và tự xoay vòng thử các model khác khi gặp lỗi đến khi có kết quả.
                         </span>
                       </div>
                     </div>
