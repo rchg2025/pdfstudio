@@ -125,10 +125,27 @@ async function ensureQuizTables(pool: any) {
         "submittedAt" TIMESTAMP DEFAULT NOW()
       );
       CREATE INDEX IF NOT EXISTS "idx_submission_quizId" ON "QuizSubmission"("quizId");
+
+      CREATE TABLE IF NOT EXISTS "SyllabusSubject" (
+        id VARCHAR(64) PRIMARY KEY,
+        "userId" VARCHAR(64) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        "schoolName" VARCHAR(255),
+        "departmentName" VARCHAR(255),
+        "sourceType" VARCHAR(32),
+        "sourceTitle" VARCHAR(255),
+        "rawContent" TEXT,
+        "driveFileId" VARCHAR(255),
+        "driveUrl" TEXT,
+        tree JSONB NOT NULL DEFAULT '[]'::jsonb,
+        "createdAt" TIMESTAMP DEFAULT NOW(),
+        "updatedAt" TIMESTAMP DEFAULT NOW()
+      );
+      CREATE INDEX IF NOT EXISTS "idx_syl_subj_userId" ON "SyllabusSubject"("userId");
     `);
     globalPool.quizTablesEnsured = true;
   } catch (e) {
-    console.error('Lỗi khởi tạo bảng Quiz:', e);
+    console.error('Lỗi khởi tạo bảng Quiz/Syllabus:', e);
   }
 }
 
@@ -999,6 +1016,94 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       } catch (err: any) {
         return res.status(500).json({ error: 'Lỗi khi đọc nội dung link: ' + (err.message || 'Lỗi mạng') });
       }
+    }
+
+    // 17. QUẢN LÝ MÔN HỌC / GIÁO TRÌNH ĐÃ LƯU THEO TÀI KHOẢN (SyllabusSubject)
+    // 17.1 Lấy danh sách môn học của người dùng
+    if (req.method === 'GET' && action === 'get-syllabus-subjects') {
+      const { userId, id } = req.query;
+      if (id) {
+        const singleRes = await pool.query('SELECT * FROM "SyllabusSubject" WHERE id = $1 LIMIT 1', [String(id)]);
+        return res.status(200).json({ success: true, subject: singleRes.rows[0] || null });
+      }
+
+      if (!userId || String(userId).trim() === '') {
+        return res.status(200).json({ success: true, subjects: [] });
+      }
+
+      const listRes = await pool.query(
+        'SELECT * FROM "SyllabusSubject" WHERE "userId" = $1 ORDER BY "updatedAt" DESC',
+        [String(userId)]
+      );
+      return res.status(200).json({ success: true, subjects: listRes.rows });
+    }
+
+    // 17.2 Lưu / Cập nhật môn học vào tài khoản
+    if (req.method === 'POST' && action === 'save-syllabus-subject') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { id, userId, name, schoolName, departmentName, sourceType, sourceTitle, rawContent, driveFileId, driveUrl, tree } = body || {};
+
+      if (!userId || String(userId).trim() === '') {
+        return res.status(401).json({ error: 'Vui lòng đăng nhập để lưu trữ môn học vào tài khoản.' });
+      }
+      if (!name || String(name).trim() === '') {
+        return res.status(400).json({ error: 'Tên môn học không được để trống.' });
+      }
+
+      const subjectId = id || generateCuidLike();
+      const upsertQuery = `
+        INSERT INTO "SyllabusSubject" (
+          id, "userId", name, "schoolName", "departmentName",
+          "sourceType", "sourceTitle", "rawContent", "driveFileId", "driveUrl",
+          tree, "createdAt", "updatedAt"
+        )
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+        ON CONFLICT (id) DO UPDATE SET
+          name = EXCLUDED.name,
+          "schoolName" = EXCLUDED."schoolName",
+          "departmentName" = EXCLUDED."departmentName",
+          "sourceType" = EXCLUDED."sourceType",
+          "sourceTitle" = EXCLUDED."sourceTitle",
+          "rawContent" = EXCLUDED."rawContent",
+          "driveFileId" = EXCLUDED."driveFileId",
+          "driveUrl" = EXCLUDED."driveUrl",
+          tree = EXCLUDED.tree,
+          "updatedAt" = NOW()
+        RETURNING *;
+      `;
+
+      const result = await pool.query(upsertQuery, [
+        subjectId,
+        String(userId),
+        String(name).trim(),
+        schoolName ? String(schoolName).trim() : '',
+        departmentName ? String(departmentName).trim() : '',
+        sourceType || 'file',
+        sourceTitle ? String(sourceTitle).trim() : '',
+        rawContent ? String(rawContent) : '',
+        driveFileId || null,
+        driveUrl || null,
+        JSON.stringify(tree || [])
+      ]);
+
+      return res.status(200).json({ success: true, subject: result.rows[0] });
+    }
+
+    // 17.3 Xóa môn học đã lưu
+    if (req.method === 'POST' && action === 'delete-syllabus-subject') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { id, userId } = body || {};
+      if (!id) return res.status(400).json({ error: 'Thiếu ID môn học cần xóa.' });
+      if (!userId) return res.status(401).json({ error: 'Yêu cầu đăng nhập.' });
+
+      await pool.query('DELETE FROM "SyllabusSubject" WHERE id = $1 AND "userId" = $2', [String(id), String(userId)]);
+      return res.status(200).json({ success: true });
     }
 
     return res.status(400).json({ error: 'Không tìm thấy action' });

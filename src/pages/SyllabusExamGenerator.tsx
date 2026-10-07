@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   BookOpen,
   FileText,
@@ -19,14 +19,18 @@ import {
   Check,
   AlertCircle,
   Key,
-  RefreshCw
+  RefreshCw,
+  Bookmark,
+  Trash2,
+  ShieldCheck,
+  LogIn
 } from 'lucide-react';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useAuth } from '../contexts/AuthContext';
 import { useDialogs } from '../components/CustomDialogs';
 import { useNotification } from '../contexts/NotificationContext';
-import type { QuizQuestion, QuizPackage } from '../types/quiz';
+import type { QuizQuestion, QuizPackage, SavedSyllabusSubject } from '../types/quiz';
 import { downloadExamDocFile } from '../utils/wordExport';
 import './SyllabusExamGenerator.css';
 
@@ -104,6 +108,136 @@ export default function SyllabusExamGenerator() {
   const [analyzeProgressText, setAnalyzeProgressText] = useState('Đang khởi động phân tích cấu trúc giáo trình...');
   // Tiến trình sinh câu hỏi đề thi
   const [examProgressText, setExamProgressText] = useState('Đang khởi tạo đề thi với Google Gemini AI...');
+
+  // Quản lý Môn học lưu theo tài khoản trong Database
+  const [savedSubjects, setSavedSubjects] = useState<SavedSyllabusSubject[]>([]);
+  const [isLoadingSubjects, setIsLoadingSubjects] = useState(false);
+  const [currentSubjectId, setCurrentSubjectId] = useState<string | null>(null);
+  const [isSavingSubject, setIsSavingSubject] = useState(false);
+
+  // Tải danh sách môn học đã lưu của người dùng
+  const loadSavedSubjects = async () => {
+    if (!user) return;
+    setIsLoadingSubjects(true);
+    try {
+      const res = await fetch(`/api/quiz-api?action=get-syllabus-subjects&userId=${encodeURIComponent(user.id)}`);
+      const data = await res.json();
+      if (res.ok && data.subjects) {
+        setSavedSubjects(data.subjects);
+      }
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách môn học:', err);
+    } finally {
+      setIsLoadingSubjects(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      loadSavedSubjects();
+    }
+  }, [user]);
+
+  // Lưu môn học hiện tại vào tài khoản
+  const handleSaveCurrentSubject = async (customName?: string) => {
+    if (!user) {
+      showAlert('Vui lòng đăng nhập để lưu trữ môn học vào tài khoản!', 'Yêu cầu đăng nhập');
+      return;
+    }
+    const nameToSave = customName?.trim() || examSubject.trim() || sourceTitle.trim() || 'Môn học mới';
+    setIsSavingSubject(true);
+
+    try {
+      const payload = {
+        id: currentSubjectId || undefined,
+        userId: user.id,
+        name: nameToSave,
+        schoolName,
+        departmentName,
+        sourceType: sourceTab,
+        sourceTitle,
+        rawContent,
+        driveFileId: driveFileInfo?.fileId,
+        driveUrl: driveFileInfo?.webViewLink,
+        tree: syllabusTree
+      };
+
+      const res = await fetch('/api/quiz-api?action=save-syllabus-subject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Không thể lưu môn học vào tài khoản');
+      }
+
+      setCurrentSubjectId(data.subject.id);
+      showToast(`Đã lưu môn học "${data.subject.name}" vào tài khoản của bạn!`, 'success');
+      loadSavedSubjects();
+    } catch (err: any) {
+      showAlert(err.message || 'Lỗi khi lưu môn học', 'Lỗi lưu trữ');
+    } finally {
+      setIsSavingSubject(false);
+    }
+  };
+
+  // Nạp lại môn học đã lưu để tiếp tục làm việc
+  const handleLoadSubject = (subject: SavedSyllabusSubject) => {
+    setCurrentSubjectId(subject.id);
+    setExamSubject(subject.name || '');
+    if (subject.schoolName) setSchoolName(subject.schoolName);
+    if (subject.departmentName) setDepartmentName(subject.departmentName);
+    if (subject.sourceType) setSourceTab(subject.sourceType);
+    if (subject.sourceTitle) setSourceTitle(subject.sourceTitle);
+    if (subject.rawContent) setRawContent(subject.rawContent);
+    if (subject.driveFileId || subject.driveUrl) {
+      setDriveFileInfo({
+        fileId: subject.driveFileId,
+        webViewLink: subject.driveUrl,
+        fileName: subject.sourceTitle
+      });
+    }
+
+    const tree = subject.tree || [];
+    setSyllabusTree(tree);
+    const allIds = getAllNodeIds(tree);
+    setSelectedNodeIds(new Set(allIds));
+    setExpandedNodeIds(new Set(allIds));
+    setSelectAll(true);
+    setCurrentStep(3); // Vào thẳng màn hình cấu hình & sinh đề thi
+    showToast(`Đã nạp môn "${subject.name}" cùng cây đề mục thành công!`, 'success');
+  };
+
+  // Xóa môn học đã lưu
+  const handleDeleteSubject = async (e: React.MouseEvent, subjectId: string, subjectName: string) => {
+    e.stopPropagation();
+    if (!user) return;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa môn học "${subjectName}" khỏi tài khoản không?`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/quiz-api?action=delete-syllabus-subject', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: subjectId, userId: user.id })
+      });
+      if (res.ok) {
+        showToast(`Đã xóa môn "${subjectName}"`, 'success');
+        if (currentSubjectId === subjectId) {
+          setCurrentSubjectId(null);
+        }
+        loadSavedSubjects();
+      } else {
+        const d = await res.json();
+        showAlert(d.error || 'Không thể xóa môn học', 'Lỗi');
+      }
+    } catch (err: any) {
+      showAlert(err.message || 'Lỗi khi xóa môn học', 'Lỗi');
+    }
+  };
+
 
   const handleTestApiKey = async () => {
     setIsTestingKey(true);
@@ -336,6 +470,12 @@ export default function SyllabusExamGenerator() {
       setSelectAll(true);
       setCurrentStep(3); // Chuyển thẳng sang Bước 3 hiển thị giao diện 2 cột như ảnh của người dùng!
       showToast(`Đã phân tích xong mục lục giáo trình bằng model ${data.modelUsed || 'Gemini'}!`, 'success');
+
+      // Tự động lưu môn học vào database nếu đã đăng nhập
+      if (user) {
+        const autoName = examSubject.trim() || sourceTitle.trim() || 'Giáo trình mới';
+        handleSaveCurrentSubject(autoName);
+      }
     } catch (err: any) {
       const msg = err.message || 'Không thể phân tích mục lục giáo trình';
       showAlert(msg, 'Lỗi phân tích đề mục');
@@ -601,6 +741,55 @@ export default function SyllabusExamGenerator() {
     }
   };
 
+  // 1. Kiểm tra yêu cầu Đăng nhập hệ thống (Bảo vệ dữ liệu & lưu trữ môn học theo tài khoản)
+  if (!user) {
+    return (
+      <div className="syl-page animate-fade-in" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '70vh' }}>
+        <div style={{
+          maxWidth: 620,
+          width: '100%',
+          margin: '40px auto',
+          background: 'var(--bg-secondary)',
+          padding: '3rem 2rem',
+          borderRadius: 'var(--radius-xl)',
+          border: '1.5px solid rgba(99, 102, 241, 0.25)',
+          boxShadow: 'var(--shadow-lg)',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: 70,
+            height: 70,
+            borderRadius: '50%',
+            background: 'rgba(99, 102, 241, 0.12)',
+            color: 'var(--primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1.5rem',
+            border: '2px solid rgba(99, 102, 241, 0.25)'
+          }}>
+            <ShieldCheck size={38} />
+          </div>
+          <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--text-primary)' }}>
+            Yêu Cầu Đăng Nhập Tài Khoản
+          </h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+            Hệ thống bóc tách cây giáo trình và soạn đề thi tự động AI yêu cầu đăng nhập tài khoản 
+            để quản lý, lưu trữ các Môn học và ngân hàng đề thi riêng biệt theo từng người dùng.
+          </p>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link to="/login" className="btn btn-primary" style={{ padding: '0.75rem 2rem', fontWeight: 700 }}>
+              <LogIn size={18} /> Đăng Nhập Ngay
+            </Link>
+            <Link to="/" className="btn btn-outline" style={{ padding: '0.75rem 1.5rem' }}>
+              Về Trang Chủ
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="syl-page animate-fade-in">
       {/* Main Banner / Header (Matching QuizManager qm-header) */}
@@ -665,9 +854,95 @@ export default function SyllabusExamGenerator() {
         </div>
       </div>
 
-      {/* BƯỚC 1: CHỌN NGUỒN TÀI LIỆU */}
+      {/* BƯỚC 1: CHỌN NGUỒN TÀI LIỆU HOẶC MỞ MÔN HỌC ĐÃ LƯU */}
       {currentStep === 1 && (
         <div className="syl-panel animate-fade-in">
+          {/* MÔN HỌC ĐÃ LƯU CỦA TÔI */}
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(124, 58, 237, 0.05))',
+            borderRadius: 'var(--radius-lg)',
+            border: '1.5px solid rgba(99, 102, 241, 0.25)',
+            padding: '1.25rem',
+            marginBottom: '1.5rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.85rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Bookmark size={18} color="var(--primary)" />
+                <h3 style={{ fontSize: '1rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                  Môn Học & Giáo Trình Đã Lưu Của Bạn ({savedSubjects.length})
+                </h3>
+              </div>
+              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                Bấm vào một môn học để tải lại ngay cấu trúc đề mục và tiếp tục soạn đề
+              </span>
+            </div>
+
+            {isLoadingSubjects ? (
+              <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                <Loader2 size={16} className="spin" style={{ display: 'inline', marginRight: 6 }} />
+                Đang tải danh sách môn học của bạn...
+              </div>
+            ) : savedSubjects.length === 0 ? (
+              <div style={{ padding: '0.85rem 1rem', background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', fontSize: '0.86rem', color: 'var(--text-muted)', textAlign: 'center' }}>
+                Bạn chưa lưu môn học nào. Sau khi tải tệp và bóc tách cây giáo trình bên dưới, hệ thống sẽ tự động lưu môn vào tài khoản để bạn tái sử dụng bất cứ lúc nào!
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '0.75rem' }}>
+                {savedSubjects.map((subj) => {
+                  const nodeCount = getAllNodeIds(subj.tree || []).length;
+                  return (
+                    <div
+                      key={subj.id}
+                      onClick={() => handleLoadSubject(subj)}
+                      style={{
+                        padding: '0.85rem 1rem',
+                        background: currentSubjectId === subj.id ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-secondary)',
+                        border: currentSubjectId === subj.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                        borderRadius: 'var(--radius-md)',
+                        cursor: 'pointer',
+                        transition: 'all 0.18s ease',
+                        position: 'relative'
+                      }}
+                      className="syl-subject-card"
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+                          📚 {subj.name}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSubject(e, subj.id, subj.name)}
+                          style={{
+                            border: 'none',
+                            background: 'transparent',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            padding: '2px',
+                            display: 'flex',
+                            alignItems: 'center'
+                          }}
+                          title="Xóa môn này khỏi tài khoản"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                        {nodeCount > 0 ? `${nodeCount} đề mục kiến thức` : 'Chưa có cây đề mục'}
+                        {subj.schoolName ? ` • ${subj.schoolName}` : ''}
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                        <span>{subj.updatedAt ? new Date(subj.updatedAt).toLocaleDateString('vi-VN') : ''}</span>
+                        <span style={{ color: 'var(--primary)', fontWeight: 600 }}>Tiếp tục soạn đề →</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="syl-source-tabs">
             <button
               type="button"
@@ -978,17 +1253,30 @@ export default function SyllabusExamGenerator() {
         <div className="syl-full-grid animate-fade-in">
           {/* CỘT TRÁI: CẤU HÌNH ĐỀ THI & CÂY CHỌN MỤC LỤC */}
           <div className="syl-config-col">
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)' }}>
                 <Settings size={18} color="var(--primary)" /> CẤU HÌNH ĐỀ THI
               </h2>
-              <button
-                type="button"
-                className="btn btn-outline btn-xs"
-                onClick={() => setCurrentStep(1)}
-              >
-                Đổi nguồn tài liệu
-              </button>
+              <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-xs"
+                  onClick={() => handleSaveCurrentSubject()}
+                  disabled={isSavingSubject}
+                  style={{ borderColor: 'var(--primary)', color: 'var(--primary)', fontWeight: 600 }}
+                  title="Lưu môn học và cây đề mục vào database tài khoản"
+                >
+                  {isSavingSubject ? <Loader2 size={13} className="spin" /> : <Bookmark size={13} />}
+                  {isSavingSubject ? 'Đang lưu...' : 'Lưu Môn Học'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-xs"
+                  onClick={() => setCurrentStep(1)}
+                >
+                  Đổi nguồn tài liệu
+                </button>
+              </div>
             </div>
 
             {/* Khối Cây Kiến thức */}

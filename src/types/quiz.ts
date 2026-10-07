@@ -82,3 +82,26 @@ export interface QuizPackage {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface SyllabusTreeNode {
+  id: string;
+  title: string;
+  children?: SyllabusTreeNode[];
+}
+
+export interface SavedSyllabusSubject {
+  id: string;
+  userId: string;
+  name: string;
+  schoolName?: string;
+  departmentName?: string;
+  sourceType?: 'file' | 'url' | 'text' | 'drive';
+  sourceTitle?: string;
+  rawContent?: string;
+  driveFileId?: string;
+  driveUrl?: string;
+  tree: SyllabusTreeNode[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+

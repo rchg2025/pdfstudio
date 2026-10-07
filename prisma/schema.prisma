@@ -137,3 +137,20 @@ model QuizSubmission {
   answers          Json?    @default("{}")
   submittedAt      DateTime? @default(now())
 }
+
+model SyllabusSubject {
+  id             String    @id @db.VarChar(64)
+  userId         String    @db.VarChar(64)
+  name           String    @db.VarChar(255)
+  schoolName     String?   @db.VarChar(255)
+  departmentName String?   @db.VarChar(255)
+  sourceType     String?   @db.VarChar(32)
+  sourceTitle    String?   @db.VarChar(255)
+  rawContent     String?   @db.Text
+  driveFileId    String?   @db.VarChar(255)
+  driveUrl       String?   @db.Text
+  tree           Json      @default("[]")
+  createdAt      DateTime? @default(now())
+  updatedAt      DateTime? @default(now())
+}
+
