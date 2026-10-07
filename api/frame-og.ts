@@ -4,23 +4,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const slug = req.query.slug as string;
     
-    let html = '';
-    
-    try {
-      // Use https in production, fallback to http in dev
-      const protocol = req.headers['x-forwarded-proto'] || (req.headers.host?.includes('localhost') ? 'http' : 'https');
-      const host = req.headers['x-forwarded-host'] || req.headers.host;
-      const baseUrl = `${protocol}://${host}`;
-      
-      const response = await fetch(`${baseUrl}/index.html`);
-      if (response.ok) {
-        html = await response.text();
-      } else {
-        throw new Error(`Failed to fetch index.html: ${response.status}`);
+    // Try reading index.html directly from disk if in server environment
+    const fs = await import('fs');
+    const path = await import('path');
+    const possiblePaths = [
+      path.resolve(process.cwd(), 'dist', 'index.html'),
+      path.resolve(process.cwd(), 'index.html')
+    ];
+    for (const p of possiblePaths) {
+      if (fs.existsSync(p)) {
+        try {
+          html = fs.readFileSync(p, 'utf-8');
+          break;
+        } catch {}
       }
-    } catch (e: any) {
-      console.error("Could not fetch index.html", e);
-      return res.status(500).send('Could not fetch base HTML: ' + e.message);
+    }
+
+    if (!html) {
+      try {
+        const protocol = req.headers['x-forwarded-proto'] || (req.headers.host?.includes('localhost') ? 'http' : 'https');
+        const host = req.headers['x-forwarded-host'] || req.headers.host;
+        const baseUrl = `${protocol}://${host}`;
+        const response = await fetch(`${baseUrl}/index.html`);
+        if (response.ok) {
+          html = await response.text();
+        }
+      } catch (e: any) {
+        console.error("Could not fetch index.html", e);
+      }
+    }
+
+    if (!html) {
+      return res.status(500).send('Could not load base HTML template');
     }
 
     if (slug) {

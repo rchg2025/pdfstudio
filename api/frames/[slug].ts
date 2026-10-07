@@ -6,7 +6,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { slug } = req.query;
+  const slug = (req.query?.slug || (req as any).params?.slug) as string;
   if (!slug || typeof slug !== 'string') {
     return res.status(400).json({ message: 'Slug is required' });
   }

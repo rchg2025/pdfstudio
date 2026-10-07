@@ -34,10 +34,10 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 function adaptVercelHandler(handler: any, extraQuery: Record<string, any> = {}) {
   return async (req: express.Request, res: express.Response) => {
     try {
+      req.query = { ...req.query, ...req.params, ...extraQuery };
       if (req.params && req.params.action) {
         (req.query as any).action = req.params.action;
       }
-      Object.assign(req.query, req.params, extraQuery);
       await handler(req, res);
     } catch (err: any) {
       console.error('Server Handler Error:', err);

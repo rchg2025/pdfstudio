@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createPool } from '@vercel/postgres';
+import { prisma } from '../_lib/prisma.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
@@ -27,20 +27,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'URL không hợp lệ' });
   }
 
-  const dbUrl = process.env.DATABASE_URL || process.env.POSTGRES_URL || "postgresql://neondb_owner:npg_Yvd4phsckal3@ep-quiet-king-atdwf3ey-pooler.c-9.us-east-1.aws.neon.tech/neondb?sslmode=require";
-  const pool = createPool({
-    connectionString: dbUrl
-  });
-
   try {
     // Check if alias exists
-    const checkQuery = await pool.query('SELECT id FROM urls WHERE alias = $1', [customAlias]);
-    if (checkQuery.rows.length > 0) {
+    const existing = await prisma.urls.findFirst({
+      where: {
+        alias: {
+          equals: customAlias,
+          mode: 'insensitive'
+        }
+      }
+    });
+
+    if (existing) {
       return res.status(409).json({ error: 'Đuôi tùy chỉnh này đã tồn tại, vui lòng chọn tên khác.' });
     }
 
     // Insert new URL
-    await pool.query('INSERT INTO urls (original_url, alias) VALUES ($1, $2)', [originalUrl, customAlias]);
+    await prisma.urls.create({
+      data: {
+        original_url: originalUrl,
+        alias: customAlias
+      }
+    });
     
     return res.status(200).json({ success: true, alias: customAlias });
   } catch (error: any) {
