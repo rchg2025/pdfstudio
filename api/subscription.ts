@@ -224,6 +224,40 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       });
 
+      // Tạo link VietQR chuẩn QuickLink
+      const encodedContent = encodeURIComponent(transferCode);
+      const encodedAccountName = encodeURIComponent(bankAccountName);
+      const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccountNo}-compact2.png?amount=${amount}&addInfo=${encodedContent}&accountName=${encodedAccountName}`;
+
+      return res.status(201).json({
+        message: 'Tạo đơn gia hạn thành công',
+        order,
+        bank: {
+          bankId,
+          bankAccountNo,
+          bankAccountName
+        },
+        qrUrl
+      });
+    }
+
+    // 4. Người dùng xác nhận đã chuyển khoản thành công -> Gửi thông báo cho Admin
+    if (action === 'confirm-transfer' && req.method === 'POST') {
+      const user = requireAuth(req);
+      const { orderId } = req.body;
+
+      if (!orderId) {
+        return res.status(400).json({ message: 'Thiếu mã đơn hàng' });
+      }
+
+      const order = await prisma.subscriptionOrder.findUnique({
+        where: { id: orderId }
+      });
+
+      if (!order || order.userId !== user.userId) {
+        return res.status(404).json({ message: 'Không tìm thấy đơn hàng tương ứng' });
+      }
+
       // Gửi email thông báo cho Admin (bất đồng bộ để không chặn phản hồi của user)
       (async () => {
         try {
@@ -240,20 +274,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       })();
 
-      // Tạo link VietQR chuẩn QuickLink
-      const encodedContent = encodeURIComponent(transferCode);
-      const encodedAccountName = encodeURIComponent(bankAccountName);
-      const qrUrl = `https://img.vietqr.io/image/${bankId}-${bankAccountNo}-compact2.png?amount=${amount}&addInfo=${encodedContent}&accountName=${encodedAccountName}`;
-
-      return res.status(201).json({
-        message: 'Tạo đơn gia hạn thành công',
-        order,
-        bank: {
-          bankId,
-          bankAccountNo,
-          bankAccountName
-        },
-        qrUrl
+      return res.status(200).json({
+        success: true,
+        message: 'Đã gửi thông báo xác nhận chuyển khoản tới Quản trị viên'
       });
     }
 

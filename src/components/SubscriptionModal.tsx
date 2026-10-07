@@ -105,6 +105,40 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
     }
   };
 
+  const handleConfirmTransfer = async () => {
+    if (!orderData?.id) {
+      showToast('Yêu cầu gia hạn đã được ghi nhận. Quản trị viên sẽ kích hoạt gói cho bạn trong giây lát!', 'success');
+      refreshUser();
+      onClose();
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch('/api/subscription?action=confirm-transfer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderId: orderData.id })
+      });
+
+      if (res.ok) {
+        showToast('Đã gửi thông báo xác nhận chuyển khoản tới Quản trị viên. Gói của bạn sẽ được kích hoạt sớm nhất!', 'success');
+      } else {
+        showToast('Yêu cầu đã được lưu, Quản trị viên sẽ kiểm tra chuyển khoản sớm nhất!', 'info');
+      }
+    } catch (err) {
+      console.error('Lỗi khi gửi xác nhận chuyển khoản:', err);
+      showToast('Yêu cầu đã được lưu, Quản trị viên sẽ kiểm tra chuyển khoản sớm nhất!', 'info');
+    } finally {
+      setLoading(false);
+      refreshUser();
+      onClose();
+    }
+  };
+
   const copyToClipboard = (text: string, field: string) => {
     navigator.clipboard.writeText(text);
     setCopiedField(field);
@@ -322,13 +356,10 @@ export default function SubscriptionModal({ isOpen, onClose, reason }: Subscript
                   <button 
                     type="button" 
                     className="btn btn-primary"
-                    onClick={() => {
-                      showToast('Yêu cầu gia hạn đã được ghi nhận. Quản trị viên sẽ kích hoạt gói cho bạn trong giây lát!', 'success');
-                      refreshUser();
-                      onClose();
-                    }}
+                    onClick={handleConfirmTransfer}
+                    disabled={loading}
                   >
-                    <CheckCircle2 size={18} /> Tôi Đã Chuyển Khoản Xong
+                    <CheckCircle2 size={18} /> {loading ? 'Đang gửi...' : 'Tôi Đã Chuyển Khoản Xong'}
                   </button>
                 </div>
               </div>
