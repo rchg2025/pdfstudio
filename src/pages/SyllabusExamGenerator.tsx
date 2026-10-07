@@ -670,14 +670,14 @@ export default function SyllabusExamGenerator() {
 
           {/* Tab 2: URL Internet */}
           {sourceTab === 'url' && (
-            <div>
-              <label className="qm-label" style={{ marginBottom: '0.5rem' }}>
+            <div style={{ width: '100%' }}>
+              <label className="qm-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
                 Đường dẫn URL bài giảng / trang web tài liệu tham khảo:
               </label>
-              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+              <div className="syl-url-input-group">
                 <input
                   type="url"
-                  className="qm-input"
+                  className="qm-input syl-url-field"
                   placeholder="https://example.com/bai-giang-chuong-1..."
                   value={webUrl}
                   onChange={(e) => setWebUrl(e.target.value)}
@@ -685,17 +685,16 @@ export default function SyllabusExamGenerator() {
                 />
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary syl-url-btn"
                   onClick={handleFetchUrl}
                   disabled={isProcessingSource}
-                  style={{ whiteSpace: 'nowrap' }}
                 >
                   {isProcessingSource ? <Loader2 size={16} className="spin" /> : <Globe size={16} />} Quét Link
                 </button>
               </div>
 
               {rawContent && sourceTab === 'url' && (
-                <div style={{ padding: '0.75rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: '0.85rem' }}>
+                <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', fontSize: '0.85rem' }}>
                   ✓ Đã trích xuất <strong>{rawContent.length}</strong> ký tự văn bản từ link trang web.
                 </div>
               )}
@@ -704,13 +703,13 @@ export default function SyllabusExamGenerator() {
 
           {/* Tab 3: Paste Text */}
           {sourceTab === 'text' && (
-            <div>
-              <label className="qm-label" style={{ marginBottom: '0.5rem' }}>
+            <div style={{ width: '100%' }}>
+              <label className="qm-label" style={{ marginBottom: '0.5rem', display: 'block' }}>
                 Dán đề cương, mục lục hoặc nội dung văn bản giáo trình:
               </label>
               <textarea
-                className="qm-textarea"
-                rows={9}
+                className="qm-textarea syl-source-textarea"
+                rows={11}
                 placeholder="Dán nội dung chương trình khung, giáo trình môn học hoặc đề cương chi tiết vào đây..."
                 value={pastedText}
                 onChange={(e) => setPastedText(e.target.value)}

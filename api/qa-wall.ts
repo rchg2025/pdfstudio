@@ -466,7 +466,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Chưa có Gemini API Key để kiểm tra.' });
       }
 
-      const testModels = ['gemini-2.0-flash', 'gemini-1.5-flash', 'gemini-2.5-flash'];
+      const testModels = [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
+        'gemini-1.5-flash',
+        'gemini-1.5-flash-8b',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-pro'
+      ];
+
+      const errors: string[] = [];
+
       for (const m of testModels) {
         try {
           const testRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
@@ -476,12 +486,33 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               contents: [{ parts: [{ text: 'Trả lời đúng 1 chữ: OK' }] }]
             })
           });
+
           if (testRes.ok) {
-            return res.status(200).json({ success: true, model: m, message: `Kết nối thành công với model ${m}!` });
+            return res.status(200).json({ 
+              success: true, 
+              model: m, 
+              message: `Kết nối thành công với model ${m}!` 
+            });
+          } else {
+            const errText = await testRes.text();
+            let parsedErr = '';
+            try {
+              const j = JSON.parse(errText);
+              parsedErr = j.error?.message || j.message || errText;
+            } catch {
+              parsedErr = errText;
+            }
+            errors.push(`[${m} - HTTP ${testRes.status}]: ${parsedErr.slice(0, 150)}`);
           }
-        } catch {}
+        } catch (fetchErr: any) {
+          errors.push(`[${m}]: ${fetchErr.message || 'Lỗi mạng khi kết nối'}`);
+        }
       }
-      return res.status(502).json({ error: 'Không thể kết nối tới Google Gemini API với khóa này. Vui lòng kiểm tra lại API Key.' });
+
+      return res.status(502).json({ 
+        error: `Không thể kết nối tới Google Gemini API: ${errors[0] || 'Vui lòng kiểm tra lại API Key và hạn mức Google AI Studio.'}`,
+        details: errors
+      });
     }
 
     // 13. TẠO CÂU HỎI TRẮC NGHIỆM BẰNG AI (TỰ ĐỘNG THAY ĐỔI CÁC MODEL KHI GẶP LỖI)
