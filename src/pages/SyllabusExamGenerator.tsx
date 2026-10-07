@@ -521,85 +521,89 @@ export default function SyllabusExamGenerator() {
 
   return (
     <div className="syl-page animate-fade-in">
-      {/* Header */}
-      <div className="syl-header">
-        <div className="syl-header-left">
-          <h1>
-            <BookOpen size={26} color="var(--primary)" /> Soạn Đề Thi Từ Giáo Trình & Khung Chương Trình AI
-          </h1>
-          <p>
-            Tự động bóc tách cây đề mục (Chương / Bài / Sub) từ tài liệu Word, PDF, Drive hoặc Link Internet, sinh đề thi trắc nghiệm & tự luận theo phạm vi chọn lọc.
-          </p>
+      {/* Main Banner / Header (Matching QuizManager qm-header) */}
+      <header className="syl-header-banner">
+        <div className="syl-title-group">
+          <div className="syl-icon-box">
+            <BookOpen size={28} />
+          </div>
+          <div>
+            <h1 className="syl-title">Soạn Đề Thi Từ Giáo Trình & Khung Chương Trình AI</h1>
+            <p className="syl-subtitle">
+              Tự động bóc tách cây đề mục (Chương / Bài / Sub) từ Word, PDF, Drive hoặc Link Web để sinh đề trắc nghiệm & tự luận theo phạm vi chọn lọc.
+            </p>
+          </div>
         </div>
 
-        <div className="syl-header-right">
+        <div className="syl-header-actions">
           <button
             type="button"
             className="btn btn-outline btn-sm"
             onClick={() => navigate('/quan-ly-thi-trac-nghiem')}
+            style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
           >
             <ArrowLeft size={15} /> Về Quản Lý Thi
           </button>
         </div>
-      </div>
+      </header>
 
-      {/* Thanh tiến trình Stepper */}
-      <div className="syl-stepper">
+      {/* Stepper Bar Full Width */}
+      <div className="syl-stepper-bar">
         <div
-          className={`syl-step-item ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}
+          className={`syl-step-card ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}
           onClick={() => setCurrentStep(1)}
         >
-          <div className="syl-step-num">1</div>
+          <div className="syl-step-badge">1</div>
           <div>
-            <div className="syl-step-text-title">Bước 1: Nguồn Giáo Trình</div>
-            <div className="syl-step-text-desc">Upload Word, PDF, Link web hoặc Drive</div>
+            <div className="syl-step-info-title">Bước 1: Nguồn Giáo Trình</div>
+            <div className="syl-step-info-desc">Tải Word, PDF, Drive hoặc Link Internet</div>
           </div>
         </div>
 
         <div
-          className={`syl-step-item ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}
+          className={`syl-step-card ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}
           onClick={() => syllabusTree.length > 0 && setCurrentStep(2)}
         >
-          <div className="syl-step-num">2</div>
+          <div className="syl-step-badge">2</div>
           <div>
-            <div className="syl-step-text-title">Bước 2: Cây Đề Mục Kiến Thức</div>
-            <div className="syl-step-text-desc">Trích xuất chương/bài & chọn phạm vi</div>
+            <div className="syl-step-info-title">Bước 2: Cây Đề Mục Kiến Thức</div>
+            <div className="syl-step-info-desc">Trích xuất chương/bài & chọn phạm vi</div>
           </div>
         </div>
 
         <div
-          className={`syl-step-item ${currentStep === 3 ? 'active' : ''}`}
+          className={`syl-step-card ${currentStep === 3 ? 'active' : ''}`}
           onClick={() => syllabusTree.length > 0 && setCurrentStep(3)}
         >
-          <div className="syl-step-num">3</div>
+          <div className="syl-step-badge">3</div>
           <div>
-            <div className="syl-step-text-title">Bước 3: Cấu Hình & Sinh Đề</div>
-            <div className="syl-step-text-desc">Tạo câu hỏi & xuất file Word chuẩn</div>
+            <div className="syl-step-info-title">Bước 3: Cấu Hình & Sinh Đề</div>
+            <div className="syl-step-info-desc">Biên soạn câu hỏi & xuất file Word chuẩn</div>
           </div>
         </div>
       </div>
 
       {/* BƯỚC 1: CHỌN NGUỒN TÀI LIỆU */}
       {currentStep === 1 && (
-        <div className="syl-card animate-fade-in">
-          <div className="syl-tabs">
+        <div className="syl-panel animate-fade-in">
+          <div className="syl-source-tabs">
             <button
               type="button"
-              className={`syl-tab-btn ${sourceTab === 'file' ? 'active' : ''}`}
+              className={`syl-source-tab-btn ${sourceTab === 'file' ? 'active' : ''}`}
               onClick={() => setSourceTab('file')}
             >
               <FileText size={16} /> Tải file Word (.docx, .doc) / PDF
             </button>
             <button
               type="button"
-              className={`syl-tab-btn ${sourceTab === 'url' ? 'active' : ''}`}
+              className={`syl-source-tab-btn ${sourceTab === 'url' ? 'active' : ''}`}
               onClick={() => setSourceTab('url')}
             >
               <Globe size={16} /> Lấy nội dung từ Link Internet
             </button>
             <button
               type="button"
-              className={`syl-tab-btn ${sourceTab === 'text' ? 'active' : ''}`}
+              className={`syl-source-tab-btn ${sourceTab === 'text' ? 'active' : ''}`}
               onClick={() => setSourceTab('text')}
             >
               <BookOpen size={16} /> Dán văn bản Giáo trình / Đề cương
@@ -621,11 +625,13 @@ export default function SyllabusExamGenerator() {
                 className="syl-dropzone"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Upload size={48} color="var(--primary)" style={{ opacity: 0.8, marginBottom: '0.75rem' }} />
-                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
-                  {isProcessingSource ? 'Đang đọc và phân tích tệp...' : 'Bấm vào đây để tải lên hoặc kéo thả tệp giáo trình vào'}
+                <div className="syl-dropzone-icon">
+                  <Upload size={32} />
                 </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                <div className="syl-dropzone-title">
+                  {isProcessingSource ? 'Đang đọc và giải mã tệp...' : 'Bấm vào đây để tải lên hoặc kéo thả tệp giáo trình vào'}
+                </div>
+                <div className="syl-dropzone-sub">
                   Hỗ trợ tài liệu Microsoft Word (.docx, .doc), PDF hoặc văn bản (.txt)
                 </div>
               </div>
@@ -769,9 +775,9 @@ export default function SyllabusExamGenerator() {
 
       {/* BƯỚC 3 (HOẶC 2): GIAO DIỆN CHÍNH 2 CỘT TƯƠNG TỰ HÌNH ẢNH MẪU */}
       {(currentStep === 2 || currentStep === 3) && (
-        <div className="syl-editor-grid animate-fade-in">
+        <div className="syl-full-grid animate-fade-in">
           {/* CỘT TRÁI: CẤU HÌNH ĐỀ THI & CÂY CHỌN MỤC LỤC */}
-          <div className="syl-config-pane">
+          <div className="syl-config-col">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
               <h2 style={{ fontSize: '1.1rem', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)' }}>
                 <Settings size={18} color="var(--primary)" /> CẤU HÌNH ĐỀ THI
@@ -972,7 +978,7 @@ export default function SyllabusExamGenerator() {
           </div>
 
           {/* CỘT PHẢI: XEM TRƯỚC ĐỀ THI & XUẤT FILE WORD / NẠP HỆ THỐNG */}
-          <div className="syl-preview-pane">
+          <div className="syl-preview-col">
             <div className="syl-preview-toolbar">
               <div className="syl-preview-title">
                 <FileText size={20} color="var(--primary)" /> XEM TRƯỚC ĐỀ THI
