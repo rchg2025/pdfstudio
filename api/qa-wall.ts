@@ -509,7 +509,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }
       }
 
-      return res.status(502).json({ 
+      return res.status(400).json({ 
         error: `Không thể kết nối tới Google Gemini API: ${errors[0] || 'Vui lòng kiểm tra lại API Key và hạn mức Google AI Studio.'}`,
         details: errors
       });
