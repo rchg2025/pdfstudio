@@ -58,11 +58,17 @@ async function resolveGeminiModels(apiKey: string, preferredModel?: string): Pro
           .map((m: any) => (m.name || '').replace(/^models\//, ''))
           .filter(Boolean);
 
-        // Ưu tiên các model flash trước, sau đó là pro
-        const flashModels = supported.filter((m: string) => m.includes('flash')).reverse();
-        const otherModels = supported.filter((m: string) => !m.includes('flash')).reverse();
+        // Ưu tiên các model flash văn bản chính thống trước (loại trừ TTS hoặc audio chuyên biệt)
+        const textFlashModels = supported
+          .filter((m: string) => m.includes('flash') && !m.includes('tts') && !m.includes('audio'))
+          .reverse();
+        const otherTextModels = supported
+          .filter((m: string) => !m.includes('flash') && !m.includes('tts') && !m.includes('audio'))
+          .reverse();
+        const remainingModels = supported
+          .filter((m: string) => m.includes('tts') || m.includes('audio'));
 
-        for (const m of [...flashModels, ...otherModels]) {
+        for (const m of [...textFlashModels, ...otherTextModels, ...remainingModels]) {
           modelsSet.add(m);
         }
       }
