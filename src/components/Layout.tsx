@@ -1,8 +1,19 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import VisitorTracker from './VisitorTracker';
 
 const Layout = () => {
+  const location = useLocation();
+  const isExamRoom = location.pathname.startsWith('/phong-thi');
+
+  if (isExamRoom) {
+    return (
+      <main style={{ minHeight: '100vh', width: '100%', background: 'var(--bg-primary)' }}>
+        <Outlet />
+      </main>
+    );
+  }
+
   return (
     <>
       <Navbar />
