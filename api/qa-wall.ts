@@ -901,7 +901,15 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
           });
 
           if (!gRes.ok) {
-            attemptErrors.push(`[${m}]: HTTP ${gRes.status}`);
+            const errBody = await gRes.text();
+            let parsedErrMsg = '';
+            try {
+              const j = JSON.parse(errBody);
+              parsedErrMsg = j.error?.message || j.message || errBody;
+            } catch {
+              parsedErrMsg = errBody;
+            }
+            attemptErrors.push(`[${m} - HTTP ${gRes.status}]: ${parsedErrMsg.slice(0, 180)}`);
             continue;
           }
 

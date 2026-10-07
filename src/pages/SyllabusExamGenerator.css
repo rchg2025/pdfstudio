@@ -275,10 +275,57 @@
   resize: vertical;
 }
 
+/* Form Controls (Inputs, Selects, Labels) */
+.qm-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  margin-bottom: 0.85rem;
+  width: 100%;
+}
+
+.qm-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: block;
+  margin-bottom: 0.15rem;
+}
+
+.qm-input,
+.qm-select,
+.qm-textarea {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  background: var(--bg-primary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  outline: none;
+}
+
+.qm-input:focus,
+.qm-select:focus,
+.qm-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+  background: var(--bg-secondary);
+}
+
+.qm-select {
+  cursor: pointer;
+  appearance: auto;
+}
+
 /* Two Columns Full Width Grid (Step 3: Config & Preview) */
 .syl-full-grid {
   display: grid;
-  grid-template-columns: 480px 1fr;
+  grid-template-columns: 460px 1fr;
   gap: 1.5rem;
   align-items: start;
   width: 100%;

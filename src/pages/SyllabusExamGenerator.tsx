@@ -102,6 +102,8 @@ export default function SyllabusExamGenerator() {
 
   // Tiến trình phân tích bóc tách cây giáo trình
   const [analyzeProgressText, setAnalyzeProgressText] = useState('Đang khởi động phân tích cấu trúc giáo trình...');
+  // Tiến trình sinh câu hỏi đề thi
+  const [examProgressText, setExamProgressText] = useState('Đang khởi tạo đề thi với Google Gemini AI...');
 
   const handleTestApiKey = async () => {
     setIsTestingKey(true);
@@ -446,6 +448,23 @@ export default function SyllabusExamGenerator() {
     }
 
     setIsGeneratingExam(true);
+    setExamProgressText(`Đang kết nối AI để biên soạn đề thi (${examType === 'choice' ? `${choiceCount} câu trắc nghiệm` : examType === 'essay' ? `${essayCount} câu tự luận` : `${choiceCount} TN + ${essayCount} TL`})...`);
+
+    const progressSteps = [
+      'Đang trích xuất nội dung giáo trình bám sát các chương đã chọn...',
+      'Đang tự động kết nối và xoay vòng các Model (Gemini 3.6 Flash, 2.5 Flash, 2.0 Flash)...',
+      'Đang biên soạn các câu hỏi, phân loại 4 đáp án A, B, C, D và barem điểm chi tiết...',
+      'Đang chuẩn hóa đề thi theo mẫu quy chuẩn sư phạm...',
+      'Gần hoàn tất, đang kết xuất tờ đề thi...'
+    ];
+    let stepIdx = 0;
+    const examTimer = setInterval(() => {
+      if (stepIdx < progressSteps.length) {
+        setExamProgressText(progressSteps[stepIdx]);
+        stepIdx++;
+      }
+    }, 2800);
+
     try {
       const res = await fetch('/api/quiz-api?action=generate-syllabus-quiz', {
         method: 'POST',
@@ -470,11 +489,13 @@ export default function SyllabusExamGenerator() {
       setModelUsed(data.modelUsed || 'Gemini');
       showToast(`AI (${data.modelUsed}) đã soạn thành công đề thi với ${data.questions.length} câu hỏi!`, 'success');
     } catch (err: any) {
-      showAlert(err.message || 'Không thể tạo đề thi', 'Lỗi sinh đề');
-      if ((err.message || '').includes('Google Gemini API Key')) {
+      const msg = err.message || 'Không thể tạo đề thi';
+      showAlert(msg, 'Lỗi biên soạn đề thi AI');
+      if (msg.includes('Google Gemini API Key') || msg.includes('API Key') || msg.includes('hạn mức')) {
         setShowKeySetting(true);
       }
     } finally {
+      clearInterval(examTimer);
       setIsGeneratingExam(false);
     }
   };
@@ -1201,11 +1222,43 @@ export default function SyllabusExamGenerator() {
             </div>
 
             {/* Vùng hiển thị tờ đề thi */}
-            {generatedQuestions.length === 0 ? (
+            {isGeneratingExam ? (
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '5rem 2rem',
+                textAlign: 'center',
+                flex: 1
+              }}>
+                <div style={{
+                  width: '68px',
+                  height: '68px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.15))',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '1.25rem'
+                }}>
+                  <Loader2 size={36} color="var(--primary)" className="spin" />
+                </div>
+                <div style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+                  Đang biên soạn bộ đề kiểm tra...
+                </div>
+                <div style={{ fontSize: '0.92rem', color: 'var(--primary)', fontWeight: 600, maxWidth: '520px', lineHeight: 1.5 }}>
+                  {examProgressText}
+                </div>
+                <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: '0.75rem', maxWidth: '480px' }}>
+                  💡 Hệ thống tự động sử dụng Gemini API Key và xoay vòng các model mới nhất. Đề thi sẽ tự động xuất hiện ngay bên dưới khi hoàn tất.
+                </div>
+              </div>
+            ) : generatedQuestions.length === 0 ? (
               <div className="syl-exam-empty">
                 <FileText size={56} />
                 <div style={{ fontWeight: 600, fontSize: '1.05rem', marginBottom: '0.35rem' }}>
-                  {isGeneratingExam ? 'AI đang tổng hợp kiến thức và soạn đề thi...' : 'Đề thi sẽ hiển thị tại đây sau khi AI xử lý xong...'}
+                  Đề thi sẽ hiển thị tại đây sau khi AI xử lý xong...
                 </div>
                 <div style={{ fontSize: '0.85rem' }}>
                   Hãy tick chọn phạm vi kiến thức ở cột trái và bấm nút "Bắt đầu tạo đề kiểm tra".
