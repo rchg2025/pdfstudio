@@ -15,7 +15,11 @@ import {
   ChevronDown,
   Settings,
   PlusCircle,
-  Loader2
+  Loader2,
+  Check,
+  AlertCircle,
+  Key,
+  RefreshCw
 } from 'lucide-react';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -93,6 +97,45 @@ export default function SyllabusExamGenerator() {
     return localStorage.getItem('rchg_gemini_api_key') || '';
   });
   const [showKeySetting, setShowKeySetting] = useState(false);
+  const [isTestingKey, setIsTestingKey] = useState(false);
+  const [keyTestStatus, setKeyTestStatus] = useState<{ success?: boolean; message?: string } | null>(null);
+
+  // Tiến trình phân tích bóc tách cây giáo trình
+  const [analyzeProgressText, setAnalyzeProgressText] = useState('Đang khởi động phân tích cấu trúc giáo trình...');
+
+  const handleTestApiKey = async () => {
+    setIsTestingKey(true);
+    setKeyTestStatus(null);
+    try {
+      const res = await fetch('/api/quiz-api?action=test-gemini', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey: customApiKey.trim() || undefined })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setKeyTestStatus({
+          success: true,
+          message: data.message || `Kết nối thành công với model ${data.model}!`
+        });
+        showToast(data.message || 'Kết nối Gemini API thành công!', 'success');
+      } else {
+        setKeyTestStatus({
+          success: false,
+          message: data.error || 'API Key không hợp lệ hoặc vượt hạn mức.'
+        });
+        showAlert(data.error || 'API Key không hợp lệ hoặc vượt hạn mức.', 'Kiểm tra thất bại');
+      }
+    } catch (e: any) {
+      setKeyTestStatus({
+        success: false,
+        message: e.message || 'Lỗi mạng khi kiểm tra API Key.'
+      });
+      showAlert(e.message || 'Lỗi mạng khi kiểm tra API Key.', 'Lỗi kết nối');
+    } finally {
+      setIsTestingKey(false);
+    }
+  };
 
   // Quét toàn bộ ID của các node trong cây
   const getAllNodeIds = (nodes: TreeNode[]): string[] => {
@@ -249,6 +292,22 @@ export default function SyllabusExamGenerator() {
     }
 
     setIsExtractingTree(true);
+    setAnalyzeProgressText('Đang gửi nội dung tài liệu tới Google Gemini AI...');
+
+    const progressSteps = [
+      'Đang trích xuất cấu trúc đề mục, các chương, bài học và mục con...',
+      'Đang tự động xoay vòng qua các Model (3.6 Flash, 2.5 Flash, 2.0 Flash, 1.5 Flash)...',
+      'Đang đối soát định dạng cây phân cấp JSON chuẩn...',
+      'Gần hoàn tất, đang chuẩn bị cây đề mục kiến thức...'
+    ];
+    let stepIndex = 0;
+    const progressTimer = setInterval(() => {
+      if (stepIndex < progressSteps.length) {
+        setAnalyzeProgressText(progressSteps[stepIndex]);
+        stepIndex++;
+      }
+    }, 2500);
+
     try {
       const res = await fetch('/api/quiz-api?action=extract-syllabus-tree', {
         method: 'POST',
@@ -274,13 +333,15 @@ export default function SyllabusExamGenerator() {
       setExpandedNodeIds(new Set(allIds));
       setSelectAll(true);
       setCurrentStep(3); // Chuyển thẳng sang Bước 3 hiển thị giao diện 2 cột như ảnh của người dùng!
-      showToast('Đã phân tích xong mục lục giáo trình! Mời bạn cấu hình và chọn phạm vi đề thi.', 'success');
+      showToast(`Đã phân tích xong mục lục giáo trình bằng model ${data.modelUsed || 'Gemini'}!`, 'success');
     } catch (err: any) {
-      showAlert(err.message || 'Không thể phân tích mục lục giáo trình', 'Lỗi phân tích');
-      if ((err.message || '').includes('Google Gemini API Key')) {
+      const msg = err.message || 'Không thể phân tích mục lục giáo trình';
+      showAlert(msg, 'Lỗi phân tích đề mục');
+      if (msg.includes('Google Gemini API Key') || msg.includes('API Key') || msg.includes('hạn mức')) {
         setShowKeySetting(true);
       }
     } finally {
+      clearInterval(progressTimer);
       setIsExtractingTree(false);
     }
   };
@@ -748,24 +809,143 @@ export default function SyllabusExamGenerator() {
             </button>
           </div>
 
+          {/* Banner Thông báo tiến trình khi AI đang phân tích */}
+          {isExtractingTree && (
+            <div style={{
+              marginTop: '1.25rem',
+              padding: '1rem 1.25rem',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(124, 58, 237, 0.08))',
+              border: '1.5px solid rgba(99, 102, 241, 0.3)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '1rem'
+            }}>
+              <div style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '50%',
+                background: 'rgba(99, 102, 241, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Loader2 size={24} color="var(--primary)" className="spin" />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.95rem' }}>
+                  Hệ thống đang phân tích cây mục lục giáo trình...
+                </div>
+                <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                  {analyzeProgressText}
+                </div>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                  💡 Vui lòng giữ cửa sổ trình duyệt, quá trình bóc tách chương/mục tự động mất khoảng 5 - 15 giây tùy độ dài tài liệu.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Cấu hình Gemini Key */}
           {showKeySetting && (
-            <div style={{ marginTop: '1rem', background: 'var(--bg-primary)', padding: '0.85rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
-              <label className="qm-label" style={{ fontSize: '0.82rem' }}>
-                Google Gemini API Key (Để trống sẽ sử dụng Key hệ thống của Quản trị viên):
-              </label>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <input
-                  type="password"
-                  className="qm-input"
-                  placeholder="AIzaSy..."
-                  value={customApiKey}
-                  onChange={(e) => {
-                    setCustomApiKey(e.target.value);
-                    localStorage.setItem('rchg_gemini_api_key', e.target.value);
+            <div style={{
+              marginTop: '1.25rem',
+              background: 'var(--bg-secondary)',
+              padding: '1.15rem 1.25rem',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border)',
+              boxShadow: 'var(--shadow-sm)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <label className="qm-label" style={{ fontSize: '0.85rem', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Key size={14} color="var(--primary)" /> Tùy chỉnh Google Gemini API Key cá nhân:
+                </label>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                  (Để trống sẽ dùng Key hệ thống mặc định của Quản trị viên)
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', flex: '1 1 320px' }}>
+                  <input
+                    type="password"
+                    className="qm-input"
+                    placeholder="AIzaSy... hoặc dán API Key của bạn"
+                    value={customApiKey}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCustomApiKey(val);
+                      localStorage.setItem('rchg_gemini_api_key', val);
+                      setKeyTestStatus(null);
+                    }}
+                    style={{ fontSize: '0.88rem', width: '100%', paddingRight: '2.5rem' }}
+                  />
+                  {customApiKey && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCustomApiKey('');
+                        localStorage.removeItem('rchg_gemini_api_key');
+                        setKeyTestStatus(null);
+                      }}
+                      style={{
+                        position: 'absolute',
+                        right: '8px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        fontSize: '0.8rem'
+                      }}
+                      title="Xóa key cá nhân"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={handleTestApiKey}
+                  disabled={isTestingKey}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.35rem',
+                    fontSize: '0.82rem',
+                    whiteSpace: 'nowrap'
                   }}
-                  style={{ fontSize: '0.85rem' }}
-                />
+                >
+                  {isTestingKey ? <Loader2 size={14} className="spin" /> : <RefreshCw size={14} />}
+                  {isTestingKey ? 'Đang kiểm tra...' : 'Kiểm Tra Key'}
+                </button>
+              </div>
+
+              {keyTestStatus && (
+                <div style={{
+                  marginTop: '0.65rem',
+                  padding: '0.5rem 0.75rem',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '0.82rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem',
+                  background: keyTestStatus.success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                  color: keyTestStatus.success ? '#059669' : '#dc2626',
+                  border: `1px solid ${keyTestStatus.success ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`
+                }}>
+                  {keyTestStatus.success ? <Check size={15} /> : <AlertCircle size={15} />}
+                  <span>{keyTestStatus.message}</span>
+                </div>
+              )}
+
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.6rem', lineHeight: 1.5 }}>
+                • Lấy API Key miễn phí tại: <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Google AI Studio (aistudio.google.com)</a>.<br />
+                • Hệ thống tự động phát hiện và luân chuyển các Model mới nhất (Gemini 3.6 Flash, 2.5 Flash, 2.0 Flash, 1.5 Flash...) để đảm bảo luôn tạo được đề thi thành công.
               </div>
             </div>
           )}

@@ -746,6 +746,8 @@ Quy tắc:
 
       let parsedTree = null;
       let usedModel = '';
+      const attemptErrors: string[] = [];
+
       for (const m of BASE_MODELS) {
         try {
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
@@ -757,7 +759,20 @@ Quy tắc:
               generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
             })
           });
-          if (!gRes.ok) continue;
+
+          if (!gRes.ok) {
+            const errText = await gRes.text();
+            let parsedMsg = '';
+            try {
+              const j = JSON.parse(errText);
+              parsedMsg = j.error?.message || j.message || errText;
+            } catch {
+              parsedMsg = errText;
+            }
+            attemptErrors.push(`[${m} - HTTP ${gRes.status}]: ${parsedMsg.slice(0, 180)}`);
+            continue;
+          }
+
           const data = await gRes.json();
           const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
           const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
@@ -772,14 +787,20 @@ Quy tắc:
             parsedTree = parsed;
             usedModel = m;
             break;
+          } else {
+            attemptErrors.push(`[${m}]: Trả về cấu trúc JSON không nhận diện được danh sách chương/mục`);
           }
-        } catch (e) {
+        } catch (e: any) {
+          attemptErrors.push(`[${m}]: ${e.message || 'Lỗi kết nối'}`);
           console.warn(`Lỗi model ${m} khi trích xuất cây giáo trình:`, e);
         }
       }
 
-      if (!parsedTree) {
-        return res.status(400).json({ error: 'Không thể trích xuất mục lục giáo trình từ tài liệu này. Vui lòng kiểm tra nội dung hoặc API Key.' });
+      if (!parsedTree || parsedTree.length === 0) {
+        const errorDetail = attemptErrors[0] || 'Lỗi kết nối hoặc tài liệu không có văn bản phù hợp.';
+        return res.status(400).json({ 
+          error: `Không thể phân tích mục lục giáo trình bằng AI (${errorDetail}). Vui lòng kiểm tra lại Gemini API Key hoặc thử đổi nguồn tài liệu.` 
+        });
       }
 
       return res.status(200).json({ success: true, tree: parsedTree, modelUsed: usedModel });
