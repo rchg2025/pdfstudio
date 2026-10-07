@@ -88,7 +88,7 @@ export default function SyllabusExamGenerator() {
   const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(90);
   const [difficulty, setDifficulty] = useState<'medium' | 'easy' | 'hard' | 'mixed'>('medium');
   const [examSubject, setExamSubject] = useState<string>('Công nghệ thông tin');
-  const [schoolName, setSchoolName] = useState<string>('BỘ GIÁO DỤC VÀ ĐÀO TẠO');
+  const [schoolName, setSchoolName] = useState<string>('TRƯỜNG CAO ĐẲNG BÁCH KHOA NAM SÀI GÒN');
   const [departmentName, setDepartmentName] = useState<string>('KHOA CÔNG NGHỆ THÔNG TIN');
 
   // Đề thi được AI sinh ra
@@ -672,18 +672,19 @@ export default function SyllabusExamGenerator() {
     }
 
     const confirm = window.confirm(
-      `Bạn có muốn tạo ngay bộ đề thi mới "${sourceTitle || 'Bộ đề thi mới'}" vào hệ thống Quản lý thi trắc nghiệm không?`
+      `Bạn có muốn chuyển bộ đề thi "${examSubject || sourceTitle || 'Bộ đề thi mới'}" vào hệ thống Quản lý thi trắc nghiệm để mở phòng thi không?`
     );
     if (!confirm) return;
 
     const newQuizId = `qz-${Date.now()}`;
     const newQuizCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const quizTitle = examSubject.trim() ? `Đề kiểm tra: ${examSubject.trim()}` : (sourceTitle ? `Đề thi: ${sourceTitle}` : 'Đề thi tạo từ Giáo trình');
 
     const newQuiz: QuizPackage = {
       id: newQuizId,
       userId: user?.id,
-      title: sourceTitle ? `Đề thi: ${sourceTitle}` : 'Đề thi tạo từ Giáo trình',
-      subject: examSubject || 'Chung',
+      title: quizTitle,
+      subject: examSubject || 'Công nghệ thông tin',
       description: `Bộ đề sinh tự động từ giáo trình bám sát ${getSelectedNodeTitles(syllabusTree, selectedNodeIds).length} chuyên đề mục lục.`,
       code: newQuizCode,
       isOpen: true,
@@ -716,26 +717,32 @@ export default function SyllabusExamGenerator() {
     };
 
     try {
-      // 1. Lưu vào Database backend
-      await fetch('/api/quiz-api?action=save-package', {
+      // 1. Lưu vào Database backend bằng action save-quiz
+      const res = await fetch('/api/quiz-api?action=save-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newQuiz)
       });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data.error || 'Lỗi khi lưu bộ đề vào hệ thống.');
+      }
 
-      // 2. Lưu vào LocalStorage
+      // 2. Lưu vào LocalStorage đồng bộ cho user và set active quiz
       if (user) {
         try {
           const currentLocal = localStorage.getItem(`rchg_quiz_packages_${user.id}`);
-          const parsed = currentLocal ? JSON.parse(currentLocal) : [];
-          localStorage.setItem(`rchg_quiz_packages_${user.id}`, JSON.stringify([newQuiz, ...parsed]));
+          const parsed: QuizPackage[] = currentLocal ? JSON.parse(currentLocal) : [];
+          const updated = [newQuiz, ...parsed.filter(q => q.id !== newQuiz.id)];
+          localStorage.setItem(`rchg_quiz_packages_${user.id}`, JSON.stringify(updated));
+          localStorage.setItem(`rchg_active_quiz_id_${user.id}`, newQuiz.id);
         } catch {}
       }
 
-      showToast(`Đã thêm bộ đề thi (Mã: #${newQuizCode}) vào Quản lý thi trắc nghiệm! Đang chuyển hướng...`, 'success');
+      showToast(`Đã thêm bộ đề thi "${quizTitle}" (Mã: #${newQuizCode}) vào Quản lý thi trắc nghiệm! Đang chuyển hướng...`, 'success');
       setTimeout(() => {
-        navigate('/quan-ly-thi-trac-nghiem');
-      }, 1200);
+        navigate(`/quan-ly-thi-trac-nghiem?quizId=${newQuiz.id}`);
+      }, 1000);
     } catch (err: any) {
       showAlert('Lỗi khi lưu bộ đề: ' + err.message, 'Lỗi');
     }

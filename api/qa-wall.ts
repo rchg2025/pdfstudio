@@ -377,7 +377,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     // 7. LƯU / CẬP NHẬT BỘ ĐỀ QUIZ
-    if (req.method === 'POST' && action === 'save-quiz') {
+    if (req.method === 'POST' && (action === 'save-quiz' || action === 'save-package')) {
       let body = req.body;
       if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { body = {}; }

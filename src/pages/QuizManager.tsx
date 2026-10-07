@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   GraduationCap, 
   Plus, 
@@ -167,6 +167,8 @@ export default function QuizManager() {
   const { user, token, isExpired } = useAuth();
   const { showToast } = useNotification();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const queryQuizId = searchParams.get('quizId');
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
 
   // Storage key riêng biệt cho từng người dùng
@@ -186,6 +188,11 @@ export default function QuizManager() {
   });
 
   const [activeQuizId, setActiveQuizId] = useState<string>(() => {
+    if (queryQuizId) return queryQuizId;
+    if (user) {
+      const savedActive = localStorage.getItem(`rchg_active_quiz_id_${user.id}`);
+      if (savedActive) return savedActive;
+    }
     return quizzes[0]?.id || DEFAULT_QUIZ.id;
   });
   const [activeTab, setActiveTab] = useState<'quizzes' | 'questions' | 'settings' | 'submissions'>('quizzes');
@@ -349,6 +356,9 @@ export default function QuizManager() {
             if (data.quizzes.length > 0) {
               setQuizzes(data.quizzes);
               setActiveQuizId(prev => {
+                if (queryQuizId && data.quizzes.some((q: any) => q.id === queryQuizId)) {
+                  return queryQuizId;
+                }
                 const exists = data.quizzes.some((q: any) => q.id === prev);
                 return exists ? prev : data.quizzes[0].id;
               });
