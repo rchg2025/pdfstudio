@@ -73,8 +73,8 @@ export function generateExamWordDoc(
       const opts = q.options && q.options.length > 0 ? q.options : ['A', 'B', 'C', 'D'];
 
       bodyHtml += `
-        <div style="margin-bottom:12px;font-size:12pt;line-height:1.4;">
-          <p style="margin:0 0 4px 0;">
+        <div class="question question-choice" data-question="${qNum}" data-type="choice" style="margin-bottom:12px;font-size:12pt;line-height:1.4;">
+          <p class="question-text" style="margin:0 0 4px 0;">
             <strong>Câu ${qNum}:</strong> ${escapeXml(q.question)}
             ${q.points ? `<span style="font-size:10pt;color:#64748b;"> (${q.points} điểm)</span>` : ''}
           </p>
@@ -92,12 +92,12 @@ export function generateExamWordDoc(
       const isLongOptions = opts.some(o => o.length > 35);
       if (isLongOptions) {
         // Mỗi phương án 1 dòng
-        bodyHtml += `<table style="width:100%;border-collapse:collapse;margin:4px 0;">`;
+        bodyHtml += `<table class="options-table" style="width:100%;border-collapse:collapse;margin:4px 0;">`;
         opts.forEach((opt, oIdx) => {
           const char = String.fromCharCode(65 + oIdx);
           bodyHtml += `
             <tr>
-              <td style="padding:2px 8px;vertical-align:top;width:100%;">
+              <td class="option-cell" style="padding:2px 8px;vertical-align:top;width:100%;">
                 <strong>${char}.</strong> ${escapeXml(opt)}
               </td>
             </tr>
@@ -106,11 +106,11 @@ export function generateExamWordDoc(
         bodyHtml += `</table>`;
       } else {
         // 2 cột / dòng (hoặc 4 cột)
-        bodyHtml += `<table style="width:100%;border-collapse:collapse;margin:4px 0;"><tr>`;
+        bodyHtml += `<table class="options-table" style="width:100%;border-collapse:collapse;margin:4px 0;"><tr>`;
         opts.forEach((opt, oIdx) => {
           const char = String.fromCharCode(65 + oIdx);
           bodyHtml += `
-            <td style="padding:2px 6px;vertical-align:top;width:25%;">
+            <td class="option-cell" style="padding:2px 6px;vertical-align:top;width:25%;">
               <strong>${char}.</strong> ${escapeXml(opt)}
             </td>
           `;
@@ -138,8 +138,8 @@ export function generateExamWordDoc(
       const typeLabel = q.type === 'essay' ? 'Tự luận' : (q.type === 'matching' ? 'Nối cặp' : 'Điền khuyết');
 
       bodyHtml += `
-        <div style="margin-bottom:14px;font-size:12pt;line-height:1.5;">
-          <p style="margin:0 0 4px 0;">
+        <div class="question question-${q.type}" data-question="${qNum}" data-type="${q.type}" style="margin-bottom:14px;font-size:12pt;line-height:1.5;">
+          <p class="question-text" style="margin:0 0 4px 0;">
             <strong>Câu ${qNum} (${typeLabel}):</strong> ${escapeXml(q.question)}
             ${q.points ? `<span style="font-size:10pt;color:#64748b;"> (${q.points} điểm)</span>` : ''}
           </p>
@@ -207,7 +207,7 @@ export function generateExamWordDoc(
           (Mã đề: ${examCode} - Dành cho Giảng viên / Cán bộ chấm thi)
         </p>
 
-        <table style="width:100%;border-collapse:collapse;margin:10px auto;border:1px solid #000;text-align:center;font-size:11pt;">
+        <table class="answers-table" style="width:100%;border-collapse:collapse;margin:10px auto;border:1px solid #000;text-align:center;font-size:11pt;">
           <thead>
             <tr style="background-color:#e2e8f0;font-weight:bold;">
     `;
@@ -267,7 +267,7 @@ export function generateExamWordDoc(
   // Hướng dẫn giải chi tiết
   if (includeExplanations && questions.some(q => q.explanation || q.correctAnswer)) {
     bodyHtml += `
-      <div style="margin-top:20px;">
+      <div class="explanations-section" style="margin-top:20px;">
         <h4 style="font-size:12pt;font-weight:bold;color:#1e3a8a;margin-bottom:8px;">
           HƯỚNG DẪN CHẤM & LỜI GIẢI CHI TIẾT:
         </h4>
@@ -276,7 +276,7 @@ export function generateExamWordDoc(
     questions.forEach((q, idx) => {
       if (q.explanation || q.type !== 'choice') {
         bodyHtml += `
-          <div style="margin-bottom:8px;font-size:11pt;line-height:1.4;">
+          <div class="explanation-item" data-question="${idx + 1}" style="margin-bottom:8px;font-size:11pt;line-height:1.4;">
             <strong>Câu ${idx + 1}:</strong> 
             ${q.correctAnswer ? `Đáp án đúng: <strong style="color:#b91c1c;">${escapeXml(q.correctAnswer)}</strong>. ` : ''}
             ${q.explanation ? `<em>${escapeXml(q.explanation)}</em>` : ''}
