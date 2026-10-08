@@ -16,10 +16,11 @@ interface QuizStop {
 }
 
 interface PlayerConfig {
-  src: string;
-  type: 'youtube' | 'canva' | 'drive' | 'generic';
-  stops: QuizStop[];
+  src?: string;
+  type?: 'youtube' | 'canva' | 'drive' | 'generic' | 'html';
+  stops?: QuizStop[];
   title?: string;
+  html?: string;
 }
 
 export default function EmbedPlayer() {
@@ -90,8 +91,17 @@ export default function EmbedPlayer() {
       }
 
       const parsed: PlayerConfig = JSON.parse(decodedStr);
-      if (!parsed.src) {
+      if (!parsed.src && !parsed.html) {
         setError('Nguồn nhúng không hợp lệ!');
+        return;
+      }
+      if (parsed.html) {
+        parsed.type = 'html';
+        parsed.stops = parsed.stops || [];
+        setConfig(parsed);
+        setHasStarted(true);
+        setIsPlaying(true);
+        isPlayingRef.current = true;
         return;
       }
       setConfig(parsed);
@@ -343,24 +353,45 @@ export default function EmbedPlayer() {
         overflow: 'hidden',
         background: '#000000'
       }}>
-        <iframe
-          id="player-embed-iframe"
-          src={config.src}
-          title="Interactive Lecture"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            pointerEvents: activeQuiz ? 'none' : 'auto',
-            opacity: activeQuiz ? 0.15 : 1,
-            transition: 'opacity 0.3s ease'
-          }}
-          allowFullScreen
-          allow="fullscreen; autoplay; encrypted-media"
-        />
+        {config.html ? (
+          <iframe
+            id="player-embed-iframe"
+            srcDoc={config.html}
+            title={config.title || "Interactive Lecture"}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              margin: 0,
+              padding: 0,
+              background: '#ffffff'
+            }}
+            allowFullScreen
+            allow="fullscreen; autoplay; encrypted-media"
+          />
+        ) : (
+          <iframe
+            id="player-embed-iframe"
+            src={config.src}
+            title="Interactive Lecture"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              pointerEvents: activeQuiz ? 'none' : 'auto',
+              opacity: activeQuiz ? 0.15 : 1,
+              transition: 'opacity 0.3s ease'
+            }}
+            allowFullScreen
+            allow="fullscreen; autoplay; encrypted-media"
+          />
+        )}
 
         {/* Lớp phủ Bắt đầu bài giảng cho Canva / Drive / Generic */}
         {!hasStarted && config?.type !== 'youtube' && (
@@ -588,77 +619,79 @@ export default function EmbedPlayer() {
       </div>
 
       {/* Thanh điều khiển tương tác phía dưới */}
-      <div style={{
-        height: '52px',
-        background: '#0f172a',
-        borderTop: '1px solid #1e293b',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 16px',
-        boxSizing: 'border-box'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button
-            type="button"
-            onClick={handleTogglePlay}
-            disabled={!!activeQuiz}
-            style={{
+      {(!config.html || (config.stops && config.stops.length > 0)) && (
+        <div style={{
+          height: '52px',
+          background: '#0f172a',
+          borderTop: '1px solid #1e293b',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 16px',
+          boxSizing: 'border-box'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button
+              type="button"
+              onClick={handleTogglePlay}
+              disabled={!!activeQuiz}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: isPlaying ? '#ef4444' : '#2563eb',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '6px 14px',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: activeQuiz ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+              {isPlaying ? 'Tạm Dừng' : 'Tiếp Tục'}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleReset}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                background: '#1e293b',
+                color: '#94a3b8',
+                border: '1px solid #334155',
+                borderRadius: '6px',
+                padding: '6px 12px',
+                fontSize: '13px',
+                cursor: 'pointer'
+              }}
+            >
+              <RotateCcw size={14} />
+              <span>Xem lại</span>
+            </button>
+
+            <div style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              background: isPlaying ? '#ef4444' : '#2563eb',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '6px',
-              padding: '6px 14px',
+              fontSize: '14px',
+              color: '#e2e8f0',
               fontWeight: 700,
-              fontSize: '13px',
-              cursor: activeQuiz ? 'not-allowed' : 'pointer'
-            }}
-          >
-            {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-            {isPlaying ? 'Tạm Dừng' : 'Tiếp Tục'}
-          </button>
+              marginLeft: '8px'
+            }}>
+              <Clock size={16} style={{ color: '#38bdf8' }} />
+              <span>{formatTime(currentTime)}</span>
+            </div>
+          </div>
 
-          <button
-            type="button"
-            onClick={handleReset}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: '#1e293b',
-              color: '#94a3b8',
-              border: '1px solid #334155',
-              borderRadius: '6px',
-              padding: '6px 12px',
-              fontSize: '13px',
-              cursor: 'pointer'
-            }}
-          >
-            <RotateCcw size={14} />
-            <span>Xem lại</span>
-          </button>
-
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '14px',
-            color: '#e2e8f0',
-            fontWeight: 700,
-            marginLeft: '8px'
-          }}>
-            <Clock size={16} style={{ color: '#38bdf8' }} />
-            <span>{formatTime(currentTime)}</span>
+          <div style={{ fontSize: '13px', color: '#94a3b8' }}>
+            <span>Điểm dừng: <strong>{config.stops ? config.stops.length : 0}</strong> câu hỏi</span>
           </div>
         </div>
-
-        <div style={{ fontSize: '13px', color: '#94a3b8' }}>
-          <span>Điểm dừng: <strong>{config.stops.length}</strong> câu hỏi</span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -272,6 +272,8 @@ export default function QuizExam() {
       triggerViolation('bấm nút quay lại (Back) của trình duyệt');
     };
 
+    const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+
     // 3. Bắt sự kiện chuyển tab hoặc ẩn trình duyệt (visibilitychange)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
@@ -281,6 +283,15 @@ export default function QuizExam() {
 
     // 4. Bắt sự kiện mất focus cửa sổ khi chuyển sang app khác (Zalo, Word, trình duyệt khác, v.v.)
     const handleWindowBlur = () => {
+      // Khi đang nhúng trong iframe LMS, nếu sinh viên click vào khung LMS bên ngoài iframe thì không tính là rời app
+      if (isInIframe) {
+        setTimeout(() => {
+          if (document.visibilityState === 'hidden') {
+            triggerViolation('chuyển sang tab khác hoặc thu nhỏ trình duyệt');
+          }
+        }, 300);
+        return;
+      }
       // Đợi nhẹ để tránh false positive từ các dropdown native
       setTimeout(() => {
         if (document.visibilityState === 'hidden' || !document.hasFocus()) {
@@ -291,6 +302,7 @@ export default function QuizExam() {
 
     // 5. Kiểm tra thoát chế độ toàn màn hình
     const handleFullscreenChange = () => {
+      if (isInIframe) return; // Không bắt buộc toàn màn hình đối với sinh viên thi qua khung nhúng Iframe trên LMS
       const isFull = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(isFull);
       if (!isFull) {

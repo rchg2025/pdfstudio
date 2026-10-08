@@ -47,7 +47,9 @@ import {
   Crown,
   Calendar,
   Filter,
-  BookOpen
+  BookOpen,
+  Globe,
+  FileCode
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
@@ -261,6 +263,7 @@ export default function QuizManager() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedIframe, setCopiedIframe] = useState(false);
+  const [exportMode, setExportMode] = useState<'lms-iframe' | 'standard' | 'html5'>('lms-iframe');
 
   // Xem trước câu hỏi và giao diện thi
   const [showPreviewModal, setShowPreviewModal] = useState(false);
@@ -1026,8 +1029,37 @@ export default function QuizManager() {
     showToast('Đã tải xuống file HTML Đề Thi Độc Lập!', 'success');
   };
 
-  // Tạo mã Iframe nhúng LMS
-  const generateIframeCode = () => {
+  // 1. Tạo mã Iframe nhúng LMS khuyên dùng (100% không bị LMS chặn script)
+  const generateLmsIframeCode = () => {
+    return `<!-- BẮT ĐẦU: KHUNG NHÚNG BÀI THI TRẮC NGHIỆM CHO LMS / MOODLE / CANVAS (CHUẨN 16:9) -->
+<div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;padding-top:0;margin:15px auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06);">
+  <iframe 
+    src="${window.location.origin}/phong-thi/${activeQuiz.id}" 
+    style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;background:#f8fafc;" 
+    width="100%" 
+    height="100%" 
+    allow="fullscreen; autoplay" 
+    allowfullscreen="allowfullscreen">
+  </iframe>
+</div>
+<!-- KẾT THÚC: KHUNG NHÚNG BÀI THI TRẮC NGHIỆM -->`;
+  };
+
+  // 2. Mã HTML Thường (Chuẩn thẻ Iframe đơn giản)
+  const generateStandardHtmlCode = () => {
+    return `<!-- MÃ NHÚNG BÀI THI TRẮC NGHIỆM (CHUẨN TIÊU CHUẨN 16:9) -->
+<iframe 
+  src="${window.location.origin}/phong-thi/${activeQuiz.id}" 
+  width="100%" 
+  height="650" 
+  style="border:1px solid #e2e8f0;border-radius:12px;width:100%;aspect-ratio:16/9;height:auto;" 
+  allow="fullscreen; autoplay" 
+  allowfullscreen="allowfullscreen">
+</iframe>`;
+  };
+
+  // 3. Mã HTML5 Nâng Cao (Đóng gói Base64 độc lập)
+  const generateHtml5AdvancedCode = () => {
     const html = generateStandaloneQuizHtml(activeQuiz);
     const utf8Bytes = new TextEncoder().encode(html);
     let binary = '';
@@ -1036,18 +1068,24 @@ export default function QuizManager() {
     }
     const b64 = btoa(binary);
 
-    return `<!-- MA NHUNG BAI THI TRAC NGHIEM CHO LMS / CANVAS / MOODLE (CHUAN 16:9) -->
+    return `<!-- MA NHUNG BAI THI TRAC NGHIEM HTML5 DOC LAP (CHUAN 16:9) -->
 <div style="position:relative;width:100%;height:auto;aspect-ratio:16/9;padding-top:0;margin:15px auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:14px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,0.06);">
   <iframe 
     src="data:text/html;charset=utf-8;base64,${b64}" 
     style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;margin:0;padding:0;background:#f8fafc;" 
-    width="100%"
-    height="100%"
-    allow="fullscreen" 
+    width="100%" 
+    height="100%" 
+    allow="fullscreen; autoplay" 
     allowfullscreen="allowfullscreen">
   </iframe>
 </div>
 <!-- KET THUC MA NHUNG -->`;
+  };
+
+  const getExportedCode = () => {
+    if (exportMode === 'lms-iframe') return generateLmsIframeCode();
+    if (exportMode === 'standard') return generateStandardHtmlCode();
+    return generateHtml5AdvancedCode();
   };
 
   const getDirectExamLink = () => {
@@ -1065,11 +1103,13 @@ export default function QuizManager() {
 
   const handleCopyIframe = async () => {
     try {
-      await navigator.clipboard.writeText(generateIframeCode());
+      await navigator.clipboard.writeText(getExportedCode());
       setCopiedIframe(true);
-      showToast('Đã sao chép mã nhúng Iframe!', 'success');
+      showToast('Đã sao chép mã nhúng vào bộ nhớ tạm!', 'success');
       setTimeout(() => setCopiedIframe(false), 2000);
-    } catch {}
+    } catch {
+      showToast('Không thể sao chép tự động, vui lòng chọn và copy thủ công.', 'warning');
+    }
   };
 
   // Xử lý tệp đề thi Word / HTML / Text
@@ -3213,10 +3253,29 @@ export default function QuizManager() {
       {/* MODAL LẤY MÃ NHÚNG IFRAME & LINK THI */}
       {showExportModal && (
         <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3><Share2 size={18} color="var(--primary)" /> Chia Sẻ & Nhúng Đề Thi: {activeQuiz.title}</h3>
-              <button type="button" className="modal-close-btn" onClick={() => setShowExportModal(false)}>✕</button>
+          <div className="modal-content" style={{ maxWidth: '820px' }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Share2 size={20} color="var(--primary)" />
+                <h3 style={{ margin: 0 }}>Xuất Bài Thi & Mã Nhúng: {activeQuiz.title}</h3>
+              </div>
+              <button 
+                type="button" 
+                className="btn btn-sm"
+                onClick={handleExportHtml}
+                style={{
+                  background: '#10b981',
+                  color: '#ffffff',
+                  border: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontWeight: 700,
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                <Download size={15} /> Tải Tệp HTML Về Máy (.html)
+              </button>
             </div>
             <div className="modal-body">
               {/* Direct link */}
@@ -3225,35 +3284,137 @@ export default function QuizManager() {
                 <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
                   <input type="text" className="qm-input" readOnly value={getDirectExamLink()} />
                   <button type="button" className="btn btn-primary btn-sm" onClick={handleCopyLink}>
-                    {copiedLink ? <Check size={14} /> : <Copy size={14} />} {copiedLink ? 'Đã chép' : 'Sao chép'}
+                    {copiedLink ? <Check size={14} /> : <Copy size={14} />} {copiedLink ? 'Đã chép' : 'Sao chép link'}
                   </button>
                 </div>
               </div>
 
-              {/* LMS Iframe code */}
+              {/* 3 Export Mode Tabs */}
               <div>
-                <label className="qm-label">2. Mã nhúng Iframe cho LMS (Canvas, Moodle, Google Sites...):</label>
+                <label className="qm-label">2. Chọn định dạng mã nhúng phù hợp cho LMS của trường:</label>
+                <div className="export-mode-tabs" style={{ marginTop: '0.5rem' }}>
+                  <button 
+                    type="button" 
+                    className={`export-mode-tab ${exportMode === 'lms-iframe' ? 'active' : ''}`}
+                    onClick={() => {
+                      setExportMode('lms-iframe');
+                      showToast('Đã chọn Mã Iframe LMS (100% Tương thích LMS Nam Sài Gòn & Moodle)!', 'success');
+                    }}
+                  >
+                    <div className="export-mode-tab-title">
+                      <Globe size={18} style={{ flexShrink: 0 }} /> 
+                      <span>Mã Iframe LMS (Khuyên dùng)</span>
+                    </div>
+                    <div className="export-mode-tab-desc">
+                      100% không bị LMS chặn script, chuẩn xác từng câu hỏi
+                    </div>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`export-mode-tab ${exportMode === 'standard' ? 'active' : ''}`}
+                    onClick={() => {
+                      setExportMode('standard');
+                      showToast('Đã chọn mã HTML thường (Tương thích tốt Elearning / LMS / CKEditor)!', 'success');
+                    }}
+                  >
+                    <div className="export-mode-tab-title">
+                      <FileCode size={18} style={{ flexShrink: 0 }} /> 
+                      <span>Mã HTML Thường</span>
+                    </div>
+                    <div className="export-mode-tab-desc">
+                      Chèn mã trực tiếp (cần web cho phép chạy script)
+                    </div>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    className={`export-mode-tab ${exportMode === 'html5' ? 'active' : ''}`}
+                    onClick={() => {
+                      setExportMode('html5');
+                      showToast('Đã chọn mã HTML5 nâng cao!', 'success');
+                    }}
+                  >
+                    <div className="export-mode-tab-title">
+                      <Sparkles size={18} style={{ flexShrink: 0 }} /> 
+                      <span>Mã HTML5 Nâng Cao</span>
+                    </div>
+                    <div className="export-mode-tab-desc">
+                      Giao diện độc lập có hiệu ứng làm mờ
+                    </div>
+                  </button>
+                </div>
+
+                {/* Hướng dẫn dán vào LMS */}
+                <div style={{ background: 'rgba(59, 130, 246, 0.08)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '8px', padding: '0.85rem 1rem', fontSize: '0.84rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
+                  <strong style={{ color: 'var(--primary)', display: 'block', marginBottom: '0.25rem' }}>
+                    💡 Hướng dẫn nhúng vào LMS / Elearning:
+                  </strong>
+                  {exportMode === 'lms-iframe' ? (
+                    <>
+                      1. Chọn <strong>"Mã Iframe LMS (Khuyên dùng)"</strong> và bấm <strong>"Sao Chép Mã"</strong>.<br />
+                      2. Trên trang Cập nhật bài giảng LMS, ở khung soạn thảo nội dung hãy bấm vào nút <strong>Mã nguồn (Source / &lt;&gt;)</strong> trên thanh công cụ.<br />
+                      3. Dán đoạn mã iframe vào rồi bấm <strong>Lưu lại bài giảng</strong>. Vì là iframe độc lập, toàn bộ đề thi, tính giờ và bảng điểm sinh viên sẽ hoạt động trơn tru 100% mà không bị CMS của trường can thiệp xóa code.
+                    </>
+                  ) : (
+                    <>
+                      1. Bấm nút <strong>"Mã HTML Thường"</strong> ở trên và bấm <strong>"Sao Chép Mã"</strong>.<br />
+                      2. Trên trang Cập nhật bài giảng LMS, ở khung soạn thảo nội dung hãy bấm vào nút <strong>Mã nguồn (Source / &lt;&gt;)</strong> trên thanh công cụ.<br />
+                      3. Dán toàn bộ mã đã sao chép vào rồi bấm Lưu lại bài giảng.
+                    </>
+                  )}
+                </div>
+
+                {/* Khung mã nhúng */}
                 <div className="export-result-box">
-                  <div className="export-result-header">
-                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Mã HTML Iframe độc lập tự động chấm điểm & phát nhạc nền</span>
+                  <div className="export-result-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.6rem 1rem', background: '#1e293b', borderTopLeftRadius: '8px', borderTopRightRadius: '8px' }}>
+                    <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                      {exportMode === 'lms-iframe' ? 'Khung nhúng Iframe an toàn tuyệt đối cho LMS (Tỉ lệ 16:9)' : (exportMode === 'standard' ? 'Mã nhúng HTML tiêu chuẩn' : 'Mã HTML5 đóng gói Base64')}
+                    </span>
                     <button 
                       type="button" 
                       className="btn btn-primary btn-xs"
                       onClick={handleCopyIframe}
                       style={{ background: copiedIframe ? '#10b981' : 'var(--primary)' }}
                     >
-                      {copiedIframe ? <Check size={13} /> : <Copy size={13} />} {copiedIframe ? 'Đã chép' : 'Sao chép'}
+                      {copiedIframe ? <Check size={13} /> : <Copy size={13} />} {copiedIframe ? 'Đã sao chép' : 'Sao chép mã'}
                     </button>
                   </div>
-                  <pre className="export-code-block">{generateIframeCode()}</pre>
+                  <pre className="export-code-block" style={{ margin: 0, padding: '1rem', background: '#0f172a', color: '#e2e8f0', fontSize: '0.82rem', maxHeight: '200px', overflow: 'auto', borderBottomLeftRadius: '8px', borderBottomRightRadius: '8px' }}>{getExportedCode()}</pre>
                 </div>
               </div>
             </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowExportModal(false)}>Đóng</button>
-              <button type="button" className="btn btn-primary btn-sm" onClick={() => navigate(`/phong-thi/${activeQuiz.id}`)}>
-                <Play size={14} /> Mở Trang Thi Thử
-              </button>
+            <div className="modal-footer" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <a
+                  href={getDirectExamLink()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn btn-outline btn-sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                >
+                  <ExternalLink size={14} /> Mở thử phòng thi ở tab mới
+                </a>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={handleExportHtml}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#10b981', borderColor: '#10b981' }}
+                >
+                  <Download size={14} /> Tải file HTML (.html)
+                </button>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowExportModal(false)}>Đóng</button>
+                <button 
+                  type="button" 
+                  className="btn btn-primary btn-sm" 
+                  onClick={handleCopyIframe}
+                  style={{ background: copiedIframe ? '#10b981' : 'var(--primary)' }}
+                >
+                  {copiedIframe ? <Check size={14} /> : <Copy size={14} />} {copiedIframe ? 'Đã sao chép' : 'Sao chép mã nhúng'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

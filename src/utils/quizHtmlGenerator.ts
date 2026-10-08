@@ -408,11 +408,11 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
       // Xử lý tự động tách link ảnh nếu nằm trong nội dung câu hỏi
       let qText = q.question || '';
       let qImg = q.imageUrl || '';
-      const urlRegex = /(https?:\/\/[^\s"']+\.(?:png|jpg|jpeg|webp|gif|svg)(?:\?[^\s"']*)?)|(https?:\/\/(?:drive|docs)\.google\.com\/[^\s"']+)/i;
+      const urlRegex = /(https?:\/\/[^\\s"']+\.(?:png|jpg|jpeg|webp|gif|svg)(?:\\?[^\\s"']*)?)|(https?:\/\/(?:drive|docs)\.google\.com\/[^\\s"']+)/i;
       const m = qText.match(urlRegex);
       if (m) {
         if (!qImg) qImg = m[0];
-        qText = qText.replace(m[0], '').replace(/(?:\[?\s*(?:Hình ảnh|Ảnh|Image|Hình minh họa)[:.]?\s*\]?)\s*$/i, '').trim();
+        qText = qText.replace(m[0], '').replace(/(?:\\[?\\s*(?:Hình ảnh|Ảnh|Image|Hình minh họa)[:.]?\\s*\\]?)\\s*$/i, '').trim();
       }
 
       // Hiển thị ảnh câu hỏi ở PHÍA TRÊN TIÊU ĐỀ CÂU HỎI
@@ -431,7 +431,17 @@ export function generateStandaloneQuizHtml(quiz: QuizPackage): string {
           qTitleEl.parentNode.insertBefore(imgWrap, qTitleEl);
         }
         imgWrap.style.display = 'block';
-        imgWrap.innerHTML = '<img src="' + qImg + '" referrerpolicy="no-referrer" style="max-width:100%;max-height:300px;object-fit:contain;border-radius:8px;cursor:pointer;" onclick="window.open(this.src,\'_blank\')" /><div style="font-size:0.78rem;color:#64748b;margin-top:4px;font-weight:500;">🔍 Bấm vào ảnh để xem kích thước lớn</div>';
+        imgWrap.innerHTML = '';
+        const imgEl = document.createElement('img');
+        imgEl.src = qImg;
+        imgEl.setAttribute('referrerpolicy', 'no-referrer');
+        imgEl.style.cssText = 'max-width:100%;max-height:300px;object-fit:contain;border-radius:8px;cursor:pointer;';
+        imgEl.onclick = function() { window.open(qImg, '_blank'); };
+        const hintEl = document.createElement('div');
+        hintEl.style.cssText = 'font-size:0.78rem;color:#64748b;margin-top:4px;font-weight:500;';
+        hintEl.innerText = '🔍 Bấm vào ảnh để xem kích thước lớn';
+        imgWrap.appendChild(imgEl);
+        imgWrap.appendChild(hintEl);
       } else if (imgWrap) {
         imgWrap.style.display = 'none';
       }
