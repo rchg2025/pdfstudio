@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert, Crown, CheckCircle, XCircle, Clock, Check, X } from "lucide-react";
+import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert, Crown, CheckCircle, XCircle, Clock, Check, X, Banknote } from "lucide-react";
 
 
 export default function Admin() {
@@ -538,6 +538,16 @@ export default function Admin() {
 
   const paginatedOrders = filteredOrders.slice((ordersPage - 1) * itemsPerPage, ordersPage * itemsPerPage);
   const totalOrderPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+  // Thống kê doanh thu & đơn hàng
+  const approvedOrders = orders.filter((o: any) => o.status === 'APPROVED');
+  const totalApprovedAmount = approvedOrders.reduce((sum: number, o: any) => sum + (Number(o.amount) || 0), 0);
+
+  const pendingOrders = orders.filter((o: any) => o.status === 'PENDING');
+  const totalPendingAmount = pendingOrders.reduce((sum: number, o: any) => sum + (Number(o.amount) || 0), 0);
+
+  const validOrders = orders.filter((o: any) => o.status !== 'REJECTED');
+  const totalSalesAmount = validOrders.reduce((sum: number, o: any) => sum + (Number(o.amount) || 0), 0);
 
   const filteredUrls = urls.filter((u: any) => {
     const query = urlSearchQuery.toLowerCase();
@@ -1215,6 +1225,123 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* THỐNG KÊ DOANH THU & TỔNG TIỀN ĐÃ BÁN */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                {/* Card 1: Tổng tiền đã duyệt (Doanh thu thực tế) */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(5, 150, 105, 0.03))',
+                  border: '1.5px solid #a7f3d0',
+                  borderRadius: '1rem',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '14px',
+                    background: '#d1fae5',
+                    color: '#059669',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(16, 185, 129, 0.15)'
+                  }}>
+                    <CheckCircle size={26} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Doanh Thu Đã Duyệt
+                    </div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#065f46', lineHeight: 1.2, margin: '0.2rem 0' }}>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalApprovedAmount)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#059669', fontWeight: 500 }}>
+                      {approvedOrders.length} đơn đã kích hoạt thành công
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Tiền đang chờ duyệt */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(234, 179, 8, 0.08), rgba(202, 138, 4, 0.03))',
+                  border: '1.5px solid #fde047',
+                  borderRadius: '1rem',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  boxShadow: '0 2px 8px rgba(234, 179, 8, 0.08)'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '14px',
+                    background: '#fef08a',
+                    color: '#b45309',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(234, 179, 8, 0.15)'
+                  }}>
+                    <Clock size={26} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#a16207', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Tiền Đang Chờ Duyệt
+                    </div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#854d0e', lineHeight: 1.2, margin: '0.2rem 0' }}>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalPendingAmount)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#a16207', fontWeight: 500 }}>
+                      {pendingOrders.length} đơn người dùng vừa bấm xác nhận
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 3: Tổng số tiền đã bán (tất cả đơn người dùng bấm xác nhận CK) */}
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.03))',
+                  border: '1.5px solid #bfdbfe',
+                  borderRadius: '1rem',
+                  padding: '1.25rem 1.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '1rem',
+                  boxShadow: '0 2px 8px rgba(59, 130, 246, 0.08)'
+                }}>
+                  <div style={{
+                    width: '50px',
+                    height: '50px',
+                    borderRadius: '14px',
+                    background: '#dbeafe',
+                    color: '#2563eb',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    boxShadow: '0 2px 6px rgba(37, 99, 235, 0.15)'
+                  }}>
+                    <Banknote size={26} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Tổng Tiền Đã Bán (Đã Xác Nhận CK)
+                    </div>
+                    <div style={{ fontSize: '1.45rem', fontWeight: 800, color: '#1e40af', lineHeight: 1.2, margin: '0.2rem 0' }}>
+                      {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(totalSalesAmount)}
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: '#2563eb', fontWeight: 500 }}>
+                      {validOrders.length} đơn người dùng đã bấm thanh toán
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* BỘ LỌC VÀ TÌM KIẾM ĐƠN HÀNG */}
               <div className="flex flex-col md:flex-row gap-4 mb-6">
                 <input 
@@ -1369,6 +1496,21 @@ export default function Admin() {
                           );
                         })}
                     </tbody>
+                    {paginatedOrders.length > 0 && (
+                      <tfoot>
+                        <tr style={{ background: 'var(--bg-secondary)', borderTop: '2px solid var(--border)', fontWeight: 700 }}>
+                          <td colSpan={3} style={{ padding: '0.85rem 1rem', textAlign: 'right', color: 'var(--text-secondary)' }}>
+                            Tổng tiền hiển thị trang này ({paginatedOrders.length} đơn):
+                          </td>
+                          <td style={{ padding: '0.85rem 1rem', color: '#059669', fontSize: '0.95rem' }}>
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(
+                              paginatedOrders.reduce((sum: number, o: any) => sum + (Number(o.amount) || 0), 0)
+                            )}
+                          </td>
+                          <td colSpan={3} style={{ padding: '0.85rem 1rem' }}></td>
+                        </tr>
+                      </tfoot>
+                    )}
                   </table>
                   {orders.length === 0 && (
                     <div style={{ textAlign: 'center', padding: '2.5rem', color: 'var(--text-secondary)' }}>
