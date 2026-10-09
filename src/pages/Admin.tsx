@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../contexts/NotificationContext';
-import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert, Crown, CheckCircle, XCircle, Clock, Check, X, Banknote } from "lucide-react";
+import { Eye, Edit, Trash2, ExternalLink, UserCheck, UserX, ShieldCheck, ShieldAlert, Crown, CheckCircle, XCircle, Clock, Check, X, Banknote, ChevronLeft, ChevronRight } from "lucide-react";
 
 
 export default function Admin() {
@@ -39,6 +39,7 @@ export default function Admin() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersPerPage, setOrdersPerPage] = useState<number>(10);
   const [orderSearchQuery, setOrderSearchQuery] = useState('');
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
 
@@ -536,8 +537,8 @@ export default function Admin() {
     return matchSearch && matchStatus;
   });
 
-  const paginatedOrders = filteredOrders.slice((ordersPage - 1) * itemsPerPage, ordersPage * itemsPerPage);
-  const totalOrderPages = Math.ceil(filteredOrders.length / itemsPerPage);
+  const paginatedOrders = filteredOrders.slice((ordersPage - 1) * ordersPerPage, ordersPage * ordersPerPage);
+  const totalOrderPages = Math.max(1, Math.ceil(filteredOrders.length / ordersPerPage));
 
   // Thống kê doanh thu & đơn hàng
   const approvedOrders = orders.filter((o: any) => o.status === 'APPROVED');
@@ -1519,24 +1520,130 @@ export default function Admin() {
                   )}
 
                   {/* Pagination Orders */}
-                  {totalOrderPages > 1 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginTop: '1.5rem' }}>
-                      {Array.from({ length: totalOrderPages }).map((_, idx) => (
+                  {filteredOrders.length > 0 && (
+                    <div 
+                      className="flex flex-col sm:flex-row justify-between items-center gap-4"
+                      style={{
+                        marginTop: '1.5rem',
+                        padding: '1.25rem 0.5rem 0.5rem',
+                        borderTop: '1px solid var(--border)',
+                        fontSize: '0.875rem',
+                        color: 'var(--text-secondary)'
+                      }}
+                    >
+                      {/* Left: Summary & Rows per page selector */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap' }}>
+                        <span>
+                          Hiển thị <strong>{(ordersPage - 1) * ordersPerPage + 1}</strong> - <strong>{Math.min(ordersPage * ordersPerPage, filteredOrders.length)}</strong> trên tổng số <strong>{filteredOrders.length}</strong> đơn hàng
+                        </span>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Mỗi trang:</span>
+                          <select 
+                            value={ordersPerPage}
+                            onChange={(e) => {
+                              setOrdersPerPage(Number(e.target.value));
+                              setOrdersPage(1);
+                            }}
+                            style={{
+                              padding: '0.3rem 0.6rem',
+                              borderRadius: '0.4rem',
+                              border: '1px solid var(--border)',
+                              background: 'var(--bg-secondary)',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.82rem',
+                              fontWeight: 600,
+                              cursor: 'pointer'
+                            }}
+                          >
+                            <option value={5}>5 đơn</option>
+                            <option value={10}>10 đơn</option>
+                            <option value={20}>20 đơn</option>
+                            <option value={50}>50 đơn</option>
+                            <option value={100}>100 đơn</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Right: Prev, Page Buttons, Next */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                         <button
-                          key={idx}
-                          onClick={() => setOrdersPage(idx + 1)}
+                          type="button"
+                          disabled={ordersPage <= 1}
+                          onClick={() => setOrdersPage(p => Math.max(1, p - 1))}
                           style={{
-                            padding: '0.5rem 1rem',
+                            padding: '0.45rem 0.85rem',
                             borderRadius: '0.5rem',
                             border: '1px solid var(--border)',
-                            background: ordersPage === idx + 1 ? 'var(--primary)' : 'var(--bg-secondary)',
-                            color: ordersPage === idx + 1 ? '#fff' : 'var(--text-primary)',
-                            cursor: 'pointer'
+                            background: 'var(--bg-secondary)',
+                            color: ordersPage <= 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                            cursor: ordersPage <= 1 ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            opacity: ordersPage <= 1 ? 0.5 : 1,
+                            transition: 'all 0.15s ease'
                           }}
                         >
-                          {idx + 1}
+                          <ChevronLeft size={16} /> <span>Trước</span>
                         </button>
-                      ))}
+
+                        {/* Page Numbers */}
+                        {Array.from({ length: totalOrderPages }).map((_, idx) => {
+                          const pageNum = idx + 1;
+                          const isActive = ordersPage === pageNum;
+                          return (
+                            <button
+                              key={pageNum}
+                              type="button"
+                              onClick={() => setOrdersPage(pageNum)}
+                              style={{
+                                minWidth: '36px',
+                                height: '36px',
+                                padding: '0 0.5rem',
+                                borderRadius: '0.5rem',
+                                border: isActive ? '1px solid var(--primary)' : '1px solid var(--border)',
+                                background: isActive ? 'var(--primary)' : 'var(--bg-secondary)',
+                                color: isActive ? '#ffffff' : 'var(--text-primary)',
+                                fontWeight: 700,
+                                fontSize: '0.85rem',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                transition: 'all 0.15s ease',
+                                boxShadow: isActive ? '0 2px 6px rgba(37, 99, 235, 0.25)' : 'none'
+                              }}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+
+                        <button
+                          type="button"
+                          disabled={ordersPage >= totalOrderPages}
+                          onClick={() => setOrdersPage(p => Math.min(totalOrderPages, p + 1))}
+                          style={{
+                            padding: '0.45rem 0.85rem',
+                            borderRadius: '0.5rem',
+                            border: '1px solid var(--border)',
+                            background: 'var(--bg-secondary)',
+                            color: ordersPage >= totalOrderPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                            cursor: ordersPage >= totalOrderPages ? 'not-allowed' : 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontSize: '0.82rem',
+                            fontWeight: 600,
+                            opacity: ordersPage >= totalOrderPages ? 0.5 : 1,
+                            transition: 'all 0.15s ease'
+                          }}
+                        >
+                          <span>Sau</span> <ChevronRight size={16} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
