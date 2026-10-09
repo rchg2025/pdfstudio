@@ -873,7 +873,7 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
       if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { body = {}; }
       }
-      const { topic, count, difficulty, customApiKey } = body || {};
+      const { topic, count, difficulty, format, customApiKey } = body || {};
       if (!topic || !topic.trim()) {
         return res.status(400).json({ error: 'Chủ đề bài thi không được để trống' });
       }
@@ -899,8 +899,25 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
       const qCount = Number(count) || 5;
       const diffLabel = difficulty === 'easy' ? 'Dễ (Nhận biết cơ bản)' : (difficulty === 'hard' ? 'Khó (Vận dụng nâng cao)' : 'Hỗn hợp các mức Dễ, Trung bình, Khó');
 
-      const prompt = `Bạn là chuyên gia khảo thí sư phạm. Hãy tạo chính xác ${qCount} câu hỏi trắc nghiệm về chủ đề: "${topic.trim()}".
+      let formatInstructions = '';
+      if (format === 'essay_only') {
+        formatInstructions = `Tất cả câu hỏi đều thuộc hình thức TỰ LUẬN (type: "essay").
+Mỗi câu hỏi có nội dung bài tập tự luận yêu cầu thí sinh trả lời sâu hoặc giải quyết vấn đề, kèm tiêu chí/gợi ý chấm điểm chi tiết (correctAnswer) và lời giải thích (explanation). Không cần trường options.`;
+      } else if (format === 'practical_only') {
+        formatInstructions = `Tất cả câu hỏi đều thuộc hình thức BÀI THỰC HÀNH (type: "practical").
+Mỗi câu hỏi có đề bài yêu cầu thí sinh thực hành (viết mã nguồn, thao tác phần mềm, giải case study có nộp file đính kèm), kèm hướng dẫn thực hiện hoặc tiêu chí/code mẫu (correctAnswer) và lời giải thích (explanation). Không cần trường options.`;
+      } else if (format === 'mixed') {
+        formatInstructions = `Đề thi hỗn hợp gồm cả TRẮC NGHIỆM KHÁCH QUAN (type: "choice") và TỰ LUẬN / THỰC HÀNH (type: "essay" hoặc "practical").
+Khoảng 60-70% là câu trắc nghiệm ABCD (có options, correctAnswer, explanation), còn lại 30-40% là câu tự luận / bài thực hành (type "essay" hoặc "practical", có correctAnswer là gợi ý/tiêu chí chấm, không cần options).`;
+      } else {
+        formatInstructions = `Tất cả câu hỏi là trắc nghiệm khách quan ABCD (type: "choice"), có 4 phương án (options), correctAnswer là phương án đúng, kèm explanation.`;
+      }
+
+      const prompt = `Bạn là chuyên gia khảo thí sư phạm. Hãy tạo chính xác ${qCount} câu hỏi về chủ đề: "${topic.trim()}".
 Yêu cầu độ khó: ${diffLabel}.
+Yêu cầu hình thức câu hỏi:
+${formatInstructions}
+
 BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown, không có chữ dẫn \`\`\`json ở đầu cuối):
 [
   {
@@ -908,8 +925,8 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
     "difficulty": "easy",
     "question": "Nội dung câu hỏi...",
     "options": ["Phương án A", "Phương án B", "Phương án C", "Phương án D"],
-    "correctAnswer": "Phương án đúng",
-    "explanation": "Lời giải thích vì sao đáp án này đúng...",
+    "correctAnswer": "Phương án đúng hoặc tiêu chí chấm",
+    "explanation": "Lời giải thích vì sao đáp án này đúng hoặc thang điểm chi tiết...",
     "points": 1
   }
 ]`;
@@ -952,16 +969,20 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
           }
 
           if (Array.isArray(parsed) && parsed.length > 0) {
-            successfulQuestions = parsed.map((item, idx) => ({
-              id: `ai-q-${Date.now()}-${idx}`,
-              type: item.type || 'choice',
-              difficulty: item.difficulty || 'medium',
-              question: item.question || `Câu hỏi ${idx + 1}`,
-              options: Array.isArray(item.options) && item.options.length >= 2 ? item.options : ['A', 'B', 'C', 'D'],
-              correctAnswer: item.correctAnswer || (item.options ? item.options[0] : 'A'),
-              explanation: item.explanation || 'Lời giải thích của câu hỏi.',
-              points: item.points || 1
-            }));
+            successfulQuestions = parsed.map((item, idx) => {
+              const qType = item.type || 'choice';
+              const isChoice = qType === 'choice' || qType === 'multiple_choice';
+              return {
+                id: `ai-q-${Date.now()}-${idx}`,
+                type: qType,
+                difficulty: item.difficulty || 'medium',
+                question: item.question || `Câu hỏi ${idx + 1}`,
+                options: isChoice && Array.isArray(item.options) && item.options.length >= 2 ? item.options : (isChoice ? ['A', 'B', 'C', 'D'] : undefined),
+                correctAnswer: item.correctAnswer || (isChoice && item.options ? item.options[0] : 'Tiêu chí chấm điểm tự luận/thực hành'),
+                explanation: item.explanation || 'Lời giải thích / tiêu chí chi tiết của câu hỏi.',
+                points: item.points || (qType === 'essay' || qType === 'practical' ? 2 : 1)
+              };
+            });
             usedModel = m;
             break; // THÀNH CÔNG!
           } else {

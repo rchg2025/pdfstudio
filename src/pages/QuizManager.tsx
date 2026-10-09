@@ -236,6 +236,7 @@ export default function QuizManager() {
   const [aiTopic, setAiTopic] = useState('');
   const [aiCount, setAiCount] = useState(5);
   const [aiDifficulty, setAiDifficulty] = useState<Difficulty | 'mixed'>('mixed');
+  const [aiFormat, setAiFormat] = useState<'choice' | 'essay_only' | 'practical_only' | 'mixed'>('choice');
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [customAiKey, setCustomAiKey] = useState(() => {
     return localStorage.getItem('rchg_gemini_api_key') || '';
@@ -620,7 +621,7 @@ export default function QuizManager() {
       points: Number(formQPoints) || 1,
       explanation: formQExpl.trim() || undefined,
       options: (formQType === 'choice' || formQType === 'multiple_choice') ? formQOptions.filter(o => o.trim()) : undefined,
-      correctAnswer: (formQType === 'choice' || formQType === 'fill_blank' || formQType === 'essay') ? formQCorrectAnswer.trim() : undefined,
+      correctAnswer: (formQType === 'choice' || formQType === 'fill_blank' || formQType === 'essay' || formQType === 'practical') ? formQCorrectAnswer.trim() : undefined,
       correctAnswers: formQType === 'multiple_choice' ? (formQCorrectAnswers.length > 0 ? formQCorrectAnswers : [formQCorrectAnswer.trim()]) : undefined,
       matchingPairs: formQType === 'matching' ? formQMatchingPairs.map((p, idx) => ({ id: `m-${idx}`, left: p.left.trim(), right: p.right.trim() })) : undefined
     };
@@ -657,15 +658,15 @@ export default function QuizManager() {
   };
 
   // Mở modal tạo câu hỏi mới
-  const handleOpenNewQuestion = () => {
+  const handleOpenNewQuestion = (initialType: QuestionType = 'choice') => {
     setEditingQuestion(null);
-    setFormQType('choice');
+    setFormQType(initialType);
     setFormQDiff('medium');
     setFormQText('');
-    setFormQPoints(1);
+    setFormQPoints(initialType === 'essay' || initialType === 'practical' ? 2 : 1);
     setFormQExpl('');
     setFormQOptions(['Đáp án A', 'Đáp án B', 'Đáp án C', 'Đáp án D']);
-    setFormQCorrectAnswer('Đáp án A');
+    setFormQCorrectAnswer(initialType === 'essay' ? 'Gợi ý đáp án và tiêu chí chấm điểm' : (initialType === 'practical' ? 'Mã nguồn / File mẫu hoặc tiêu chí hoàn thành' : 'Đáp án A'));
     setFormQCorrectAnswers(['Đáp án A']);
     setFormQImageUrl('');
     setFormQMatchingPairs([{ left: 'Khái niệm 1', right: 'Định nghĩa 1' }, { left: 'Khái niệm 2', right: 'Định nghĩa 2' }]);
@@ -1049,6 +1050,7 @@ export default function QuizManager() {
           topic: aiTopic.trim(),
           count: aiCount,
           difficulty: aiDifficulty,
+          format: aiFormat,
           customApiKey: customAiKey.trim() || undefined
         })
       });
@@ -1833,8 +1835,26 @@ export default function QuizManager() {
               </button>
               <button 
                 type="button" 
+                className="btn btn-outline btn-sm"
+                onClick={() => handleOpenNewQuestion('essay')}
+                style={{ borderColor: '#0ea5e9', color: '#0ea5e9' }}
+                title="Thêm nhanh câu hỏi Tự luận để giảng viên chấm sau"
+              >
+                <Edit3 size={15} /> + Thêm Tự Luận
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-outline btn-sm"
+                onClick={() => handleOpenNewQuestion('practical')}
+                style={{ borderColor: '#f59e0b', color: '#f59e0b' }}
+                title="Thêm nhanh bài tập Thực hành (cho phép thí sinh nộp file/code lên Google Drive)"
+              >
+                <FileCode size={15} /> + Thêm Thực Hành
+              </button>
+              <button 
+                type="button" 
                 className="btn btn-primary btn-sm"
-                onClick={handleOpenNewQuestion}
+                onClick={() => handleOpenNewQuestion('choice')}
               >
                 <Plus size={15} /> Thêm Câu Hỏi
               </button>
@@ -1939,7 +1959,7 @@ export default function QuizManager() {
                             {q.difficulty === 'easy' ? 'DỄ' : (q.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
                           </span>
                           <span className="qm-badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
-                            {q.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : 'TỰ LUẬN NGẮN')))}
+                            {q.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (q.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (q.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (q.type === 'matching' ? 'NỐI CẶP' : (q.type === 'practical' ? 'BÀI THỰC HÀNH' : 'TỰ LUẬN'))))}
                           </span>
                           {resolvedImageUrl && (
                             <span className="qm-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
@@ -2018,7 +2038,13 @@ export default function QuizManager() {
 
                     {q.type === 'essay' && (
                       <div style={{ fontSize: '0.88rem', color: '#38bdf8' }}>
-                        Từ khóa chấm điểm: <em>{q.correctAnswer}</em>
+                        Gợi ý / Tiêu chí chấm: <em>{q.correctAnswer || 'Chưa thiết lập'}</em>
+                      </div>
+                    )}
+
+                    {q.type === 'practical' && (
+                      <div style={{ fontSize: '0.88rem', color: '#f59e0b' }}>
+                        Yêu cầu nộp bài / Code mẫu: <em>{q.correctAnswer || 'Chưa thiết lập'}</em>
                       </div>
                     )}
 
@@ -2201,6 +2227,96 @@ export default function QuizManager() {
                   onChange={(e) => updateActiveQuiz({ settings: { ...activeQuiz.settings, passingScorePercent: Number(e.target.value) } })}
                 />
               </div>
+
+              {/* Hình thức tổ chức đề thi: Toàn bộ / Chỉ Trắc Nghiệm / Chỉ Tự Luận & Thực Hành / Hỗn hợp */}
+              <div className="qm-form-group">
+                <label className="qm-label">Hình thức đề thi (Khảo thí)</label>
+                <select 
+                  className="qm-select"
+                  value={activeQuiz.settings.questionFormatFilter || 'all'}
+                  onChange={(e) => updateActiveQuiz({ 
+                    settings: { 
+                      ...activeQuiz.settings, 
+                      questionFormatFilter: e.target.value as any,
+                      formatDistribution: activeQuiz.settings.formatDistribution || {
+                        choiceCount: activeQuiz.questions.filter(q => ['choice', 'multiple_choice', 'fill_blank', 'matching'].includes(q.type)).length,
+                        essayCount: activeQuiz.questions.filter(q => q.type === 'essay' || q.type === 'practical').length
+                      }
+                    } 
+                  })}
+                >
+                  <option value="all">🌐 Đầy đủ các hình thức có trong ngân hàng ({activeQuiz.questions.length} câu)</option>
+                  <option value="choice_only">📝 Chỉ thi Trắc nghiệm khách quan (ABCD, nhiều đáp án, điền khuyết, nối cặp)</option>
+                  <option value="essay_practical_only">✍️ Chỉ thi Tự luận / Bài thực hành (Chấm điểm bằng tay)</option>
+                  <option value="mixed_custom">⚖️ Hỗn hợp Trắc nghiệm + Tự luận / Thực hành (Cấu hình số câu riêng)</option>
+                </select>
+                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
+                  {activeQuiz.settings.questionFormatFilter === 'choice_only' && '💡 Khi thi, hệ thống sẽ chỉ rút các câu hỏi trắc nghiệm khách quan (tự động chấm điểm ngay sau khi nộp).'}
+                  {activeQuiz.settings.questionFormatFilter === 'essay_practical_only' && '💡 Khi thi, bài thi chỉ chứa các câu tự luận / bài thực hành nộp file (chuyển sang trạng thái Chờ Giảng Viên Chấm Điểm).'}
+                  {activeQuiz.settings.questionFormatFilter === 'mixed_custom' && '💡 Cho phép quy định cụ thể số lượng câu trắc nghiệm và số lượng câu tự luận/thực hành xuất hiện trong đề thi.'}
+                  {(!activeQuiz.settings.questionFormatFilter || activeQuiz.settings.questionFormatFilter === 'all') && '💡 Mặc định sử dụng tất cả các loại câu hỏi đã được tạo trong ngân hàng.'}
+                </div>
+              </div>
+
+              {/* Nếu chọn Hỗn hợp Trắc nghiệm + Tự luận/Thực hành (mixed_custom) */}
+              {activeQuiz.settings.questionFormatFilter === 'mixed_custom' && (
+                <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--primary)', marginBottom: '1rem' }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    ⚖️ Cấu hình số lượng câu hỏi Hỗn hợp trong mỗi đề:
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+                    <div>
+                      <label className="qm-label" style={{ color: '#3b82f6', fontSize: '0.82rem' }}>
+                        Số câu Trắc nghiệm khách quan
+                      </label>
+                      <input 
+                        type="number" 
+                        min={0}
+                        max={activeQuiz.questions.filter(q => ['choice', 'multiple_choice', 'fill_blank', 'matching'].includes(q.type)).length}
+                        className="qm-input" 
+                        value={activeQuiz.settings.formatDistribution?.choiceCount ?? activeQuiz.questions.filter(q => ['choice', 'multiple_choice', 'fill_blank', 'matching'].includes(q.type)).length}
+                        onChange={(e) => updateActiveQuiz({ 
+                          settings: { 
+                            ...activeQuiz.settings, 
+                            formatDistribution: { 
+                              ...activeQuiz.settings.formatDistribution, 
+                              choiceCount: Number(e.target.value) 
+                            } 
+                          } 
+                        })}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Ngân hàng hiện có: {activeQuiz.questions.filter(q => ['choice', 'multiple_choice', 'fill_blank', 'matching'].includes(q.type)).length} câu
+                      </span>
+                    </div>
+
+                    <div>
+                      <label className="qm-label" style={{ color: '#f59e0b', fontSize: '0.82rem' }}>
+                        Số câu Tự luận / Thực hành
+                      </label>
+                      <input 
+                        type="number" 
+                        min={0}
+                        max={activeQuiz.questions.filter(q => q.type === 'essay' || q.type === 'practical').length}
+                        className="qm-input" 
+                        value={activeQuiz.settings.formatDistribution?.essayCount ?? activeQuiz.questions.filter(q => q.type === 'essay' || q.type === 'practical').length}
+                        onChange={(e) => updateActiveQuiz({ 
+                          settings: { 
+                            ...activeQuiz.settings, 
+                            formatDistribution: { 
+                              ...activeQuiz.settings.formatDistribution, 
+                              essayCount: Number(e.target.value) 
+                            } 
+                          } 
+                        })}
+                      />
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        Ngân hàng hiện có: {activeQuiz.questions.filter(q => q.type === 'essay' || q.type === 'practical').length} câu
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="qm-form-group">
                 <label className="qm-label">Chế độ chọn câu hỏi khi bắt đầu thi</label>
@@ -3204,9 +3320,23 @@ export default function QuizManager() {
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.75rem' }}>
                 <div className="qm-form-group">
-                  <label className="qm-label">Số lượng câu hỏi</label>
+                  <label className="qm-label">Hình thức câu hỏi</label>
+                  <select 
+                    className="qm-select"
+                    value={aiFormat}
+                    onChange={(e) => setAiFormat(e.target.value as any)}
+                    disabled={isGeneratingAi}
+                  >
+                    <option value="choice">Trắc nghiệm ABCD</option>
+                    <option value="essay_only">Chỉ Tự luận</option>
+                    <option value="practical_only">Chỉ Bài thực hành</option>
+                    <option value="mixed">Hỗn hợp (Trắc nghiệm + Tự luận/Thực hành)</option>
+                  </select>
+                </div>
+                <div className="qm-form-group">
+                  <label className="qm-label">Số lượng câu</label>
                   <select 
                     className="qm-select"
                     value={aiCount}
@@ -3219,16 +3349,16 @@ export default function QuizManager() {
                   </select>
                 </div>
                 <div className="qm-form-group">
-                  <label className="qm-label">Độ khó mong muốn</label>
+                  <label className="qm-label">Độ khó</label>
                   <select 
                     className="qm-select"
                     value={aiDifficulty}
                     onChange={(e) => setAiDifficulty(e.target.value as any)}
                     disabled={isGeneratingAi}
                   >
-                    <option value="mixed">Hỗn hợp (Dễ, Vừa, Khó)</option>
+                    <option value="mixed">Hỗn hợp (Dễ/Vừa/Khó)</option>
                     <option value="easy">Cơ bản (Dễ)</option>
-                    <option value="medium">Thông hiểu (Trung bình)</option>
+                    <option value="medium">Thông hiểu (Vừa)</option>
                     <option value="hard">Vận dụng cao (Khó)</option>
                   </select>
                 </div>

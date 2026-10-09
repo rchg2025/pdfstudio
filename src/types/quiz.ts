@@ -26,12 +26,18 @@ export interface QuizSettings {
   passingScorePercent: number; // Điểm qua bài (mặc định 50%)
   shuffleQuestions: boolean; // Đảo thứ tự câu hỏi
   shuffleOptions: boolean; // Đảo thứ tự đáp án
-  // Chiến lược chọn câu hỏi khi bắt đầu thi:
+  // Hình thức đề thi & chọn câu hỏi khi bắt đầu thi:
+  examFormat?: 'all' | 'choice_only' | 'essay_practical_only' | 'mixed'; // Hình thức bài thi
   questionSelectionMode: 'all' | 'custom_difficulty';
   difficultyDistribution: {
     easyCount: number;
     mediumCount: number;
     hardCount: number;
+  };
+  questionFormatFilter?: 'all' | 'choice_only' | 'essay_practical_only' | 'mixed_custom';
+  formatDistribution?: {
+    choiceCount?: number; // Số câu trắc nghiệm khách quan (ABCD, điền khuyết, ghép đôi...)
+    essayCount?: number; // Số câu tự luận / bài thực hành
   };
   totalQuestionsToTake?: number;
   // Cấu hình form thu thập thông tin sinh viên

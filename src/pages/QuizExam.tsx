@@ -357,8 +357,31 @@ export default function QuizExam() {
     setViolationCount(0);
     setShowViolationModal(false);
 
-    // Chọn câu hỏi theo chiến lược cấu hình
+    // Chọn câu hỏi theo chiến lược cấu hình & hình thức bài thi
     let pool = [...quiz.questions];
+
+    // 1. Lọc theo hình thức thi nếu có cấu hình (Trắc nghiệm riêng / Tự luận, thực hành riêng / Hỗn hợp)
+    const examFmt = quiz.settings?.questionFormatFilter || quiz.settings?.examFormat;
+    const isChoiceType = (t: string) => ['choice', 'multiple_choice', 'fill_blank', 'matching'].includes(t);
+    const isEssayOrPractical = (t: string) => t === 'essay' || t === 'practical';
+
+    if (examFmt === 'choice_only') {
+      pool = pool.filter(q => isChoiceType(q.type));
+    } else if (examFmt === 'essay_practical_only') {
+      pool = pool.filter(q => isEssayOrPractical(q.type));
+    } else if (examFmt === 'mixed_custom' && quiz.settings?.formatDistribution) {
+      const choicePool = pool.filter(q => isChoiceType(q.type));
+      const essayPool = pool.filter(q => isEssayOrPractical(q.type));
+      const shuffle = (arr: any[]) => [...arr].sort(() => 0.5 - Math.random());
+      const selectedChoices = shuffle(choicePool).slice(0, Number(quiz.settings.formatDistribution.choiceCount) || 0);
+      const selectedEssays = shuffle(essayPool).slice(0, Number(quiz.settings.formatDistribution.essayCount) || 0);
+      const mixedSelected = [...selectedChoices, ...selectedEssays];
+      if (mixedSelected.length > 0) {
+        pool = mixedSelected;
+      }
+    }
+
+    // 2. Lọc theo độ khó nếu chọn chế độ custom_difficulty
     if (quiz.settings?.questionSelectionMode === 'custom_difficulty' && quiz.settings?.difficultyDistribution) {
       const easyPool = pool.filter(q => q.difficulty === 'easy');
       const medPool = pool.filter(q => q.difficulty === 'medium');
@@ -645,14 +668,31 @@ export default function QuizExam() {
   // Tính số câu hỏi của bài thi thực tế mà thí sinh sẽ làm
   const examQuestionCount = activeQuestions.length > 0 
     ? activeQuestions.length 
-    : (quiz?.settings?.questionSelectionMode === 'custom_difficulty' && quiz.settings?.difficultyDistribution)
-      ? Math.min(
-          ((Number(quiz.settings.difficultyDistribution.easyCount) || 0) +
-           (Number(quiz.settings.difficultyDistribution.mediumCount) || 0) +
-           (Number(quiz.settings.difficultyDistribution.hardCount) || 0)) || (quiz.questions.length || 0),
-          quiz.questions.length || 0
-        )
-      : (quiz?.questions.length || 0);
+    : (() => {
+        if (!quiz) return 0;
+        const examFmt = quiz.settings?.questionFormatFilter || quiz.settings?.examFormat;
+        const isChoiceType = (t: string) => ['choice', 'multiple_choice', 'fill_blank', 'matching'].includes(t);
+        const isEssayOrPractical = (t: string) => t === 'essay' || t === 'practical';
+
+        let targetQuestions = quiz.questions;
+        if (examFmt === 'choice_only') {
+          targetQuestions = quiz.questions.filter(q => isChoiceType(q.type));
+        } else if (examFmt === 'essay_practical_only') {
+          targetQuestions = quiz.questions.filter(q => isEssayOrPractical(q.type));
+        } else if (examFmt === 'mixed_custom' && quiz.settings?.formatDistribution) {
+          const cCount = Number(quiz.settings.formatDistribution.choiceCount) || 0;
+          const eCount = Number(quiz.settings.formatDistribution.essayCount) || 0;
+          return cCount + eCount;
+        }
+
+        if (quiz.settings?.questionSelectionMode === 'custom_difficulty' && quiz.settings?.difficultyDistribution) {
+          const totalFromDiff = (Number(quiz.settings.difficultyDistribution.easyCount) || 0) +
+            (Number(quiz.settings.difficultyDistribution.mediumCount) || 0) +
+            (Number(quiz.settings.difficultyDistribution.hardCount) || 0);
+          return Math.min(totalFromDiff || targetQuestions.length, targetQuestions.length);
+        }
+        return targetQuestions.length;
+      })();
 
   const currentQ = activeQuestions[currentIdx];
 
@@ -810,7 +850,11 @@ export default function QuizExam() {
                 <li style={{ color: '#ef4444', fontWeight: 600 }}>
                   ⚠️ Hệ thống khóa chuyển tab/ứng dụng: Rời khỏi màn hình bài thi hoặc chuyển sang cửa sổ khác sẽ bị ghi nhận vi phạm quy chế.
                 </li>
-                <li>Hệ thống tự động chấm điểm và công bố kết quả ngay khi nộp bài.</li>
+                <li>
+                  {(quiz.settings?.questionFormatFilter === 'essay_practical_only' || (!quiz.settings?.questionFormatFilter && quiz.questions.some(q => q.type === 'essay' || q.type === 'practical')))
+                    ? '📝 Bài thi có phần Tự luận / Thực hành: Sau khi nộp bài, kết quả sẽ chuyển sang Chờ Giảng Viên Chấm Điểm.'
+                    : '⚡ Hệ thống tự động chấm điểm và công bố kết quả ngay khi nộp bài.'}
+                </li>
               </ul>
             </div>
 
