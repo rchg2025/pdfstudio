@@ -590,56 +590,58 @@ export default function IdPhotoStudio() {
                     e.preventDefault();
                     if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
                   }}
-                  className="border-2 border-dashed border-slate-300 hover:border-blue-500 transition-all rounded-2xl py-8 px-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/40 group"
+                  className="idphoto-dropzone"
                 >
-                  <div className="w-16 h-16 bg-white border border-slate-200 shadow-sm group-hover:scale-110 group-hover:border-blue-300 transition-all rounded-2xl flex items-center justify-center mx-auto mb-3.5">
-                    <FileImage className="text-slate-400 group-hover:text-blue-600 transition-colors" size={32} />
+                  <div className="idphoto-dropzone-icon">
+                    <FileImage size={32} />
                   </div>
-                  <p className="text-sm font-bold text-slate-700 mb-2">
-                    Kéo thả ảnh vào đây hoặc
+                  <p style={{ fontSize: '1rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.85rem 0' }}>
+                    Kéo thả ảnh chân dung vào đây
                   </p>
-                  <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-sm group-hover:bg-blue-700 transition">
-                    <Upload size={14} />
+                  <div className="btn btn-primary" style={{ padding: '0.65rem 1.35rem', fontSize: '0.85rem' }}>
+                    <Upload size={16} />
                     <span>Chọn từ thiết bị</span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-2.5">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
+                  <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '1rem 0 0 0' }}>
+                    Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)
+                  </p>
                 </div>
 
                 {/* Sample Images */}
-                <div className="mt-5 pt-4 border-t border-slate-100">
+                <div className="mt-6 pt-5 border-t border-slate-200">
                   <p className="idphoto-section-label">
                     <span>Hoặc thử nhanh với ảnh mẫu</span>
                   </p>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-3 gap-3.5">
                     <button 
                       type="button"
                       onClick={() => loadSampleImage('male')}
                       className="idphoto-sample-btn group"
                     >
-                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
-                        <User size={20} />
+                      <div className="w-11 h-11 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
+                        <User size={22} />
                       </div>
-                      <span className="text-xs font-semibold text-slate-700">Nam giới</span>
+                      <span className="text-xs font-bold text-slate-700">Nam giới</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => loadSampleImage('female')}
                       className="idphoto-sample-btn group"
                     >
-                      <div className="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
-                        <User size={20} />
+                      <div className="w-11 h-11 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
+                        <User size={22} />
                       </div>
-                      <span className="text-xs font-semibold text-slate-700">Nữ giới</span>
+                      <span className="text-xs font-bold text-slate-700">Nữ giới</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => loadSampleImage('casual')}
                       className="idphoto-sample-btn group"
                     >
-                      <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
-                        <User size={20} />
+                      <div className="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition shadow-sm">
+                        <User size={22} />
                       </div>
-                      <span className="text-xs font-semibold text-slate-700">Chân dung</span>
+                      <span className="text-xs font-bold text-slate-700">Chân dung</span>
                     </button>
                   </div>
                 </div>
@@ -648,7 +650,7 @@ export default function IdPhotoStudio() {
           </div>
 
           {/* Card 2: Editor Controls */}
-          <div className="idphoto-card space-y-6">
+          <div className="idphoto-card space-y-7">
 
             {/* Navigation Tabs */}
             <div className="idphoto-tabs-container">
@@ -657,48 +659,48 @@ export default function IdPhotoStudio() {
                 onClick={() => setActiveTab('ai')}
                 className={`idphoto-tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
               >
-                <Sparkles size={15} /> <span>AI Studio</span>
+                <Sparkles size={16} /> <span>AI Studio</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('crop')}
                 className={`idphoto-tab-btn ${activeTab === 'crop' ? 'active' : ''}`}
               >
-                <Crop size={15} /> <span>Kích Thước</span>
+                <Crop size={16} /> <span>Kích Thước</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('adjust')}
                 className={`idphoto-tab-btn ${activeTab === 'adjust' ? 'active' : ''}`}
               >
-                <Sliders size={15} /> <span>Chỉnh Màu</span>
+                <Sliders size={16} /> <span>Chỉnh Màu</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('print')}
                 className={`idphoto-tab-btn ${activeTab === 'print' ? 'active' : ''}`}
               >
-                <Printer size={15} /> <span>Khổ In</span>
+                <Printer size={16} /> <span>Khổ In</span>
               </button>
             </div>
 
             {/* TAB CONTENT 1: AI STUDIO */}
             {activeTab === 'ai' && (
-              <div className="space-y-6">
+              <div className="space-y-7">
                 {/* 1. Chọn phông nền */}
                 <div>
                   <div className="idphoto-section-label">
                     <span className="badge-num">1</span>
                     <span>Chọn Phông Nền Ảnh Thẻ</span>
                   </div>
-                  <div className="grid grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-4 gap-3">
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#0055A5'); setSelectedBgName('Xanh Chuẩn VN'); }}
                       className={`idphoto-color-tile ${selectedBgColor === '#0055A5' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-[#0055A5]"></span>
-                      <span className="text-[11px] font-bold text-slate-700">Xanh Chuẩn</span>
+                      <span className="text-xs font-bold text-slate-700">Xanh Chuẩn</span>
                     </button>
                     <button 
                       type="button"
@@ -706,7 +708,7 @@ export default function IdPhotoStudio() {
                       className={`idphoto-color-tile ${selectedBgColor === '#FFFFFF' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-white"></span>
-                      <span className="text-[11px] font-bold text-slate-700">Trắng HC</span>
+                      <span className="text-xs font-bold text-slate-700">Trắng HC</span>
                     </button>
                     <button 
                       type="button"
@@ -714,7 +716,7 @@ export default function IdPhotoStudio() {
                       className={`idphoto-color-tile ${selectedBgColor === '#4A90E2' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-[#4A90E2]"></span>
-                      <span className="text-[11px] font-bold text-slate-700">Xanh Nhạt</span>
+                      <span className="text-xs font-bold text-slate-700">Xanh Nhạt</span>
                     </button>
                     <button 
                       type="button"
@@ -722,7 +724,7 @@ export default function IdPhotoStudio() {
                       className={`idphoto-color-tile ${selectedBgColor === '#D32F2F' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-[#D32F2F]"></span>
-                      <span className="text-[11px] font-bold text-slate-700">Đỏ Giấy Tờ</span>
+                      <span className="text-xs font-bold text-slate-700">Đỏ Giấy Tờ</span>
                     </button>
                   </div>
                 </div>
@@ -733,15 +735,15 @@ export default function IdPhotoStudio() {
                     <span className="badge-num">2</span>
                     <span>Thay Trang Phục Lịch Sự (AI)</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-2 gap-3.5">
                     <div 
                       onClick={() => setAttire('white_shirt')}
                       className={`idphoto-select-card ${attire === 'white_shirt' ? 'active' : ''}`}
                     >
                       <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Sơ mi trắng</p>
-                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Nam / Nữ cổ bẻ</p>
+                        <p className="text-sm font-bold text-slate-800 m-0 mb-1">Sơ mi trắng</p>
+                        <p className="text-xs text-slate-500 m-0 leading-relaxed">Nam / Nữ cổ bẻ</p>
                       </div>
                     </div>
 
@@ -751,8 +753,8 @@ export default function IdPhotoStudio() {
                     >
                       <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Áo Vest & Cà vạt</p>
-                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Sang trọng công sở</p>
+                        <p className="text-sm font-bold text-slate-800 m-0 mb-1">Áo Vest & Cà vạt</p>
+                        <p className="text-xs text-slate-500 m-0 leading-relaxed">Sang trọng công sở</p>
                       </div>
                     </div>
 
@@ -762,8 +764,8 @@ export default function IdPhotoStudio() {
                     >
                       <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Áo Dài Trắng</p>
-                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Nữ sinh / Truyền thống</p>
+                        <p className="text-sm font-bold text-slate-800 m-0 mb-1">Áo Dài Trắng</p>
+                        <p className="text-xs text-slate-500 m-0 leading-relaxed">Nữ sinh / Truyền thống</p>
                       </div>
                     </div>
 
@@ -773,52 +775,55 @@ export default function IdPhotoStudio() {
                     >
                       <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Trang phục gốc</p>
-                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Chỉ đổi phông nền</p>
+                        <p className="text-sm font-bold text-slate-800 m-0 mb-1">Trang phục gốc</p>
+                        <p className="text-xs text-slate-500 m-0 leading-relaxed">Chỉ đổi phông nền</p>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 {/* Ghi chú AI */}
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Ghi chú AI bổ sung (Tùy chọn)</label>
+                <div className="space-y-2">
+                  <label className="block text-xs font-bold text-slate-700">Ghi chú AI bổ sung (Tùy chọn)</label>
                   <input 
                     type="text" 
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     placeholder="VD: Mắt nhìn thẳng, làm mịn da nhẹ, tóc tai gọn gàng..." 
                     className="input text-xs"
+                    style={{ padding: '0.8rem 1rem', fontSize: '0.88rem' }}
                   />
                 </div>
 
                 {/* Nút Tạo ảnh AI */}
-                <button 
-                  type="button"
-                  onClick={() => {
-                    if (!currentImage) {
-                      showToast('Vui lòng tải lên một ảnh chân dung hoặc chọn ảnh mẫu trước!', 'warning');
-                      return;
-                    }
-                    handleProcessAiPhoto();
-                  }}
-                  disabled={isAiProcessing}
-                  className={`btn btn-primary w-full py-3.5 text-sm font-bold shadow-md transition-all ${
-                    !currentImage ? 'opacity-90' : ''
-                  }`}
-                >
-                  {isAiProcessing ? (
-                    <>
-                      <Loader2 className="animate-spin" size={18} />
-                      <span>Đang Xử Lý Ảnh Thẻ AI...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles size={16} />
-                      <span>Tạo Ảnh Thẻ Bằng AI Gemini</span>
-                    </>
-                  )}
-                </button>
+                <div className="pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      if (!currentImage) {
+                        showToast('Vui lòng tải lên một ảnh chân dung hoặc chọn ảnh mẫu trước!', 'warning');
+                        return;
+                      }
+                      handleProcessAiPhoto();
+                    }}
+                    disabled={isAiProcessing}
+                    className={`btn btn-primary w-full py-4 text-sm font-bold shadow-md hover:shadow-lg transition-all ${
+                      !currentImage ? 'opacity-90' : ''
+                    }`}
+                  >
+                    {isAiProcessing ? (
+                      <>
+                        <Loader2 className="animate-spin" size={18} />
+                        <span>Đang Xử Lý Ảnh Thẻ AI...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles size={17} />
+                        <span>Tạo Ảnh Thẻ Bằng AI Gemini</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1157,37 +1162,68 @@ export default function IdPhotoStudio() {
         />
       </div>
 
-      {/* API Key Modal */}
+      {/* API Key Modal - Chuẩn Project RCHG */}
       {showApiKeyModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-up">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Key className="text-blue-600" size={20} />
-                <h3 className="text-base font-bold text-slate-800 m-0">Cấu Hình Gemini API Key</h3>
+        <div className="preview-modal-overlay" onClick={() => setShowApiKeyModal(false)}>
+          <div 
+            className="preview-modal-content" 
+            style={{ maxWidth: '480px', width: '92%', borderRadius: '1.25rem', overflow: 'hidden', boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)', border: '1px solid #e2e8f0' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="preview-modal-header" style={{ padding: '1.25rem 1.5rem', background: '#f8fafc', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563eb', border: '1px solid #dbeafe', flexShrink: 0 }}>
+                  <Key size={20} />
+                </div>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' }}>Cấu Hình Gemini API Key</h3>
+                  <p style={{ margin: '3px 0 0 0', fontSize: '0.78rem', color: '#64748b' }}>Tùy chọn kết nối khóa AI cá nhân</p>
+                </div>
               </div>
               <button 
                 type="button" 
                 onClick={() => setShowApiKeyModal(false)}
-                className="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', color: '#94a3b8', cursor: 'pointer', padding: '0.35rem 0.6rem', borderRadius: '8px', lineHeight: 1 }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = '#ef4444')}
+                onMouseLeave={(e) => (e.currentTarget.style.color = '#94a3b8')}
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 leading-relaxed m-0">
-              Hệ thống đã có sẵn Gemini AI từ máy chủ. Bạn cũng có thể dán API Key cá nhân của mình từ <strong>Google AI Studio</strong> để sử dụng riêng:
-            </p>
+            {/* Modal Body */}
+            <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', background: '#ffffff' }}>
+              <p style={{ margin: 0, fontSize: '0.88rem', color: '#475569', lineHeight: 1.6 }}>
+                Hệ thống đã tích hợp sẵn Gemini AI từ máy chủ. Bạn cũng có thể dán <strong>Gemini API Key</strong> cá nhân từ{' '}
+                <a 
+                  href="https://aistudio.google.com/app/apikey" 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  style={{ color: '#2563eb', fontWeight: 600, textDecoration: 'underline' }}
+                >
+                  Google AI Studio
+                </a>{' '}
+                để chủ động hạn ngạch sử dụng riêng:
+              </p>
 
-            <input 
-              type="password" 
-              value={apiKeyInput}
-              onChange={(e) => setApiKeyInput(e.target.value)}
-              placeholder="AIzaSy..." 
-              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white"
-            />
+              <div>
+                <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 700, color: '#334155', marginBottom: '0.5rem' }}>
+                  Khóa API (API Key)
+                </label>
+                <input 
+                  type="password" 
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  placeholder="Dán mã khóa AIzaSy... vào đây" 
+                  className="input"
+                  style={{ width: '100%', padding: '0.85rem 1rem', fontSize: '0.9rem', borderRadius: '0.75rem', border: '1px solid #cbd5e1', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
 
-            <div className="flex justify-end gap-2 pt-2">
+            {/* Modal Footer */}
+            <div style={{ padding: '1.15rem 1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #e2e8f0', background: '#f8fafc' }}>
               <button 
                 type="button" 
                 onClick={() => {
@@ -1196,7 +1232,8 @@ export default function IdPhotoStudio() {
                   setShowApiKeyModal(false);
                   showToast('Đã xóa API key cá nhân, chuyển sang dùng key hệ thống.', 'info');
                 }}
-                className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
+                className="btn btn-secondary"
+                style={{ padding: '0.7rem 1.25rem', fontSize: '0.88rem' }}
               >
                 Dùng Mặc Định
               </button>
@@ -1205,11 +1242,12 @@ export default function IdPhotoStudio() {
                 onClick={() => {
                   if (apiKeyInput.trim()) {
                     localStorage.setItem('rchg_gemini_api_key', apiKeyInput.trim());
-                    showToast('Đã lưu Gemini API Key cá nhân!', 'success');
+                    showToast('Đã lưu Gemini API Key cá nhân thành công!', 'success');
                   }
                   setShowApiKeyModal(false);
                 }}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white shadow-md shadow-blue-600/25 transition cursor-pointer"
+                className="btn btn-primary"
+                style={{ padding: '0.7rem 1.5rem', fontSize: '0.88rem', fontWeight: 700 }}
               >
                 Lưu Cấu Hình
               </button>
