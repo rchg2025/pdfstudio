@@ -15,7 +15,7 @@ import {
   Key, 
   Loader2, 
   FileImage,
-  ArrowLeft
+  Trash2
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './IdPhotoStudio.css';
@@ -457,9 +457,10 @@ export default function IdPhotoStudio() {
             <button 
               type="button" 
               onClick={() => fileInputRef.current?.click()}
-              className="btn btn-secondary text-xs sm:text-sm py-2 px-3.5"
+              className="btn btn-secondary text-xs sm:text-sm py-2 px-3.5 flex items-center gap-1.5 shadow-sm"
+              title="Chọn ảnh khác từ máy tính hoặc điện thoại"
             >
-              <ArrowLeft size={16} /> <span>Tải Ảnh Khác</span>
+              <Upload size={15} /> <span>Tải Ảnh Khác</span>
             </button>
           )}
           <button
@@ -473,95 +474,181 @@ export default function IdPhotoStudio() {
         </div>
       </header>
 
+      {/* Global Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        accept="image/*" 
+        className="hidden"
+        onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
+        onChange={(e) => {
+          if (e.target.files?.[0]) {
+            handleFileSelect(e.target.files[0]);
+          }
+        }}
+      />
+
       {/* Main Grid */}
       <main className="idphoto-main-grid">
         {/* LEFT COLUMN: Controls & Settings */}
         <section className="space-y-5">
           
-          {/* Card 1: Upload (Ẩn khi đã có ảnh) */}
-          {!currentImage && (
-            <div className="idphoto-card">
-              <h2 className="idphoto-card-title">
-                <Upload className="text-blue-600" size={20} /> 1. Tải Lên Ảnh Chân Dung
-              </h2>
-              <p className="idphoto-card-desc">
-                Tải lên bất kỳ ảnh tự chụp từ điện thoại, webcam hoặc ảnh thẻ có sẵn để AI xử lý.
-              </p>
-
-              {/* Dropzone */}
-              <div 
-                onClick={() => fileInputRef.current?.click()}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
-                }}
-                className="border-2 border-dashed border-slate-300 hover:border-blue-500 transition rounded-2xl p-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/40 group"
-              >
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
-                  accept="image/*" 
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-                />
-                <div className="w-14 h-14 bg-white border border-slate-200 shadow-sm group-hover:scale-110 transition rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <FileImage className="text-slate-400 group-hover:text-blue-600" size={28} />
+          {/* Card 1: Quản lý & Tải Ảnh Chân Dung */}
+          <div className="idphoto-card">
+            {currentImage ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="idphoto-card-title m-0">
+                    <FileImage className="text-blue-600" size={20} /> 1. Ảnh Đang Xử Lý
+                  </h2>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Đã nạp ảnh
+                  </span>
                 </div>
-                <p className="text-sm font-semibold text-slate-700">
-                  Kéo thả ảnh vào đây hoặc <span className="text-blue-600 underline">chọn từ thiết bị</span>
-                </p>
-                <p className="text-xs text-slate-400 mt-1">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
-              </div>
 
-              {/* Sample Images */}
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <p className="idphoto-section-label">
-                  <span>Hoặc thử nhanh với ảnh mẫu</span>
-                </p>
-                <div className="grid grid-cols-3 gap-3">
-                  <div 
-                    onClick={() => loadSampleImage('male')}
-                    className="idphoto-sample-btn group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
-                      <User size={20} />
-                    </div>
-                    <span className="text-xs font-semibold text-slate-700">Nam giới</span>
+                <div className="flex flex-col sm:flex-row items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                  <div className="w-20 h-24 rounded-xl overflow-hidden border border-slate-300 shadow-sm bg-white flex-shrink-0 flex items-center justify-center">
+                    <img src={currentImage} alt="Ảnh chân dung đã chọn" className="w-full h-full object-cover" />
                   </div>
-                  <div 
-                    onClick={() => loadSampleImage('female')}
-                    className="idphoto-sample-btn group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
-                      <User size={20} />
+                  <div className="flex-1 text-center sm:text-left">
+                    <p className="text-sm font-bold text-slate-800 m-0">Ảnh chân dung sẵn sàng</p>
+                    <p className="text-xs text-slate-500 m-0 mt-1">
+                      Ảnh đã được nạp vào khung cắt & bộ công cụ AI bên dưới.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-3 justify-center sm:justify-start">
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="btn btn-primary text-xs py-2 px-3.5 flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Upload size={14} />
+                        <span>Tải Ảnh Khác</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCurrentImage(null);
+                          showToast('Đã đóng ảnh hiện tại. Bạn có thể chọn ảnh mới!', 'info');
+                        }}
+                        className="btn btn-secondary text-xs py-2 px-3 flex items-center gap-1.5 hover:text-red-600 hover:border-red-200"
+                      >
+                        <Trash2 size={14} />
+                        <span>Chọn lại từ đầu</span>
+                      </button>
                     </div>
-                    <span className="text-xs font-semibold text-slate-700">Nữ giới</span>
-                  </div>
-                  <div 
-                    onClick={() => loadSampleImage('casual')}
-                    className="idphoto-sample-btn group"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
-                      <User size={20} />
-                    </div>
-                    <span className="text-xs font-semibold text-slate-700">Chân dung</span>
                   </div>
                 </div>
+
+                {/* Quick sample switch even when image is active */}
+                <div className="pt-3 border-t border-slate-100">
+                  <p className="idphoto-section-label">
+                    <span>Hoặc đổi nhanh sang ảnh mẫu:</span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-2.5">
+                    <button 
+                      type="button"
+                      onClick={() => loadSampleImage('male')}
+                      className="idphoto-sample-btn group"
+                    >
+                      <User size={18} className="text-blue-600 group-hover:scale-110 transition" />
+                      <span className="text-xs font-semibold text-slate-700">Nam giới</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => loadSampleImage('female')}
+                      className="idphoto-sample-btn group"
+                    >
+                      <User size={18} className="text-pink-600 group-hover:scale-110 transition" />
+                      <span className="text-xs font-semibold text-slate-700">Nữ giới</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => loadSampleImage('casual')}
+                      className="idphoto-sample-btn group"
+                    >
+                      <User size={18} className="text-emerald-600 group-hover:scale-110 transition" />
+                      <span className="text-xs font-semibold text-slate-700">Chân dung</span>
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          )}
+            ) : (
+              <div>
+                <h2 className="idphoto-card-title">
+                  <Upload className="text-blue-600" size={20} /> 1. Tải Lên Ảnh Chân Dung
+                </h2>
+                <p className="idphoto-card-desc">
+                  Tải lên bất kỳ ảnh tự chụp từ điện thoại, webcam hoặc ảnh thẻ có sẵn để AI xử lý.
+                </p>
+
+                {/* Dropzone */}
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
+                  }}
+                  className="border-2 border-dashed border-slate-300 hover:border-blue-500 transition-all rounded-2xl py-8 px-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/40 group"
+                >
+                  <div className="w-16 h-16 bg-white border border-slate-200 shadow-sm group-hover:scale-110 group-hover:border-blue-300 transition-all rounded-2xl flex items-center justify-center mx-auto mb-3.5">
+                    <FileImage className="text-slate-400 group-hover:text-blue-600 transition-colors" size={32} />
+                  </div>
+                  <p className="text-sm font-bold text-slate-700 mb-2">
+                    Kéo thả ảnh vào đây hoặc
+                  </p>
+                  <div className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-semibold shadow-sm group-hover:bg-blue-700 transition">
+                    <Upload size={14} />
+                    <span>Chọn từ thiết bị</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2.5">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
+                </div>
+
+                {/* Sample Images */}
+                <div className="mt-5 pt-4 border-t border-slate-100">
+                  <p className="idphoto-section-label">
+                    <span>Hoặc thử nhanh với ảnh mẫu</span>
+                  </p>
+                  <div className="grid grid-cols-3 gap-3">
+                    <button 
+                      type="button"
+                      onClick={() => loadSampleImage('male')}
+                      className="idphoto-sample-btn group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <User size={20} />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-700">Nam giới</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => loadSampleImage('female')}
+                      className="idphoto-sample-btn group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <User size={20} />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-700">Nữ giới</span>
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => loadSampleImage('casual')}
+                      className="idphoto-sample-btn group"
+                    >
+                      <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
+                        <User size={20} />
+                      </div>
+                      <span className="text-xs font-semibold text-slate-700">Chân dung</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Card 2: Editor Controls */}
           <div className="idphoto-card space-y-6">
-            {/* Hidden file input */}
-            <input 
-              type="file" 
-              ref={fileInputRef} 
-              accept="image/*" 
-              className="hidden"
-              onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
-            />
 
             {/* Navigation Tabs */}
             <div className="idphoto-tabs-container">
@@ -708,9 +795,17 @@ export default function IdPhotoStudio() {
                 {/* Nút Tạo ảnh AI */}
                 <button 
                   type="button"
-                  onClick={handleProcessAiPhoto}
-                  disabled={isAiProcessing || !currentImage}
-                  className="btn btn-primary w-full py-3 text-sm"
+                  onClick={() => {
+                    if (!currentImage) {
+                      showToast('Vui lòng tải lên một ảnh chân dung hoặc chọn ảnh mẫu trước!', 'warning');
+                      return;
+                    }
+                    handleProcessAiPhoto();
+                  }}
+                  disabled={isAiProcessing}
+                  className={`btn btn-primary w-full py-3.5 text-sm font-bold shadow-md transition-all ${
+                    !currentImage ? 'opacity-90' : ''
+                  }`}
                 >
                   {isAiProcessing ? (
                     <>
