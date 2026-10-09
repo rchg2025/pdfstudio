@@ -275,13 +275,19 @@ export default function QuizManager() {
   const [previewUserAnswer, setPreviewUserAnswer] = useState<any>(null);
   const [previewAnswerChecked, setPreviewAnswerChecked] = useState<boolean | null>(null);
 
-  // Danh sách bài nộp của sinh viên
+  // Danh sách bài nộp của sinh viên (luôn sắp xếp bài mới nhất lên trên cùng)
   const [submissions, setSubmissions] = useState<StudentSubmission[]>(() => {
     try {
       const saved = localStorage.getItem(subStorageKey);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const list: StudentSubmission[] = JSON.parse(saved);
+        return list.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      }
       const fallbackSaved = localStorage.getItem('rchg_quiz_submissions');
-      if (fallbackSaved) return JSON.parse(fallbackSaved);
+      if (fallbackSaved) {
+        const list: StudentSubmission[] = JSON.parse(fallbackSaved);
+        return list.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+      }
     } catch {}
     return [];
   });
@@ -437,6 +443,8 @@ export default function QuizManager() {
               }
             }
           } catch {}
+          // Luôn sắp xếp bài thi mới nhất lên đầu tiên (submittedAt DESC)
+          merged.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
           setSubmissions(merged);
           if (showToastNotify) {
             showToast(`Đã đồng bộ xong! Có ${merged.length} lượt nộp bài.`, 'success');
@@ -770,7 +778,8 @@ export default function QuizManager() {
 
   // Xuất bảng điểm chi tiết dạng Excel (.xlsx)
   const handleExportExcel = () => {
-    const targetSubmissions = filteredSubmissions.length > 0 ? filteredSubmissions : activeQuizSubmissions;
+    const rawTarget = filteredSubmissions.length > 0 ? filteredSubmissions : activeQuizSubmissions;
+    const targetSubmissions = [...rawTarget].sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
     if (targetSubmissions.length === 0) {
       showToast('Chưa có dữ liệu bài nộp để xuất Excel!', 'warning');
       return;
@@ -1416,9 +1425,14 @@ export default function QuizManager() {
     setSubPage(1);
   }, [subSearchQuery, subResultFilter, subDateFilter, subStartDate, subEndDate, activeQuizId, subQuizFilter, subPageSize]);
 
+  // Luôn sắp xếp bài thi của sinh viên mới nhất lên trên cùng bảng điểm
+  const sortedFilteredSubmissions = [...filteredSubmissions].sort((a, b) => 
+    new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime()
+  );
+
   // Phân trang danh sách bài nộp
-  const totalSubPages = Math.max(1, Math.ceil(filteredSubmissions.length / subPageSize));
-  const paginatedSubmissions = filteredSubmissions.slice((subPage - 1) * subPageSize, subPage * subPageSize);
+  const totalSubPages = Math.max(1, Math.ceil(sortedFilteredSubmissions.length / subPageSize));
+  const paginatedSubmissions = sortedFilteredSubmissions.slice((subPage - 1) * subPageSize, subPage * subPageSize);
 
   if (!user) {
     return (

@@ -14,6 +14,7 @@ import {
   X,
   Play,
   ShieldAlert,
+  ShieldCheck,
   AlertTriangle,
   Maximize2,
   Upload,
@@ -259,6 +260,15 @@ export default function QuizExam() {
     quizAudio.playClickSound();
   };
 
+  // Ref lưu câu hỏi hiện tại để listener anti-cheat có thể nhận biết chính xác
+  const currentQRef = useRef<QuizQuestion | null>(null);
+  useEffect(() => {
+    currentQRef.current = activeQuestions[currentIdx] || null;
+  }, [activeQuestions, currentIdx]);
+
+  // Cờ báo hiệu đang mở file picker (chọn tập tin) để tránh trigger blur vi phạm
+  const isFilePickerActiveRef = useRef<boolean>(false);
+
   // Lắng nghe sự kiện chuyển tab, rời ứng dụng, reload, back history khi đang trong quá trình thi
   useEffect(() => {
     if (step !== 'exam') return;
@@ -283,17 +293,32 @@ export default function QuizExam() {
     // 3. Bắt sự kiện chuyển tab hoặc ẩn trình duyệt (visibilitychange)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        // Nếu câu hỏi hiện tại là tự luận hoặc thực hành, học viên cần mở phần mềm ngoài hoặc xem tài liệu hướng dẫn/file
+        const qType = currentQRef.current?.type;
+        if (qType === 'essay' || qType === 'practical') {
+          return; // Đặc cách cho câu tự luận và thực hành!
+        }
         triggerViolation('chuyển sang tab khác hoặc thu nhỏ trình duyệt');
       }
     };
 
-    // 4. Bắt sự kiện mất focus cửa sổ khi chuyển sang app khác (Zalo, Word, trình duyệt khác, v.v.)
+    // 4. Bắt sự kiện mất focus cửa sổ khi chuyển sang app khác (Zalo, Word, Excel, trình duyệt khác, v.v.)
     const handleWindowBlur = () => {
+      // Nếu đang mở File Picker hoặc câu hỏi hiện tại là tự luận/thực hành: ĐẶC CÁCH MIỄN VI PHẠM
+      if (isFilePickerActiveRef.current) return;
+      const qType = currentQRef.current?.type;
+      if (qType === 'essay' || qType === 'practical') {
+        return; // Cho phép mở phần mềm khác (Word, Excel, IDE...) hoặc chọn tệp tải lên mà không tính vi phạm
+      }
+
       // Khi đang nhúng trong iframe LMS, nếu sinh viên click vào khung LMS bên ngoài iframe thì không tính là rời app
       if (isInIframe) {
         setTimeout(() => {
           if (document.visibilityState === 'hidden') {
-            triggerViolation('chuyển sang tab khác hoặc thu nhỏ trình duyệt');
+            const curType = currentQRef.current?.type;
+            if (curType !== 'essay' && curType !== 'practical') {
+              triggerViolation('chuyển sang tab khác hoặc thu nhỏ trình duyệt');
+            }
           }
         }, 300);
         return;
@@ -301,7 +326,10 @@ export default function QuizExam() {
       // Đợi nhẹ để tránh false positive từ các dropdown native
       setTimeout(() => {
         if (document.visibilityState === 'hidden' || !document.hasFocus()) {
-          triggerViolation('rời khỏi cửa sổ bài thi hoặc mở ứng dụng khác');
+          const curType = currentQRef.current?.type;
+          if (curType !== 'essay' && curType !== 'practical') {
+            triggerViolation('rời khỏi cửa sổ bài thi hoặc mở ứng dụng khác');
+          }
         }
       }, 300);
     };
@@ -312,6 +340,11 @@ export default function QuizExam() {
       const isFull = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement);
       setIsFullscreen(isFull);
       if (!isFull) {
+        // Nếu câu hỏi hiện tại là tự luận/thực hành, cho phép thoát full screen để thao tác phần mềm ngoài
+        const qType = currentQRef.current?.type;
+        if (qType === 'essay' || qType === 'practical') {
+          return; // Đặc cách cho câu tự luận và thực hành!
+        }
         triggerViolation('thoát chế độ làm bài toàn màn hình');
       }
     };
@@ -1041,6 +1074,25 @@ export default function QuizExam() {
             {/* Tự luận hoặc Bài thực hành */}
             {(currentQ.type === 'essay' || currentQ.type === 'practical') && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                {/* Thông báo đặc cách quy chế thi dành riêng cho câu Tự luận / Thực hành */}
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.6rem',
+                  padding: '0.6rem 0.9rem',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.82rem',
+                  color: '#059669',
+                  fontWeight: 500
+                }}>
+                  <ShieldCheck size={18} style={{ flexShrink: 0 }} />
+                  <span>
+                    <strong>Đặc cách câu hỏi {currentQ.type === 'practical' ? 'Thực hành' : 'Tự luận'}:</strong> Cho phép mở phần mềm ngoài hoặc chọn tệp tin từ máy tính mà <u>không bị tính vi phạm quy chế thi</u>.
+                  </span>
+                </div>
+
                 <textarea 
                   className="exam-textarea" 
                   rows={currentQ.type === 'practical' ? 6 : 4}
@@ -1124,7 +1176,14 @@ export default function QuizExam() {
                         type="file" 
                         id={`file-input-${currentQ.id}`}
                         style={{ display: 'none' }}
+                        onClick={() => {
+                          isFilePickerActiveRef.current = true;
+                          window.addEventListener('focus', () => {
+                            setTimeout(() => { isFilePickerActiveRef.current = false; }, 500);
+                          }, { once: true });
+                        }}
                         onChange={(e) => {
+                          isFilePickerActiveRef.current = false;
                           const file = e.target.files?.[0];
                           if (file) {
                             handleFileUpload(currentQ.id, file);
@@ -1135,6 +1194,12 @@ export default function QuizExam() {
                       <label 
                         htmlFor={`file-input-${currentQ.id}`}
                         className="btn btn-outline btn-sm"
+                        onClick={() => {
+                          isFilePickerActiveRef.current = true;
+                          window.addEventListener('focus', () => {
+                            setTimeout(() => { isFilePickerActiveRef.current = false; }, 500);
+                          }, { once: true });
+                        }}
                         style={{ 
                           display: 'inline-flex', 
                           alignItems: 'center', 
