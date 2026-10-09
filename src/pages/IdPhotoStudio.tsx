@@ -438,40 +438,38 @@ export default function IdPhotoStudio() {
 
   return (
     <div className="idphoto-container">
-      {/* Header */}
+      {/* Header Banner */}
       <header className="idphoto-header">
-        <div className="w-full flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
-              <CreditCard className="text-white" size={22} />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-slate-800 m-0">
-                IDPhoto AI Studio
-              </h1>
-              <p className="text-xs text-slate-500 m-0">Tạo Ảnh Thẻ & Hộ Chiếu Chuẩn AI</p>
-            </div>
+        <div className="idphoto-header-left">
+          <div className="idphoto-icon-box">
+            <CreditCard size={26} />
           </div>
+          <div>
+            <h1 className="idphoto-title">Tạo Ảnh Thẻ & Hộ Chiếu AI Studio</h1>
+            <p className="idphoto-subtitle">
+              Tự động cắt ảnh thẻ chuẩn ICAO, thay phông nền xanh/trắng, đổi trang phục lịch sự và xuất khổ in 10x15cm.
+            </p>
+          </div>
+        </div>
 
-          <div className="flex items-center space-x-3">
-            {currentImage && (
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()}
-                className="text-xs sm:text-sm px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition flex items-center gap-1.5 border border-slate-300 cursor-pointer"
-              >
-                <ArrowLeft size={14} /> <span>Ảnh Mới</span>
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setShowApiKeyModal(true)}
-              className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
-              title="Cài đặt API Key Gemini"
+        <div className="flex items-center gap-3 idphoto-header-actions">
+          {currentImage && (
+            <button 
+              type="button" 
+              onClick={() => fileInputRef.current?.click()}
+              className="btn btn-secondary text-xs sm:text-sm py-2 px-3.5"
             >
-              <Sparkles className="mr-1.5 text-blue-500" size={13} /> Gemini 3.1 AI
+              <ArrowLeft size={16} /> <span>Tải Ảnh Khác</span>
             </button>
-          </div>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowApiKeyModal(true)}
+            className="inline-flex items-center px-3.5 py-2 rounded-full text-xs font-semibold bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
+            title="Cài đặt API Key Gemini"
+          >
+            <Sparkles className="mr-1.5 text-blue-500" size={14} /> Gemini 3.1 AI
+          </button>
         </div>
       </header>
 
@@ -483,11 +481,11 @@ export default function IdPhotoStudio() {
           {/* Card 1: Upload (Ẩn khi đã có ảnh) */}
           {!currentImage && (
             <div className="idphoto-card">
-              <h2 className="text-base font-semibold text-slate-800 mb-1.5 flex items-center gap-2">
-                <Upload className="text-blue-600" size={18} /> 1. Tải Ảnh Ban Đầu
+              <h2 className="idphoto-card-title">
+                <Upload className="text-blue-600" size={20} /> 1. Tải Lên Ảnh Chân Dung
               </h2>
-              <p className="text-xs text-slate-500 mb-4">
-                Tải lên bất kỳ ảnh chân dung, ảnh tự chụp hoặc ảnh thường từ điện thoại/máy tính.
+              <p className="idphoto-card-desc">
+                Tải lên bất kỳ ảnh tự chụp từ điện thoại, webcam hoặc ảnh thẻ có sẵn để AI xử lý.
               </p>
 
               {/* Dropzone */}
@@ -498,7 +496,7 @@ export default function IdPhotoStudio() {
                   e.preventDefault();
                   if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
                 }}
-                className="border-2 border-dashed border-slate-300 hover:border-blue-500 transition rounded-xl p-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/50 group"
+                className="border-2 border-dashed border-slate-300 hover:border-blue-500 transition rounded-2xl p-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/40 group"
               >
                 <input 
                   type="file" 
@@ -507,41 +505,41 @@ export default function IdPhotoStudio() {
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
                 />
-                <div className="w-14 h-14 bg-white border border-slate-200 shadow-sm group-hover:scale-110 transition rounded-full flex items-center justify-center mx-auto mb-3">
-                  <FileImage className="text-slate-400 group-hover:text-blue-600" size={26} />
+                <div className="w-14 h-14 bg-white border border-slate-200 shadow-sm group-hover:scale-110 transition rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <FileImage className="text-slate-400 group-hover:text-blue-600" size={28} />
                 </div>
-                <p className="text-sm font-medium text-slate-700">
-                  Kéo thả ảnh vào đây hoặc <span className="text-blue-600 underline font-semibold">chọn từ thiết bị</span>
+                <p className="text-sm font-semibold text-slate-700">
+                  Kéo thả ảnh vào đây hoặc <span className="text-blue-600 underline">chọn từ thiết bị</span>
                 </p>
                 <p className="text-xs text-slate-400 mt-1">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
               </div>
 
               {/* Sample Images */}
               <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-xs font-medium text-slate-500 mb-2">Hoặc thử với ảnh mẫu:</p>
-                <div className="grid grid-cols-3 gap-2">
+                <p className="text-xs font-semibold text-slate-500 mb-2">Hoặc thử nhanh với ảnh mẫu:</p>
+                <div className="grid grid-cols-3 gap-2.5">
                   <button 
                     type="button"
                     onClick={() => loadSampleImage('male')}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-blue-300 transition cursor-pointer font-medium"
+                    className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-blue-300 transition cursor-pointer font-medium"
                   >
-                    <User className="text-blue-600" size={20} />
+                    <User className="text-blue-600" size={22} />
                     <span>Nam giới</span>
                   </button>
                   <button 
                     type="button"
                     onClick={() => loadSampleImage('female')}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-pink-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-pink-300 transition cursor-pointer font-medium"
+                    className="p-3 rounded-xl bg-slate-50 hover:bg-pink-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-pink-300 transition cursor-pointer font-medium"
                   >
-                    <User className="text-pink-600" size={20} />
+                    <User className="text-pink-600" size={22} />
                     <span>Nữ giới</span>
                   </button>
                   <button 
                     type="button"
                     onClick={() => loadSampleImage('casual')}
-                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-emerald-300 transition cursor-pointer font-medium"
+                    className="p-3 rounded-xl bg-slate-50 hover:bg-emerald-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-emerald-300 transition cursor-pointer font-medium"
                   >
-                    <User className="text-emerald-600" size={20} />
+                    <User className="text-emerald-600" size={22} />
                     <span>Chân dung</span>
                   </button>
                 </div>
@@ -561,42 +559,34 @@ export default function IdPhotoStudio() {
             />
 
             {/* Navigation Tabs */}
-            <div className="flex bg-slate-100 p-1 rounded-xl gap-1 overflow-x-auto idphoto-tabs-scroll">
+            <div className="idphoto-tabs-container">
               <button 
                 type="button"
                 onClick={() => setActiveTab('ai')}
-                className={`flex-1 min-w-[75px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                  activeTab === 'ai' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`idphoto-tab-btn ${activeTab === 'ai' ? 'active' : ''}`}
               >
-                <Sparkles size={14} className="shrink-0" /> <span>AI Studio</span>
+                <Sparkles size={15} /> <span>AI Studio</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('crop')}
-                className={`flex-1 min-w-[85px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                  activeTab === 'crop' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`idphoto-tab-btn ${activeTab === 'crop' ? 'active' : ''}`}
               >
-                <Crop size={14} className="shrink-0" /> <span>Kích Thước</span>
+                <Crop size={15} /> <span>Kích Thước</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('adjust')}
-                className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                  activeTab === 'adjust' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`idphoto-tab-btn ${activeTab === 'adjust' ? 'active' : ''}`}
               >
-                <Sliders size={14} className="shrink-0" /> <span>Chỉnh Màu</span>
+                <Sliders size={15} /> <span>Chỉnh Màu</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('print')}
-                className={`flex-1 min-w-[70px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                  activeTab === 'print' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-                }`}
+                className={`idphoto-tab-btn ${activeTab === 'print' ? 'active' : ''}`}
               >
-                <Printer size={14} className="shrink-0" /> <span>Khổ In</span>
+                <Printer size={15} /> <span>Khổ In</span>
               </button>
             </div>
 
@@ -610,42 +600,34 @@ export default function IdPhotoStudio() {
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#0055A5'); setSelectedBgName('Xanh Chuẩn VN'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
-                        selectedBgColor === '#0055A5' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
-                      }`}
+                      className={`idphoto-color-tile ${selectedBgColor === '#0055A5' ? 'active' : ''}`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#0055A5] border border-black/10 shadow-sm"></span>
-                      <span className="text-[10px] font-medium text-slate-700">Xanh Chuẩn</span>
+                      <span className="idphoto-color-swatch bg-[#0055A5]"></span>
+                      <span className="text-[11px] font-semibold text-slate-700">Xanh Chuẩn</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#FFFFFF'); setSelectedBgName('Trắng Hộ Chiếu'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
-                        selectedBgColor === '#FFFFFF' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
-                      }`}
+                      className={`idphoto-color-tile ${selectedBgColor === '#FFFFFF' ? 'active' : ''}`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow-sm"></span>
-                      <span className="text-[10px] font-medium text-slate-700">Trắng HC</span>
+                      <span className="idphoto-color-swatch bg-white"></span>
+                      <span className="text-[11px] font-semibold text-slate-700">Trắng HC</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#4A90E2'); setSelectedBgName('Xanh Nhạt'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
-                        selectedBgColor === '#4A90E2' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
-                      }`}
+                      className={`idphoto-color-tile ${selectedBgColor === '#4A90E2' ? 'active' : ''}`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#4A90E2] border border-black/10 shadow-sm"></span>
-                      <span className="text-[10px] font-medium text-slate-700">Xanh Nhạt</span>
+                      <span className="idphoto-color-swatch bg-[#4A90E2]"></span>
+                      <span className="text-[11px] font-semibold text-slate-700">Xanh Nhạt</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#D32F2F'); setSelectedBgName('Đỏ Giấy Tờ'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
-                        selectedBgColor === '#D32F2F' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
-                      }`}
+                      className={`idphoto-color-tile ${selectedBgColor === '#D32F2F' ? 'active' : ''}`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#D32F2F] border border-black/10 shadow-sm"></span>
-                      <span className="text-[10px] font-medium text-slate-700">Đỏ Giấy Tờ</span>
+                      <span className="idphoto-color-swatch bg-[#D32F2F]"></span>
+                      <span className="text-[11px] font-semibold text-slate-700">Đỏ Giấy Tờ</span>
                     </button>
                   </div>
                 </div>
@@ -653,78 +635,62 @@ export default function IdPhotoStudio() {
                 {/* 2. Thay trang phục */}
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-2">2. Thay Trang Phục Lịch Sự (AI)</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'white_shirt' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
-                      <input 
-                        type="radio" 
-                        name="attire" 
-                        value="white_shirt" 
-                        checked={attire === 'white_shirt'} 
-                        onChange={() => setAttire('white_shirt')}
-                        className="text-blue-600"
-                      />
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <div 
+                      onClick={() => setAttire('white_shirt')}
+                      className={`idphoto-select-card ${attire === 'white_shirt' ? 'active' : ''}`}
+                    >
+                      <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-semibold text-slate-800 m-0">Sơ mi trắng</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Sơ mi trắng</p>
                         <p className="text-[10px] text-slate-500 m-0">Nam / Nữ cổ bẻ</p>
                       </div>
-                    </label>
+                    </div>
 
-                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'suit_tie' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
-                      <input 
-                        type="radio" 
-                        name="attire" 
-                        value="suit_tie" 
-                        checked={attire === 'suit_tie'} 
-                        onChange={() => setAttire('suit_tie')}
-                        className="text-blue-600"
-                      />
+                    <div 
+                      onClick={() => setAttire('suit_tie')}
+                      className={`idphoto-select-card ${attire === 'suit_tie' ? 'active' : ''}`}
+                    >
+                      <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-semibold text-slate-800 m-0">Áo Vest & Cà vạt</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Áo Vest & Cà vạt</p>
                         <p className="text-[10px] text-slate-500 m-0">Sang trọng công sở</p>
                       </div>
-                    </label>
+                    </div>
 
-                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'aodai' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
-                      <input 
-                        type="radio" 
-                        name="attire" 
-                        value="aodai" 
-                        checked={attire === 'aodai'} 
-                        onChange={() => setAttire('aodai')}
-                        className="text-blue-600"
-                      />
+                    <div 
+                      onClick={() => setAttire('aodai')}
+                      className={`idphoto-select-card ${attire === 'aodai' ? 'active' : ''}`}
+                    >
+                      <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-semibold text-slate-800 m-0">Áo Dài Trắng</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Áo Dài Trắng</p>
                         <p className="text-[10px] text-slate-500 m-0">Nữ sinh / Truyền thống</p>
                       </div>
-                    </label>
+                    </div>
 
-                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'keep_original' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
-                      <input 
-                        type="radio" 
-                        name="attire" 
-                        value="keep_original" 
-                        checked={attire === 'keep_original'} 
-                        onChange={() => setAttire('keep_original')}
-                        className="text-blue-600"
-                      />
+                    <div 
+                      onClick={() => setAttire('keep_original')}
+                      className={`idphoto-select-card ${attire === 'keep_original' ? 'active' : ''}`}
+                    >
+                      <span className="idphoto-radio-indicator"></span>
                       <div>
-                        <p className="text-xs font-semibold text-slate-800 m-0">Trang phục gốc</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Trang phục gốc</p>
                         <p className="text-[10px] text-slate-500 m-0">Chỉ đổi phông nền</p>
                       </div>
-                    </label>
+                    </div>
                   </div>
                 </div>
 
                 {/* Ghi chú AI */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Ghi chú AI bổ sung (Tùy chọn)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">Ghi chú AI bổ sung (Tùy chọn)</label>
                   <input 
                     type="text" 
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
-                    placeholder="VD: Mắt nhìn thẳng, làm mịn da nhẹ, tóc gọn gàng..." 
-                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
+                    placeholder="VD: Mắt nhìn thẳng, làm mịn da nhẹ, tóc tai gọn gàng..." 
+                    className="input text-xs"
                   />
                 </div>
 
@@ -733,7 +699,7 @@ export default function IdPhotoStudio() {
                   type="button"
                   onClick={handleProcessAiPhoto}
                   disabled={isAiProcessing || !currentImage}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 font-semibold text-sm text-white rounded-xl shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                  className="btn btn-primary w-full py-3 text-sm"
                 >
                   {isAiProcessing ? (
                     <>
@@ -754,61 +720,61 @@ export default function IdPhotoStudio() {
             {activeTab === 'crop' && (
               <div className="space-y-4">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Chọn Kích Thước Chuẩn Giấy Tờ</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button 
-                    type="button"
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div 
                     onClick={() => handleSetAspectRatio(2 / 3, '2x3 cm')}
-                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName === '2x3 cm' ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
-                    }`}
+                    className={`idphoto-select-card ${currentRatioName === '2x3 cm' ? 'active' : ''}`}
                   >
-                    <p className="text-xs font-bold text-slate-800 m-0">2 x 3 cm</p>
-                    <p className="text-[10px] text-slate-500 m-0">Thẻ sinh viên / Giấy tờ nhỏ</p>
-                  </button>
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">2 x 3 cm</p>
+                      <p className="text-[10px] text-slate-500 m-0">Thẻ SV / Bằng lái nhỏ</p>
+                    </div>
+                  </div>
 
-                  <button 
-                    type="button"
+                  <div 
                     onClick={() => handleSetAspectRatio(3 / 4, '3x4 cm')}
-                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName === '3x4 cm' ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
-                    }`}
+                    className={`idphoto-select-card ${currentRatioName === '3x4 cm' ? 'active' : ''}`}
                   >
-                    <p className="text-xs font-bold text-slate-800 m-0">3 x 4 cm</p>
-                    <p className="text-[10px] text-slate-500 m-0">Ảnh thẻ phổ thông Việt Nam</p>
-                  </button>
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">3 x 4 cm</p>
+                      <p className="text-[10px] text-slate-500 m-0">Ảnh thẻ phổ thông VN</p>
+                    </div>
+                  </div>
 
-                  <button 
-                    type="button"
+                  <div 
                     onClick={() => handleSetAspectRatio(2 / 3, '4x6 cm')}
-                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName === '4x6 cm' ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
-                    }`}
+                    className={`idphoto-select-card ${currentRatioName === '4x6 cm' ? 'active' : ''}`}
                   >
-                    <p className="text-xs font-bold text-slate-800 m-0">4 x 6 cm</p>
-                    <p className="text-[10px] text-slate-500 m-0">Hồ sơ xin việc / Bằng lái</p>
-                  </button>
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">4 x 6 cm</p>
+                      <p className="text-[10px] text-slate-500 m-0">Hồ sơ xin việc / Bằng lái</p>
+                    </div>
+                  </div>
 
-                  <button 
-                    type="button"
+                  <div 
                     onClick={() => handleSetAspectRatio(35 / 45, '3.5x4.5 cm (Passport)')}
-                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName.startsWith('3.5x4.5') ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
-                    }`}
+                    className={`idphoto-select-card ${currentRatioName.startsWith('3.5x4.5') ? 'active' : ''}`}
                   >
-                    <p className="text-xs font-bold text-slate-800 m-0">3.5 x 4.5 cm</p>
-                    <p className="text-[10px] text-slate-500 m-0">Hộ chiếu Quốc tế / Visa EU</p>
-                  </button>
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">3.5 x 4.5 cm</p>
+                      <p className="text-[10px] text-slate-500 m-0">Hộ chiếu / Visa EU</p>
+                    </div>
+                  </div>
 
-                  <button 
-                    type="button"
+                  <div 
                     onClick={() => handleSetAspectRatio(1, '5x5 cm (US Visa)')}
-                    className={`col-span-2 border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName.startsWith('5x5') ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
-                    }`}
+                    className={`col-span-2 idphoto-select-card ${currentRatioName.startsWith('5x5') ? 'active' : ''}`}
                   >
-                    <p className="text-xs font-bold text-slate-800 m-0">5 x 5 cm (2x2 inch)</p>
-                    <p className="text-[10px] text-slate-500 m-0">Visa Mỹ / Visa Hàn Quốc / Nhật Bản</p>
-                  </button>
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">5 x 5 cm (2x2 inch)</p>
+                      <p className="text-[10px] text-slate-500 m-0">Visa Mỹ / Visa Hàn Quốc / Nhật Bản</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="pt-3 border-t border-slate-200 space-y-3">
@@ -827,14 +793,14 @@ export default function IdPhotoStudio() {
                     <button 
                       type="button"
                       onClick={() => handleRotate(-90)} 
-                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-xs rounded-xl text-slate-700 font-medium flex items-center justify-center gap-1.5 transition cursor-pointer border border-slate-200"
+                      className="btn btn-secondary flex-1 py-2 text-xs"
                     >
                       <RotateCcw size={14} /> Xoay -90°
                     </button>
                     <button 
                       type="button"
                       onClick={() => handleRotate(90)} 
-                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-xs rounded-xl text-slate-700 font-medium flex items-center justify-center gap-1.5 transition cursor-pointer border border-slate-200"
+                      className="btn btn-secondary flex-1 py-2 text-xs"
                     >
                       <RotateCw size={14} /> Xoay +90°
                     </button>
@@ -849,7 +815,7 @@ export default function IdPhotoStudio() {
                 <div>
                   <div className="flex justify-between text-xs text-slate-700 font-semibold mb-1">
                     <span>Độ Sáng (Brightness)</span>
-                    <span className="text-blue-600">{filters.brightness}%</span>
+                    <span className="text-blue-600 font-bold">{filters.brightness}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -857,14 +823,14 @@ export default function IdPhotoStudio() {
                     max="150" 
                     value={filters.brightness} 
                     onChange={(e) => setFilters(f => ({ ...f, brightness: Number(e.target.value) }))}
-                    className="w-full accent-blue-600 cursor-pointer"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between text-xs text-slate-700 font-semibold mb-1">
                     <span>Độ Tương Phản (Contrast)</span>
-                    <span className="text-blue-600">{filters.contrast}%</span>
+                    <span className="text-blue-600 font-bold">{filters.contrast}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -872,14 +838,14 @@ export default function IdPhotoStudio() {
                     max="150" 
                     value={filters.contrast} 
                     onChange={(e) => setFilters(f => ({ ...f, contrast: Number(e.target.value) }))}
-                    className="w-full accent-blue-600 cursor-pointer"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
                 <div>
                   <div className="flex justify-between text-xs text-slate-700 font-semibold mb-1">
                     <span>Độ Rực Màu (Saturation)</span>
-                    <span className="text-blue-600">{filters.saturate}%</span>
+                    <span className="text-blue-600 font-bold">{filters.saturate}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -887,16 +853,16 @@ export default function IdPhotoStudio() {
                     max="200" 
                     value={filters.saturate} 
                     onChange={(e) => setFilters(f => ({ ...f, saturate: Number(e.target.value) }))}
-                    className="w-full accent-blue-600 cursor-pointer"
+                    className="w-full accent-blue-600"
                   />
                 </div>
 
                 <button 
                   type="button"
                   onClick={() => setFilters({ brightness: 100, contrast: 100, saturate: 100 })}
-                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-slate-200"
+                  className="btn btn-secondary w-full py-2.5 text-xs font-semibold"
                 >
-                  <RotateCcw size={14} /> Đặt Lại Thông Số
+                  <RotateCcw size={14} /> Đặt Lại Thông Số Mặc Định
                 </button>
               </div>
             )}
@@ -905,83 +871,60 @@ export default function IdPhotoStudio() {
             {activeTab === 'print' && (
               <div className="space-y-4">
                 <label className="block text-xs font-bold text-slate-700 mb-1">Chọn Bố Cục In Ảnh Thẻ Khổ 10x15cm</label>
-                <div className="space-y-2">
-                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === 'mix' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="radio" 
-                        name="printLayout" 
-                        value="mix" 
-                        checked={printLayout === 'mix'} 
-                        onChange={() => setPrintLayout('mix')}
-                        className="text-blue-600"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Bố Cục Hỗn Hợp (Khuyên Dùng)</p>
-                        <p className="text-[10px] text-slate-500 m-0">4 ảnh 3x4cm + 2 ảnh 4x6cm + 2 ảnh 2x3cm</p>
-                      </div>
+                <div className="space-y-2.5">
+                  <div 
+                    onClick={() => setPrintLayout('mix')}
+                    className={`idphoto-select-card ${printLayout === 'mix' ? 'active' : ''}`}
+                  >
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">Bố Cục Hỗn Hợp (Khuyên Dùng)</p>
+                      <p className="text-[10px] text-slate-500 m-0">4 ảnh 3x4cm + 2 ảnh 4x6cm + 2 ảnh 2x3cm</p>
                     </div>
-                  </label>
+                  </div>
 
-                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '8_3x4' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="radio" 
-                        name="printLayout" 
-                        value="8_3x4" 
-                        checked={printLayout === '8_3x4'} 
-                        onChange={() => setPrintLayout('8_3x4')}
-                        className="text-blue-600"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Khổ 3x4 cm (8 Tấm)</p>
-                        <p className="text-[10px] text-slate-500 m-0">8 ảnh 3x4cm chuẩn tiện dụng</p>
-                      </div>
+                  <div 
+                    onClick={() => setPrintLayout('8_3x4')}
+                    className={`idphoto-select-card ${printLayout === '8_3x4' ? 'active' : ''}`}
+                  >
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">Khổ 3x4 cm (8 Tấm)</p>
+                      <p className="text-[10px] text-slate-500 m-0">8 ảnh 3x4cm chuẩn tiện dụng</p>
                     </div>
-                  </label>
+                  </div>
 
-                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '4_4x6' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="radio" 
-                        name="printLayout" 
-                        value="4_4x6" 
-                        checked={printLayout === '4_4x6'} 
-                        onChange={() => setPrintLayout('4_4x6')}
-                        className="text-blue-600"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Khổ 4x6 cm (4 Tấm)</p>
-                        <p className="text-[10px] text-slate-500 m-0">4 ảnh 4x6cm làm hồ sơ lớn</p>
-                      </div>
+                  <div 
+                    onClick={() => setPrintLayout('4_4x6')}
+                    className={`idphoto-select-card ${printLayout === '4_4x6' ? 'active' : ''}`}
+                  >
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">Khổ 4x6 cm (4 Tấm)</p>
+                      <p className="text-[10px] text-slate-500 m-0">4 ảnh 4x6cm làm hồ sơ lớn</p>
                     </div>
-                  </label>
+                  </div>
 
-                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '6_35x45' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
-                    <div className="flex items-center gap-3">
-                      <input 
-                        type="radio" 
-                        name="printLayout" 
-                        value="6_35x45" 
-                        checked={printLayout === '6_35x45'} 
-                        onChange={() => setPrintLayout('6_35x45')}
-                        className="text-blue-600"
-                      />
-                      <div>
-                        <p className="text-xs font-bold text-slate-800 m-0">Khổ Hộ Chiếu 3.5x4.5 cm (6 Tấm)</p>
-                        <p className="text-[10px] text-slate-500 m-0">6 ảnh Hộ chiếu / Visa Châu Âu</p>
-                      </div>
+                  <div 
+                    onClick={() => setPrintLayout('6_35x45')}
+                    className={`idphoto-select-card ${printLayout === '6_35x45' ? 'active' : ''}`}
+                  >
+                    <span className="idphoto-radio-indicator"></span>
+                    <div>
+                      <p className="text-xs font-bold text-slate-800 m-0">Khổ Hộ Chiếu 3.5x4.5 cm (6 Tấm)</p>
+                      <p className="text-[10px] text-slate-500 m-0">6 ảnh Hộ chiếu / Visa Châu Âu</p>
                     </div>
-                  </label>
+                  </div>
                 </div>
 
                 <button 
                   type="button"
                   onClick={handleDownloadPrintSheet}
                   disabled={!currentImage}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs text-white rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                  className="btn btn-primary w-full py-3 text-xs font-semibold disabled:opacity-50"
+                  style={{ background: 'linear-gradient(135deg, #059669, #10b981)' }}
                 >
-                  <Download size={15} /> Tải Trang In Khổ 10x15cm (300 DPI)
+                  <Download size={16} /> Tải Trang In Khổ 10x15cm (300 DPI)
                 </button>
               </div>
             )}
@@ -992,7 +935,7 @@ export default function IdPhotoStudio() {
         <section className="space-y-4 idphoto-sticky-preview">
           
           {/* Main Canvas Card */}
-          <div className="idphoto-card flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden bg-slate-50/60">
+          <div className="idphoto-card flex flex-col items-center justify-center min-h-[460px] relative overflow-hidden bg-slate-50/60">
             
             {/* Loading Spinner Overlay for AI */}
             {isAiProcessing && (
@@ -1011,27 +954,27 @@ export default function IdPhotoStudio() {
             {/* Mode Indicator Badge */}
             <div className="w-full flex items-center justify-between mb-3 text-xs">
               <span className="font-semibold text-slate-700">Kích thước: <strong className="text-blue-600">{currentRatioName}</strong></span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shadow-sm font-medium">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shadow-sm font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedBgColor }}></span>
                 <span>{selectedBgName}</span>
               </span>
             </div>
 
-            {/* Image Container with Passport Guidelines */}
-            <div className="relative w-full max-w-sm aspect-[3/4] bg-slate-900 rounded-xl overflow-hidden border border-slate-300 flex items-center justify-center shadow-lg">
+            {/* Image Container with Passport Guidelines (Viewport) */}
+            <div className="idphoto-viewport">
               
               {/* Passport Guidelines Overlay */}
               {showPassportGuide && currentImage && (
                 <div className="passport-guide">
                   <div className="passport-oval-guide"></div>
                   <div className="passport-head-top">
-                    <span className="guide-label text-yellow-300 bg-black/60 shadow">Đỉnh đầu ~15%</span>
+                    <span className="guide-label text-yellow-800 bg-yellow-100/90 shadow-sm">Đỉnh đầu ~15%</span>
                   </div>
                   <div className="passport-eye-line">
-                    <span className="guide-label text-blue-300 bg-black/60 shadow">Tầm mắt ~42%</span>
+                    <span className="guide-label text-blue-800 bg-blue-100/90 shadow-sm">Tầm mắt ~42%</span>
                   </div>
                   <div className="passport-chin-line">
-                    <span className="guide-label text-red-300 bg-black/60 shadow">Cằm ~75%</span>
+                    <span className="guide-label text-red-800 bg-red-100/90 shadow-sm">Cằm ~75%</span>
                   </div>
                 </div>
               )}
@@ -1046,9 +989,9 @@ export default function IdPhotoStudio() {
               {/* Placeholder State */}
               {!currentImage && (
                 <div className="text-center p-6 text-slate-400">
-                  <CreditCard className="mx-auto mb-3 text-slate-500" size={48} />
-                  <p className="text-sm font-medium text-slate-300 m-0">Chưa có ảnh nào được chọn</p>
-                  <p className="text-xs mt-1 text-slate-400 m-0">Vui lòng tải ảnh lên từ bảng bên trái</p>
+                  <CreditCard className="mx-auto mb-3 text-slate-400" size={52} />
+                  <p className="text-sm font-semibold text-slate-600 m-0">Chưa có ảnh nào được chọn</p>
+                  <p className="text-xs mt-1 text-slate-400 m-0">Vui lòng tải ảnh lên từ bảng điều khiển bên trái</p>
                 </div>
               )}
             </div>
@@ -1059,17 +1002,17 @@ export default function IdPhotoStudio() {
                 type="button"
                 onClick={handleDownloadSingle} 
                 disabled={!currentImage}
-                className="flex-1 min-w-[140px] py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                className="btn btn-primary flex-1 min-w-[150px] py-2.5 text-xs font-semibold disabled:opacity-50"
               >
-                <Download size={14} /> Tải Ảnh Đơn (HD)
+                <Download size={15} /> Tải Ảnh Đơn (HD)
               </button>
               <button 
                 type="button"
                 onClick={handleTriggerPrint} 
                 disabled={!currentImage}
-                className="py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-300 cursor-pointer disabled:opacity-50 shadow-sm"
+                className="btn btn-secondary py-2.5 px-4 text-xs font-semibold disabled:opacity-50"
               >
-                <Printer size={14} /> In Trực Tiếp
+                <Printer size={15} /> In Trực Tiếp
               </button>
             </div>
 
@@ -1078,14 +1021,14 @@ export default function IdPhotoStudio() {
           {/* Sheet Print Preview Section */}
           <div className="idphoto-card space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 m-0">
-                <FileImage className="text-emerald-600" size={16} /> Xem Trước Trang In Khổ 10x15cm
+              <h3 className="idphoto-card-title m-0 text-sm">
+                <FileImage className="text-emerald-600" size={18} /> Xem Trước Trang In Khổ 10x15cm
               </h3>
-              <span className="text-[10px] text-slate-500 font-medium">Chuẩn rửa ảnh tiệm (300 DPI)</span>
+              <span className="text-[11px] text-slate-500 font-medium">Chuẩn rửa ảnh tiệm (300 DPI)</span>
             </div>
             
-            <div className="w-full bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200 overflow-auto">
-              <div className="bg-white p-2 shadow-lg rounded-sm transition-all" style={{ width: '240px', height: '360px' }}>
+            <div className="w-full bg-slate-50 rounded-2xl p-4 flex items-center justify-center border border-slate-200 overflow-auto">
+              <div className="bg-white p-2.5 shadow-md rounded-md transition-all border border-slate-200" style={{ width: '240px', height: '360px' }}>
                 <canvas 
                   ref={printSheetCanvasRef} 
                   width={1200} 
