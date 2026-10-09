@@ -53,6 +53,7 @@ const AnonymousQaWall = React.lazy(() => import('./pages/AnonymousQaWall'));
 const QuizManager = React.lazy(() => import('./pages/QuizManager'));
 const QuizExam = React.lazy(() => import('./pages/QuizExam'));
 const SyllabusExamGenerator = React.lazy(() => import('./pages/SyllabusExamGenerator'));
+const IdPhotoStudio = React.lazy(() => import('./pages/IdPhotoStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -213,6 +214,12 @@ function App() {
             } />
             <Route path="phong-thi" element={
               <Suspense fallback={<FallbackLoader />}><QuizExam /></Suspense>
+            } />
+            <Route path="tao-anh-the" element={
+              <Suspense fallback={<FallbackLoader />}><IdPhotoStudio /></Suspense>
+            } />
+            <Route path="anh-the-ai" element={
+              <Suspense fallback={<FallbackLoader />}><IdPhotoStudio /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

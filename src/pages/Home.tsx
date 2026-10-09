@@ -36,7 +36,8 @@ import {
   Calculator,
   Timer,
   MessageSquare,
-  CheckSquare
+  CheckSquare,
+  CreditCard
 } from 'lucide-react';
 import './Home.css';
 
@@ -152,6 +153,12 @@ const imageTools = [
     icon: <Eraser size={24} />,
     title: 'Công Cụ Xóa Nền Theo Màu',
     desc: 'Tự động chọn và xóa phông nền theo màu sắc với công cụ Chroma Key.'
+  },
+  {
+    path: '/tao-anh-the',
+    icon: <CreditCard size={24} />,
+    title: 'Tạo Ảnh Thẻ & Hộ Chiếu AI',
+    desc: 'Tự động tạo ảnh thẻ 2x3, 3x4, 4x6, Visa hộ chiếu, đổi phông xanh/trắng, thay trang phục vest/áo dài và dàn trang in 10x15cm.'
   }
 ];
 

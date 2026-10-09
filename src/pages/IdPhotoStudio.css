@@ -1,0 +1,138 @@
+/* IDPhoto AI Studio Dark Theme & Cropper Styles */
+.idphoto-container {
+  min-height: 100vh;
+  background-color: #020617;
+  color: #f1f5f9;
+  padding-bottom: 3rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.idphoto-header {
+  border-bottom: 1px solid #1e293b;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.idphoto-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .idphoto-main-grid {
+    grid-template-columns: 5fr 7fr;
+  }
+}
+
+.idphoto-card {
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #1e293b;
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}
+
+/* Cropper custom adjustments */
+.cropper-view-box,
+.cropper-face {
+  border-radius: 4px;
+}
+
+.cropper-line,
+.cropper-point {
+  background-color: #3b82f6 !important;
+}
+
+.cropper-dashed {
+  border-color: rgba(255, 255, 255, 0.4) !important;
+}
+
+/* Passport Guide Overlay */
+.passport-guide {
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 10;
+}
+
+.passport-head-top {
+  width: 65%;
+  border-top: 2px dashed rgba(234, 179, 8, 0.85);
+  position: absolute;
+  top: 15%;
+}
+
+.passport-eye-line {
+  width: 85%;
+  border-top: 2px dashed rgba(59, 130, 246, 0.85);
+  position: absolute;
+  top: 42%;
+}
+
+.passport-chin-line {
+  width: 55%;
+  border-top: 2px dashed rgba(239, 68, 68, 0.85);
+  position: absolute;
+  top: 75%;
+}
+
+.passport-oval-guide {
+  position: absolute;
+  top: 14%;
+  left: 17.5%;
+  width: 65%;
+  height: 63%;
+  border: 1.5px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 50% / 60% 60% 40% 40%;
+  pointer-events: none;
+}
+
+.guide-label {
+  position: absolute;
+  right: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+/* Print Container */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  #idphoto-print-sheet,
+  #idphoto-print-sheet * {
+    visibility: visible !important;
+  }
+  #idphoto-print-sheet {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100mm !important;
+    height: 150mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+  }
+  @page {
+    size: 100mm 150mm;
+    margin: 0;
+  }
+}

@@ -123,6 +123,7 @@ const Navbar = () => {
             <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "nav-link active font-medium text-violet-600" : "nav-link font-medium text-violet-600"}>Thi Trắc Nghiệm</NavLink>
             <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Soạn Đề AI</NavLink>
             <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
+            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Ảnh Thẻ AI</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
           </nav>
 
@@ -215,6 +216,7 @@ const Navbar = () => {
             <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "nav-link active font-medium text-violet-600" : "nav-link font-medium text-violet-600"}>Thi Trắc Nghiệm</NavLink>
             <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Soạn Đề AI</NavLink>
             <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
+            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Ảnh Thẻ AI</NavLink>
             <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
           </div>
 

@@ -546,6 +546,107 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     }
 
+    // 11b. TẠO ẢNH THẺ AI (ID PHOTO STUDIO)
+    if (req.method === 'POST' && action === 'generate-id-photo') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+
+      let apiKey = body?.apiKey;
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa cấu hình Gemini API Key trên hệ thống.' });
+      }
+
+      const rawBase64 = body.imageBase64 || '';
+      const cleanBase64 = rawBase64.includes(',') ? rawBase64.split(',')[1] : rawBase64;
+      if (!cleanBase64) {
+        return res.status(400).json({ error: 'Thiếu dữ liệu hình ảnh.' });
+      }
+
+      const attireChoice = body.attire || 'white_shirt';
+      let attirePrompt = 'Change clothing to a neat white collared formal shirt.';
+      if (attireChoice === 'suit_tie') {
+        attirePrompt = 'Change clothing to a high quality formal black business suit vest with a dark necktie and crisp white inner shirt.';
+      } else if (attireChoice === 'aodai') {
+        attirePrompt = 'Change clothing to a traditional Vietnamese white Ao Dai with clean collar.';
+      } else if (attireChoice === 'keep_original') {
+        attirePrompt = 'Keep the original clothing untouched.';
+      }
+
+      const bgName = body.bgColorName || 'Solid Studio Color';
+      const bgHex = body.bgColorHex || '#0055A5';
+      const customPrompt = body.customPrompt ? body.customPrompt.trim() : '';
+
+      const systemPrompt = `You are an expert studio passport photo generator. Transform the person in the input image into a crisp, high-resolution professional passport ID photo.
+Key guidelines:
+1. BACKGROUND: Replace background completely with a solid clean studio background color of ${bgName} (${bgHex}). No gradient, no shadows, no texture on the background.
+2. ATTIRE: ${attirePrompt}
+3. POSE & FACE: Maintain person's original face identity, hair shape, features, skin tone, gender and realistic expression perfectly. Ensure person is facing straight forward with balanced shoulders.
+4. LIGHTING: Studio soft lighting, crystal clear focus, high clarity, photorealistic.
+${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
+
+      const payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              { text: systemPrompt },
+              {
+                inlineData: {
+                  mimeType: 'image/jpeg',
+                  data: cleanBase64
+                }
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          responseModalities: ['IMAGE', 'TEXT']
+        }
+      };
+
+      const candidateModels = [
+        'gemini-3.1-flash-image',
+        'gemini-2.5-flash-image',
+        'gemini-2.0-flash-exp',
+        'gemini-1.5-flash'
+      ];
+
+      for (const m of candidateModels) {
+        try {
+          const aiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (aiRes.ok) {
+            const result = await aiRes.json();
+            const candidate = result?.candidates?.[0];
+            const imagePart = candidate?.content?.parts?.find((p: any) => p.inlineData);
+            if (imagePart?.inlineData?.data) {
+              const mime = imagePart.inlineData.mimeType || 'image/png';
+              return res.status(200).json({
+                success: true,
+                image: `data:${mime};base64,${imagePart.inlineData.data}`,
+                model: m
+              });
+            }
+          }
+        } catch (e: any) {
+          console.warn(`Model ${m} failed for id-photo:`, e.message);
+        }
+      }
+
+      return res.status(500).json({ error: 'Mô hình AI hiện tại không hỗ trợ xuất hình ảnh hoặc đang bận. Vui lòng thử lại.' });
+    }
+
     // 12. KIỂM TRA KẾT NỐI GEMINI API
     if (req.method === 'POST' && action === 'test-gemini') {
       let body = req.body;
