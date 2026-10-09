@@ -515,40 +515,45 @@ export default function IdPhotoStudio() {
               </div>
 
               {/* Sample Images */}
-              <div className="mt-4 pt-4 border-t border-slate-200">
-                <p className="text-xs font-semibold text-slate-500 mb-2">Hoặc thử nhanh với ảnh mẫu:</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  <button 
-                    type="button"
+              <div className="mt-5 pt-4 border-t border-slate-100">
+                <p className="idphoto-section-label">
+                  <span>Hoặc thử nhanh với ảnh mẫu</span>
+                </p>
+                <div className="grid grid-cols-3 gap-3">
+                  <div 
                     onClick={() => loadSampleImage('male')}
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-blue-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-blue-300 transition cursor-pointer font-medium"
+                    className="idphoto-sample-btn group"
                   >
-                    <User className="text-blue-600" size={22} />
-                    <span>Nam giới</span>
-                  </button>
-                  <button 
-                    type="button"
+                    <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center group-hover:scale-110 transition">
+                      <User size={20} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700">Nam giới</span>
+                  </div>
+                  <div 
                     onClick={() => loadSampleImage('female')}
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-pink-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-pink-300 transition cursor-pointer font-medium"
+                    className="idphoto-sample-btn group"
                   >
-                    <User className="text-pink-600" size={22} />
-                    <span>Nữ giới</span>
-                  </button>
-                  <button 
-                    type="button"
+                    <div className="w-10 h-10 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center group-hover:scale-110 transition">
+                      <User size={20} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700">Nữ giới</span>
+                  </div>
+                  <div 
                     onClick={() => loadSampleImage('casual')}
-                    className="p-3 rounded-xl bg-slate-50 hover:bg-emerald-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-emerald-300 transition cursor-pointer font-medium"
+                    className="idphoto-sample-btn group"
                   >
-                    <User className="text-emerald-600" size={22} />
-                    <span>Chân dung</span>
-                  </button>
+                    <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition">
+                      <User size={20} />
+                    </div>
+                    <span className="text-xs font-semibold text-slate-700">Chân dung</span>
+                  </div>
                 </div>
               </div>
             </div>
           )}
 
           {/* Card 2: Editor Controls */}
-          <div className="idphoto-card space-y-5">
+          <div className="idphoto-card space-y-6">
             {/* Hidden file input */}
             <input 
               type="file" 
@@ -592,18 +597,21 @@ export default function IdPhotoStudio() {
 
             {/* TAB CONTENT 1: AI STUDIO */}
             {activeTab === 'ai' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {/* 1. Chọn phông nền */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">1. Chọn Phông Nền Ảnh Thẻ</label>
-                  <div className="grid grid-cols-4 gap-2">
+                  <div className="idphoto-section-label">
+                    <span className="badge-num">1</span>
+                    <span>Chọn Phông Nền Ảnh Thẻ</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2.5">
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#0055A5'); setSelectedBgName('Xanh Chuẩn VN'); }}
                       className={`idphoto-color-tile ${selectedBgColor === '#0055A5' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-[#0055A5]"></span>
-                      <span className="text-[11px] font-semibold text-slate-700">Xanh Chuẩn</span>
+                      <span className="text-[11px] font-bold text-slate-700">Xanh Chuẩn</span>
                     </button>
                     <button 
                       type="button"
@@ -611,7 +619,7 @@ export default function IdPhotoStudio() {
                       className={`idphoto-color-tile ${selectedBgColor === '#FFFFFF' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-white"></span>
-                      <span className="text-[11px] font-semibold text-slate-700">Trắng HC</span>
+                      <span className="text-[11px] font-bold text-slate-700">Trắng HC</span>
                     </button>
                     <button 
                       type="button"
@@ -619,7 +627,7 @@ export default function IdPhotoStudio() {
                       className={`idphoto-color-tile ${selectedBgColor === '#4A90E2' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-[#4A90E2]"></span>
-                      <span className="text-[11px] font-semibold text-slate-700">Xanh Nhạt</span>
+                      <span className="text-[11px] font-bold text-slate-700">Xanh Nhạt</span>
                     </button>
                     <button 
                       type="button"
@@ -627,15 +635,18 @@ export default function IdPhotoStudio() {
                       className={`idphoto-color-tile ${selectedBgColor === '#D32F2F' ? 'active' : ''}`}
                     >
                       <span className="idphoto-color-swatch bg-[#D32F2F]"></span>
-                      <span className="text-[11px] font-semibold text-slate-700">Đỏ Giấy Tờ</span>
+                      <span className="text-[11px] font-bold text-slate-700">Đỏ Giấy Tờ</span>
                     </button>
                   </div>
                 </div>
 
                 {/* 2. Thay trang phục */}
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-2">2. Thay Trang Phục Lịch Sự (AI)</label>
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="idphoto-section-label">
+                    <span className="badge-num">2</span>
+                    <span>Thay Trang Phục Lịch Sự (AI)</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
                     <div 
                       onClick={() => setAttire('white_shirt')}
                       className={`idphoto-select-card ${attire === 'white_shirt' ? 'active' : ''}`}
@@ -643,7 +654,7 @@ export default function IdPhotoStudio() {
                       <span className="idphoto-radio-indicator"></span>
                       <div>
                         <p className="text-xs font-bold text-slate-800 m-0">Sơ mi trắng</p>
-                        <p className="text-[10px] text-slate-500 m-0">Nam / Nữ cổ bẻ</p>
+                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Nam / Nữ cổ bẻ</p>
                       </div>
                     </div>
 
@@ -654,7 +665,7 @@ export default function IdPhotoStudio() {
                       <span className="idphoto-radio-indicator"></span>
                       <div>
                         <p className="text-xs font-bold text-slate-800 m-0">Áo Vest & Cà vạt</p>
-                        <p className="text-[10px] text-slate-500 m-0">Sang trọng công sở</p>
+                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Sang trọng công sở</p>
                       </div>
                     </div>
 
@@ -665,7 +676,7 @@ export default function IdPhotoStudio() {
                       <span className="idphoto-radio-indicator"></span>
                       <div>
                         <p className="text-xs font-bold text-slate-800 m-0">Áo Dài Trắng</p>
-                        <p className="text-[10px] text-slate-500 m-0">Nữ sinh / Truyền thống</p>
+                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Nữ sinh / Truyền thống</p>
                       </div>
                     </div>
 
@@ -676,7 +687,7 @@ export default function IdPhotoStudio() {
                       <span className="idphoto-radio-indicator"></span>
                       <div>
                         <p className="text-xs font-bold text-slate-800 m-0">Trang phục gốc</p>
-                        <p className="text-[10px] text-slate-500 m-0">Chỉ đổi phông nền</p>
+                        <p className="text-[10px] text-slate-500 m-0 mt-0.5">Chỉ đổi phông nền</p>
                       </div>
                     </div>
                   </div>
