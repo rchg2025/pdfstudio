@@ -917,9 +917,14 @@ export default function QuizManager() {
   const handleSaveGrade = async () => {
     if (!viewingSubmission) return;
 
-    // Tìm bộ đề thi gốc để đối chiếu điểm tối đa
+    // Tìm danh sách câu hỏi mà thí sinh thực tế đã làm trong bài thi này
     const quizOfSub = quizzes.find(q => q.id === viewingSubmission.quizId) || activeQuiz;
-    const questions = quizOfSub?.questions || [];
+    const answeredKeys = Object.keys(viewingSubmission.answers || {});
+    const questions = (viewingSubmission.examQuestions && viewingSubmission.examQuestions.length > 0)
+      ? viewingSubmission.examQuestions
+      : (answeredKeys.length > 0 && quizOfSub?.questions
+          ? quizOfSub.questions.filter(q => answeredKeys.includes(q.id))
+          : (quizOfSub?.questions || []));
 
     // Tính lại điểm: Điểm trắc nghiệm tự động + Điểm tự luận/thực hành giảng viên chấm
     let manualTotal = 0;
@@ -1350,7 +1355,7 @@ export default function QuizManager() {
     return s.quizId === subQuizFilter;
   });
   const avgScore = activeQuizSubmissions.length > 0 
-    ? (activeQuizSubmissions.reduce((acc, cur) => acc + cur.score, 0) / activeQuizSubmissions.length).toFixed(1)
+    ? (activeQuizSubmissions.reduce((acc, cur) => acc + (Number(cur.score) || 0), 0) / activeQuizSubmissions.length).toFixed(1)
     : '0';
   const passCount = activeQuizSubmissions.filter(s => s.passed).length;
   const passRate = activeQuizSubmissions.length > 0 
@@ -2816,9 +2821,14 @@ export default function QuizManager() {
                             </td>
                           )}
                           <td>
-                            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>
-                              {sub.status === 'PENDING_GRADING' ? `${sub.score}*` : sub.score}/{sub.totalPoints}
-                            </span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.05rem' }}>
+                                {sub.status === 'PENDING_GRADING' ? `${Number(sub.score).toFixed(1)}*` : Number(sub.score).toFixed(1)} / 10 đ
+                              </span>
+                              <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                ({sub.totalPoints ? `${Math.round((Number(sub.score) / 10) * Number(sub.totalPoints))}/${Number(sub.totalPoints)} câu đúng` : 'Thang 10'})
+                              </span>
+                            </div>
                           </td>
                           <td>{sub.status === 'PENDING_GRADING' ? '—' : `${sub.percentage}%`}</td>
                           <td>
@@ -2974,9 +2984,12 @@ export default function QuizManager() {
                 gap: '1rem'
               }}>
                 <div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Điểm số hiện tại</span>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Điểm số (Thang 10)</span>
                   <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)' }}>
-                    {viewingSubmission.score}/{viewingSubmission.totalPoints}
+                    {Number(viewingSubmission.score).toFixed(1)} / 10 đ
+                  </span>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'block' }}>
+                    ({viewingSubmission.totalPoints ? `${Math.round((Number(viewingSubmission.score) / 10) * Number(viewingSubmission.totalPoints))}/${Number(viewingSubmission.totalPoints)} câu đúng` : ''})
                   </span>
                 </div>
                 <div>
@@ -3004,21 +3017,29 @@ export default function QuizManager() {
                 </div>
               </div>
 
-              {/* Danh sách câu hỏi và câu trả lời của thí sinh */}
+              {/* Danh sách câu hỏi và câu trả lời của thí sinh (Chỉ hiển thị các câu trong đề thí sinh làm) */}
               {(() => {
                 const targetQuiz = quizzes.find(q => q.id === viewingSubmission.quizId) || activeQuiz;
-                const questions = targetQuiz?.questions || [];
+                const answeredKeys = Object.keys(viewingSubmission.answers || {});
+                const questions = (viewingSubmission.examQuestions && viewingSubmission.examQuestions.length > 0)
+                  ? viewingSubmission.examQuestions
+                  : (answeredKeys.length > 0 && targetQuiz?.questions
+                      ? targetQuiz.questions.filter(q => answeredKeys.includes(q.id))
+                      : (targetQuiz?.questions || []));
 
                 if (questions.length === 0) {
                   return (
                     <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                      Không tìm thấy danh sách câu hỏi gốc của đề thi này.
+                      Không tìm thấy danh sách câu hỏi của bài thi này.
                     </div>
                   );
                 }
 
                 return (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '-0.25rem' }}>
+                      📋 Danh sách <strong>{questions.length} câu hỏi</strong> trong đề thi của thí sinh:
+                    </div>
                     {questions.map((q, idx) => {
                       const userAns = viewingSubmission.answers?.[q.id];
                       const isEssayOrPractical = q.type === 'essay' || q.type === 'practical';

@@ -72,6 +72,7 @@ export interface StudentSubmission {
   timeSpentSeconds: number;
   submittedAt: string;
   answers: Record<string, any>; // questionId -> answer (text, array, or { text?: string, fileUrl?: string, fileName?: string })
+  examQuestions?: QuizQuestion[]; // Danh sách các câu hỏi cụ thể mà thí sinh đã được phát trong đề thi này
   violationCount?: number; // Số lần vi phạm chuyển tab / rời màn hình thi
   status?: 'GRADED' | 'PENDING_GRADING'; // Trạng thái chấm điểm: Đã chấm hoặc Chờ giảng viên chấm
   hasManualGrading?: boolean; // Bài thi có câu tự luận hoặc thực hành cần chấm thủ công

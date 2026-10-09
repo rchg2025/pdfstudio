@@ -586,6 +586,7 @@ export default function QuizExam() {
       timeSpentSeconds: spentSec,
       submittedAt: new Date().toISOString(),
       answers,
+      examQuestions: activeQuestions,
       violationCount,
       status: hasManualGrading ? 'PENDING_GRADING' : 'GRADED',
       hasManualGrading

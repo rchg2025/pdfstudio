@@ -139,6 +139,7 @@ async function ensureQuizTables(pool: any) {
       ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "hasManualGrading" BOOLEAN DEFAULT false;
       ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "manualScores" JSONB DEFAULT '{}'::jsonb;
       ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "teacherFeedback" TEXT;
+      ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "examQuestions" JSONB DEFAULT '[]'::jsonb;
       CREATE INDEX IF NOT EXISTS "idx_submission_quizId" ON "QuizSubmission"("quizId");
 
       CREATE TABLE IF NOT EXISTS "SyllabusSubject" (
@@ -458,7 +459,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const { 
         quizId, quizTitle, studentName, studentId, className, email, 
         score, totalPoints, percentage, passed, timeSpentSeconds, 
-        answers, violationCount, status, hasManualGrading, manualScores, teacherFeedback 
+        answers, examQuestions, violationCount, status, hasManualGrading, manualScores, teacherFeedback 
       } = body || {};
 
       if (!quizId || !studentName) {
@@ -469,10 +470,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const insertQuery = `
         INSERT INTO "QuizSubmission" (
           id, "quizId", "quizTitle", "studentName", "studentId", "className", email,
-          score, "totalPoints", percentage, passed, "timeSpentSeconds", answers, "violationCount",
+          score, "totalPoints", percentage, passed, "timeSpentSeconds", answers, "examQuestions", "violationCount",
           status, "hasManualGrading", "manualScores", "teacherFeedback", "submittedAt"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
         RETURNING *;
       `;
 
@@ -490,6 +491,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Boolean(passed),
         Number(timeSpentSeconds) || 0,
         JSON.stringify(answers || {}),
+        JSON.stringify(examQuestions || []),
         Number(violationCount) || 0,
         status || 'GRADED',
         Boolean(hasManualGrading),
