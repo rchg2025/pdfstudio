@@ -8,7 +8,6 @@ import {
   ArrowRight, 
   CheckCircle2, 
   AlertCircle, 
-  RotateCcw,
   Sparkles,
   LayoutGrid,
   Music,
@@ -1230,15 +1229,6 @@ export default function QuizExam() {
               Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings?.passingScorePercent || 50}%.
             </p>
           )}
-
-          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
-            <button type="button" className="btn btn-primary" onClick={() => setStep('register')}>
-              <RotateCcw size={16} /> Làm Lại Bài Thi
-            </button>
-            <button type="button" className="btn btn-outline" onClick={() => navigate('/quan-ly-thi-trac-nghiem')}>
-              Về Trang Quản Trị
-            </button>
-          </div>
 
           {/* Chi tiết lời giải & đối chiếu đáp án (Chỉ hiển thị khi giáo viên cho phép) */}
           {quiz.settings?.showCorrectAnswersAfterSubmit ? (
