@@ -440,16 +440,16 @@ export default function IdPhotoStudio() {
     <div className="idphoto-container">
       {/* Header */}
       <header className="idphoto-header">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="w-full flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20">
               <CreditCard className="text-white" size={22} />
             </div>
             <div>
-              <h1 className="text-lg font-bold bg-gradient-to-r from-white via-slate-200 to-blue-400 bg-clip-text text-transparent m-0">
+              <h1 className="text-lg font-bold text-slate-800 m-0">
                 IDPhoto AI Studio
               </h1>
-              <p className="text-xs text-slate-400 m-0">Tạo Ảnh Thẻ & Hộ Chiếu Chuẩn AI</p>
+              <p className="text-xs text-slate-500 m-0">Tạo Ảnh Thẻ & Hộ Chiếu Chuẩn AI</p>
             </div>
           </div>
 
@@ -458,7 +458,7 @@ export default function IdPhotoStudio() {
               <button 
                 type="button" 
                 onClick={() => fileInputRef.current?.click()}
-                className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition flex items-center gap-1.5 border border-slate-700"
+                className="text-xs sm:text-sm px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium transition flex items-center gap-1.5 border border-slate-300 cursor-pointer"
               >
                 <ArrowLeft size={14} /> <span>Ảnh Mới</span>
               </button>
@@ -466,10 +466,10 @@ export default function IdPhotoStudio() {
             <button
               type="button"
               onClick={() => setShowApiKeyModal(true)}
-              className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20 transition cursor-pointer"
+              className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium bg-blue-50 text-blue-600 border border-blue-200 hover:bg-blue-100 transition cursor-pointer"
               title="Cài đặt API Key Gemini"
             >
-              <Sparkles className="mr-1.5" size={13} /> Gemini 3.1 AI
+              <Sparkles className="mr-1.5 text-blue-500" size={13} /> Gemini 3.1 AI
             </button>
           </div>
         </div>
@@ -478,15 +478,15 @@ export default function IdPhotoStudio() {
       {/* Main Grid */}
       <main className="idphoto-main-grid">
         {/* LEFT COLUMN: Controls & Settings */}
-        <section className="space-y-6">
+        <section className="space-y-5">
           
           {/* Card 1: Upload (Ẩn khi đã có ảnh) */}
           {!currentImage && (
             <div className="idphoto-card">
-              <h2 className="text-base font-semibold text-white mb-1.5 flex items-center gap-2">
-                <Upload className="text-blue-400" size={18} /> 1. Tải Ảnh Ban Đầu
+              <h2 className="text-base font-semibold text-slate-800 mb-1.5 flex items-center gap-2">
+                <Upload className="text-blue-600" size={18} /> 1. Tải Ảnh Ban Đầu
               </h2>
-              <p className="text-xs text-slate-400 mb-4">
+              <p className="text-xs text-slate-500 mb-4">
                 Tải lên bất kỳ ảnh chân dung, ảnh tự chụp hoặc ảnh thường từ điện thoại/máy tính.
               </p>
 
@@ -498,7 +498,7 @@ export default function IdPhotoStudio() {
                   e.preventDefault();
                   if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
                 }}
-                className="border-2 border-dashed border-slate-700 hover:border-blue-500 transition rounded-xl p-6 text-center cursor-pointer bg-slate-950/50 hover:bg-slate-900/80 group"
+                className="border-2 border-dashed border-slate-300 hover:border-blue-500 transition rounded-xl p-6 text-center cursor-pointer bg-slate-50 hover:bg-blue-50/50 group"
               >
                 <input 
                   type="file" 
@@ -507,41 +507,41 @@ export default function IdPhotoStudio() {
                   className="hidden"
                   onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
                 />
-                <div className="w-14 h-14 bg-slate-800 group-hover:bg-blue-600/20 group-hover:scale-110 transition rounded-full flex items-center justify-center mx-auto mb-3">
-                  <FileImage className="text-slate-400 group-hover:text-blue-400" size={26} />
+                <div className="w-14 h-14 bg-white border border-slate-200 shadow-sm group-hover:scale-110 transition rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FileImage className="text-slate-400 group-hover:text-blue-600" size={26} />
                 </div>
-                <p className="text-sm font-medium text-slate-200">
-                  Kéo thả ảnh vào đây hoặc <span className="text-blue-400 underline">chọn từ thiết bị</span>
+                <p className="text-sm font-medium text-slate-700">
+                  Kéo thả ảnh vào đây hoặc <span className="text-blue-600 underline font-semibold">chọn từ thiết bị</span>
                 </p>
-                <p className="text-xs text-slate-500 mt-1">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
+                <p className="text-xs text-slate-400 mt-1">Hỗ trợ JPG, PNG, WEBP (Tối đa 10MB)</p>
               </div>
 
               {/* Sample Images */}
-              <div className="mt-4 pt-4 border-t border-slate-800">
-                <p className="text-xs font-medium text-slate-400 mb-2">Hoặc thử với ảnh mẫu:</p>
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <p className="text-xs font-medium text-slate-500 mb-2">Hoặc thử với ảnh mẫu:</p>
                 <div className="grid grid-cols-3 gap-2">
                   <button 
                     type="button"
                     onClick={() => loadSampleImage('male')}
-                    className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex flex-col items-center gap-1.5 border border-slate-700/50 transition cursor-pointer"
+                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-blue-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-blue-300 transition cursor-pointer font-medium"
                   >
-                    <User className="text-blue-400" size={20} />
+                    <User className="text-blue-600" size={20} />
                     <span>Nam giới</span>
                   </button>
                   <button 
                     type="button"
                     onClick={() => loadSampleImage('female')}
-                    className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex flex-col items-center gap-1.5 border border-slate-700/50 transition cursor-pointer"
+                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-pink-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-pink-300 transition cursor-pointer font-medium"
                   >
-                    <User className="text-pink-400" size={20} />
+                    <User className="text-pink-600" size={20} />
                     <span>Nữ giới</span>
                   </button>
                   <button 
                     type="button"
                     onClick={() => loadSampleImage('casual')}
-                    className="p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex flex-col items-center gap-1.5 border border-slate-700/50 transition cursor-pointer"
+                    className="p-2.5 rounded-xl bg-slate-50 hover:bg-emerald-50 text-xs text-slate-700 flex flex-col items-center gap-1.5 border border-slate-200 hover:border-emerald-300 transition cursor-pointer font-medium"
                   >
-                    <User className="text-emerald-400" size={20} />
+                    <User className="text-emerald-600" size={20} />
                     <span>Chân dung</span>
                   </button>
                 </div>
@@ -561,42 +561,42 @@ export default function IdPhotoStudio() {
             />
 
             {/* Navigation Tabs */}
-            <div className="flex border-b border-slate-800 pb-2 space-x-2">
+            <div className="flex bg-slate-100 p-1 rounded-xl gap-1 overflow-x-auto idphoto-tabs-scroll">
               <button 
                 type="button"
                 onClick={() => setActiveTab('ai')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  activeTab === 'ai' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`flex-1 min-w-[75px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                  activeTab === 'ai' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Sparkles size={14} /> AI Studio
+                <Sparkles size={14} className="shrink-0" /> <span>AI Studio</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('crop')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  activeTab === 'crop' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`flex-1 min-w-[85px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                  activeTab === 'crop' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Crop size={14} /> Kích Thước
+                <Crop size={14} className="shrink-0" /> <span>Kích Thước</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('adjust')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  activeTab === 'adjust' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`flex-1 min-w-[80px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                  activeTab === 'adjust' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Sliders size={14} /> Chỉnh Màu
+                <Sliders size={14} className="shrink-0" /> <span>Chỉnh Màu</span>
               </button>
               <button 
                 type="button"
                 onClick={() => setActiveTab('print')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer ${
-                  activeTab === 'print' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                className={`flex-1 min-w-[70px] py-2 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
+                  activeTab === 'print' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Printer size={14} /> Khổ In
+                <Printer size={14} className="shrink-0" /> <span>Khổ In</span>
               </button>
             </div>
 
@@ -605,56 +605,56 @@ export default function IdPhotoStudio() {
               <div className="space-y-4">
                 {/* 1. Chọn phông nền */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-2">1. Chọn Phông Nền Ảnh Thẻ</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">1. Chọn Phông Nền Ảnh Thẻ</label>
                   <div className="grid grid-cols-4 gap-2">
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#0055A5'); setSelectedBgName('Xanh Chuẩn VN'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-slate-950 hover:bg-slate-800 transition cursor-pointer ${
-                        selectedBgColor === '#0055A5' ? 'border-blue-500' : 'border-transparent'
+                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
+                        selectedBgColor === '#0055A5' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
                       }`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#0055A5] border border-white/20 shadow"></span>
-                      <span className="text-[10px] text-slate-300">Xanh Chuẩn</span>
+                      <span className="w-6 h-6 rounded-full bg-[#0055A5] border border-black/10 shadow-sm"></span>
+                      <span className="text-[10px] font-medium text-slate-700">Xanh Chuẩn</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#FFFFFF'); setSelectedBgName('Trắng Hộ Chiếu'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-slate-950 hover:bg-slate-800 transition cursor-pointer ${
-                        selectedBgColor === '#FFFFFF' ? 'border-blue-500' : 'border-transparent'
+                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
+                        selectedBgColor === '#FFFFFF' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
                       }`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-white border border-slate-400 shadow"></span>
-                      <span className="text-[10px] text-slate-300">Trắng HC</span>
+                      <span className="w-6 h-6 rounded-full bg-white border border-slate-300 shadow-sm"></span>
+                      <span className="text-[10px] font-medium text-slate-700">Trắng HC</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#4A90E2'); setSelectedBgName('Xanh Nhạt'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-slate-950 hover:bg-slate-800 transition cursor-pointer ${
-                        selectedBgColor === '#4A90E2' ? 'border-blue-500' : 'border-transparent'
+                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
+                        selectedBgColor === '#4A90E2' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
                       }`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#4A90E2] border border-white/20 shadow"></span>
-                      <span className="text-[10px] text-slate-300">Xanh Nhạt</span>
+                      <span className="w-6 h-6 rounded-full bg-[#4A90E2] border border-black/10 shadow-sm"></span>
+                      <span className="text-[10px] font-medium text-slate-700">Xanh Nhạt</span>
                     </button>
                     <button 
                       type="button"
                       onClick={() => { setSelectedBgColor('#D32F2F'); setSelectedBgName('Đỏ Giấy Tờ'); }}
-                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-slate-950 hover:bg-slate-800 transition cursor-pointer ${
-                        selectedBgColor === '#D32F2F' ? 'border-blue-500' : 'border-transparent'
+                      className={`border-2 rounded-xl p-2.5 flex flex-col items-center gap-1 bg-white hover:bg-slate-50 transition cursor-pointer ${
+                        selectedBgColor === '#D32F2F' ? 'border-blue-600 ring-2 ring-blue-100' : 'border-slate-200'
                       }`}
                     >
-                      <span className="w-6 h-6 rounded-full bg-[#D32F2F] border border-white/20 shadow"></span>
-                      <span className="text-[10px] text-slate-300">Đỏ Giấy Tờ</span>
+                      <span className="w-6 h-6 rounded-full bg-[#D32F2F] border border-black/10 shadow-sm"></span>
+                      <span className="text-[10px] font-medium text-slate-700">Đỏ Giấy Tờ</span>
                     </button>
                   </div>
                 </div>
 
                 {/* 2. Thay trang phục */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-2">2. Thay Trang Phục Lịch Sự (AI)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-2">2. Thay Trang Phục Lịch Sự (AI)</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-500 transition ${attire === 'white_shirt' ? 'border-blue-500' : 'border-slate-800'}`}>
+                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'white_shirt' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
                       <input 
                         type="radio" 
                         name="attire" 
@@ -664,12 +664,12 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Sơ mi trắng</p>
-                        <p className="text-[10px] text-slate-400 m-0">Nam / Nữ cổ bẻ</p>
+                        <p className="text-xs font-semibold text-slate-800 m-0">Sơ mi trắng</p>
+                        <p className="text-[10px] text-slate-500 m-0">Nam / Nữ cổ bẻ</p>
                       </div>
                     </label>
 
-                    <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-500 transition ${attire === 'suit_tie' ? 'border-blue-500' : 'border-slate-800'}`}>
+                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'suit_tie' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
                       <input 
                         type="radio" 
                         name="attire" 
@@ -679,12 +679,12 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Áo Vest & Cà vạt</p>
-                        <p className="text-[10px] text-slate-400 m-0">Sang trọng công sở</p>
+                        <p className="text-xs font-semibold text-slate-800 m-0">Áo Vest & Cà vạt</p>
+                        <p className="text-[10px] text-slate-500 m-0">Sang trọng công sở</p>
                       </div>
                     </label>
 
-                    <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-500 transition ${attire === 'aodai' ? 'border-blue-500' : 'border-slate-800'}`}>
+                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'aodai' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
                       <input 
                         type="radio" 
                         name="attire" 
@@ -694,12 +694,12 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Áo Dài Trắng</p>
-                        <p className="text-[10px] text-slate-400 m-0">Nữ sinh / Truyền thống</p>
+                        <p className="text-xs font-semibold text-slate-800 m-0">Áo Dài Trắng</p>
+                        <p className="text-[10px] text-slate-500 m-0">Nữ sinh / Truyền thống</p>
                       </div>
                     </label>
 
-                    <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-500 transition ${attire === 'keep_original' ? 'border-blue-500' : 'border-slate-800'}`}>
+                    <label className={`cursor-pointer border bg-white p-2.5 rounded-xl flex items-center gap-2.5 hover:border-blue-400 transition ${attire === 'keep_original' ? 'border-blue-600 bg-blue-50/40 ring-1 ring-blue-500' : 'border-slate-200'}`}>
                       <input 
                         type="radio" 
                         name="attire" 
@@ -709,8 +709,8 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Trang phục gốc</p>
-                        <p className="text-[10px] text-slate-400 m-0">Chỉ đổi phông nền</p>
+                        <p className="text-xs font-semibold text-slate-800 m-0">Trang phục gốc</p>
+                        <p className="text-[10px] text-slate-500 m-0">Chỉ đổi phông nền</p>
                       </div>
                     </label>
                   </div>
@@ -718,13 +718,13 @@ export default function IdPhotoStudio() {
 
                 {/* Ghi chú AI */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 mb-1">Ghi chú AI bổ sung (Tùy chọn)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Ghi chú AI bổ sung (Tùy chọn)</label>
                   <input 
                     type="text" 
                     value={customPrompt}
                     onChange={(e) => setCustomPrompt(e.target.value)}
                     placeholder="VD: Mắt nhìn thẳng, làm mịn da nhẹ, tóc gọn gàng..." 
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+                    className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white"
                   />
                 </div>
 
@@ -733,7 +733,7 @@ export default function IdPhotoStudio() {
                   type="button"
                   onClick={handleProcessAiPhoto}
                   disabled={isAiProcessing || !currentImage}
-                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 font-semibold text-sm text-white rounded-xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 font-semibold text-sm text-white rounded-xl shadow-md shadow-blue-600/25 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
                 >
                   {isAiProcessing ? (
                     <>
@@ -753,73 +753,73 @@ export default function IdPhotoStudio() {
             {/* TAB CONTENT 2: CROP & ASPECT RATIOS */}
             {activeTab === 'crop' && (
               <div className="space-y-4">
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Chọn Kích Thước Chuẩn Giấy Tờ</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Chọn Kích Thước Chuẩn Giấy Tờ</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button 
                     type="button"
                     onClick={() => handleSetAspectRatio(2 / 3, '2x3 cm')}
-                    className={`border bg-slate-950 p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName === '2x3 cm' ? 'border-2 border-blue-500' : 'border-slate-800'
+                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
+                      currentRatioName === '2x3 cm' ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    <p className="text-xs font-semibold text-white m-0">2 x 3 cm</p>
-                    <p className="text-[10px] text-slate-400 m-0">Thẻ sinh viên / Giấy tờ nhỏ</p>
+                    <p className="text-xs font-bold text-slate-800 m-0">2 x 3 cm</p>
+                    <p className="text-[10px] text-slate-500 m-0">Thẻ sinh viên / Giấy tờ nhỏ</p>
                   </button>
 
                   <button 
                     type="button"
                     onClick={() => handleSetAspectRatio(3 / 4, '3x4 cm')}
-                    className={`border bg-slate-950 p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName === '3x4 cm' ? 'border-2 border-blue-500' : 'border-slate-800'
+                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
+                      currentRatioName === '3x4 cm' ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    <p className="text-xs font-semibold text-white m-0">3 x 4 cm</p>
-                    <p className="text-[10px] text-slate-400 m-0">Ảnh thẻ phổ thông Việt Nam</p>
+                    <p className="text-xs font-bold text-slate-800 m-0">3 x 4 cm</p>
+                    <p className="text-[10px] text-slate-500 m-0">Ảnh thẻ phổ thông Việt Nam</p>
                   </button>
 
                   <button 
                     type="button"
                     onClick={() => handleSetAspectRatio(2 / 3, '4x6 cm')}
-                    className={`border bg-slate-950 p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName === '4x6 cm' ? 'border-2 border-blue-500' : 'border-slate-800'
+                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
+                      currentRatioName === '4x6 cm' ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    <p className="text-xs font-semibold text-white m-0">4 x 6 cm</p>
-                    <p className="text-[10px] text-slate-400 m-0">Hồ sơ xin việc / Bằng lái</p>
+                    <p className="text-xs font-bold text-slate-800 m-0">4 x 6 cm</p>
+                    <p className="text-[10px] text-slate-500 m-0">Hồ sơ xin việc / Bằng lái</p>
                   </button>
 
                   <button 
                     type="button"
                     onClick={() => handleSetAspectRatio(35 / 45, '3.5x4.5 cm (Passport)')}
-                    className={`border bg-slate-950 p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName.startsWith('3.5x4.5') ? 'border-2 border-blue-500' : 'border-slate-800'
+                    className={`border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
+                      currentRatioName.startsWith('3.5x4.5') ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    <p className="text-xs font-semibold text-white m-0">3.5 x 4.5 cm</p>
-                    <p className="text-[10px] text-slate-400 m-0">Hộ chiếu Quốc tế / Visa EU</p>
+                    <p className="text-xs font-bold text-slate-800 m-0">3.5 x 4.5 cm</p>
+                    <p className="text-[10px] text-slate-500 m-0">Hộ chiếu Quốc tế / Visa EU</p>
                   </button>
 
                   <button 
                     type="button"
                     onClick={() => handleSetAspectRatio(1, '5x5 cm (US Visa)')}
-                    className={`col-span-2 border bg-slate-950 p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
-                      currentRatioName.startsWith('5x5') ? 'border-2 border-blue-500' : 'border-slate-800'
+                    className={`col-span-2 border p-2.5 rounded-xl text-left hover:border-blue-500 transition cursor-pointer ${
+                      currentRatioName.startsWith('5x5') ? 'border-2 border-blue-600 bg-blue-50/50' : 'border-slate-200 bg-white'
                     }`}
                   >
-                    <p className="text-xs font-semibold text-white m-0">5 x 5 cm (2x2 inch)</p>
-                    <p className="text-[10px] text-slate-400 m-0">Visa Mỹ / Visa Hàn Quốc / Nhật Bản</p>
+                    <p className="text-xs font-bold text-slate-800 m-0">5 x 5 cm (2x2 inch)</p>
+                    <p className="text-[10px] text-slate-500 m-0">Visa Mỹ / Visa Hàn Quốc / Nhật Bản</p>
                   </button>
                 </div>
 
-                <div className="pt-3 border-t border-slate-800 space-y-3">
+                <div className="pt-3 border-t border-slate-200 space-y-3">
                   <div className="flex justify-between items-center text-xs">
-                    <span className="text-slate-300 font-medium">Khung Căn Chỉnh Hộ Chiếu (ICAO)</span>
+                    <span className="text-slate-700 font-semibold">Khung Căn Chỉnh Hộ Chiếu (ICAO)</span>
                     <input 
                       type="checkbox" 
                       id="chkGuideOverlay" 
                       checked={showPassportGuide} 
                       onChange={(e) => setShowPassportGuide(e.target.checked)}
-                      className="rounded border-slate-700 bg-slate-900 text-blue-600 focus:ring-0 cursor-pointer"
+                      className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer w-4 h-4"
                     />
                   </div>
 
@@ -827,14 +827,14 @@ export default function IdPhotoStudio() {
                     <button 
                       type="button"
                       onClick={() => handleRotate(-90)} 
-                      className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-xs rounded-xl text-slate-700 font-medium flex items-center justify-center gap-1.5 transition cursor-pointer border border-slate-200"
                     >
                       <RotateCcw size={14} /> Xoay -90°
                     </button>
                     <button 
                       type="button"
                       onClick={() => handleRotate(90)} 
-                      className="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-slate-300 flex items-center justify-center gap-1.5 transition cursor-pointer"
+                      className="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-xs rounded-xl text-slate-700 font-medium flex items-center justify-center gap-1.5 transition cursor-pointer border border-slate-200"
                     >
                       <RotateCw size={14} /> Xoay +90°
                     </button>
@@ -847,9 +847,9 @@ export default function IdPhotoStudio() {
             {activeTab === 'adjust' && (
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between text-xs text-slate-300 mb-1">
+                  <div className="flex justify-between text-xs text-slate-700 font-semibold mb-1">
                     <span>Độ Sáng (Brightness)</span>
-                    <span>{filters.brightness}%</span>
+                    <span className="text-blue-600">{filters.brightness}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -857,14 +857,14 @@ export default function IdPhotoStudio() {
                     max="150" 
                     value={filters.brightness} 
                     onChange={(e) => setFilters(f => ({ ...f, brightness: Number(e.target.value) }))}
-                    className="w-full accent-blue-500 cursor-pointer"
+                    className="w-full accent-blue-600 cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs text-slate-300 mb-1">
+                  <div className="flex justify-between text-xs text-slate-700 font-semibold mb-1">
                     <span>Độ Tương Phản (Contrast)</span>
-                    <span>{filters.contrast}%</span>
+                    <span className="text-blue-600">{filters.contrast}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -872,14 +872,14 @@ export default function IdPhotoStudio() {
                     max="150" 
                     value={filters.contrast} 
                     onChange={(e) => setFilters(f => ({ ...f, contrast: Number(e.target.value) }))}
-                    className="w-full accent-blue-500 cursor-pointer"
+                    className="w-full accent-blue-600 cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs text-slate-300 mb-1">
+                  <div className="flex justify-between text-xs text-slate-700 font-semibold mb-1">
                     <span>Độ Rực Màu (Saturation)</span>
-                    <span>{filters.saturate}%</span>
+                    <span className="text-blue-600">{filters.saturate}%</span>
                   </div>
                   <input 
                     type="range" 
@@ -887,14 +887,14 @@ export default function IdPhotoStudio() {
                     max="200" 
                     value={filters.saturate} 
                     onChange={(e) => setFilters(f => ({ ...f, saturate: Number(e.target.value) }))}
-                    className="w-full accent-blue-500 cursor-pointer"
+                    className="w-full accent-blue-600 cursor-pointer"
                   />
                 </div>
 
                 <button 
                   type="button"
                   onClick={() => setFilters({ brightness: 100, contrast: 100, saturate: 100 })}
-                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 rounded-lg flex items-center justify-center gap-1.5 transition cursor-pointer"
+                  className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-xs font-semibold text-slate-700 rounded-xl flex items-center justify-center gap-1.5 transition cursor-pointer border border-slate-200"
                 >
                   <RotateCcw size={14} /> Đặt Lại Thông Số
                 </button>
@@ -904,9 +904,9 @@ export default function IdPhotoStudio() {
             {/* TAB CONTENT 4: PRINT SHEET CONFIG */}
             {activeTab === 'print' && (
               <div className="space-y-4">
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Chọn Bố Cục In Ảnh Thẻ Khổ 10x15cm</label>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Chọn Bố Cục In Ảnh Thẻ Khổ 10x15cm</label>
                 <div className="space-y-2">
-                  <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === 'mix' ? 'border-blue-500' : 'border-slate-800'}`}>
+                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === 'mix' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
                     <div className="flex items-center gap-3">
                       <input 
                         type="radio" 
@@ -917,13 +917,13 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Bố Cục Hỗn Hợp (Khuyên Dùng)</p>
-                        <p className="text-[10px] text-slate-400 m-0">4 ảnh 3x4cm + 2 ảnh 4x6cm + 2 ảnh 2x3cm</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Bố Cục Hỗn Hợp (Khuyên Dùng)</p>
+                        <p className="text-[10px] text-slate-500 m-0">4 ảnh 3x4cm + 2 ảnh 4x6cm + 2 ảnh 2x3cm</p>
                       </div>
                     </div>
                   </label>
 
-                  <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '8_3x4' ? 'border-blue-500' : 'border-slate-800'}`}>
+                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '8_3x4' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
                     <div className="flex items-center gap-3">
                       <input 
                         type="radio" 
@@ -934,13 +934,13 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Khổ 3x4 cm (8 Tấm)</p>
-                        <p className="text-[10px] text-slate-400 m-0">8 ảnh 3x4cm chuẩn tiện dụng</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Khổ 3x4 cm (8 Tấm)</p>
+                        <p className="text-[10px] text-slate-500 m-0">8 ảnh 3x4cm chuẩn tiện dụng</p>
                       </div>
                     </div>
                   </label>
 
-                  <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '4_4x6' ? 'border-blue-500' : 'border-slate-800'}`}>
+                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '4_4x6' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
                     <div className="flex items-center gap-3">
                       <input 
                         type="radio" 
@@ -951,13 +951,13 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Khổ 4x6 cm (4 Tấm)</p>
-                        <p className="text-[10px] text-slate-400 m-0">4 ảnh 4x6cm làm hồ sơ lớn</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Khổ 4x6 cm (4 Tấm)</p>
+                        <p className="text-[10px] text-slate-500 m-0">4 ảnh 4x6cm làm hồ sơ lớn</p>
                       </div>
                     </div>
                   </label>
 
-                  <label className={`cursor-pointer border bg-slate-950 p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '6_35x45' ? 'border-blue-500' : 'border-slate-800'}`}>
+                  <label className={`cursor-pointer border p-2.5 rounded-xl flex items-center justify-between hover:border-blue-500 transition ${printLayout === '6_35x45' ? 'border-2 border-blue-600 bg-blue-50/40' : 'border-slate-200 bg-white'}`}>
                     <div className="flex items-center gap-3">
                       <input 
                         type="radio" 
@@ -968,8 +968,8 @@ export default function IdPhotoStudio() {
                         className="text-blue-600"
                       />
                       <div>
-                        <p className="text-xs font-medium text-white m-0">Khổ Hộ Chiếu 3.5x4.5 cm (6 Tấm)</p>
-                        <p className="text-[10px] text-slate-400 m-0">6 ảnh Hộ chiếu / Visa Châu Âu</p>
+                        <p className="text-xs font-bold text-slate-800 m-0">Khổ Hộ Chiếu 3.5x4.5 cm (6 Tấm)</p>
+                        <p className="text-[10px] text-slate-500 m-0">6 ảnh Hộ chiếu / Visa Châu Âu</p>
                       </div>
                     </div>
                   </label>
@@ -979,7 +979,7 @@ export default function IdPhotoStudio() {
                   type="button"
                   onClick={handleDownloadPrintSheet}
                   disabled={!currentImage}
-                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs text-white rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                  className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 font-semibold text-xs text-white rounded-xl shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
                 >
                   <Download size={15} /> Tải Trang In Khổ 10x15cm (300 DPI)
                 </button>
@@ -989,49 +989,49 @@ export default function IdPhotoStudio() {
         </section>
 
         {/* RIGHT COLUMN: Preview & Workspace */}
-        <section className="space-y-4">
+        <section className="space-y-4 idphoto-sticky-preview">
           
           {/* Main Canvas Card */}
-          <div className="idphoto-card flex flex-col items-center justify-center min-h-[480px] relative overflow-hidden">
+          <div className="idphoto-card flex flex-col items-center justify-center min-h-[500px] relative overflow-hidden bg-slate-50/60">
             
             {/* Loading Spinner Overlay for AI */}
             {isAiProcessing && (
-              <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+              <div className="absolute inset-0 bg-white/85 backdrop-blur-sm z-30 flex flex-col items-center justify-center p-6 text-center animate-fade-in">
                 <div className="relative w-16 h-16 mb-4">
-                  <div className="absolute inset-0 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
-                  <Sparkles className="text-blue-400 text-xl absolute inset-0 m-auto w-fit h-fit animate-pulse" size={24} />
+                  <div className="absolute inset-0 rounded-full border-4 border-blue-200 border-t-blue-600 animate-spin"></div>
+                  <Sparkles className="text-blue-600 text-xl absolute inset-0 m-auto w-fit h-fit animate-pulse" size={24} />
                 </div>
-                <h3 className="text-base font-bold text-white mb-1">Gemini AI Đang Xử Lý Ảnh Thẻ...</h3>
-                <p className="text-xs text-slate-400 max-w-xs m-0">
+                <h3 className="text-base font-bold text-slate-800 mb-1">Gemini AI Đang Xử Lý Ảnh Thẻ...</h3>
+                <p className="text-xs text-slate-500 max-w-xs m-0">
                   AI đang cắt phông nền, thay đổi trang phục lịch sự và tối ưu hóa ánh sáng studio.
                 </p>
               </div>
             )}
 
             {/* Mode Indicator Badge */}
-            <div className="w-full flex items-center justify-between mb-3 text-xs text-slate-400">
-              <span className="font-medium text-slate-300">Kích thước: {currentRatioName}</span>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-blue-500/10 text-blue-400 border border-blue-500/20">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: selectedBgColor }}></span>
+            <div className="w-full flex items-center justify-between mb-3 text-xs">
+              <span className="font-semibold text-slate-700">Kích thước: <strong className="text-blue-600">{currentRatioName}</strong></span>
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white text-slate-700 border border-slate-200 shadow-sm font-medium">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: selectedBgColor }}></span>
                 <span>{selectedBgName}</span>
               </span>
             </div>
 
             {/* Image Container with Passport Guidelines */}
-            <div className="relative w-full max-w-sm aspect-[3/4] bg-slate-950 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center shadow-2xl">
+            <div className="relative w-full max-w-sm aspect-[3/4] bg-slate-900 rounded-xl overflow-hidden border border-slate-300 flex items-center justify-center shadow-lg">
               
               {/* Passport Guidelines Overlay */}
               {showPassportGuide && currentImage && (
                 <div className="passport-guide">
                   <div className="passport-oval-guide"></div>
                   <div className="passport-head-top">
-                    <span className="guide-label text-yellow-400 bg-yellow-950/60">Đỉnh đầu ~15%</span>
+                    <span className="guide-label text-yellow-300 bg-black/60 shadow">Đỉnh đầu ~15%</span>
                   </div>
                   <div className="passport-eye-line">
-                    <span className="guide-label text-blue-400 bg-blue-950/60">Tầm mắt ~42%</span>
+                    <span className="guide-label text-blue-300 bg-black/60 shadow">Tầm mắt ~42%</span>
                   </div>
                   <div className="passport-chin-line">
-                    <span className="guide-label text-red-400 bg-red-950/60">Cằm ~75%</span>
+                    <span className="guide-label text-red-300 bg-black/60 shadow">Cằm ~75%</span>
                   </div>
                 </div>
               )}
@@ -1045,21 +1045,21 @@ export default function IdPhotoStudio() {
               
               {/* Placeholder State */}
               {!currentImage && (
-                <div className="text-center p-6 text-slate-500">
-                  <CreditCard className="mx-auto mb-3 text-slate-700" size={48} />
-                  <p className="text-sm font-medium m-0">Chưa có ảnh nào được chọn</p>
-                  <p className="text-xs mt-1 text-slate-500 m-0">Vui lòng tải ảnh lên từ bảng bên trái</p>
+                <div className="text-center p-6 text-slate-400">
+                  <CreditCard className="mx-auto mb-3 text-slate-500" size={48} />
+                  <p className="text-sm font-medium text-slate-300 m-0">Chưa có ảnh nào được chọn</p>
+                  <p className="text-xs mt-1 text-slate-400 m-0">Vui lòng tải ảnh lên từ bảng bên trái</p>
                 </div>
               )}
             </div>
 
             {/* Download & Quick Actions */}
-            <div className="w-full flex flex-wrap gap-3 mt-5 pt-4 border-t border-slate-800 justify-center sm:justify-between">
+            <div className="w-full flex flex-wrap gap-3 mt-5 pt-4 border-t border-slate-200 justify-center sm:justify-between">
               <button 
                 type="button"
                 onClick={handleDownloadSingle} 
                 disabled={!currentImage}
-                className="flex-1 min-w-[140px] py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
+                className="flex-1 min-w-[140px] py-2.5 px-4 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-50"
               >
                 <Download size={14} /> Tải Ảnh Đơn (HD)
               </button>
@@ -1067,7 +1067,7 @@ export default function IdPhotoStudio() {
                 type="button"
                 onClick={handleTriggerPrint} 
                 disabled={!currentImage}
-                className="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-700 cursor-pointer disabled:opacity-50"
+                className="py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 transition border border-slate-300 cursor-pointer disabled:opacity-50 shadow-sm"
               >
                 <Printer size={14} /> In Trực Tiếp
               </button>
@@ -1078,14 +1078,14 @@ export default function IdPhotoStudio() {
           {/* Sheet Print Preview Section */}
           <div className="idphoto-card space-y-3">
             <div className="flex justify-between items-center">
-              <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2 m-0">
-                <FileImage className="text-emerald-400" size={16} /> Xem Trước Trang In Khổ 10x15cm
+              <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2 m-0">
+                <FileImage className="text-emerald-600" size={16} /> Xem Trước Trang In Khổ 10x15cm
               </h3>
-              <span className="text-[10px] text-slate-400">Chuẩn rửa ảnh tiệm (300 DPI)</span>
+              <span className="text-[10px] text-slate-500 font-medium">Chuẩn rửa ảnh tiệm (300 DPI)</span>
             </div>
             
-            <div className="w-full bg-slate-950 rounded-xl p-3 flex items-center justify-center border border-slate-800 overflow-auto">
-              <div className="bg-white p-2 shadow-2xl transition-all" style={{ width: '240px', height: '360px' }}>
+            <div className="w-full bg-slate-100 rounded-xl p-4 flex items-center justify-center border border-slate-200 overflow-auto">
+              <div className="bg-white p-2 shadow-lg rounded-sm transition-all" style={{ width: '240px', height: '360px' }}>
                 <canvas 
                   ref={printSheetCanvasRef} 
                   width={1200} 
@@ -1110,24 +1110,24 @@ export default function IdPhotoStudio() {
 
       {/* API Key Modal */}
       {showApiKeyModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl animate-scale-up">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-scale-up">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <Key className="text-blue-400" size={20} />
-                <h3 className="text-base font-bold text-white m-0">Cấu Hình Gemini API Key</h3>
+                <Key className="text-blue-600" size={20} />
+                <h3 className="text-base font-bold text-slate-800 m-0">Cấu Hình Gemini API Key</h3>
               </div>
               <button 
                 type="button" 
                 onClick={() => setShowApiKeyModal(false)}
-                className="text-slate-400 hover:text-white"
+                className="text-slate-400 hover:text-slate-600 text-lg leading-none cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed m-0">
-              Hệ thống đã có sẵn Gemini AI từ máy chủ. Bạn cũng có thể dán API Key cá nhân của mình từ <strong>Google AI Studio</strong> để sử dụng không giới hạn:
+            <p className="text-xs text-slate-600 leading-relaxed m-0">
+              Hệ thống đã có sẵn Gemini AI từ máy chủ. Bạn cũng có thể dán API Key cá nhân của mình từ <strong>Google AI Studio</strong> để sử dụng riêng:
             </p>
 
             <input 
@@ -1135,7 +1135,7 @@ export default function IdPhotoStudio() {
               value={apiKeyInput}
               onChange={(e) => setApiKeyInput(e.target.value)}
               placeholder="AIzaSy..." 
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500"
+              className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-blue-500 focus:bg-white"
             />
 
             <div className="flex justify-end gap-2 pt-2">
@@ -1147,7 +1147,7 @@ export default function IdPhotoStudio() {
                   setShowApiKeyModal(false);
                   showToast('Đã xóa API key cá nhân, chuyển sang dùng key hệ thống.', 'info');
                 }}
-                className="px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white"
+                className="px-3.5 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:text-slate-800 hover:bg-slate-100 transition cursor-pointer"
               >
                 Dùng Mặc Định
               </button>
@@ -1160,7 +1160,7 @@ export default function IdPhotoStudio() {
                   }
                   setShowApiKeyModal(false);
                 }}
-                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-semibold text-white shadow-md shadow-blue-600/30"
+                className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-semibold text-white shadow-md shadow-blue-600/25 transition cursor-pointer"
               >
                 Lưu Cấu Hình
               </button>
