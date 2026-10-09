@@ -40,6 +40,7 @@ import {
   Save,
   Loader2,
   Eye,
+  Paperclip,
   Monitor,
   Smartphone,
   RotateCcw,
@@ -288,7 +289,7 @@ export default function QuizManager() {
   const [subQuizFilter, setSubQuizFilter] = useState<string>('active'); // 'active' | 'all' | quizId
   const [isFetchingSubs, setIsFetchingSubs] = useState(false);
   const [subSearchQuery, setSubSearchQuery] = useState('');
-  const [subResultFilter, setSubResultFilter] = useState<'all' | 'passed' | 'failed'>('all');
+  const [subResultFilter, setSubResultFilter] = useState<'all' | 'passed' | 'failed' | 'pending'>('all');
   const [subDateFilter, setSubDateFilter] = useState<'all' | 'today' | '7days' | '30days' | 'custom'>('all');
   const [subStartDate, setSubStartDate] = useState('');
   const [subEndDate, setSubEndDate] = useState('');
@@ -296,6 +297,12 @@ export default function QuizManager() {
   const [subPageSize, setSubPageSize] = useState(10);
   const [selectedSubIds, setSelectedSubIds] = useState<string[]>([]);
   const [isDeletingSubs, setIsDeletingSubs] = useState(false);
+
+  // Modal Xem chi tiết bài làm & Chấm điểm tự luận/thực hành
+  const [viewingSubmission, setViewingSubmission] = useState<StudentSubmission | null>(null);
+  const [gradingScores, setGradingScores] = useState<Record<string, number>>({});
+  const [teacherFeedbackText, setTeacherFeedbackText] = useState('');
+  const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
 
   const activeQuiz = quizzes.find(q => q.id === activeQuizId) || quizzes[0] || DEFAULT_QUIZ;
 
@@ -905,6 +912,117 @@ export default function QuizManager() {
     }
   };
 
+  // Lưu kết quả chấm điểm bài thi của giảng viên
+  const handleSaveGrade = async () => {
+    if (!viewingSubmission) return;
+
+    // Tìm bộ đề thi gốc để đối chiếu điểm tối đa
+    const quizOfSub = quizzes.find(q => q.id === viewingSubmission.quizId) || activeQuiz;
+    const questions = quizOfSub?.questions || [];
+
+    // Tính lại điểm: Điểm trắc nghiệm tự động + Điểm tự luận/thực hành giảng viên chấm
+    let manualTotal = 0;
+    Object.values(gradingScores).forEach(scoreVal => {
+      manualTotal += Number(scoreVal) || 0;
+    });
+
+    // Điểm trắc nghiệm ban đầu (nếu có các câu tự luận thì điểm câu tự luận trước đó là 0)
+    let autoScore = 0;
+    let examTotalPoints = 0;
+
+    questions.forEach(q => {
+      examTotalPoints += (q.points || 1);
+      const userAns = viewingSubmission.answers?.[q.id];
+      if (q.type === 'choice' && userAns === q.correctAnswer) {
+        autoScore += (q.points || 1);
+      } else if (q.type === 'multiple_choice') {
+        if (Array.isArray(userAns) && Array.isArray(q.correctAnswers)) {
+          const s1 = [...userAns].sort().join('|');
+          const s2 = [...q.correctAnswers].sort().join('|');
+          if (s1 === s2) autoScore += (q.points || 1);
+        }
+      } else if (q.type === 'fill_blank') {
+        const correctList = (q.correctAnswer || '').split(';').map(s => s.trim().toLowerCase());
+        const userTrim = (typeof userAns === 'string' ? userAns : (userAns?.text || '')).trim().toLowerCase();
+        if (correctList.includes(userTrim)) autoScore += (q.points || 1);
+      } else if (q.type === 'matching' && typeof userAns === 'object' && userAns !== null && q.matchingPairs) {
+        if (q.matchingPairs.every(p => userAns[p.left] === p.right)) autoScore += (q.points || 1);
+      }
+    });
+
+    const calculatedTotalScore = autoScore + manualTotal;
+    const totalPts = examTotalPoints > 0 ? examTotalPoints : (viewingSubmission.totalPoints || 10);
+    const finalScaledScore = totalPts > 0 ? Number(((calculatedTotalScore / totalPts) * 10).toFixed(1)) : 0;
+    const passThreshold = quizOfSub?.settings?.passingScorePercent || 50;
+    const isPassed = ((finalScaledScore / 10) * 100) >= passThreshold;
+    const finalPercentage = Math.round((finalScaledScore / 10) * 100);
+
+    setIsSubmittingGrade(true);
+    showToast('Đang cập nhật kết quả chấm điểm...', 'info');
+
+    try {
+      const payload = {
+        id: viewingSubmission.id,
+        score: finalScaledScore,
+        percentage: finalPercentage,
+        passed: isPassed,
+        manualScores: gradingScores,
+        teacherFeedback: teacherFeedbackText,
+        status: 'GRADED'
+      };
+
+      // 1. Gửi cập nhật lên PostgreSQL qua API
+      const res = await fetch('/api/qa-wall?action=grade-submission', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if (!res.ok) {
+        console.warn('Cảnh báo lưu điểm:', await res.text());
+      }
+
+      const updatedSub: StudentSubmission = {
+        ...viewingSubmission,
+        score: finalScaledScore,
+        percentage: finalPercentage,
+        passed: isPassed,
+        manualScores: gradingScores,
+        teacherFeedback: teacherFeedbackText,
+        status: 'GRADED'
+      };
+
+      // 2. Cập nhật state trong bảng điểm
+      setSubmissions(prev => prev.map(s => s.id === updatedSub.id ? updatedSub : s));
+      setViewingSubmission(updatedSub);
+
+      // 3. Cập nhật localStorage
+      try {
+        const prev = localStorage.getItem('rchg_quiz_submissions');
+        if (prev) {
+          const list: StudentSubmission[] = JSON.parse(prev);
+          const next = list.map(s => s.id === updatedSub.id ? updatedSub : s);
+          localStorage.setItem('rchg_quiz_submissions', JSON.stringify(next));
+        }
+        if (user) {
+          const userKey = `rchg_quiz_submissions_${user.id}`;
+          const userSubs = localStorage.getItem(userKey);
+          if (userSubs) {
+            const list: StudentSubmission[] = JSON.parse(userSubs);
+            const next = list.map(s => s.id === updatedSub.id ? updatedSub : s);
+            localStorage.setItem(userKey, JSON.stringify(next));
+          }
+        }
+      } catch {}
+
+      showToast('🎉 Đã lưu kết quả chấm điểm thành công!', 'success');
+    } catch (err: any) {
+      console.error('Lỗi khi chấm bài:', err);
+      showToast('Lỗi khi lưu điểm bài thi: ' + (err.message || 'Không xác định'), 'error');
+    } finally {
+      setIsSubmittingGrade(false);
+    }
+  };
+
   // Xóa câu hỏi khỏi ngân hàng
   const handleDeleteQuestion = (qId: string) => {
     const updated = activeQuiz.questions.filter(q => q.id !== qId);
@@ -1239,9 +1357,10 @@ export default function QuizManager() {
 
   // Lọc thông minh danh sách bài nộp & sinh viên
   const filteredSubmissions = activeQuizSubmissions.filter(s => {
-    // 1. Lọc theo kết quả Đạt / Chưa đạt
-    if (subResultFilter === 'passed' && !s.passed) return false;
-    if (subResultFilter === 'failed' && s.passed) return false;
+    // 1. Lọc theo kết quả Đạt / Chưa đạt / Chờ chấm điểm
+    if (subResultFilter === 'pending' && s.status !== 'PENDING_GRADING' && !s.hasManualGrading) return false;
+    if (subResultFilter === 'passed' && (s.status === 'PENDING_GRADING' || !s.passed)) return false;
+    if (subResultFilter === 'failed' && (s.status === 'PENDING_GRADING' || s.passed)) return false;
 
     // 2. Lọc theo khoảng thời gian
     const subDate = new Date(s.submittedAt);
@@ -1773,7 +1892,8 @@ export default function QuizManager() {
                   <option value="multiple_choice">Chọn nhiều đáp án</option>
                   <option value="fill_blank">Điền khuyết</option>
                   <option value="matching">Kéo thả / Nối cặp</option>
-                  <option value="essay">Tự luận ngắn</option>
+                  <option value="essay">Tự luận</option>
+                  <option value="practical">Bài thực hành</option>
                 </select>
               </div>
 
@@ -2408,6 +2528,7 @@ export default function QuizManager() {
                   onChange={(e) => setSubResultFilter(e.target.value as any)}
                 >
                   <option value="all">Tất cả xếp loại</option>
+                  <option value="pending">⏳ Chờ chấm điểm (Tự luận / Thực hành)</option>
                   <option value="passed">✅ Đạt chuẩn (Pass)</option>
                   <option value="failed">❌ Chưa đạt (Fail)</option>
                 </select>
@@ -2578,12 +2699,22 @@ export default function QuizManager() {
                               {sub.quizTitle || 'Bài thi trắc nghiệm'}
                             </td>
                           )}
-                          <td><span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>{sub.score}/{sub.totalPoints}</span></td>
-                          <td>{sub.percentage}%</td>
                           <td>
-                            <span className="qm-badge" style={{ background: sub.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub.passed ? '#10b981' : '#ef4444' }}>
-                              {sub.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
+                            <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1rem' }}>
+                              {sub.status === 'PENDING_GRADING' ? `${sub.score}*` : sub.score}/{sub.totalPoints}
                             </span>
+                          </td>
+                          <td>{sub.status === 'PENDING_GRADING' ? '—' : `${sub.percentage}%`}</td>
+                          <td>
+                            {sub.status === 'PENDING_GRADING' ? (
+                              <span className="qm-badge" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#d97706', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                ⏳ CHỜ CHẤM
+                              </span>
+                            ) : (
+                              <span className="qm-badge" style={{ background: sub.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub.passed ? '#10b981' : '#ef4444' }}>
+                                {sub.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
+                              </span>
+                            )}
                           </td>
                           <td>
                             {sub.violationCount && sub.violationCount > 0 ? (
@@ -2604,16 +2735,31 @@ export default function QuizManager() {
                             {new Date(sub.submittedAt).toLocaleTimeString('vi-VN')} {new Date(sub.submittedAt).toLocaleDateString('vi-VN')}
                           </td>
                           <td style={{ textAlign: 'center' }}>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-xs"
-                              onClick={() => handleDeleteSubmissions([sub.id])}
-                              style={{ color: '#ef4444', borderColor: '#ef4444', padding: '4px 8px' }}
-                              title="Xóa bài thi của thí sinh này"
-                              disabled={isDeletingSubs}
-                            >
-                              <Trash2 size={14} />
-                            </button>
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-xs"
+                                onClick={() => {
+                                  setViewingSubmission(sub);
+                                  setGradingScores(sub.manualScores || {});
+                                  setTeacherFeedbackText(sub.teacherFeedback || '');
+                                }}
+                                style={{ color: 'var(--primary)', borderColor: 'var(--primary)', padding: '4px 8px' }}
+                                title="Xem chi tiết bài làm & Chấm điểm tự luận/thực hành"
+                              >
+                                <Eye size={14} />
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-xs"
+                                onClick={() => handleDeleteSubmissions([sub.id])}
+                                style={{ color: '#ef4444', borderColor: '#ef4444', padding: '4px 8px' }}
+                                title="Xóa bài thi của thí sinh này"
+                                disabled={isDeletingSubs}
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -2679,6 +2825,308 @@ export default function QuizManager() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL XEM CHI TIẾT BÀI LÀM & CHẤM ĐIỂM TỰ LUẬN / THỰC HÀNH */}
+      {viewingSubmission && (
+        <div className="modal-overlay" onClick={() => setViewingSubmission(null)}>
+          <div className="modal-content" style={{ maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header" style={{ borderBottom: '1px solid var(--border)', paddingBottom: '0.85rem' }}>
+              <div>
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                  <Eye size={20} color="var(--primary)" /> Chi Tiết Bài Làm & Chấm Điểm Thí Sinh
+                </h3>
+                <div style={{ marginTop: '0.35rem', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Thí sinh: <strong>{viewingSubmission.studentName}</strong> • MSSV: <strong>{viewingSubmission.studentId || 'Chưa có'}</strong> • Lớp: <strong>{viewingSubmission.className || 'Tự do'}</strong>
+                </div>
+              </div>
+              <button type="button" className="modal-close-btn" onClick={() => setViewingSubmission(null)}>✕</button>
+            </div>
+
+            <div className="modal-body" style={{ overflowY: 'auto', padding: '1.25rem', flex: 1 }}>
+              {/* Thẻ tóm tắt điểm số hiện tại */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1rem 1.25rem',
+                marginBottom: '1.25rem',
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '1rem'
+              }}>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Điểm số hiện tại</span>
+                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--primary)' }}>
+                    {viewingSubmission.score}/{viewingSubmission.totalPoints}
+                  </span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Tỷ lệ đạt</span>
+                  <span style={{ fontSize: '1.4rem', fontWeight: 800, color: viewingSubmission.passed ? '#10b981' : '#ef4444' }}>
+                    {viewingSubmission.status === 'PENDING_GRADING' ? 'Chờ chấm' : `${viewingSubmission.percentage}%`}
+                  </span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Trạng thái chấm</span>
+                  <span className="qm-badge" style={{
+                    marginTop: '0.25rem',
+                    background: viewingSubmission.status === 'PENDING_GRADING' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                    color: viewingSubmission.status === 'PENDING_GRADING' ? '#d97706' : '#10b981',
+                    fontWeight: 700
+                  }}>
+                    {viewingSubmission.status === 'PENDING_GRADING' ? '⏳ ĐANG CHỜ GIẢNG VIÊN CHẤM' : '✅ ĐÃ HOÀN TẤT CHẤM'}
+                  </span>
+                </div>
+                <div>
+                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'block' }}>Giám sát thi</span>
+                  <span style={{ fontSize: '0.9rem', fontWeight: 600, color: viewingSubmission.violationCount && viewingSubmission.violationCount > 0 ? '#ef4444' : '#10b981' }}>
+                    {viewingSubmission.violationCount && viewingSubmission.violationCount > 0 ? `⚠️ Rời tab ${viewingSubmission.violationCount} lần` : '✓ Hợp lệ'}
+                  </span>
+                </div>
+              </div>
+
+              {/* Danh sách câu hỏi và câu trả lời của thí sinh */}
+              {(() => {
+                const targetQuiz = quizzes.find(q => q.id === viewingSubmission.quizId) || activeQuiz;
+                const questions = targetQuiz?.questions || [];
+
+                if (questions.length === 0) {
+                  return (
+                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                      Không tìm thấy danh sách câu hỏi gốc của đề thi này.
+                    </div>
+                  );
+                }
+
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                    {questions.map((q, idx) => {
+                      const userAns = viewingSubmission.answers?.[q.id];
+                      const isEssayOrPractical = q.type === 'essay' || q.type === 'practical';
+
+                      // Kiểm tra đúng sai trắc nghiệm
+                      let isCorrect = false;
+                      if (q.type === 'choice') {
+                        isCorrect = userAns === q.correctAnswer;
+                      } else if (q.type === 'multiple_choice') {
+                        if (Array.isArray(userAns) && Array.isArray(q.correctAnswers)) {
+                          const s1 = [...userAns].sort().join('|');
+                          const s2 = [...q.correctAnswers].sort().join('|');
+                          isCorrect = s1 === s2;
+                        }
+                      } else if (q.type === 'fill_blank') {
+                        const correctList = (q.correctAnswer || '').split(';').map(s => s.trim().toLowerCase());
+                        const userTrim = (typeof userAns === 'string' ? userAns : (userAns?.text || '')).trim().toLowerCase();
+                        isCorrect = correctList.includes(userTrim);
+                      } else if (q.type === 'matching' && typeof userAns === 'object' && userAns !== null && q.matchingPairs) {
+                        isCorrect = q.matchingPairs.every(p => userAns[p.left] === p.right);
+                      }
+
+                      return (
+                        <div 
+                          key={q.id}
+                          style={{
+                            background: 'var(--bg-primary)',
+                            border: `1px solid ${isEssayOrPractical ? 'var(--primary)' : (isCorrect ? '#10b981' : 'var(--border)')}`,
+                            borderRadius: 'var(--radius-lg)',
+                            padding: '1.1rem 1.25rem',
+                            position: 'relative'
+                          }}
+                        >
+                          {/* Header câu hỏi */}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.75rem', marginBottom: '0.6rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                              <span style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                Câu #{idx + 1}
+                              </span>
+                              <span className="qm-badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
+                                {q.type === 'choice' ? 'Trắc nghiệm ABCD' : (q.type === 'multiple_choice' ? 'Nhiều đáp án' : (q.type === 'fill_blank' ? 'Điền khuyết' : (q.type === 'matching' ? 'Ghép nối' : (q.type === 'practical' ? 'Bài thực hành' : 'Tự luận'))))}
+                              </span>
+                              <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                (Điểm tối đa: {q.points || 1}đ)
+                              </span>
+                            </div>
+
+                            {/* Badge kết quả hoặc ô nhập điểm */}
+                            {isEssayOrPractical ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                                  Điểm GV chấm:
+                                </label>
+                                <input 
+                                  type="number"
+                                  min={0}
+                                  max={q.points || 10}
+                                  step={0.25}
+                                  className="qm-input"
+                                  style={{ width: '80px', height: '34px', fontSize: '0.95rem', fontWeight: 700, textAlign: 'center', borderColor: 'var(--primary)' }}
+                                  value={gradingScores[q.id] !== undefined ? gradingScores[q.id] : (viewingSubmission.manualScores?.[q.id] ?? '')}
+                                  onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    setGradingScores(prev => ({ ...prev, [q.id]: isNaN(val) ? 0 : val }));
+                                  }}
+                                  placeholder="0"
+                                />
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>/{q.points || 1}</span>
+                              </div>
+                            ) : (
+                              <span className="qm-badge" style={{
+                                background: isCorrect ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                                color: isCorrect ? '#10b981' : '#ef4444',
+                                fontWeight: 700
+                              }}>
+                                {isCorrect ? `+${q.points || 1} điểm` : '0 điểm'}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Nội dung câu hỏi */}
+                          <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)', marginBottom: '0.75rem', fontWeight: 500, lineHeight: 1.5 }}>
+                            {q.question}
+                          </div>
+
+                          {/* Nếu có hình ảnh đính kèm câu hỏi */}
+                          {q.imageUrl && (
+                            <div style={{ marginBottom: '0.75rem' }}>
+                              <img 
+                                src={getSafeImageUrl(q.imageUrl)} 
+                                alt="Ảnh câu hỏi" 
+                                style={{ maxHeight: '160px', maxWidth: '100%', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', objectFit: 'contain', cursor: 'pointer' }}
+                                onClick={() => window.open(q.imageUrl, '_blank')}
+                                title="Bấm để xem ảnh phóng to"
+                              />
+                            </div>
+                          )}
+
+                          {/* Chi tiết câu trả lời của thí sinh */}
+                          <div style={{ background: 'var(--bg-secondary)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                            <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.35rem' }}>
+                              BÀI LÀM CỦA THÍ SINH:
+                            </div>
+
+                            {isEssayOrPractical ? (
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                                  {typeof userAns === 'object' && userAns !== null ? (userAns.text || 'Thí sinh không nhập nội dung văn bản.') : (userAns || 'Chưa trả lời.')}
+                                </div>
+
+                                {/* File đính kèm tải lên Google Drive */}
+                                {typeof userAns === 'object' && userAns?.fileUrl && (
+                                  <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.6rem 0.85rem',
+                                    background: 'var(--bg-primary)',
+                                    borderRadius: 'var(--radius-sm)',
+                                    border: '1px solid var(--primary)',
+                                    marginTop: '0.35rem'
+                                  }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                                      <Paperclip size={16} color="var(--primary)" style={{ flexShrink: 0 }} />
+                                      <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                                        {userAns.fileName || 'Tệp tin bài làm đính kèm'}
+                                      </span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '0.4rem', flexShrink: 0 }}>
+                                      <a 
+                                        href={userAns.fileUrl} 
+                                        target="_blank" 
+                                        rel="noreferrer"
+                                        className="btn btn-primary btn-xs"
+                                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                      >
+                                        <ExternalLink size={12} /> Xem file trên Drive
+                                      </a>
+                                      {userAns.webContentLink && (
+                                        <a 
+                                          href={userAns.webContentLink} 
+                                          target="_blank" 
+                                          rel="noreferrer"
+                                          className="btn btn-outline btn-xs"
+                                          style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '3px' }}
+                                        >
+                                          <Download size={12} /> Tải file về
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div>
+                                <div style={{ fontSize: '0.9rem', color: isCorrect ? '#10b981' : '#ef4444', fontWeight: 600 }}>
+                                  {isCorrect ? '✅ Đã chọn đúng: ' : '❌ Đã chọn: '}
+                                  <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                                    {typeof userAns === 'object' ? JSON.stringify(userAns) : (userAns || 'Chưa trả lời')}
+                                  </span>
+                                </div>
+                                {!isCorrect && (
+                                  <div style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.3rem' }}>
+                                    💡 Đáp án chuẩn: <strong>{q.correctAnswer || (q.correctAnswers || []).join(', ')}</strong>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Gợi ý chấm điểm hoặc đáp án tham khảo cho GV */}
+                            {isEssayOrPractical && q.correctAnswer && (
+                              <div style={{ marginTop: '0.6rem', paddingTop: '0.6rem', borderTop: '1px dashed var(--border)', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                                💡 <strong>Gợi ý đáp án / Tiêu chí chấm:</strong> {q.correctAnswer}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Phần nhận xét của giảng viên */}
+              <div style={{ marginTop: '1.5rem', background: 'var(--bg-secondary)', padding: '1.25rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                <label className="qm-label" style={{ marginBottom: '0.5rem' }}>
+                  💬 Nhận xét của Giảng viên dành cho bài làm này:
+                </label>
+                <textarea 
+                  className="qm-textarea"
+                  rows={3}
+                  placeholder="Nhập nhận xét, góp ý hoặc lời khen dành cho sinh viên..."
+                  value={teacherFeedbackText}
+                  onChange={(e) => setTeacherFeedbackText(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="modal-footer" style={{ borderTop: '1px solid var(--border)', padding: '0.85rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button 
+                type="button" 
+                className="btn btn-outline" 
+                onClick={() => setViewingSubmission(null)}
+              >
+                Đóng
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-primary"
+                onClick={handleSaveGrade}
+                disabled={isSubmittingGrade}
+                style={{ minWidth: '180px' }}
+              >
+                {isSubmittingGrade ? (
+                  <>
+                    <Loader2 size={16} className="spinner" /> Đang lưu điểm...
+                  </>
+                ) : (
+                  <>
+                    <Save size={16} /> Lưu Điểm & Hoàn Tất Chấm
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -2920,7 +3368,8 @@ export default function QuizManager() {
                     <option value="multiple_choice">Chọn nhiều đáp án đúng</option>
                     <option value="fill_blank">Điền khuyết (Fill-in-the-blank)</option>
                     <option value="matching">Kéo thả / Ghép nối cặp</option>
-                    <option value="essay">Tự luận ngắn (Từ khóa)</option>
+                    <option value="essay">Tự luận (Giảng viên chấm sau)</option>
+                    <option value="practical">Bài thực hành (Kèm nộp file / code)</option>
                   </select>
                 </div>
                 <div className="qm-form-group">
@@ -3215,17 +3664,19 @@ export default function QuizManager() {
                 </div>
               )}
 
-              {/* Fill blank or Essay */}
-              {(formQType === 'fill_blank' || formQType === 'essay') && (
+              {/* Fill blank or Essay or Practical */}
+              {(formQType === 'fill_blank' || formQType === 'essay' || formQType === 'practical') && (
                 <div className="qm-form-group">
                   <label className="qm-label">
-                    {formQType === 'fill_blank' ? 'Đáp án đúng (chấp nhận nhiều đáp án cách nhau bằng dấu chấm phẩy ;)' : 'Các từ khóa trọng tâm để tự động chấm điểm (cách nhau bằng dấu phẩy)'}
+                    {formQType === 'fill_blank' 
+                      ? 'Đáp án đúng (chấp nhận nhiều đáp án cách nhau bằng dấu chấm phẩy ;)' 
+                      : (formQType === 'practical' ? 'Tiêu chí chấm điểm hoặc đáp án/code mẫu (Giảng viên đối chiếu khi chấm sau)' : 'Gợi ý đáp án hoặc tiêu chí chấm bài tự luận')}
                   </label>
                   <input 
                     type="text" 
                     className="qm-input" 
                     value={formQCorrectAnswer}
-                    placeholder="Ví dụ: Hà Nội;Ha Noi;Hanoi"
+                    placeholder={formQType === 'fill_blank' ? "Ví dụ: Hà Nội;Ha Noi;Hanoi" : "Nhập tiêu chí hoặc gợi ý kết quả mong đợi..."}
                     onChange={(e) => setFormQCorrectAnswer(e.target.value)}
                   />
                 </div>

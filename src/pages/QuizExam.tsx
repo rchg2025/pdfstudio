@@ -16,7 +16,13 @@ import {
   Play,
   ShieldAlert,
   AlertTriangle,
-  Maximize2
+  Maximize2,
+  Upload,
+  Loader2,
+  Paperclip,
+  ExternalLink,
+  Check,
+  Trash2
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import type { QuizPackage, QuizQuestion, StudentSubmission } from '../types/quiz';
@@ -54,6 +60,7 @@ export default function QuizExam() {
 
   const [submissionResult, setSubmissionResult] = useState<StudentSubmission | null>(null);
   const [reviewList, setReviewList] = useState<{ q: QuizQuestion; userAns: any; isCorrect: boolean }[]>([]);
+  const [uploadingQId, setUploadingQId] = useState<string | null>(null);
 
   // Chống gian lận / Khóa chuyển tab & ứng dụng
   const [violationCount, setViolationCount] = useState<number>(0);
@@ -398,10 +405,95 @@ export default function QuizExam() {
     quizAudio.playNavSound();
   };
 
+  // Xử lý tải file đính kèm câu hỏi tự luận/thực hành lên Google Drive của hệ thống
+  const handleFileUpload = async (qId: string, file: File) => {
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      showToast('Kích thước file vượt quá giới hạn cho phép (tối đa 25MB).', 'error');
+      return;
+    }
+
+    setUploadingQId(qId);
+    showToast(`Đang tải file "${file.name}" lên Google Drive của hệ thống...`, 'info');
+
+    try {
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = (err) => reject(err);
+      });
+      reader.readAsDataURL(file);
+      const base64Data = await base64Promise;
+
+      const res = await fetch('/api/qa-wall?action=upload-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileBase64: base64Data,
+          filename: file.name,
+          mimeType: file.type || 'application/octet-stream'
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Tải file thất bại');
+      }
+
+      const data = await res.json();
+      const currentAns = answers[qId];
+      let existingText = '';
+      if (typeof currentAns === 'string') {
+        existingText = currentAns;
+      } else if (typeof currentAns === 'object' && currentAns !== null) {
+        existingText = currentAns.text || '';
+      }
+
+      setAnswers(prev => ({
+        ...prev,
+        [qId]: {
+          text: existingText,
+          fileUrl: data.webViewLink || data.url,
+          fileName: data.fileName || file.name,
+          webContentLink: data.webContentLink
+        }
+      }));
+
+      showToast(`Đã tải file "${file.name}" lên Google Drive thành công!`, 'success');
+      quizAudio.playSuccessSound();
+    } catch (err: any) {
+      console.error('Lỗi khi tải file bài tập:', err);
+      showToast('Lỗi khi tải file lên hệ thống: ' + (err.message || 'Vui lòng thử lại'), 'error');
+    } finally {
+      setUploadingQId(null);
+    }
+  };
+
+  const handleRemoveFile = (qId: string) => {
+    const currentAns = answers[qId];
+    if (typeof currentAns === 'object' && currentAns !== null) {
+      setAnswers(prev => ({
+        ...prev,
+        [qId]: {
+          text: currentAns.text || '',
+          fileUrl: undefined,
+          fileName: undefined
+        }
+      }));
+      showToast('Đã hủy đính kèm tệp tin.', 'info');
+    }
+  };
+
   // Nộp bài thi & Chấm điểm tự động
   const handleSubmitExam = (force = false) => {
     if (!force) {
-      const unanswered = activeQuestions.filter(q => answers[q.id] === undefined || answers[q.id] === '');
+      const unanswered = activeQuestions.filter(q => {
+        const ans = answers[q.id];
+        if (ans === undefined || ans === null || ans === '') return true;
+        if (typeof ans === 'object' && !ans.text?.trim() && !ans.fileUrl) return true;
+        return false;
+      });
+
       let confirmMsg = 'Bạn có chắc chắn muốn nộp bài thi?';
       if (unanswered.length > 0) {
         confirmMsg = `CẢNH BÁO: Còn ${unanswered.length} câu hỏi bạn chưa hoàn thành. Bạn có chắc chắn muốn nộp bài?`;
@@ -415,6 +507,7 @@ export default function QuizExam() {
 
     let earned = 0;
     let total = 0;
+    let hasManualGrading = false;
     const rev: { q: QuizQuestion; userAns: any; isCorrect: boolean }[] = [];
 
     activeQuestions.forEach(q => {
@@ -433,21 +526,16 @@ export default function QuizExam() {
         }
       } else if (q.type === 'fill_blank') {
         const correctList = (q.correctAnswer || '').split(';').map(s => s.trim().toLowerCase());
-        const userTrim = (userAns || '').trim().toLowerCase();
+        const userTrim = (typeof userAns === 'string' ? userAns : (userAns?.text || '')).trim().toLowerCase();
         isCorrect = correctList.includes(userTrim);
       } else if (q.type === 'matching') {
         if (typeof userAns === 'object' && userAns !== null && q.matchingPairs) {
           isCorrect = q.matchingPairs.every(p => userAns[p.left] === p.right);
         }
-      } else if (q.type === 'essay') {
-        const keywords = (q.correctAnswer || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
-        const userText = (userAns || '').toLowerCase();
-        if (keywords.length > 0) {
-          const matchCount = keywords.filter(k => userText.includes(k)).length;
-          isCorrect = matchCount >= Math.ceil(keywords.length / 2);
-        } else {
-          isCorrect = (userAns || '').trim().length > 10;
-        }
+      } else if (q.type === 'essay' || q.type === 'practical') {
+        // Đề thi có câu tự luận hoặc thực hành: KHÔNG TỰ ĐỘNG CHẤM ĐIỂM, để giảng viên tự chấm sau
+        hasManualGrading = true;
+        isCorrect = false; // Chờ giáo viên đánh giá
       }
 
       if (isCorrect) earned += pts;
@@ -456,7 +544,7 @@ export default function QuizExam() {
 
     const finalScore = total > 0 ? Number(((earned / total) * 10).toFixed(1)) : 0;
     const passThreshold = quiz?.settings?.passingScorePercent || 50;
-    const isPassed = ((finalScore / 10) * 100) >= passThreshold;
+    const isPassed = !hasManualGrading && ((finalScore / 10) * 100) >= passThreshold;
 
     const totalLimitSec = (quiz?.settings?.timeLimitMinutes || 0) * 60;
     const spentSec = totalLimitSec > 0 ? Math.max(1, totalLimitSec - timeLeft) : 60;
@@ -471,12 +559,14 @@ export default function QuizExam() {
       email: studentEmail.trim() || undefined,
       score: finalScore,
       totalPoints: total,
-      percentage: Math.round((finalScore / 10) * 100),
+      percentage: hasManualGrading ? 0 : Math.round((finalScore / 10) * 100),
       passed: isPassed,
       timeSpentSeconds: spentSec,
       submittedAt: new Date().toISOString(),
       answers,
-      violationCount
+      violationCount,
+      status: hasManualGrading ? 'PENDING_GRADING' : 'GRADED',
+      hasManualGrading
     };
 
     setSubmissionResult(sub);
@@ -785,7 +875,7 @@ export default function QuizExam() {
                     {currentQ.difficulty === 'easy' ? 'DỄ' : (currentQ.difficulty === 'medium' ? 'TRUNG BÌNH' : 'KHÓ')}
                   </span>
                   <span className="exam-badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
-                    {currentQ.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (currentQ.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (currentQ.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (currentQ.type === 'matching' ? 'GHÉP NỐI' : 'TỰ LUẬN')))}
+                    {currentQ.type === 'choice' ? 'TRẮC NGHIỆM ABCD' : (currentQ.type === 'multiple_choice' ? 'CHỌN NHIỀU ĐÁP ÁN' : (currentQ.type === 'fill_blank' ? 'ĐIỀN KHUYẾT' : (currentQ.type === 'matching' ? 'GHÉP NỐI' : (currentQ.type === 'practical' ? 'BÀI THỰC HÀNH' : 'TỰ LUẬN'))))}
                   </span>
                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>
                     ({currentQ.points || 1} điểm)
@@ -904,16 +994,124 @@ export default function QuizExam() {
               </div>
             )}
 
-            {/* Tự luận ngắn */}
-            {currentQ.type === 'essay' && (
-              <div>
+            {/* Tự luận hoặc Bài thực hành */}
+            {(currentQ.type === 'essay' || currentQ.type === 'practical') && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                 <textarea 
                   className="exam-textarea" 
-                  rows={4}
-                  placeholder="Nhập câu trả lời tự luận ngắn của bạn..."
-                  value={answers[currentQ.id] || ''}
-                  onChange={(e) => setAnswers(prev => ({ ...prev, [currentQ.id]: e.target.value }))}
+                  rows={currentQ.type === 'practical' ? 6 : 4}
+                  placeholder={currentQ.type === 'practical' 
+                    ? "Nhập câu trả lời, lời giải chi tiết, đoạn mã (code) hoặc mô tả các bước thực hành của bạn..." 
+                    : "Nhập bài làm tự luận của bạn vào đây..."}
+                  value={typeof answers[currentQ.id] === 'object' && answers[currentQ.id] !== null ? (answers[currentQ.id].text || '') : (answers[currentQ.id] || '')}
+                  onChange={(e) => {
+                    const textVal = e.target.value;
+                    const prevAns = answers[currentQ.id];
+                    if (typeof prevAns === 'object' && prevAns !== null) {
+                      setAnswers(prev => ({ ...prev, [currentQ.id]: { ...prevAns, text: textVal } }));
+                    } else {
+                      setAnswers(prev => ({ ...prev, [currentQ.id]: textVal }));
+                    }
+                  }}
                 />
+
+                {/* Vùng tải lên tệp tin đính kèm (cho phép cả trong iframe LMS) */}
+                <div style={{
+                  padding: '0.85rem 1rem',
+                  background: 'var(--bg-tertiary)',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px dashed var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.6rem'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.88rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      <Paperclip size={16} color="var(--primary)" />
+                      <span>Đính kèm file bài làm (Google Drive của hệ thống)</span>
+                    </div>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                      Hỗ trợ: PDF, Word (.docx), Excel, ZIP, Ảnh, Code (tối đa 25MB)
+                    </span>
+                  </div>
+
+                  {/* Hiển thị file đã upload */}
+                  {typeof answers[currentQ.id] === 'object' && answers[currentQ.id]?.fileUrl ? (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '0.6rem 0.85rem',
+                      background: 'var(--bg-primary)',
+                      borderRadius: 'var(--radius-sm)',
+                      border: '1px solid #10b981'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', overflow: 'hidden' }}>
+                        <Check size={16} color="#10b981" style={{ flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-primary)', wordBreak: 'break-all' }}>
+                          {answers[currentQ.id].fileName || 'Tệp đính kèm bài làm'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0, marginLeft: '0.5rem' }}>
+                        <a
+                          href={answers[currentQ.id].fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn btn-outline btn-xs"
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', textDecoration: 'none' }}
+                          title="Xem tệp trên Google Drive"
+                        >
+                          <ExternalLink size={12} /> Xem file
+                        </a>
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-xs"
+                          style={{ color: '#ef4444', borderColor: '#ef4444' }}
+                          onClick={() => handleRemoveFile(currentQ.id)}
+                          title="Xóa tệp đính kèm này"
+                        >
+                          <Trash2 size={12} /> Xóa
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <input 
+                        type="file" 
+                        id={`file-input-${currentQ.id}`}
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleFileUpload(currentQ.id, file);
+                          }
+                          e.target.value = '';
+                        }}
+                      />
+                      <label 
+                        htmlFor={`file-input-${currentQ.id}`}
+                        className="btn btn-outline btn-sm"
+                        style={{ 
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '0.45rem', 
+                          cursor: uploadingQId === currentQ.id ? 'not-allowed' : 'pointer',
+                          opacity: uploadingQId === currentQ.id ? 0.7 : 1
+                        }}
+                      >
+                        {uploadingQId === currentQ.id ? (
+                          <>
+                            <Loader2 size={14} className="spinner" /> Đang tải file lên Google Drive...
+                          </>
+                        ) : (
+                          <>
+                            <Upload size={14} /> Chọn tệp tin để tải lên Google Drive
+                          </>
+                        )}
+                      </label>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -986,12 +1184,16 @@ export default function QuizExam() {
       {/* BƯỚC 3: KẾT QUẢ & CHỨNG NHẬN ĐIỂM SỐ */}
       {step === 'result' && submissionResult && (
         <div className="exam-panel animate-fade-in" style={{ textAlign: 'center' }}>
-          <div className={`exam-score-circle ${submissionResult.passed ? 'passed' : 'failed'}`}>
-            {submissionResult.score}
+          <div className={`exam-score-circle ${submissionResult.hasManualGrading ? 'pending' : (submissionResult.passed ? 'passed' : 'failed')}`}
+            style={submissionResult.hasManualGrading ? { borderColor: '#f59e0b', color: '#f59e0b', background: 'rgba(245, 158, 11, 0.1)' } : undefined}
+          >
+            {submissionResult.hasManualGrading ? '⏳' : submissionResult.score}
           </div>
 
           <h2 style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 0.5rem' }}>
-            {submissionResult.passed ? '🎉 CHÚC MỪNG: BẠN ĐÃ ĐẠT!' : '⚠️ KẾT QUẢ CHƯA ĐẠT CHUẨN'}
+            {submissionResult.hasManualGrading 
+              ? '📝 ĐÃ NỘP BÀI - CHỜ GIẢNG VIÊN CHẤM ĐIỂM' 
+              : (submissionResult.passed ? '🎉 CHÚC MỪNG: BẠN ĐÃ ĐẠT!' : '⚠️ KẾT QUẢ CHƯA ĐẠT CHUẨN')}
           </h2>
 
           <div style={{ display: 'inline-block', background: 'var(--bg-primary)', padding: '0.4rem 1rem', borderRadius: '20px', fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1.25rem', border: '1px solid var(--border)' }}>
@@ -1004,9 +1206,30 @@ export default function QuizExam() {
             </div>
           ) : null}
 
-          <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0 0 1.75rem' }}>
-            Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings?.passingScorePercent || 50}%.
-          </p>
+          {submissionResult.hasManualGrading ? (
+            <div style={{
+              maxWidth: '560px',
+              margin: '0 auto 1.5rem',
+              padding: '0.85rem 1.25rem',
+              background: 'rgba(245, 158, 11, 0.1)',
+              border: '1px solid rgba(245, 158, 11, 0.3)',
+              borderRadius: 'var(--radius-md)',
+              color: '#d97706',
+              fontSize: '0.9rem',
+              lineHeight: 1.5
+            }}>
+              💡 <strong>Lưu ý:</strong> Đề thi có câu hỏi <strong>Tự luận hoặc Bài thực hành</strong>. Hệ thống đã lưu lại nội dung và file bài làm của bạn để Giảng viên trực tiếp xem và chấm điểm bằng tay sau.
+              {submissionResult.totalPoints > 0 && submissionResult.score > 0 && (
+                <div style={{ marginTop: '0.4rem', color: 'var(--text-primary)', fontSize: '0.85rem' }}>
+                  Điểm trắc nghiệm tạm tính: <strong>{submissionResult.score} điểm</strong> (chưa bao gồm điểm các câu tự luận/thực hành).
+                </div>
+              )}
+            </div>
+          ) : (
+            <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)', margin: '0 0 1.75rem' }}>
+              Điểm số: <strong>{submissionResult.score}/10 điểm ({submissionResult.percentage}%)</strong> • Chuẩn qua môn: {quiz.settings?.passingScorePercent || 50}%.
+            </p>
+          )}
 
           <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '2rem', flexWrap: 'wrap' }}>
             <button type="button" className="btn btn-primary" onClick={() => setStep('register')}>
@@ -1048,13 +1271,38 @@ export default function QuizExam() {
                         />
                       </div>
                     )}
-                    <div style={{ fontSize: '0.85rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
-                      {item.isCorrect ? '✅ Bạn đã trả lời chính xác!' : `❌ Câu trả lời của bạn: ${typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời')}`}
-                    </div>
-                    {!item.isCorrect && (
-                      <div style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
-                        💡 Đáp án đúng: <strong>{correctDisplay}</strong>
+                    {item.q.type === 'essay' || item.q.type === 'practical' ? (
+                      <div>
+                        <div style={{ fontSize: '0.85rem', color: '#f59e0b', fontWeight: 600 }}>
+                          ⏳ Câu hỏi {item.q.type === 'practical' ? 'thực hành' : 'tự luận'}: Chờ giảng viên chấm điểm.
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>
+                          Bài làm của bạn: <strong>{typeof item.userAns === 'object' && item.userAns !== null ? (item.userAns.text || 'Không có văn bản') : (item.userAns || 'Chưa trả lời')}</strong>
+                        </div>
+                        {typeof item.userAns === 'object' && item.userAns?.fileUrl && (
+                          <div style={{ marginTop: '0.35rem' }}>
+                            <a 
+                              href={item.userAns.fileUrl} 
+                              target="_blank" 
+                              rel="noreferrer"
+                              style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.82rem', color: 'var(--primary)', textDecoration: 'underline' }}
+                            >
+                              <Paperclip size={13} /> Tệp đính kèm: {item.userAns.fileName || 'Xem file bài làm'}
+                            </a>
+                          </div>
+                        )}
                       </div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: '0.85rem', color: item.isCorrect ? '#10b981' : '#ef4444' }}>
+                          {item.isCorrect ? '✅ Bạn đã trả lời chính xác!' : `❌ Câu trả lời của bạn: ${typeof item.userAns === 'object' ? JSON.stringify(item.userAns) : (item.userAns || 'Chưa trả lời')}`}
+                        </div>
+                        {!item.isCorrect && (
+                          <div style={{ fontSize: '0.85rem', color: 'var(--primary)', marginTop: '0.25rem' }}>
+                            💡 Đáp án đúng: <strong>{correctDisplay}</strong>
+                          </div>
+                        )}
+                      </>
                     )}
                     {item.q.explanation && (
                       <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontStyle: 'italic', marginTop: '0.3rem' }}>

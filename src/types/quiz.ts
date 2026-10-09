@@ -1,4 +1,4 @@
-export type QuestionType = 'choice' | 'multiple_choice' | 'fill_blank' | 'matching' | 'essay';
+export type QuestionType = 'choice' | 'multiple_choice' | 'fill_blank' | 'matching' | 'essay' | 'practical';
 export type Difficulty = 'easy' | 'medium' | 'hard';
 
 export interface MatchingPair {
@@ -9,11 +9,11 @@ export interface MatchingPair {
 
 export interface QuizQuestion {
   id: string;
-  type: QuestionType; // 'choice' | 'multiple_choice' | 'fill_blank' | 'matching' | 'essay'
+  type: QuestionType; // 'choice' | 'multiple_choice' | 'fill_blank' | 'matching' | 'essay' | 'practical'
   difficulty: Difficulty; // 'easy' | 'medium' | 'hard'
   question: string;
   options?: string[]; // Dùng cho 'choice', 'multiple_choice'
-  correctAnswer?: string; // Dùng cho 'choice', 'fill_blank', 'essay'
+  correctAnswer?: string; // Dùng cho 'choice', 'fill_blank', 'essay', 'practical'
   correctAnswers?: string[]; // Dùng cho 'multiple_choice'
   matchingPairs?: MatchingPair[]; // Dùng cho 'matching'
   explanation?: string;
@@ -65,8 +65,12 @@ export interface StudentSubmission {
   passed: boolean;
   timeSpentSeconds: number;
   submittedAt: string;
-  answers: Record<string, any>; // questionId -> answer
+  answers: Record<string, any>; // questionId -> answer (text, array, or { text?: string, fileUrl?: string, fileName?: string })
   violationCount?: number; // Số lần vi phạm chuyển tab / rời màn hình thi
+  status?: 'GRADED' | 'PENDING_GRADING'; // Trạng thái chấm điểm: Đã chấm hoặc Chờ giảng viên chấm
+  hasManualGrading?: boolean; // Bài thi có câu tự luận hoặc thực hành cần chấm thủ công
+  manualScores?: Record<string, number>; // questionId -> điểm giảng viên chấm thủ công
+  teacherFeedback?: string; // Nhận xét chung của giảng viên
 }
 
 export interface QuizPackage {

@@ -128,9 +128,17 @@ async function ensureQuizTables(pool: any) {
         "timeSpentSeconds" INT DEFAULT 0,
         answers JSONB DEFAULT '{}'::jsonb,
         "violationCount" INT DEFAULT 0,
+        status VARCHAR(32) DEFAULT 'GRADED',
+        "hasManualGrading" BOOLEAN DEFAULT false,
+        "manualScores" JSONB DEFAULT '{}'::jsonb,
+        "teacherFeedback" TEXT,
         "submittedAt" TIMESTAMP DEFAULT NOW()
       );
       ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "violationCount" INT DEFAULT 0;
+      ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS status VARCHAR(32) DEFAULT 'GRADED';
+      ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "hasManualGrading" BOOLEAN DEFAULT false;
+      ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "manualScores" JSONB DEFAULT '{}'::jsonb;
+      ALTER TABLE "QuizSubmission" ADD COLUMN IF NOT EXISTS "teacherFeedback" TEXT;
       CREATE INDEX IF NOT EXISTS "idx_submission_quizId" ON "QuizSubmission"("quizId");
 
       CREATE TABLE IF NOT EXISTS "SyllabusSubject" (
@@ -447,7 +455,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       if (typeof body === 'string') {
         try { body = JSON.parse(body); } catch { body = {}; }
       }
-      const { quizId, quizTitle, studentName, studentId, className, email, score, totalPoints, percentage, passed, timeSpentSeconds, answers, violationCount } = body || {};
+      const { 
+        quizId, quizTitle, studentName, studentId, className, email, 
+        score, totalPoints, percentage, passed, timeSpentSeconds, 
+        answers, violationCount, status, hasManualGrading, manualScores, teacherFeedback 
+      } = body || {};
+
       if (!quizId || !studentName) {
         return res.status(400).json({ error: 'Thiếu thông tin nộp bài' });
       }
@@ -456,9 +469,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const insertQuery = `
         INSERT INTO "QuizSubmission" (
           id, "quizId", "quizTitle", "studentName", "studentId", "className", email,
-          score, "totalPoints", percentage, passed, "timeSpentSeconds", answers, "violationCount", "submittedAt"
+          score, "totalPoints", percentage, passed, "timeSpentSeconds", answers, "violationCount",
+          status, "hasManualGrading", "manualScores", "teacherFeedback", "submittedAt"
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
         RETURNING *;
       `;
 
@@ -476,10 +490,156 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         Boolean(passed),
         Number(timeSpentSeconds) || 0,
         JSON.stringify(answers || {}),
-        Number(violationCount) || 0
+        Number(violationCount) || 0,
+        status || 'GRADED',
+        Boolean(hasManualGrading),
+        JSON.stringify(manualScores || {}),
+        teacherFeedback ? String(teacherFeedback).trim() : null
       ]);
 
       return res.status(201).json({ success: true, submission: result.rows[0] });
+    }
+
+    // 9B. CHẤM ĐIỂM BẰNG TAY BÀI THI (Dành cho Giảng viên chấm tự luận / thực hành)
+    if (req.method === 'POST' && action === 'grade-submission') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { id, score, percentage, passed, manualScores, teacherFeedback, status } = body || {};
+      if (!id) {
+        return res.status(400).json({ error: 'Thiếu ID bài nộp để chấm điểm' });
+      }
+
+      const updateRes = await pool.query(`
+        UPDATE "QuizSubmission"
+        SET 
+          score = $1,
+          percentage = $2,
+          passed = $3,
+          "manualScores" = $4,
+          "teacherFeedback" = $5,
+          status = $6
+        WHERE id = $7
+        RETURNING *;
+      `, [
+        Number(score) || 0,
+        Number(percentage) || 0,
+        Boolean(passed),
+        JSON.stringify(manualScores || {}),
+        teacherFeedback ? String(teacherFeedback).trim() : null,
+        status || 'GRADED',
+        String(id)
+      ]);
+
+      if (updateRes.rows.length === 0) {
+        return res.status(404).json({ error: 'Không tìm thấy bài nộp' });
+      }
+
+      return res.status(200).json({ success: true, submission: updateRes.rows[0] });
+    }
+
+    // 9C. TẢI FILE ĐÍNH KÈM LÊN GOOGLE DRIVE (Dành cho thí sinh nộp bài tự luận/thực hành, hỗ trợ cả mã nhúng iframe LMS)
+    if (req.method === 'POST' && action === 'upload-file') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const { fileBase64, filename, mimeType } = body || {};
+      if (!fileBase64) {
+        return res.status(400).json({ error: 'Thiếu dữ liệu tệp tin' });
+      }
+
+      // Lấy cấu hình Google Drive từ bảng Setting
+      const driveSettings = await pool.query(
+        'SELECT key, value FROM "Setting" WHERE key IN ($1, $2)',
+        ['googleDriveFolderId', 'googleDriveServiceJson']
+      );
+
+      const folderIdRow = driveSettings.rows.find((r: any) => r.key === 'googleDriveFolderId');
+      const serviceJsonRow = driveSettings.rows.find((r: any) => r.key === 'googleDriveServiceJson');
+
+      if (!folderIdRow?.value || !serviceJsonRow?.value) {
+        return res.status(500).json({ error: 'Hệ thống chưa cấu hình Google Drive Storage. Vui lòng liên hệ Admin.' });
+      }
+
+      try {
+        const { google } = await import('googleapis');
+        const { Readable } = await import('stream');
+
+        const credentials = JSON.parse(serviceJsonRow.value);
+        const auth = new google.auth.GoogleAuth({
+          credentials,
+          scopes: ['https://www.googleapis.com/auth/drive.file', 'https://www.googleapis.com/auth/drive'],
+        });
+        const drive = google.drive({ version: 'v3', auth });
+
+        const now = new Date();
+        const yearStr = now.getFullYear().toString();
+        const monthStr = (now.getMonth() + 1).toString().padStart(2, '0');
+
+        const getOrCreateFolder = async (name: string, parentId: string) => {
+          const query = `name='${name}' and '${parentId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`;
+          const search = await drive.files.list({ q: query, spaces: 'drive', supportsAllDrives: true, includeItemsFromAllDrives: true, corpora: 'allDrives' });
+          if (search.data.files && search.data.files.length > 0) {
+            return search.data.files[0].id!;
+          }
+          const created = await drive.files.create({
+            requestBody: { name, mimeType: 'application/vnd.google-apps.folder', parents: [parentId] },
+            supportsAllDrives: true,
+          });
+          return created.data.id!;
+        };
+
+        const yearFolderId = await getOrCreateFolder(yearStr, folderIdRow.value);
+        const monthFolderId = await getOrCreateFolder(monthStr, yearFolderId);
+
+        const base64Data = fileBase64.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
+        const stream = new Readable();
+        stream.push(buffer);
+        stream.push(null);
+
+        const safeFilename = filename || `baitap-${Date.now()}`;
+        const fileMime = mimeType || 'application/octet-stream';
+
+        const uploadedFile = await drive.files.create({
+          requestBody: {
+            name: safeFilename,
+            parents: [monthFolderId],
+          },
+          media: {
+            mimeType: fileMime,
+            body: stream,
+          },
+          fields: 'id, webViewLink, webContentLink',
+          supportsAllDrives: true,
+        });
+
+        const fileId = uploadedFile.data.id!;
+
+        // Chia sẻ quyền xem công khai
+        await drive.permissions.create({
+          fileId: fileId,
+          requestBody: { role: 'reader', type: 'anyone' },
+          supportsAllDrives: true,
+        });
+
+        const driveViewUrl = uploadedFile.data.webViewLink || `https://drive.google.com/file/d/${fileId}/view`;
+        const driveDownloadUrl = uploadedFile.data.webContentLink || `https://drive.google.com/uc?export=download&id=${fileId}`;
+
+        return res.status(200).json({
+          success: true,
+          fileId,
+          fileName: safeFilename,
+          webViewLink: driveViewUrl,
+          webContentLink: driveDownloadUrl,
+          url: driveViewUrl
+        });
+      } catch (uploadErr: any) {
+        console.error('Lỗi upload file lên Google Drive qua qa-wall:', uploadErr);
+        return res.status(500).json({ error: 'Lỗi tải lên Google Drive: ' + (uploadErr.message || 'Không xác định') });
+      }
     }
 
     // 10. LẤY BÀI NỘP CỦA BỘ ĐỀ QUIZ (Giới hạn 200 bài mới nhất để tối ưu tốc độ và bộ nhớ)
