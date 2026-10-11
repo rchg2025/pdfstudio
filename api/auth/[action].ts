@@ -44,7 +44,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             role: true,
             subscriptionPlan: true,
             subscriptionExpiresAt: true,
-            isLifetime: true
+            isLifetime: true,
+            sessionVersion: true
           }
         });
 
@@ -56,6 +57,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           return res.status(403).json({ 
             message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.',
             isBlocked: true 
+          });
+        }
+
+        // Kiểm tra phiên đăng nhập: Nếu tài khoản đã đăng nhập ở thiết bị khác (sessionVersion lớn hơn)
+        if (decoded.sessionVersion !== undefined && user.sessionVersion !== null && decoded.sessionVersion !== user.sessionVersion) {
+          return res.status(401).json({ 
+            message: 'Tài khoản của bạn đã được đăng nhập trên một thiết bị khác. Phiên làm việc này đã bị đăng xuất để bảo mật!',
+            isConcurrentSession: true
           });
         }
 

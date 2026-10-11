@@ -26,6 +26,7 @@ model User {
   subscriptionPlan     String              @default("TRIAL_30D") // TRIAL_30D, PLAN_90D, PLAN_180D, PLAN_365D, LIFETIME, EXPIRED
   subscriptionExpiresAt DateTime?
   isLifetime           Boolean             @default(false)
+  sessionVersion       Int                 @default(1)
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
   frames               Frame[]
@@ -135,6 +136,12 @@ model QuizSubmission {
   passed           Boolean? @default(false)
   timeSpentSeconds Int?     @default(0)
   answers          Json?    @default("{}")
+  violationCount   Int?     @default(0)
+  status           String?  @default("GRADED") @db.VarChar(32)
+  hasManualGrading Boolean? @default(false)
+  manualScores     Json?    @default("{}")
+  teacherFeedback  String?  @db.Text
+  examQuestions    Json?    @default("[]")
   submittedAt      DateTime? @default(now())
 }
 

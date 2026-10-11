@@ -5,6 +5,7 @@ export interface DecodedUser {
   userId: string;
   email: string;
   role: string;
+  sessionVersion?: number;
 }
 
 export function getUserFromRequest(req: VercelRequest): DecodedUser | null {
@@ -54,7 +55,8 @@ export async function requireActiveSubscription(req: VercelRequest): Promise<Dec
       role: true, 
       isLifetime: true, 
       subscriptionExpiresAt: true,
-      subscriptionPlan: true 
+      subscriptionPlan: true,
+      sessionVersion: true
     }
   });
 
@@ -64,6 +66,13 @@ export async function requireActiveSubscription(req: VercelRequest): Promise<Dec
 
   if (dbUser.role === 'DISABLED') {
     throw new Error('DISABLED_ACCOUNT');
+  }
+
+  // Kiểm tra đăng nhập trùng lặp trên thiết bị khác
+  if (user.sessionVersion !== undefined && dbUser.sessionVersion !== null && user.sessionVersion !== dbUser.sessionVersion) {
+    const err: any = new Error('CONCURRENT_SESSION');
+    err.code = 'CONCURRENT_SESSION';
+    throw err;
   }
 
   // Nếu là gói vĩnh viễn

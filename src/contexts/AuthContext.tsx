@@ -8,6 +8,7 @@ export interface User {
   subscriptionPlan?: string;
   subscriptionExpiresAt?: string | null;
   isLifetime?: boolean;
+  sessionVersion?: number;
 }
 
 interface AuthContextType {
@@ -26,6 +27,48 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
+  const checkSession = async (currentToken: string) => {
+    try {
+      const res = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${currentToken}` }
+      });
+      if (res.status === 403) {
+        const data = await res.json().catch(() => ({}));
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+        alert(data.message || 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.');
+        window.location.href = '/login';
+      } else if (res.status === 401) {
+        const data = await res.json().catch(() => ({}));
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+        if (data.isConcurrentSession) {
+          alert('⚠️ CẢNH BÁO: Tài khoản của bạn vừa được đăng nhập trên một thiết bị khác!\n\nĐể đảm bảo an toàn, hệ thống chỉ cho phép 1 thiết bị hoạt động tại một thời điểm.');
+          window.location.href = '/login';
+        }
+      } else if (res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (data?.user) {
+          if (data.user.role === 'DISABLED') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+            alert('Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.');
+            window.location.href = '/login';
+          } else {
+            setUser(data.user);
+            localStorage.setItem('user', JSON.stringify(data.user));
+          }
+        }
+      }
+    } catch {}
+  };
+
   useEffect(() => {
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
@@ -43,64 +86,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(storedToken);
         setUser(parsedUser);
 
-        // Proactively verify token & account state with backend
-        fetch('/api/auth/me', {
-          headers: { Authorization: `Bearer ${storedToken}` }
-        }).then(async (res) => {
-          if (res.status === 403) {
-            const data = await res.json().catch(() => ({}));
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            setToken(null);
-            setUser(null);
-            alert(data.message || 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.');
-            window.location.href = '/login';
-          } else if (res.status === 401) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            setToken(null);
-            setUser(null);
-          } else if (res.ok) {
-            const data = await res.json().catch(() => ({}));
-            if (data?.user) {
-              if (data.user.role === 'DISABLED') {
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-                setToken(null);
-                setUser(null);
-                alert('Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.');
-                window.location.href = '/login';
-              } else {
-                setUser(data.user);
-                localStorage.setItem('user', JSON.stringify(data.user));
-              }
-            }
-          }
-        }).catch(() => {});
+        // Kiểm tra phiên đăng nhập ngay khi mở trang
+        checkSession(storedToken);
       } catch {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       }
     }
+
+    // Kiểm tra định kỳ mỗi 15 giây và khi người dùng quay lại tab trình duyệt
+    const interval = setInterval(() => {
+      const curToken = localStorage.getItem('token');
+      if (curToken) {
+        checkSession(curToken);
+      }
+    }, 15000);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const curToken = localStorage.getItem('token');
+        if (curToken) {
+          checkSession(curToken);
+        }
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, []);
 
   const refreshUser = async () => {
     const currentToken = localStorage.getItem('token');
     if (!currentToken) return;
-    try {
-      const res = await fetch('/api/auth/me', {
-        headers: { Authorization: `Bearer ${currentToken}` }
-      });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        if (data?.user) {
-          setUser(data.user);
-          localStorage.setItem('user', JSON.stringify(data.user));
-        }
-      }
-    } catch (e) {
-      console.error(e);
-    }
+    await checkSession(currentToken);
   };
 
   const login = (newToken: string, newUser: User) => {

@@ -131,18 +131,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ message: 'Tài khoản của bạn đang bị khóa, vui lòng liên hệ quản trị viên để được hỗ trợ.' });
       }
 
-      if (!user.googleId) {
-        user = await prisma.user.update({
-          where: { email },
-          data: { googleId }
-        });
-      }
+      const nextSessionVersion = (user.sessionVersion || 0) + 1;
+      user = await prisma.user.update({
+        where: { email },
+        data: { 
+          googleId: user.googleId ? undefined : googleId,
+          sessionVersion: nextSessionVersion
+        }
+      });
       
       const jwtModule = await import('jsonwebtoken');
       const jwt = jwtModule.default || jwtModule;
       const secret = process.env.JWT_SECRET || 'fallback_secret_key';
       const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
+        { 
+          userId: user.id, 
+          email: user.email, 
+          role: user.role,
+          sessionVersion: nextSessionVersion 
+        },
         secret,
         { expiresIn: '30d' }
       );
@@ -157,7 +164,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           role: user.role,
           subscriptionPlan: user.subscriptionPlan,
           subscriptionExpiresAt: user.subscriptionExpiresAt,
-          isLifetime: user.isLifetime
+          isLifetime: user.isLifetime,
+          sessionVersion: nextSessionVersion
         }
       });
     } else {

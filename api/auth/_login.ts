@@ -53,8 +53,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const secret = process.env.JWT_SECRET || 'fallback_secret_key';
+    const nextSessionVersion = (user.sessionVersion || 0) + 1;
+
+    // Tăng sessionVersion để vô hiệu hóa tất cả các phiên đăng nhập trước đó trên thiết bị khác
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { sessionVersion: nextSessionVersion }
+    });
+
     const token = jwt.sign(
-      { userId: user.id, email: user.email, role: user.role },
+      { 
+        userId: user.id, 
+        email: user.email, 
+        role: user.role,
+        sessionVersion: nextSessionVersion 
+      },
       secret,
       { expiresIn: '7d' }
     );
@@ -63,13 +76,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       message: 'Login successful',
       token,
       user: { 
-        id: user.id, 
-        email: user.email, 
-        name: user.name, 
-        role: user.role,
-        subscriptionPlan: user.subscriptionPlan,
-        subscriptionExpiresAt: user.subscriptionExpiresAt,
-        isLifetime: user.isLifetime
+        id: updatedUser.id, 
+        email: updatedUser.email, 
+        name: updatedUser.name, 
+        role: updatedUser.role,
+        subscriptionPlan: updatedUser.subscriptionPlan,
+        subscriptionExpiresAt: updatedUser.subscriptionExpiresAt,
+        isLifetime: updatedUser.isLifetime,
+        sessionVersion: nextSessionVersion
       }
     });
   } catch (error: any) {

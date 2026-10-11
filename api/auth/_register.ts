@@ -99,7 +99,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           role: 'USER',
           subscriptionPlan: 'TRIAL_30D',
           subscriptionExpiresAt: trialExpiresAt,
-          isLifetime: false
+          isLifetime: false,
+          sessionVersion: 1
         }
       });
 
@@ -120,7 +121,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const jwtModule = await import('jsonwebtoken');
       const jwt = jwtModule.default || jwtModule;
       const token = jwt.sign(
-        { userId: user.id, email: user.email, role: user.role },
+        { 
+          userId: user.id, 
+          email: user.email, 
+          role: user.role,
+          sessionVersion: 1 
+        },
         JWT_SECRET,
         { expiresIn: '30d' }
       );
@@ -135,7 +141,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           role: user.role,
           subscriptionPlan: user.subscriptionPlan,
           subscriptionExpiresAt: user.subscriptionExpiresAt,
-          isLifetime: user.isLifetime
+          isLifetime: user.isLifetime,
+          sessionVersion: 1
         }
       });
     }
