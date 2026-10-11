@@ -19,8 +19,10 @@ async function ensureTables(prisma: any) {
         "settings" JSONB NOT NULL DEFAULT '{}'::jsonb,
         "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
-      );
+      )
+    `);
 
+    await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "LiveBattlePlayer" (
         "id" TEXT PRIMARY KEY,
         "roomId" TEXT NOT NULL,
@@ -35,8 +37,10 @@ async function ensureTables(prisma: any) {
         "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "LiveBattlePlayer_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "LiveBattleRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE,
         CONSTRAINT "LiveBattlePlayer_roomId_nickname_key" UNIQUE ("roomId", "nickname")
-      );
+      )
+    `);
 
+    await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "LiveBattleAnswer" (
         "id" TEXT PRIMARY KEY,
         "playerId" TEXT NOT NULL,
@@ -48,7 +52,7 @@ async function ensureTables(prisma: any) {
         "answeredAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT "LiveBattleAnswer_playerId_fkey" FOREIGN KEY ("playerId") REFERENCES "LiveBattlePlayer"("id") ON DELETE CASCADE ON UPDATE CASCADE,
         CONSTRAINT "LiveBattleAnswer_playerId_questionIndex_key" UNIQUE ("playerId", "questionIndex")
-      );
+      )
     `);
     tablesEnsured = true;
   } catch (e) {
