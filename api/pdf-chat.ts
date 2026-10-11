@@ -25,11 +25,50 @@ async function ensurePdfChatTables(prisma: any) {
 }
 
 const DEFAULT_GEMINI_FALLBACKS = [
+  'gemini-3.8-flash',
+  'gemini-3.0-flash',
   'gemini-2.5-flash',
   'gemini-2.0-flash',
   'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+  'gemini-2.0-flash-lite',
   'gemini-1.5-pro'
 ];
+
+async function resolveGeminiModels(apiKey: string): Promise<string[]> {
+  const modelsSet = new Set<string>();
+  try {
+    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+    if (listRes.ok) {
+      const data = await listRes.json();
+      if (Array.isArray(data?.models)) {
+        const supported = data.models
+          .filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+          .map((m: any) => (m.name || '').replace(/^models\//, ''))
+          .filter(Boolean);
+
+        const textFlashModels = supported
+          .filter((m: string) => m.includes('flash') && !m.includes('tts') && !m.includes('audio'))
+          .reverse();
+        const otherTextModels = supported
+          .filter((m: string) => !m.includes('flash') && !m.includes('tts') && !m.includes('audio'))
+          .reverse();
+
+        for (const m of [...textFlashModels, ...otherTextModels]) {
+          modelsSet.add(m);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[PdfChat Gemini Discovery Error]', err);
+  }
+
+  for (const m of DEFAULT_GEMINI_FALLBACKS) {
+    modelsSet.add(m);
+  }
+
+  return Array.from(modelsSet);
+}
 
 async function getEffectiveApiKey(prisma: any, customApiKey?: string): Promise<string> {
   if (customApiKey && customApiKey.trim().length > 0) {
@@ -64,7 +103,10 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
     throw new Error('Chưa cấu hình Google Gemini API Key trong hệ thống. Vui lòng nhập API Key riêng ở phần Cài đặt.');
   }
 
-  for (const model of DEFAULT_GEMINI_FALLBACKS) {
+  const models = await resolveGeminiModels(apiKey);
+  let lastError = '';
+
+  for (const model of models) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const response = await fetch(url, {
@@ -80,18 +122,20 @@ async function callGemini(prompt: string, apiKey: string): Promise<string> {
       });
 
       if (!response.ok) {
+        const errJson = await response.json().catch(() => null);
+        lastError = errJson?.error?.message || `HTTP ${response.status} ${response.statusText}`;
         continue;
       }
 
       const data = await response.json();
       const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) return text;
-    } catch {
-      // Thử model tiếp theo
+    } catch (e: any) {
+      lastError = e?.message || 'Network error';
     }
   }
 
-  throw new Error('Không thể kết nối tới Google Gemini AI lúc này. Vui lòng kiểm tra lại API Key hoặc quota.');
+  throw new Error(`Không thể kết nối tới Google Gemini AI (${lastError || 'Tất cả model đều từ chối hoặc hết quota'}). Vui lòng kiểm tra lại API Key.`);
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
