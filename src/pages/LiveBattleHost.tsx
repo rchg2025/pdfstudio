@@ -4,7 +4,7 @@ import {
   Play, Users, Trophy, Volume2, VolumeX, Flame, 
   RotateCcw, Sparkles, ChevronRight, Award, 
   Clock, ArrowLeft, Plus, Trash2, Layers,
-  Copy, Check
+  Copy, Check, Swords
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -647,96 +647,135 @@ export default function LiveBattleHost() {
 
       {/* Modal Tạo Phòng */}
       {isCreatingRoom && (
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '650px', maxHeight: '90vh', overflowY: 'auto' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700 }}>Tạo Phòng Đấu Trường Trực Tiếp Mới</h3>
-              <button className="btn-close" onClick={() => setIsCreatingRoom(false)}>×</button>
+        <div className="battle-modal-overlay" onClick={() => setIsCreatingRoom(false)}>
+          <div className="battle-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="battle-modal-header">
+              <div className="battle-modal-title-group">
+                <div className="battle-modal-icon-badge">
+                  <Swords size={22} />
+                </div>
+                <div>
+                  <h3 className="battle-modal-title">Tạo Phòng Đấu Trường Trực Tiếp</h3>
+                  <p className="battle-modal-subtitle">Thiết lập phòng thi thời gian thực kiểu Kahoot</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="battle-modal-close" 
+                onClick={() => setIsCreatingRoom(false)}
+                title="Đóng cửa sổ"
+              >
+                ✕
+              </button>
             </div>
 
-            <form onSubmit={handleCreateRoom} style={{ padding: '1.25rem' }}>
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                  Tiêu đề phòng thi:
-                </label>
-                <input 
-                  type="text" 
-                  value={newTitle} 
-                  onChange={e => setNewTitle(e.target.value)}
-                  placeholder="Ví dụ: Đấu trường Sinh lý bệnh - Tiết 3" 
-                  className="form-input"
-                  required 
-                />
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                  Thời gian trả lời mỗi câu (giây):
-                </label>
-                <select 
-                  value={timePerQ} 
-                  onChange={e => setTimePerQ(Number(e.target.value))}
-                  className="form-input"
-                >
-                  <option value={10}>10 giây (Rất nhanh)</option>
-                  <option value={15}>15 giây (Nhanh)</option>
-                  <option value={20}>20 giây (Chuẩn Kahoot)</option>
-                  <option value={30}>30 giây (Thoải mái suy nghĩ)</option>
-                  <option value={45}>45 giây (Câu hỏi phức tạp)</option>
-                </select>
-              </div>
-
-              <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.4rem', fontSize: '0.9rem' }}>
-                  Nguồn câu hỏi trắc nghiệm:
-                </label>
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                    <input 
-                      type="radio" 
-                      name="qSource" 
-                      checked={quizSource === 'manual'} 
-                      onChange={() => setQuizSource('manual')} 
-                    />
-                    Bộ câu hỏi nhanh (Mặc định)
+            <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div className="battle-modal-body">
+                <div className="battle-form-group">
+                  <label className="battle-form-label">
+                    <span>Tiêu đề phòng thi <span style={{ color: '#ef4444' }}>*</span></span>
+                    <span className="battle-form-label-hint">Tên lớp hoặc chủ đề thi</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                    <input 
-                      type="radio" 
-                      name="qSource" 
-                      checked={quizSource === 'bank'} 
-                      onChange={() => setQuizSource('bank')} 
-                    />
-                    Lấy từ Ngân hàng đề thi ({myQuizPackages.length})
-                  </label>
+                  <input 
+                    type="text" 
+                    value={newTitle} 
+                    onChange={e => setNewTitle(e.target.value)}
+                    placeholder="Ví dụ: Đấu trường Sinh lý bệnh - Tiết 3" 
+                    className="battle-modal-input"
+                    autoFocus
+                    required 
+                  />
                 </div>
 
-                {quizSource === 'bank' ? (
+                <div className="battle-form-group">
+                  <label className="battle-form-label">
+                    <span>Thời gian trả lời mỗi câu</span>
+                    <span className="battle-form-label-hint">Đếm ngược trực tiếp</span>
+                  </label>
                   <select 
-                    value={selectedPackageId} 
-                    onChange={e => setSelectedPackageId(e.target.value)}
-                    className="form-input"
+                    value={timePerQ} 
+                    onChange={e => setTimePerQ(Number(e.target.value))}
+                    className="battle-modal-select"
                   >
-                    <option value="">-- Chọn đề thi có sẵn --</option>
-                    {myQuizPackages.map(pkg => (
-                      <option key={pkg.id} value={pkg.id}>
-                        {pkg.title} ({Array.isArray(pkg.questions) ? pkg.questions.length : 0} câu)
-                      </option>
-                    ))}
+                    <option value={10}>⚡ 10 giây (Rất nhanh)</option>
+                    <option value={15}>⏱️ 15 giây (Nhanh)</option>
+                    <option value={20}>🎯 20 giây (Chuẩn Kahoot - Khuyên dùng)</option>
+                    <option value={30}>🕒 30 giây (Thoải mái suy nghĩ)</option>
+                    <option value={45}>⌛ 45 giây (Câu hỏi phức tạp, tính toán)</option>
                   </select>
-                ) : (
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', background: 'var(--bg-tertiary)', padding: '0.75rem', borderRadius: '8px' }}>
-                    💡 Đã có sẵn 2 câu hỏi mẫu khởi động. Bạn có thể bấm tạo ngay để thử nghiệm trải nghiệm cùng lớp học!
+                </div>
+
+                <div className="battle-form-group">
+                  <label className="battle-form-label">
+                    <span>Nguồn câu hỏi trắc nghiệm</span>
+                  </label>
+                  
+                  <div className="battle-source-options">
+                    <div 
+                      className={`battle-source-card ${quizSource === 'manual' ? 'active' : ''}`}
+                      onClick={() => setQuizSource('manual')}
+                    >
+                      <input 
+                        type="radio" 
+                        name="qSource" 
+                        checked={quizSource === 'manual'} 
+                        onChange={() => setQuizSource('manual')} 
+                      />
+                      <div className="battle-source-card-text">
+                        <span className="battle-source-card-title">Bộ câu hỏi nhanh</span>
+                        <span className="battle-source-card-desc">Sử dụng bộ câu hỏi mẫu khởi động</span>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`battle-source-card ${quizSource === 'bank' ? 'active' : ''}`}
+                      onClick={() => setQuizSource('bank')}
+                    >
+                      <input 
+                        type="radio" 
+                        name="qSource" 
+                        checked={quizSource === 'bank'} 
+                        onChange={() => setQuizSource('bank')} 
+                      />
+                      <div className="battle-source-card-text">
+                        <span className="battle-source-card-title">Ngân hàng đề thi</span>
+                        <span className="battle-source-card-desc">{myQuizPackages.length} đề thi sẵn có</span>
+                      </div>
+                    </div>
                   </div>
-                )}
+
+                  {quizSource === 'bank' ? (
+                    <div style={{ marginTop: '0.75rem' }}>
+                      <select 
+                        value={selectedPackageId} 
+                        onChange={e => setSelectedPackageId(e.target.value)}
+                        className="battle-modal-select"
+                      >
+                        <option value="">-- Chọn đề thi từ danh sách của bạn --</option>
+                        {myQuizPackages.map(pkg => (
+                          <option key={pkg.id} value={pkg.id}>
+                            📖 {pkg.title} ({Array.isArray(pkg.questions) ? pkg.questions.length : 0} câu hỏi)
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="battle-info-banner" style={{ marginTop: '0.75rem' }}>
+                      <Sparkles size={18} style={{ flexShrink: 0, marginTop: '2px', color: '#3b82f6' }} />
+                      <div>
+                        <strong>Khởi động tức thì:</strong> Đã có sẵn 2 câu hỏi mẫu khởi động. Bạn có thể bấm tạo ngay để mở máy chiếu và thử nghiệm cùng lớp học!
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
-                <button type="button" className="btn btn-outline" onClick={() => setIsCreatingRoom(false)}>
+              <div className="battle-modal-footer">
+                <button type="button" className="btn-battle-cancel" onClick={() => setIsCreatingRoom(false)}>
                   Hủy bỏ
                 </button>
-                <button type="submit" className="btn btn-primary" style={{ fontWeight: 700 }}>
-                  ⚡ Khởi Tạo & Mở Máy Chiếu
+                <button type="submit" className="btn-battle-submit">
+                  <Play size={18} /> Khởi Tạo & Mở Máy Chiếu
                 </button>
               </div>
             </form>
