@@ -19,6 +19,8 @@ import utilsActionHandler from './api/utils/[action].js';
 import uploadHandler from './api/upload/index.js';
 import edgeTtsHandler from './api/edge-tts.js';
 import attendanceHandler from './api/attendance.js';
+import liveBattleHandler from './api/live-battle.js';
+import pdfChatHandler from './api/pdf-chat.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,6 +99,12 @@ app.get('/api/redirect', adaptVercelHandler(redirectHandler));
 // Attendance API (Điểm danh QR động)
 app.all('/api/attendance', adaptVercelHandler(attendanceHandler));
 
+// Live Battle API (Đấu trường trắc nghiệm Kahoot)
+app.all('/api/live-battle', adaptVercelHandler(liveBattleHandler));
+
+// Chat with PDF API (Hỏi đáp tài liệu PDF bằng AI)
+app.all('/api/pdf-chat', adaptVercelHandler(pdfChatHandler));
+
 // Static files from Vite build
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
@@ -147,6 +155,13 @@ if (fs.existsSync(distPath)) {
     '/phong-thi/:id',
     '/diem-danh',
     '/diem-danh/:code',
+    '/quan-ly-diem-danh',
+    '/bang-vinh-danh',
+    '/dau-truong-live',
+    '/dau-truong-live/:roomId',
+    '/dau-truong',
+    '/dau-truong/:pinCode',
+    '/hoi-dap-pdf-ai',
     '/embed-player'
   ];
 

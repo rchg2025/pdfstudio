@@ -57,6 +57,9 @@ const IdPhotoStudio = React.lazy(() => import('./pages/IdPhotoStudio'));
 const AttendanceManager = React.lazy(() => import('./pages/AttendanceManager'));
 const AttendanceCheckIn = React.lazy(() => import('./pages/AttendanceCheckIn'));
 const LeaderboardManager = React.lazy(() => import('./pages/LeaderboardManager'));
+const LiveBattleHost = React.lazy(() => import('./pages/LiveBattleHost'));
+const LiveBattlePlayer = React.lazy(() => import('./pages/LiveBattlePlayer'));
+const ChatWithPdf = React.lazy(() => import('./pages/ChatWithPdf'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -235,6 +238,21 @@ function App() {
             } />
             <Route path="bang-vinh-danh" element={
               <Suspense fallback={<FallbackLoader />}><LeaderboardManager /></Suspense>
+            } />
+            <Route path="dau-truong-live" element={
+              <Suspense fallback={<FallbackLoader />}><LiveBattleHost /></Suspense>
+            } />
+            <Route path="dau-truong-live/:roomId" element={
+              <Suspense fallback={<FallbackLoader />}><LiveBattleHost /></Suspense>
+            } />
+            <Route path="dau-truong" element={
+              <Suspense fallback={<FallbackLoader />}><LiveBattlePlayer /></Suspense>
+            } />
+            <Route path="dau-truong/:pinCode" element={
+              <Suspense fallback={<FallbackLoader />}><LiveBattlePlayer /></Suspense>
+            } />
+            <Route path="hoi-dap-pdf-ai" element={
+              <Suspense fallback={<FallbackLoader />}><ChatWithPdf /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

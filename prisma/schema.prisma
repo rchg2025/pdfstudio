@@ -263,3 +263,72 @@ model StudentBadge {
 
   @@unique([studentScoreId, badgeId])
 }
+
+// ==========================================
+// MODULE 3: ĐẤU TRƯỜNG ĐỐ VUI TRỰC TIẾP (LIVE QUIZ BATTLE)
+// ==========================================
+
+model LiveBattleRoom {
+  id               String             @id @default(cuid())
+  userId           String             // Giảng viên tạo phòng
+  pinCode          String             @unique // Mã PIN 6 chữ số: ví dụ "839102"
+  title            String             // Tiêu đề phòng thi: ví dụ "Đấu trường Dược lý K18 - Vòng 1"
+  status           String             @default("LOBBY") // LOBBY, QUESTION, LEADERBOARD, FINISHED
+  currentQuestionIndex Int            @default(0) // Câu hỏi hiện tại (0-indexed)
+  timePerQuestion  Int                @default(20) // Thời gian mỗi câu (giây)
+  questionStartedAt DateTime?         // Thời điểm bắt đầu câu hỏi hiện tại
+  questions        Json               @default("[]") // Danh sách câu hỏi trắc nghiệm
+  settings         Json               @default("{}") // Cấu hình âm thanh, điểm thưởng, vinh danh
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  players          LiveBattlePlayer[]
+}
+
+model LiveBattlePlayer {
+  id               String             @id @default(cuid())
+  roomId           String
+  room             LiveBattleRoom     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  nickname         String             // Tên hiển thị của sinh viên
+  studentId        String?            // Mã số sinh viên
+  className        String?            // Lớp học
+  avatarEmoji      String             @default("🦊") // Emoji đại diện
+  totalScore       Int                @default(0) // Tổng điểm tích lũy
+  streak           Int                @default(0) // Chuỗi câu trả lời đúng liên tiếp
+  isOnline         Boolean            @default(true)
+  joinedAt         DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  answers          LiveBattleAnswer[]
+
+  @@unique([roomId, nickname])
+}
+
+model LiveBattleAnswer {
+  id               String             @id @default(cuid())
+  playerId         String
+  player           LiveBattlePlayer   @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  questionIndex    Int                // Thứ tự câu hỏi
+  selectedOption   Int                // 0 (A), 1 (B), 2 (C), 3 (D)
+  isCorrect        Boolean            @default(false)
+  timeSpentMs      Int                @default(0) // Thời gian bấm phản hồi (ms)
+  scoreAwarded     Int                @default(0) // Điểm nhận được
+  answeredAt       DateTime           @default(now())
+
+  @@unique([playerId, questionIndex])
+}
+
+// ==========================================
+// MODULE 4: HỎI ĐÁP TÀI LIỆU PDF BẰNG AI (CHAT WITH PDF)
+// ==========================================
+
+model PdfChatSession {
+  id               String             @id @default(cuid())
+  userId           String?            // Người dùng (nếu có đăng nhập)
+  fileName         String             // Tên file gốc
+  fileSize         Int                @default(0)
+  pageCount        Int                @default(0)
+  summary          String?            @db.Text // Tóm tắt do AI tạo
+  extractedText    String?            @db.Text // Nội dung text đã trích xuất từ PDF
+  messages         Json               @default("[]") // Lịch sử đoạn chat [{role, content, timestamp, citations}]
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+}

@@ -94,9 +94,15 @@ const Navbar = () => {
             ref={navRef}
             onScroll={checkScroll}
           >
-            {/* Nhóm nổi bật: Điểm danh QR & Vinh Danh & Thi Trắc Nghiệm */}
-            <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"}>
-              <span className="nav-badge-new">MỚI</span>
+            {/* Nhóm nổi bật: Đấu trường Live, Điểm danh QR & Vinh Danh & Hỏi đáp PDF */}
+            <NavLink to="/dau-truong-live" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"}>
+              <span className="nav-badge-new">HOT</span>
+              ⚡ Đấu Trường Live
+            </NavLink>
+            <NavLink to="/hoi-dap-pdf-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>
+              🤖 Hỏi Đáp PDF AI
+            </NavLink>
+            <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>
               📍 Điểm Danh QR
             </NavLink>
             <NavLink to="/bang-vinh-danh" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>
@@ -216,10 +222,26 @@ const Navbar = () => {
             <span className="mobile-section-tag">Khuyên Dùng</span>
           </div>
           <div className="mobile-featured-grid">
+            <NavLink to="/dau-truong-live" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444' }}>⚡</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Đấu Trường Live <span className="mfc-badge" style={{ background: '#ef4444' }}>HOT</span></div>
+                <div className="mfc-desc">Kahoot đố vui trực tiếp, máy chiếu</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/hoi-dap-pdf-ai" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#2563eb' }}>🤖</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Hỏi Đáp PDF AI <span className="mfc-badge" style={{ background: '#2563eb' }}>MỚI</span></div>
+                <div className="mfc-desc">Đọc hiểu giáo trình, tạo trắc nghiệm</div>
+              </div>
+            </NavLink>
+
             <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
               <div className="mfc-icon bg-emerald">📍</div>
               <div className="mfc-info">
-                <div className="mfc-title">Điểm Danh QR <span className="mfc-badge">MỚI</span></div>
+                <div className="mfc-title">Điểm Danh QR</div>
                 <div className="mfc-desc">Chống chụp màn hình, GPS</div>
               </div>
             </NavLink>
@@ -227,7 +249,7 @@ const Navbar = () => {
             <NavLink to="/bang-vinh-danh" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
               <div className="mfc-icon bg-amber" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>🏆</div>
               <div className="mfc-info">
-                <div className="mfc-title">Bảng Vinh Danh <span className="mfc-badge" style={{ background: '#f59e0b' }}>HOT</span></div>
+                <div className="mfc-title">Bảng Vinh Danh</div>
                 <div className="mfc-desc">Tích điểm, Top 1-2-3, Huy hiệu</div>
               </div>
             </NavLink>

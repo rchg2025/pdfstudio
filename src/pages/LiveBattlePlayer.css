@@ -1,0 +1,524 @@
+/* CSS Giao diện Học viên tham gia Đấu Trường trên Smartphone (Live Battle Player) */
+
+.player-join-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.join-card {
+  width: 100%;
+  max-width: 420px;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 2rem 1.5rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.join-logo {
+  font-size: 2.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.join-header h1 {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #0f172a;
+  letter-spacing: 0.5px;
+}
+
+.join-header p {
+  font-size: 0.85rem;
+  color: #64748b;
+  margin-top: 0.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.join-error-box {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  font-size: 0.85rem;
+  padding: 0.6rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.join-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #334155;
+  margin-bottom: 0.35rem;
+}
+
+.input-pin {
+  width: 100%;
+  padding: 0.85rem;
+  border-radius: 12px;
+  border: 2px solid #cbd5e1;
+  font-size: 1.5rem;
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 4px;
+  color: #2563eb;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.input-pin:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.input-text {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1.5px solid #cbd5e1;
+  font-size: 0.95rem;
+  font-weight: 600;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.input-text:focus {
+  border-color: #2563eb;
+}
+
+.emoji-picker-row {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.4rem;
+}
+
+.emoji-btn {
+  background: #f1f5f9;
+  border: 2px solid transparent;
+  font-size: 1.35rem;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+
+.emoji-btn.active {
+  background: #eff6ff;
+  border-color: #2563eb;
+  transform: scale(1.1);
+}
+
+.btn-join-room {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  margin-top: 0.5rem;
+  transition: all 0.2s;
+}
+
+.btn-join-room:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+.btn-join-room:disabled {
+  opacity: 0.6;
+}
+
+/* 2. Màn hình Chờ (Wait) */
+.player-wait-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  color: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.player-header-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: rgba(0, 0, 0, 0.2);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.wait-center-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.wait-avatar-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.wait-emoji {
+  font-size: 4.5rem;
+  margin-bottom: 0.5rem;
+  animation: bounceEmoji 1.5s infinite alternate;
+}
+
+@keyframes bounceEmoji {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-12px); }
+}
+
+.wait-name {
+  font-size: 1.5rem;
+  font-weight: 900;
+}
+
+.wait-mssv {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-top: 0.25rem;
+}
+
+.wait-status-chip {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  padding: 0.5rem 1.25rem;
+  border-radius: 9999px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+}
+
+.dot-pulse {
+  width: 8px;
+  height: 8px;
+  background: #34d399;
+  border-radius: 50%;
+  animation: blink 1s infinite alternate;
+}
+
+@keyframes blink {
+  0% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+.wait-instruction {
+  font-size: 0.95rem;
+  color: #cbd5e1;
+  line-height: 1.5;
+}
+
+/* 3. Màn hình Trả lời câu hỏi (Game Screen) */
+.player-game-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: #0f172a;
+}
+
+.player-stats-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: #1e293b;
+  color: #fff;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.p-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.p-score {
+  color: #f59e0b;
+  font-size: 1rem;
+}
+
+.p-streak-badge {
+  background: #f97316;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 0.2rem 0.5rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.player-buttons-grid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 0.75rem;
+  padding: 0.75rem;
+}
+
+.game-btn {
+  border: none;
+  border-radius: 16px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s active;
+  padding: 1rem;
+  user-select: none;
+}
+
+.game-btn:active {
+  transform: scale(0.95);
+}
+
+.btn-shape {
+  font-size: 2.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.btn-label {
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.btn-red { background: #e11d48; }
+.btn-blue { background: #2563eb; }
+.btn-yellow { background: #d97706; }
+.btn-green { background: #059669; }
+
+.player-answered-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 2rem;
+  text-align: center;
+}
+
+.answered-icon-pulse {
+  animation: pulseAnswer 1s infinite alternate;
+  margin-bottom: 1.25rem;
+}
+
+@keyframes pulseAnswer {
+  0% { transform: scale(0.9); }
+  100% { transform: scale(1.1); }
+}
+
+.player-answered-box h2 {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin-bottom: 0.5rem;
+}
+
+.player-answered-box p {
+  color: #94a3b8;
+  font-size: 0.95rem;
+}
+
+/* 4. Màn hình Kết quả câu hỏi */
+.player-result-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  color: #fff;
+}
+
+.bg-success-gradient {
+  background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+}
+
+.bg-wrong-gradient {
+  background: linear-gradient(135deg, #991b1b 0%, #b91c1c 100%);
+}
+
+.result-center-card {
+  width: 100%;
+  max-width: 380px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 20px;
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.result-icon-circle {
+  margin-bottom: 1rem;
+}
+
+.result-title {
+  font-size: 1.5rem;
+  font-weight: 900;
+  margin-bottom: 1rem;
+}
+
+.score-awarded-pill {
+  background: #f59e0b;
+  color: #000;
+  font-size: 1.2rem;
+  font-weight: 900;
+  padding: 0.4rem 1.25rem;
+  border-radius: 9999px;
+  display: inline-block;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+}
+
+.player-rank-box {
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 12px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.rank-text {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+}
+
+.rank-num {
+  font-size: 1.75rem;
+  font-weight: 900;
+  color: #fef08a;
+  margin: 0.25rem 0;
+}
+
+.rank-total-score {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.next-q-hint {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+}
+
+/* 5. Màn hình Kết thúc */
+.player-finished-screen {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e1b4b, #312e81);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  color: #fff;
+  text-align: center;
+}
+
+.finished-card {
+  width: 100%;
+  max-width: 400px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 2.5rem 1.5rem;
+}
+
+.finished-card h1 {
+  font-size: 1.6rem;
+  font-weight: 900;
+  margin: 0.75rem 0 0.25rem;
+}
+
+.finished-card p {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  margin-bottom: 1.5rem;
+}
+
+.final-podium-rank {
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.final-emoji {
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.final-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.final-rank-tag {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: #f59e0b;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.final-score-tag {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.btn-play-again {
+  width: 100%;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
