@@ -4,7 +4,7 @@ import {
   Play, Users, Trophy, Volume2, VolumeX, Flame, 
   RotateCcw, Sparkles, ChevronRight, Award, 
   Clock, ArrowLeft, Plus, Trash2, Layers,
-  Copy, Check, Swords
+  Copy, Check, Swords, AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -47,9 +47,11 @@ export default function LiveBattleHost() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [timePerQ, setTimePerQ] = useState(20);
-  const [quizSource, setQuizSource] = useState<'bank' | 'manual'>('manual');
+  const [quizSource, setQuizSource] = useState<'bank' | 'manual' | 'custom'>('manual');
   const [myQuizPackages, setMyQuizPackages] = useState<any[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState('');
+  const [customQuestionsText, setCustomQuestionsText] = useState('');
+  const [isSubmittingRoom, setIsSubmittingRoom] = useState(false);
   const [manualQuestions] = useState<QuestionItem[]>([
     {
       question: 'Câu hỏi mẫu: Đâu là định nghĩa đúng của E-Learning?',
@@ -138,16 +140,46 @@ export default function LiveBattleHost() {
     }
   };
 
-  // Load ngân hàng đề thi
+  // Load ngân hàng đề thi (cả từ DB và LocalStorage)
   const loadQuizPackages = async () => {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/quiz-api?action=list-quizzes&userId=${encodeURIComponent(user.id)}`);
-      const data = await res.json();
-      if (data.quizzes) {
-        setMyQuizPackages(data.quizzes);
+    let combinedPackages: any[] = [];
+    
+    // 1. Đọc từ LocalStorage (đồng bộ với Quản lý Đề Thi - /tao-de-thi)
+    if (user) {
+      try {
+        const localData = localStorage.getItem(`rchg_quiz_packages_${user.id}`);
+        if (localData) {
+          const parsed = JSON.parse(localData);
+          if (Array.isArray(parsed)) {
+            combinedPackages = [...parsed];
+          }
+        }
+      } catch (err) {
+        console.error('Lỗi đọc local packages:', err);
       }
-    } catch {}
+    }
+
+    // 2. Fetch từ API Backend (/api/quiz-api?action=get-quizzes)
+    if (user) {
+      try {
+        const res = await fetch(`/api/quiz-api?action=get-quizzes&userId=${encodeURIComponent(user.id)}`);
+        const data = await res.json();
+        if (data.success && Array.isArray(data.quizzes)) {
+          data.quizzes.forEach((apiPkg: any) => {
+            if (!combinedPackages.some(p => p.id === apiPkg.id)) {
+              combinedPackages.push(apiPkg);
+            }
+          });
+        }
+      } catch (err) {
+        console.error('Lỗi tải đề thi từ API:', err);
+      }
+    }
+
+    setMyQuizPackages(combinedPackages);
+    if (combinedPackages.length > 0) {
+      setSelectedPackageId(combinedPackages[0].id);
+    }
   };
 
   useEffect(() => {
@@ -242,25 +274,110 @@ export default function LiveBattleHost() {
     }
   };
 
+  // Hàm parse câu hỏi nhập nhanh từ text
+  const parseCustomTextQuestions = (text: string): QuestionItem[] => {
+    if (!text.trim()) return [];
+    const blocks = text.split(/(?:Câu\s*\d+[:.]|\n\s*\n)/i).map(b => b.trim()).filter(Boolean);
+    const parsedQuestions: QuestionItem[] = [];
+
+    blocks.forEach((block, idx) => {
+      const lines = block.split('\n').map(l => l.trim()).filter(Boolean);
+      if (lines.length >= 2) {
+        const qTitle = lines[0].replace(/^Câu\s*\d+[:.]\s*/i, '');
+        const options: string[] = [];
+        let correctIdx = 0;
+
+        lines.slice(1).forEach(line => {
+          if (/^[A-D][.:)]\s*/i.test(line)) {
+            options.push(line.replace(/^[A-D][.:)]\s*/i, '').trim());
+          } else if (/^Đáp án[:.]\s*/i.test(line)) {
+            const rawAns = line.replace(/^Đáp án[:.]\s*/i, '').trim().toUpperCase();
+            const charIdx = ['A', 'B', 'C', 'D'].indexOf(rawAns);
+            if (charIdx >= 0) {
+              correctIdx = charIdx;
+            } else {
+              const matchedOptionIdx = options.findIndex((o: string) => o.toLowerCase() === rawAns.toLowerCase());
+              if (matchedOptionIdx >= 0) correctIdx = matchedOptionIdx;
+            }
+          }
+        });
+
+        if (qTitle && options.length >= 2) {
+          parsedQuestions.push({
+            id: `q-${Date.now()}-${idx}`,
+            question: qTitle,
+            options: options.slice(0, 4),
+            correctAnswer: correctIdx < options.length ? correctIdx : 0
+          });
+        }
+      }
+    });
+
+    return parsedQuestions;
+  };
+
   // Tạo phòng mới
-  const handleCreateRoom = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
+  const handleCreateRoom = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!user) {
+      showAlert('Vui lòng đăng nhập để tạo phòng đấu trường!', 'Chưa đăng nhập');
+      return;
+    }
     if (!newTitle.trim()) {
       showAlert('Vui lòng nhập tên phòng thi!', 'Thiếu thông tin');
       return;
     }
 
     let finalQuestions: QuestionItem[] = [];
-    if (quizSource === 'bank' && selectedPackageId) {
+
+    if (quizSource === 'bank') {
+      if (!selectedPackageId) {
+        showAlert('Vui lòng chọn một đề thi từ danh sách ngân hàng đề thi!', 'Chưa chọn đề');
+        return;
+      }
       const pkg = myQuizPackages.find(p => p.id === selectedPackageId);
-      if (pkg && Array.isArray(pkg.questions)) {
-        finalQuestions = pkg.questions.map((q: any) => ({
-          question: q.title || q.question || 'Câu hỏi',
-          options: q.options || ['A', 'B', 'C', 'D'],
-          correctAnswer: Number(q.correctOption ?? q.correctAnswer ?? 0),
-          explanation: q.explanation
-        }));
+      if (pkg && Array.isArray(pkg.questions) && pkg.questions.length > 0) {
+        finalQuestions = pkg.questions
+          .filter((q: any) => q.type === 'choice' || !q.type || (Array.isArray(q.options) && q.options.length >= 2))
+          .map((q: any) => {
+            const opts: string[] = Array.isArray(q.options) && q.options.length >= 2
+              ? q.options.map((opt: any) => String(opt).trim())
+              : ['A', 'B', 'C', 'D'];
+
+            let correctNum = 0;
+            if (typeof q.correctAnswer === 'number') {
+              correctNum = q.correctAnswer;
+            } else if (typeof q.correctOption === 'number') {
+              correctNum = q.correctOption;
+            } else if (typeof q.correctAnswer === 'string') {
+              const str = q.correctAnswer.trim();
+              const matchedIndex = opts.findIndex((o: string) => o.toLowerCase() === str.toLowerCase());
+              if (matchedIndex >= 0) {
+                correctNum = matchedIndex;
+              } else if (/^[A-D]$/i.test(str)) {
+                correctNum = ['A', 'B', 'C', 'D'].indexOf(str.toUpperCase());
+              }
+            }
+
+            return {
+              id: q.id || `q-${Math.random()}`,
+              question: q.title || q.question || 'Câu hỏi trắc nghiệm',
+              options: opts.slice(0, 4),
+              correctAnswer: correctNum >= 0 && correctNum < opts.length ? correctNum : 0,
+              explanation: q.explanation || ''
+            };
+          });
+      }
+
+      if (finalQuestions.length === 0) {
+        showAlert('Bộ đề thi bạn chọn không có câu hỏi trắc nghiệm hợp lệ!', 'Bộ đề rỗng');
+        return;
+      }
+    } else if (quizSource === 'custom') {
+      finalQuestions = parseCustomTextQuestions(customQuestionsText);
+      if (finalQuestions.length === 0) {
+        showAlert('Không nhận diện được câu hỏi trắc nghiệm từ văn bản bạn dán. Vui lòng kiểm tra định dạng mẫu: Câu 1, A, B, C, D, Đáp án: A', 'Lỗi định dạng');
+        return;
       }
     } else {
       finalQuestions = manualQuestions.filter(q => q.question.trim().length > 0);
@@ -271,6 +388,7 @@ export default function LiveBattleHost() {
       return;
     }
 
+    setIsSubmittingRoom(true);
     try {
       const res = await fetch('/api/live-battle?action=create-room', {
         method: 'POST',
@@ -287,9 +405,13 @@ export default function LiveBattleHost() {
         showToast('Đã tạo phòng đấu trường thành công!', 'success');
         setIsCreatingRoom(false);
         navigate(`/dau-truong-live/${data.room.id}`);
+      } else {
+        showAlert(data.message || 'Lỗi khi tạo phòng', 'Lỗi');
       }
     } catch (err: any) {
       showAlert(err.message || 'Lỗi khi tạo phòng', 'Lỗi');
+    } finally {
+      setIsSubmittingRoom(false);
     }
   };
 
@@ -708,9 +830,10 @@ export default function LiveBattleHost() {
                 <div className="battle-form-group">
                   <label className="battle-form-label">
                     <span>Nguồn câu hỏi trắc nghiệm</span>
+                    <span className="battle-form-label-hint">Chọn cách nạp đề thi</span>
                   </label>
                   
-                  <div className="battle-source-options">
+                  <div className="battle-source-options" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                     <div 
                       className={`battle-source-card ${quizSource === 'manual' ? 'active' : ''}`}
                       onClick={() => setQuizSource('manual')}
@@ -722,8 +845,24 @@ export default function LiveBattleHost() {
                         onChange={() => setQuizSource('manual')} 
                       />
                       <div className="battle-source-card-text">
-                        <span className="battle-source-card-title">Bộ câu hỏi nhanh</span>
-                        <span className="battle-source-card-desc">Sử dụng bộ câu hỏi mẫu khởi động</span>
+                        <span className="battle-source-card-title">Bộ câu mẫu</span>
+                        <span className="battle-source-card-desc">2 câu khởi động</span>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`battle-source-card ${quizSource === 'custom' ? 'active' : ''}`}
+                      onClick={() => setQuizSource('custom')}
+                    >
+                      <input 
+                        type="radio" 
+                        name="qSource" 
+                        checked={quizSource === 'custom'} 
+                        onChange={() => setQuizSource('custom')} 
+                      />
+                      <div className="battle-source-card-text">
+                        <span className="battle-source-card-title">Dán câu hỏi</span>
+                        <span className="battle-source-card-desc">Nhập văn bản ABCD</span>
                       </div>
                     </div>
 
@@ -738,32 +877,94 @@ export default function LiveBattleHost() {
                         onChange={() => setQuizSource('bank')} 
                       />
                       <div className="battle-source-card-text">
-                        <span className="battle-source-card-title">Ngân hàng đề thi</span>
+                        <span className="battle-source-card-title">Ngân hàng đề</span>
                         <span className="battle-source-card-desc">{myQuizPackages.length} đề thi sẵn có</span>
                       </div>
                     </div>
                   </div>
 
                   {quizSource === 'bank' ? (
-                    <div style={{ marginTop: '0.75rem' }}>
-                      <select 
-                        value={selectedPackageId} 
-                        onChange={e => setSelectedPackageId(e.target.value)}
-                        className="battle-modal-select"
-                      >
-                        <option value="">-- Chọn đề thi từ danh sách của bạn --</option>
-                        {myQuizPackages.map(pkg => (
-                          <option key={pkg.id} value={pkg.id}>
-                            📖 {pkg.title} ({Array.isArray(pkg.questions) ? pkg.questions.length : 0} câu hỏi)
-                          </option>
-                        ))}
-                      </select>
+                    <div style={{ marginTop: '0.85rem' }}>
+                      {myQuizPackages.length === 0 ? (
+                        <div className="battle-info-banner" style={{ background: '#fffbeb', borderColor: '#fde68a', color: '#b45309' }}>
+                          <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+                          <div>
+                            <strong>Bạn chưa có bộ đề nào trong ngân hàng đề thi!</strong>
+                            <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem' }}>
+                              Bạn có thể chọn <strong>"Dán câu hỏi"</strong> ở trên để nạp ngay, hoặc bấm vào <Link to="/tao-de-thi" target="_blank" style={{ color: '#4f46e5', textDecoration: 'underline', fontWeight: 700 }}>Quản lý Đề Thi</Link> để tạo đề trắc nghiệm bằng AI.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem', color: '#334155' }}>
+                            Chọn đề thi từ Ngân hàng của bạn:
+                          </label>
+                          <select 
+                            value={selectedPackageId} 
+                            onChange={e => setSelectedPackageId(e.target.value)}
+                            className="battle-modal-select"
+                          >
+                            <option value="">-- Chọn đề thi --</option>
+                            {myQuizPackages.map(pkg => (
+                              <option key={pkg.id} value={pkg.id}>
+                                📖 {pkg.title} ({Array.isArray(pkg.questions) ? pkg.questions.length : 0} câu hỏi)
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  ) : quizSource === 'custom' ? (
+                    <div style={{ marginTop: '0.85rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155' }}>
+                          Dán câu hỏi trắc nghiệm (Định dạng ABCD):
+                        </label>
+                        <button 
+                          type="button" 
+                          onClick={() => setCustomQuestionsText(
+`Câu 1: Thủ đô của Việt Nam là thành phố nào?
+A. Hà Nội
+B. Đà Nẵng
+C. TP Hồ Chí Minh
+D. Hải Phòng
+Đáp án: A
+
+Câu 2: Đơn vị tiền tệ chính thức của Việt Nam là gì?
+A. Dollar
+B. Đồng
+C. Yen
+D. Euro
+Đáp án: B`
+                          )}
+                          style={{ background: 'none', border: 'none', color: '#4f46e5', fontSize: '0.78rem', cursor: 'pointer', textDecoration: 'underline' }}
+                        >
+                          Điền mẫu thử
+                        </button>
+                      </div>
+                      <textarea
+                        rows={6}
+                        className="battle-modal-input"
+                        style={{ fontFamily: 'monospace', fontSize: '0.85rem', resize: 'vertical' }}
+                        value={customQuestionsText}
+                        onChange={e => setCustomQuestionsText(e.target.value)}
+                        placeholder={`Câu 1: Câu hỏi của bạn là gì?
+A. Lựa chọn thứ nhất
+B. Lựa chọn thứ hai
+C. Lựa chọn thứ ba
+D. Lựa chọn thứ tư
+Đáp án: A`}
+                      />
+                      <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.35rem' }}>
+                        💡 Tự động nhận diện các dòng <strong>Câu 1, A, B, C, D</strong> và <strong>Đáp án: A</strong>.
+                      </div>
                     </div>
                   ) : (
-                    <div className="battle-info-banner" style={{ marginTop: '0.75rem' }}>
+                    <div className="battle-info-banner" style={{ marginTop: '0.85rem' }}>
                       <Sparkles size={18} style={{ flexShrink: 0, marginTop: '2px', color: '#3b82f6' }} />
                       <div>
-                        <strong>Khởi động tức thì:</strong> Đã có sẵn 2 câu hỏi mẫu khởi động. Bạn có thể bấm tạo ngay để mở máy chiếu và thử nghiệm cùng lớp học!
+                        <strong>Khởi động tức thì:</strong> Đã có sẵn 2 câu hỏi mẫu khởi động. Bạn có thể bấm tạo ngay để mở máy chiếu và thử nghiệm trải nghiệm cùng lớp học!
                       </div>
                     </div>
                   )}
@@ -774,8 +975,18 @@ export default function LiveBattleHost() {
                 <button type="button" className="btn-battle-cancel" onClick={() => setIsCreatingRoom(false)}>
                   Hủy bỏ
                 </button>
-                <button type="submit" className="btn-battle-submit">
-                  <Play size={18} /> Khởi Tạo & Mở Máy Chiếu
+                <button 
+                  type="submit" 
+                  className="btn-battle-submit" 
+                  disabled={isSubmittingRoom}
+                >
+                  {isSubmittingRoom ? (
+                    <span>Đang khởi tạo...</span>
+                  ) : (
+                    <>
+                      <Play size={18} /> Khởi Tạo & Mở Máy Chiếu
+                    </>
+                  )}
                 </button>
               </div>
             </form>
