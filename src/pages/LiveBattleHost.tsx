@@ -5,8 +5,9 @@ import {
   RotateCcw, Sparkles, ChevronRight, Award, 
   Clock, ArrowLeft, Plus, Trash2, Layers,
   Copy, Check, Swords, AlertCircle, ArrowUpRight, ListOrdered,
-  Maximize, Minimize, Eye, Download
+  Maximize, Minimize, Eye, FileSpreadsheet
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import { useDialogs } from '../components/CustomDialogs';
@@ -544,37 +545,75 @@ export default function LiveBattleHost() {
     }
   };
 
-  // Xuất file CSV danh sách học viên tham gia
-  const exportPlayersCsv = (room: any) => {
+  // Xuất file Excel (.xlsx) danh sách học viên tham gia đấu trường
+  const exportPlayersExcel = (room: any) => {
     if (!room || !Array.isArray(room.players) || room.players.length === 0) {
       showAlert('Phòng này chưa có học viên nào tham gia để xuất file!', 'Chưa có dữ liệu');
       return;
     }
-    const headers = ['Hạng', 'Họ và tên', 'Mã số sinh viên', 'Lớp', 'Tổng điểm', 'Chuỗi trả lời đúng', 'Số câu đúng'];
+
     const totalQ = Array.isArray(room.questions) ? room.questions.length : 0;
-    const rows = room.players.map((p: any, idx: number) => {
+    
+    // Header thông tin chung
+    const headerInfo = [
+      ['BẢNG XẾP HẠNG & DANH SÁCH HỌC VIÊN - ĐẤU TRƯỜNG TRỰC TIẾP'],
+      ['Tên phòng thi:', room.title],
+      ['Mã PIN phòng:', room.pinCode],
+      ['Thời gian mỗi câu:', `${room.timePerQuestion || 20} giây/câu`],
+      ['Tổng số câu hỏi:', `${totalQ} câu`],
+      ['Tổng số học viên tham gia:', `${room.players.length} học viên`],
+      ['Thời gian xuất file:', new Date().toLocaleString('vi-VN')],
+      []
+    ];
+
+    const tableHeaders = [
+      'Thứ hạng',
+      'Họ và tên học viên',
+      'Mã số sinh viên (MSSV)',
+      'Lớp học',
+      'Tổng điểm (pts)',
+      'Chuỗi trả lời đúng (Streak)',
+      'Số câu đúng / Tổng số',
+      'Tỷ lệ đúng (%)'
+    ];
+
+    const tableRows = room.players.map((p: any, idx: number) => {
       const correctCount = (p.answers || []).filter((a: any) => a.isCorrect).length;
+      const accuracy = totalQ > 0 ? Math.round((correctCount / totalQ) * 100) : 0;
       return [
-        idx + 1,
-        `"${p.nickname.replace(/"/g, '""')}"`,
-        `"${p.studentId || ''}"`,
-        `"${p.className || ''}"`,
+        idx === 0 ? 'Hạng 1 (Quán quân)' : idx === 1 ? 'Hạng 2 (Á quân)' : idx === 2 ? 'Hạng 3 (Quý quân)' : `Hạng ${idx + 1}`,
+        p.nickname,
+        p.studentId || '',
+        p.className || '',
         p.totalScore,
         p.streak,
-        `${correctCount}/${totalQ}`
+        `${correctCount}/${totalQ}`,
+        `${accuracy}%`
       ];
     });
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Dau-Truong-Hoc-Vien-${room.pinCode}-${room.title.replace(/[\/\\]/g, '_')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast('Đã tải xuống danh sách học viên thành công!', 'success');
+    const worksheetData = [...headerInfo, tableHeaders, ...tableRows];
+    const ws = XLSX.utils.aoa_to_sheet(worksheetData);
+
+    // Cài đặt độ rộng cột chuẩn
+    ws['!cols'] = [
+      { wch: 20 }, // Thứ hạng
+      { wch: 28 }, // Họ và tên
+      { wch: 22 }, // MSSV
+      { wch: 18 }, // Lớp học
+      { wch: 18 }, // Tổng điểm
+      { wch: 25 }, // Chuỗi đúng
+      { wch: 22 }, // Số câu đúng
+      { wch: 16 }  // Tỷ lệ đúng
+    ];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'BangXepHang');
+
+    const cleanTitle = (room.title || 'DauTruong').replace(/[\/\\:*?"<>|]/g, '_');
+    const fileName = `DauTruong_${room.pinCode}_${cleanTitle}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+    showToast('Đã xuất và tải xuống file Excel (.xlsx) thành công!', 'success');
   };
 
   // -------------------------------------------------------------
@@ -895,11 +934,12 @@ export default function LiveBattleHost() {
               <button
                 type="button"
                 className="btn-sync-leaderboard"
-                style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', color: '#fff' }}
-                onClick={() => exportPlayersCsv(currentRoom)}
+                style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none', color: '#fff' }}
+                onClick={() => exportPlayersExcel(currentRoom)}
                 disabled={players.length === 0}
+                title="Tải bảng điểm xếp hạng định dạng Microsoft Excel (.xlsx)"
               >
-                <Download size={18} /> Tải File Excel / CSV
+                <FileSpreadsheet size={18} /> Xuất File Excel (.xlsx)
               </button>
 
               <Link to="/bang-vinh-danh" className="btn-view-leaderboard-link">
@@ -1391,10 +1431,11 @@ D. Lựa chọn thứ tư
                 type="button"
                 className="btn btn-outline"
                 disabled={!inspectingRoom.players || inspectingRoom.players.length === 0}
-                onClick={() => exportPlayersCsv(inspectingRoom)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+                onClick={() => exportPlayersExcel(inspectingRoom)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, color: '#059669', borderColor: '#a7f3d0', background: '#ecfdf5' }}
+                title="Tải bảng điểm học viên định dạng Microsoft Excel (.xlsx)"
               >
-                <Download size={16} color="#2563eb" /> Xuất File Excel / CSV
+                <FileSpreadsheet size={17} color="#059669" /> Xuất File Excel (.xlsx)
               </button>
 
               <div style={{ display: 'flex', gap: '0.6rem' }}>
