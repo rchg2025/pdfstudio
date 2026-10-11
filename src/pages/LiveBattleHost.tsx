@@ -242,13 +242,27 @@ export default function LiveBattleHost() {
     }
   };
 
+  const handleBackToDashboard = () => {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    }
+    setCurrentRoom(null);
+    navigate('/dau-truong-live');
+    if (user) {
+      loadMyRooms();
+    }
+  };
+
   useEffect(() => {
     if (roomId) {
       fetchHostRoom(roomId);
     } else {
       setCurrentRoom(null);
+      if (user) {
+        loadMyRooms();
+      }
     }
-  }, [roomId]);
+  }, [roomId, user]);
 
   // Polling cập nhật phòng khi đang ở màn hình Host
   useEffect(() => {
@@ -630,9 +644,15 @@ export default function LiveBattleHost() {
         {/* Top Header Bar */}
         <header className="battle-topbar">
           <div className="battle-brand">
-            <Link to="/dau-truong-live" className="battle-back-link" title="Quay lại danh sách phòng">
+            <button 
+              type="button" 
+              onClick={handleBackToDashboard} 
+              className="battle-back-link" 
+              title="Quay lại danh sách phòng"
+              style={{ cursor: 'pointer', border: 'none' }}
+            >
               <ArrowLeft size={20} />
-            </Link>
+            </button>
             <div className="battle-logo-badge">⚡ LIVE BATTLE</div>
             <span className="battle-room-title">{currentRoom.title}</span>
           </div>
