@@ -46,6 +46,13 @@
   margin-inline: auto;
 }
 
+.section-header-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding-bottom: 15px;
+}
+
 .tools-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -121,6 +128,7 @@
   font-size: 1.1rem;
   color: var(--text-primary);
   margin: 0;
+  padding-bottom: 15px;
 }
 
 .tool-desc {

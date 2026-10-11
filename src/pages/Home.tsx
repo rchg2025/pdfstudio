@@ -419,7 +419,7 @@ const Home = () => {
       {/* SECTION 1: CÔNG CỤ GIẢNG DẠY & LMS */}
       {(activeCategory === 'all' || activeCategory === 'edtech') && (
         <section style={{ marginTop: '2.5rem' }}>
-          <h2 className="text-2xl font-bold mb-8 text-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <GraduationCap size={28} /> Công Cụ Giảng Dạy & E-Learning LMS
           </h2>
           <div className="tools-grid">
@@ -455,7 +455,7 @@ const Home = () => {
       {/* SECTION 2: CÔNG CỤ PDF */}
       {(activeCategory === 'all' || activeCategory === 'pdf') && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem' }}>
-          <h2 className="text-2xl font-bold mb-8 text-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <FileEdit size={28} /> Công Cụ PDF
           </h2>
           <div className="tools-grid">
@@ -480,7 +480,7 @@ const Home = () => {
       {/* SECTION 3: CÔNG CỤ ẢNH & AI */}
       {(activeCategory === 'all' || activeCategory === 'image') && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem' }}>
-          <h2 className="text-2xl font-bold mb-8 text-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <ImageIcon size={28} /> Xử Lý Ảnh & AI
           </h2>
           <div className="tools-grid">
@@ -505,7 +505,7 @@ const Home = () => {
       {/* SECTION 4: TIỆN ÍCH KHÁC */}
       {(activeCategory === 'all' || activeCategory === 'other') && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem', marginBottom: '4rem' }}>
-          <h2 className="text-2xl font-bold mb-8 text-gradient" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+          <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <LinkIcon size={28} /> Tiện Ích Khác
           </h2>
           <div className="tools-grid">
