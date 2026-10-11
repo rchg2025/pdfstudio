@@ -1193,3 +1193,34 @@
   }
 }
 
+/* Fullscreen Projector Enhancements */
+:fullscreen .battle-host-screen,
+:-webkit-full-screen .battle-host-screen {
+  width: 100vw;
+  height: 100vh;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+:fullscreen .battle-question-layout,
+:-webkit-full-screen .battle-question-layout {
+  max-width: 95vw;
+  padding: 1.5rem 3rem 2.5rem;
+}
+
+:fullscreen .question-text,
+:-webkit-full-screen .question-text {
+  font-size: 2.6rem;
+}
+
+:fullscreen .option-label,
+:-webkit-full-screen .option-label {
+  font-size: 1.75rem;
+}
+
+:fullscreen .battle-lobby-layout,
+:-webkit-full-screen .battle-lobby-layout {
+  max-width: 95vw;
+  padding: 2rem 3rem;
+}
+

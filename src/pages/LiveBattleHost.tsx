@@ -4,7 +4,8 @@ import {
   Play, Users, Trophy, Volume2, VolumeX, Flame, 
   RotateCcw, Sparkles, ChevronRight, Award, 
   Clock, ArrowLeft, Plus, Trash2, Layers,
-  Copy, Check, Swords, AlertCircle, ArrowUpRight, ListOrdered
+  Copy, Check, Swords, AlertCircle, ArrowUpRight, ListOrdered,
+  Maximize, Minimize
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -87,6 +88,30 @@ export default function LiveBattleHost() {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [timeLeft, setTimeLeft] = useState(20);
   const [copiedPin, setCopiedPin] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Lắng nghe sự kiện Fullscreen thay đổi từ trình duyệt (hoặc khi bấm phím ESC)
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch((err) => {
+        console.error('Không thể bật toàn màn hình:', err);
+      });
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.error('Không thể thoát toàn màn hình:', err);
+        });
+      }
+    }
+  };
 
   // Audio effects synthesizer (Web Audio API)
   const playSfx = (type: 'countdown' | 'reveal' | 'fanfare' | 'click') => {
@@ -522,6 +547,14 @@ export default function LiveBattleHost() {
           </div>
 
           <div className="battle-top-actions">
+            <button 
+              className="battle-btn-sound" 
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Thu nhỏ cửa sổ (ESC)' : 'Phóng to toàn màn hình máy chiếu'}
+            >
+              {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+            </button>
+
             <button 
               className="battle-btn-sound" 
               onClick={() => setSoundEnabled(!soundEnabled)}
