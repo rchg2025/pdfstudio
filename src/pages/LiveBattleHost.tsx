@@ -766,9 +766,17 @@ export default function LiveBattleHost() {
                   <div className="rank-pos">#{idx + 1}</div>
                   <div className="rank-avatar">{p.avatarEmoji || '🦊'}</div>
                   <div className="rank-name-box">
-                    <span className="rank-name">{p.nickname}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                      <span className="rank-name">{p.nickname}</span>
+                      {p.studentId && (
+                        <span className="rank-badge-sub">MSSV: {p.studentId}</span>
+                      )}
+                      {p.className && (
+                        <span className="rank-badge-sub">Lớp: {p.className}</span>
+                      )}
+                    </div>
                     {p.streak > 1 && (
-                      <span className="rank-streak"><Flame size={14} /> Chuỗi {p.streak}🔥</span>
+                      <span className="rank-streak"><Flame size={14} /> Chuỗi đúng {p.streak} câu liên tiếp 🔥</span>
                     )}
                   </div>
                   <div className="rank-score">{p.totalScore.toLocaleString()} pts</div>

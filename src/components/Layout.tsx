@@ -5,8 +5,12 @@ import VisitorTracker from './VisitorTracker';
 const Layout = () => {
   const location = useLocation();
   const isExamRoom = location.pathname.startsWith('/phong-thi');
+  
+  // Ẩn hoàn toàn Navbar và Footer khi đang ở màn hình Máy chiếu Đấu trường (/dau-truong-live/:roomId) hoặc màn hình điện thoại học viên (/dau-truong)
+  const isLiveBattleProjector = /^\/dau-truong-live\/[^/]+/.test(location.pathname);
+  const isLiveBattlePlayer = location.pathname.startsWith('/dau-truong');
 
-  if (isExamRoom) {
+  if (isExamRoom || isLiveBattleProjector || isLiveBattlePlayer) {
     return (
       <main style={{ minHeight: '100vh', width: '100%', background: 'var(--bg-primary)' }}>
         <Outlet />

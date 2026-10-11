@@ -61,25 +61,28 @@
 .battle-top-actions {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 0.85rem;
 }
 
 .battle-btn-sound {
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  color: #fff;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .battle-btn-sound:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.32);
+  border-color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .battle-pin-badge {
@@ -410,13 +413,22 @@
 }
 
 .leaderboard-header h2 {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 900;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.75rem;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.5rem;
+  color: #ffffff;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.leaderboard-header p {
+  color: #cbd5e1;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 .leaderboard-list {
@@ -430,12 +442,38 @@
   display: flex;
   align-items: center;
   gap: 1.25rem;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 16px;
-  padding: 1.1rem 1.75rem;
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 18px;
+  padding: 1.2rem 1.75rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
   animation: slideUp 0.4s ease forwards;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.leaderboard-row:hover {
+  transform: scale(1.015);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.leaderboard-row.rank-1 {
+  background: linear-gradient(90deg, rgba(245, 158, 11, 0.25) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border-color: #f59e0b;
+  box-shadow: 0 10px 30px rgba(245, 158, 11, 0.3);
+}
+
+.leaderboard-row.rank-2 {
+  background: linear-gradient(90deg, rgba(148, 163, 184, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border-color: #cbd5e1;
+  box-shadow: 0 10px 30px rgba(148, 163, 184, 0.2);
+}
+
+.leaderboard-row.rank-3 {
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+  border-color: #d97706;
+  box-shadow: 0 10px 30px rgba(217, 119, 6, 0.2);
 }
 
 @keyframes slideUp {
@@ -444,37 +482,59 @@
 }
 
 .rank-pos {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   font-weight: 900;
-  width: 45px;
-  color: #f59e0b;
+  width: 50px;
+  color: #fbbf24;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
 .rank-avatar {
-  font-size: 2rem;
+  font-size: 2.3rem;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 
 .rank-name-box {
   flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
 }
 
 .rank-name {
-  font-size: 1.3rem;
-  font-weight: 800;
+  font-size: 1.4rem;
+  font-weight: 850;
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.3px;
+}
+
+.rank-badge-sub {
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.15);
+  color: #e2e8f0;
+  padding: 0.15rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .rank-streak {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: #f97316;
+  font-size: 0.88rem;
+  font-weight: 750;
+  color: #fb923c;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 
 .rank-score {
-  font-size: 1.5rem;
+  font-size: 1.7rem;
   font-weight: 900;
   color: #38bdf8;
+  text-shadow: 0 2px 10px rgba(56, 189, 248, 0.4);
+  letter-spacing: 0.5px;
 }
 
 .leaderboard-actions {
@@ -485,29 +545,36 @@
 }
 
 .btn-next-q {
-  padding: 1.1rem 2.5rem;
-  border-radius: 14px;
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  color: #fff;
-  font-size: 1.2rem;
-  font-weight: 800;
-  border: none;
+  padding: 1.15rem 2.75rem;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  color: #ffffff;
+  font-size: 1.25rem;
+  font-weight: 850;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  box-shadow: 0 10px 25px rgba(59, 130, 246, 0.4);
-  transition: all 0.2s;
+  gap: 0.75rem;
+  box-shadow: 0 12px 30px rgba(37, 99, 235, 0.5), 0 0 20px rgba(59, 130, 246, 0.3);
+  transition: all 0.25s ease;
+  letter-spacing: 0.5px;
 }
 
 .btn-next-q:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 15px 30px rgba(59, 130, 246, 0.6);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 16px 36px rgba(37, 99, 235, 0.7), 0 0 30px rgba(59, 130, 246, 0.5);
+  background: linear-gradient(135deg, #60a5fa 0%, #2563eb 50%, #1d4ed8 100%);
 }
 
 .btn-finish {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 10px 25px rgba(245, 158, 11, 0.4);
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.5), 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.btn-finish:hover {
+  background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+  box-shadow: 0 16px 36px rgba(245, 158, 11, 0.7), 0 0 30px rgba(245, 158, 11, 0.5);
 }
 
 /* 4. Podium Trao giải 1 - 2 - 3 */
