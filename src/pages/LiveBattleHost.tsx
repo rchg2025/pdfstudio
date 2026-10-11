@@ -5,7 +5,7 @@ import {
   RotateCcw, Sparkles, ChevronRight, Award, 
   Clock, ArrowLeft, Plus, Trash2, Layers,
   Copy, Check, Swords, AlertCircle, ArrowUpRight, ListOrdered,
-  Maximize, Minimize
+  Maximize, Minimize, Eye, Download
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -49,6 +49,9 @@ export default function LiveBattleHost() {
   const [isSyncingLeaderboard, setIsSyncingLeaderboard] = useState(false);
   const [selectedLeaderboardGroupId, setSelectedLeaderboardGroupId] = useState('');
   const [showSyncModal, setShowSyncModal] = useState(false);
+
+  // Xem danh sách học viên của phòng trực tiếp từ Dashboard
+  const [inspectingRoom, setInspectingRoom] = useState<any | null>(null);
 
   // Modal tạo phòng
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
@@ -525,6 +528,55 @@ export default function LiveBattleHost() {
     showToast(`Đã sao chép mã PIN: ${currentRoom.pinCode}`, 'info');
   };
 
+  // Mở modal xem danh sách học viên của một phòng
+  const handleInspectRoom = async (roomId: string) => {
+    try {
+      const res = await fetch(`/api/live-battle?action=get-host-room&roomId=${encodeURIComponent(roomId)}`);
+      const data = await res.json();
+      if (data.success && data.room) {
+        setInspectingRoom(data.room);
+      } else {
+        showAlert('Không tìm thấy thông tin phòng hoặc học viên!', 'Thông báo');
+      }
+    } catch (e: any) {
+      console.error(e);
+      showAlert(e.message || 'Lỗi khi tải danh sách học viên', 'Lỗi');
+    }
+  };
+
+  // Xuất file CSV danh sách học viên tham gia
+  const exportPlayersCsv = (room: any) => {
+    if (!room || !Array.isArray(room.players) || room.players.length === 0) {
+      showAlert('Phòng này chưa có học viên nào tham gia để xuất file!', 'Chưa có dữ liệu');
+      return;
+    }
+    const headers = ['Hạng', 'Họ và tên', 'Mã số sinh viên', 'Lớp', 'Tổng điểm', 'Chuỗi trả lời đúng', 'Số câu đúng'];
+    const totalQ = Array.isArray(room.questions) ? room.questions.length : 0;
+    const rows = room.players.map((p: any, idx: number) => {
+      const correctCount = (p.answers || []).filter((a: any) => a.isCorrect).length;
+      return [
+        idx + 1,
+        `"${p.nickname.replace(/"/g, '""')}"`,
+        `"${p.studentId || ''}"`,
+        `"${p.className || ''}"`,
+        p.totalScore,
+        p.streak,
+        `${correctCount}/${totalQ}`
+      ];
+    });
+
+    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map((r: any[]) => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Dau-Truong-Hoc-Vien-${room.pinCode}-${room.title.replace(/[\/\\]/g, '_')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showToast('Đã tải xuống danh sách học viên thành công!', 'success');
+  };
+
   // -------------------------------------------------------------
   // RENDER MÀN HÌNH ĐIỀU KHIỂN ĐẤU TRƯỜNG CHO MÁY CHIẾU (HOST VIEW)
   // -------------------------------------------------------------
@@ -840,6 +892,16 @@ export default function LiveBattleHost() {
                 <Trophy size={18} /> Lưu & Vinh Danh Vào Bảng Điểm Lớp
               </button>
 
+              <button
+                type="button"
+                className="btn-sync-leaderboard"
+                style={{ background: 'linear-gradient(135deg, #2563eb, #1d4ed8)', border: 'none', color: '#fff' }}
+                onClick={() => exportPlayersCsv(currentRoom)}
+                disabled={players.length === 0}
+              >
+                <Download size={18} /> Tải File Excel / CSV
+              </button>
+
               <Link to="/bang-vinh-danh" className="btn-view-leaderboard-link">
                 <ArrowUpRight size={18} /> Xem Trang Bảng Vinh Danh
               </Link>
@@ -979,6 +1041,15 @@ export default function LiveBattleHost() {
                     style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.88rem' }}
                   >
                     <Play size={16} /> Mở Máy Chiếu
+                  </button>
+                  <button 
+                    className="btn btn-outline"
+                    onClick={() => handleInspectRoom(r.id)}
+                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
+                    title="Xem danh sách học viên đã tham gia"
+                  >
+                    <Eye size={16} color="var(--primary)" />
+                    <span>Học viên ({r._count?.players || 0})</span>
                   </button>
                   <button 
                     className="btn btn-outline"
@@ -1218,6 +1289,130 @@ D. Lựa chọn thứ tư
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Xem Danh Sách Học Viên Đã Tham Gia Phòng */}
+      {inspectingRoom && (
+        <div className="battle-modal-overlay" onClick={() => setInspectingRoom(null)}>
+          <div className="battle-modal-card" style={{ maxWidth: '820px', width: '95%' }} onClick={e => e.stopPropagation()}>
+            <div className="battle-modal-header">
+              <div className="battle-modal-title-group">
+                <div className="battle-modal-icon-badge" style={{ background: '#eff6ff', color: '#2563eb' }}>
+                  <Users size={22} />
+                </div>
+                <div>
+                  <h3 className="battle-modal-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    Danh Sách Học Viên ({inspectingRoom.players?.length || 0} người)
+                    <span className="room-pin-tag" style={{ fontSize: '0.78rem' }}>PIN: {inspectingRoom.pinCode}</span>
+                  </h3>
+                  <p className="battle-modal-subtitle">
+                    Phòng: <strong>{inspectingRoom.title}</strong> • Trạng thái: {inspectingRoom.status}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="battle-modal-close" 
+                onClick={() => setInspectingRoom(null)}
+                title="Đóng cửa sổ"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="battle-modal-body" style={{ maxHeight: '65vh', overflowY: 'auto', padding: '1.25rem' }}>
+              {!inspectingRoom.players || inspectingRoom.players.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '3rem 1rem', color: '#64748b' }}>
+                  <Users size={44} color="#cbd5e1" style={{ margin: '0 auto 0.75rem' }} />
+                  <p style={{ fontWeight: 600, fontSize: '1rem', color: '#334155' }}>Chưa có học viên nào tham gia phòng này</p>
+                  <p style={{ fontSize: '0.85rem' }}>Khi học viên quét mã QR hoặc nhập PIN vào phòng, danh sách và điểm số sẽ được lưu tự động tại đây.</p>
+                </div>
+              ) : (
+                <div className="all-players-table-wrapper" style={{ maxHeight: '420px', background: '#fff', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+                  <table className="battle-players-table" style={{ color: '#1e293b' }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th style={{ width: '60px', textAlign: 'center', color: '#64748b' }}>Hạng</th>
+                        <th style={{ color: '#64748b' }}>Học viên</th>
+                        <th style={{ color: '#64748b' }}>MSSV</th>
+                        <th style={{ color: '#64748b' }}>Lớp</th>
+                        <th style={{ textAlign: 'center', color: '#64748b' }}>Chuỗi đúng</th>
+                        <th style={{ textAlign: 'center', color: '#64748b' }}>Đúng/Tổng</th>
+                        <th style={{ textAlign: 'right', color: '#64748b' }}>Tổng điểm</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {inspectingRoom.players.map((p: any, idx: number) => {
+                        const totalQ = Array.isArray(inspectingRoom.questions) ? inspectingRoom.questions.length : 0;
+                        const correctCount = (p.answers || []).filter((a: any) => a.isCorrect).length;
+                        return (
+                          <tr key={p.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ textAlign: 'center', fontWeight: 800 }}>
+                              {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <span style={{ fontSize: '1.3rem' }}>{p.avatarEmoji || '🦊'}</span>
+                                <span style={{ fontWeight: 700, color: '#0f172a' }}>{p.nickname}</span>
+                              </div>
+                            </td>
+                            <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.studentId || '—'}</td>
+                            <td style={{ color: '#475569' }}>{p.className || '—'}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              {p.streak > 1 ? (
+                                <span className="streak-tag">🔥 {p.streak}</span>
+                              ) : (
+                                <span style={{ color: '#94a3b8' }}>—</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center', fontWeight: 600 }}>
+                              <span style={{ color: '#16a34a' }}>{correctCount}</span> / {totalQ}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#d97706', fontSize: '1rem' }}>
+                              {p.totalScore.toLocaleString()} pts
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="battle-modal-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '1rem 1.25rem', borderTop: '1px solid #e2e8f0' }}>
+              <button
+                type="button"
+                className="btn btn-outline"
+                disabled={!inspectingRoom.players || inspectingRoom.players.length === 0}
+                onClick={() => exportPlayersCsv(inspectingRoom)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontWeight: 600 }}
+              >
+                <Download size={16} color="#2563eb" /> Xuất File Excel / CSV
+              </button>
+
+              <div style={{ display: 'flex', gap: '0.6rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => {
+                    navigate(`/dau-truong-live/${inspectingRoom.id}`);
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+                >
+                  <Play size={15} /> Mở Phòng Máy Chiếu
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-outline" 
+                  onClick={() => setInspectingRoom(null)}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
