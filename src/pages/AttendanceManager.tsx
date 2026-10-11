@@ -15,7 +15,9 @@ import {
   MapPin, 
   Search, 
   UserCheck,
-  ExternalLink
+  ExternalLink,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
@@ -51,6 +53,14 @@ export default function AttendanceManager() {
   // Bộ lọc tìm kiếm bảng danh sách sinh viên
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Phân trang danh sách phòng điểm danh
+  const [sessionPage, setSessionPage] = useState(1);
+  const sessionsPerPage = 4;
+
+  // Phân trang danh sách sinh viên điểm danh
+  const [recordPage, setRecordPage] = useState(1);
+  const recordsPerPage = 10;
+
   // 1. Tải danh sách buổi điểm danh của giảng viên
   const fetchSessions = async () => {
     if (!token) return;
@@ -85,6 +95,7 @@ export default function AttendanceManager() {
         const data = await res.json();
         setActiveSession(data.session);
         setSessionRecords(data.session?.records || []);
+        setRecordPage(1);
       }
     } catch (e) {
       if (!silent) console.error(e);
@@ -357,6 +368,14 @@ export default function AttendanceManager() {
     );
   });
 
+  // Tính toán phân trang phòng điểm danh
+  const totalSessionPages = Math.ceil(sessions.length / sessionsPerPage) || 1;
+  const currentSessions = sessions.slice((sessionPage - 1) * sessionsPerPage, sessionPage * sessionsPerPage);
+
+  // Tính toán phân trang học viên
+  const totalRecordPages = Math.ceil(filteredRecords.length / recordsPerPage) || 1;
+  const currentRecords = filteredRecords.slice((recordPage - 1) * recordsPerPage, recordPage * recordsPerPage);
+
   return (
     <div className="attendance-container animate-fade-in">
       {/* HEADER */}
@@ -413,79 +432,121 @@ export default function AttendanceManager() {
             </button>
           </div>
         ) : (
-          <div className="attendance-grid">
-            {sessions.map((s) => {
-              const isSelected = activeSession?.id === s.id;
-              return (
-                <div 
-                  key={s.id} 
-                  className="attendance-card" 
-                  style={{ 
-                    cursor: 'pointer',
-                    borderColor: isSelected ? 'var(--primary)' : undefined,
-                    background: isSelected ? 'rgba(99, 102, 241, 0.04)' : undefined
-                  }}
-                  onClick={() => fetchSessionDetails(s.id)}
-                >
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                      <span style={{ 
-                        fontSize: '0.75rem', 
-                        fontWeight: 700, 
-                        padding: '0.2rem 0.6rem', 
-                        borderRadius: '20px',
-                        background: s.isOpen ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                        color: s.isOpen ? '#10b981' : '#ef4444'
-                      }}>
-                        {s.isOpen ? '● ĐANG MỞ' : '○ ĐÃ KHÓA'}
-                      </span>
-                      <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '2px' }}>
-                        PIN: {s.code}
-                      </span>
-                    </div>
-
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
-                      {s.title}
-                    </h4>
-                    {s.className && (
-                      <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>
-                        Lớp: <strong>{s.className}</strong>
-                      </p>
-                    )}
-
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.65rem' }}>
-                      {s.requireGps && (
-                        <span style={{ fontSize: '0.72rem', background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', padding: '0.15rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
-                          <MapPin size={11} /> GPS &lt;{s.maxDistanceMeters}m
+          <div>
+            <div className="attendance-grid">
+              {currentSessions.map((s) => {
+                const isSelected = activeSession?.id === s.id;
+                return (
+                  <div 
+                    key={s.id} 
+                    className="attendance-card" 
+                    style={{ 
+                      cursor: 'pointer',
+                      borderColor: isSelected ? 'var(--primary)' : undefined,
+                      background: isSelected ? 'rgba(99, 102, 241, 0.04)' : undefined
+                    }}
+                    onClick={() => fetchSessionDetails(s.id)}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                        <span style={{ 
+                          fontSize: '0.75rem', 
+                          fontWeight: 700, 
+                          padding: '0.2rem 0.6rem', 
+                          borderRadius: '20px',
+                          background: s.isOpen ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                          color: s.isOpen ? '#10b981' : '#ef4444'
+                        }}>
+                          {s.isOpen ? '● ĐANG MỞ' : '○ ĐÃ KHÓA'}
                         </span>
-                      )}
-                      <span style={{ fontSize: '0.72rem', background: 'var(--bg-tertiary)', color: 'var(--text-muted)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
-                        QR đổi mỗi {s.refreshSeconds}s
-                      </span>
-                    </div>
-                  </div>
+                        <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--primary)', letterSpacing: '2px' }}>
+                          PIN: {s.code}
+                        </span>
+                      </div>
 
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      <UserCheck size={16} color="var(--primary)" />
-                      <span>{s._count?.records || 0} đã điểm danh</span>
+                      <h4 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.35rem' }}>
+                        {s.title}
+                      </h4>
+                      {s.className && (
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0 0 0.5rem' }}>
+                          Lớp: <strong>{s.className}</strong>
+                        </p>
+                      )}
+
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.65rem' }}>
+                        {s.requireGps && (
+                          <span style={{ fontSize: '0.72rem', background: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6', padding: '0.15rem 0.5rem', borderRadius: '4px', display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                            <MapPin size={11} /> GPS &lt;{s.maxDistanceMeters}m
+                          </span>
+                        )}
+                        <span style={{ fontSize: '0.72rem', background: 'var(--bg-tertiary)', color: 'var(--text-muted)', padding: '0.15rem 0.5rem', borderRadius: '4px' }}>
+                          QR đổi mỗi {s.refreshSeconds}s
+                        </span>
+                      </div>
                     </div>
-                    <button 
-                      type="button" 
-                      className="btn btn-outline btn-xs"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteSession(s.id);
-                      }}
-                      title="Xóa buổi này"
-                      style={{ color: '#ef4444' }}
-                    >
-                      <Trash2 size={13} />
-                    </button>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        <UserCheck size={16} color="var(--primary)" />
+                        <span>{s._count?.records || 0} đã điểm danh</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        className="btn btn-outline btn-xs"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSession(s.id);
+                        }}
+                        title="Xóa buổi này"
+                        style={{ color: '#ef4444' }}
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Phân trang danh sách phòng điểm danh */}
+            {totalSessionPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', padding: '0.5rem 0.25rem', marginTop: '-0.5rem' }}>
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                  Trang <strong>{sessionPage}</strong> / {totalSessionPages} (Hiển thị {currentSessions.length} / {sessions.length} phòng)
                 </div>
-              );
-            })}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-xs"
+                    disabled={sessionPage <= 1}
+                    onClick={() => setSessionPage(prev => Math.max(1, prev - 1))}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.35rem 0.7rem' }}
+                  >
+                    <ChevronLeft size={14} /> Trước
+                  </button>
+                  {Array.from({ length: totalSessionPages }, (_, i) => i + 1).map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`btn btn-xs ${sessionPage === p ? 'btn-primary' : 'btn-outline'}`}
+                      onClick={() => setSessionPage(p)}
+                      style={{ minWidth: 28, padding: '0.25rem 0.5rem', fontWeight: sessionPage === p ? 800 : 500 }}
+                    >
+                      {p}
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-xs"
+                    disabled={sessionPage >= totalSessionPages}
+                    onClick={() => setSessionPage(prev => Math.min(totalSessionPages, prev + 1))}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.35rem 0.7rem' }}
+                  >
+                    Sau <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -633,72 +694,124 @@ export default function AttendanceManager() {
                     </td>
                   </tr>
                 ) : (
-                  filteredRecords.map((r, idx) => (
-                    <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--text-muted)' }}>{idx + 1}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{r.studentName}</td>
-                      <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--primary)' }}>{r.studentId}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{r.className || '-'}</td>
-                      <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
-                        {new Date(r.checkedInAt).toLocaleTimeString('vi-VN')} ({new Date(r.checkedInAt).toLocaleDateString('vi-VN')})
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem' }}>
-                        {r.distanceMeters !== null ? (
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
-                            <span style={{ 
-                              fontSize: '0.78rem', 
-                              padding: '0.2rem 0.5rem', 
-                              borderRadius: '4px',
-                              background: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                              color: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? '#10b981' : '#ef4444',
-                              fontWeight: 700
-                            }}>
-                              {r.distanceMeters}m
-                            </span>
-                            {r.latitude && r.longitude ? (
-                              <a
-                                href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                title={`Xem vị trí của ${r.studentName} trên Google Maps (Cách lớp ${r.distanceMeters}m)`}
-                                style={{
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  width: 24,
-                                  height: 24,
-                                  borderRadius: '4px',
-                                  background: 'var(--bg-tertiary)',
-                                  color: 'var(--primary)',
-                                  border: '1px solid var(--border)',
-                                  transition: 'all 0.15s ease'
-                                }}
-                              >
-                                <ExternalLink size={13} />
-                              </a>
-                            ) : null}
-                          </div>
-                        ) : (
-                          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Không đo</span>
-                        )}
-                      </td>
-                      <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
-                        <button 
-                          type="button" 
-                          className="btn btn-outline btn-xs"
-                          onClick={() => handleDeleteRecord(r.id)}
-                          style={{ color: '#ef4444' }}
-                          title="Xóa lượt này"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  currentRecords.map((r, idx) => {
+                    const stt = (recordPage - 1) * recordsPerPage + idx + 1;
+                    return (
+                      <tr key={r.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background 0.2s' }}>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--text-muted)' }}>{stt}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{r.studentName}</td>
+                        <td style={{ padding: '0.75rem 1rem', fontWeight: 600, color: 'var(--primary)' }}>{r.studentId}</td>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>{r.className || '-'}</td>
+                        <td style={{ padding: '0.75rem 1rem', color: 'var(--text-secondary)' }}>
+                          {new Date(r.checkedInAt).toLocaleTimeString('vi-VN')} ({new Date(r.checkedInAt).toLocaleDateString('vi-VN')})
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem' }}>
+                          {r.distanceMeters !== null ? (
+                            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <span style={{ 
+                                fontSize: '0.78rem', 
+                                padding: '0.2rem 0.5rem', 
+                                borderRadius: '4px',
+                                background: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                                color: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? '#10b981' : '#ef4444',
+                                fontWeight: 700
+                              }}>
+                                {r.distanceMeters}m
+                              </span>
+                              {r.latitude && r.longitude ? (
+                                <a
+                                  href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={`Xem vị trí của ${r.studentName} trên Google Maps (Cách lớp ${r.distanceMeters}m)`}
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: 24,
+                                    height: 24,
+                                    borderRadius: '4px',
+                                    background: 'var(--bg-tertiary)',
+                                    color: 'var(--primary)',
+                                    border: '1px solid var(--border)',
+                                    transition: 'all 0.15s ease'
+                                  }}
+                                >
+                                  <ExternalLink size={13} />
+                                </a>
+                              ) : null}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Không đo</span>
+                          )}
+                        </td>
+                        <td style={{ padding: '0.75rem 1rem', textAlign: 'center' }}>
+                          <button 
+                            type="button" 
+                            className="btn btn-outline btn-xs"
+                            onClick={() => handleDeleteRecord(r.id)}
+                            style={{ color: '#ef4444' }}
+                            title="Xóa lượt này"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
+
+          {/* Phân trang danh sách sinh viên */}
+          {totalRecordPages > 1 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', marginTop: '1.25rem', paddingTop: '1rem', borderTop: '1px solid var(--border)' }}>
+              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                Hiển thị <strong>{currentRecords.length}</strong> / <strong>{filteredRecords.length}</strong> lượt điểm danh (Trang <strong>{recordPage}</strong> / {totalRecordPages})
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-xs"
+                  disabled={recordPage <= 1}
+                  onClick={() => setRecordPage(prev => Math.max(1, prev - 1))}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.35rem 0.7rem' }}
+                >
+                  <ChevronLeft size={14} /> Trước
+                </button>
+                {Array.from({ length: totalRecordPages }, (_, i) => i + 1).map((p) => {
+                  // Chỉ hiển thị các trang lân cận nếu quá nhiều trang
+                  if (totalRecordPages > 7 && Math.abs(p - recordPage) > 2 && p !== 1 && p !== totalRecordPages) {
+                    if (p === 2 || p === totalRecordPages - 1) {
+                      return <span key={p} style={{ padding: '0 0.2rem', color: 'var(--text-muted)' }}>...</span>;
+                    }
+                    return null;
+                  }
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      className={`btn btn-xs ${recordPage === p ? 'btn-primary' : 'btn-outline'}`}
+                      onClick={() => setRecordPage(p)}
+                      style={{ minWidth: 28, padding: '0.25rem 0.5rem', fontWeight: recordPage === p ? 800 : 500 }}
+                    >
+                      {p}
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  className="btn btn-outline btn-xs"
+                  disabled={recordPage >= totalRecordPages}
+                  onClick={() => setRecordPage(prev => Math.min(totalRecordPages, prev + 1))}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.2rem', padding: '0.35rem 0.7rem' }}
+                >
+                  Sau <ChevronRight size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
