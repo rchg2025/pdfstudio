@@ -568,7 +568,7 @@ export default function LiveBattleHost() {
   // DANH SÁCH PHÒNG CỦA GIẢNG VIÊN & NÚT TẠO PHÒNG MỚI
   // -------------------------------------------------------------
   return (
-    <div className="container" style={{ padding: '2rem 1rem', maxWidth: '1100px' }}>
+    <div className="battle-manager-container">
       <div className="battle-manager-header">
         <div>
           <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '1.75rem', fontWeight: 800 }}>

@@ -642,19 +642,30 @@
   gap: 0.5rem;
 }
 
-/* Manager Screen */
+/* Manager Screen Full Width & Responsive */
+.battle-manager-container {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.5rem 2rem 4rem;
+  box-sizing: border-box;
+}
+
 .battle-manager-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   gap: 1.5rem;
   flex-wrap: wrap;
+  margin-bottom: 1.5rem;
 }
 
 .rooms-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .room-card {
@@ -665,6 +676,13 @@
   box-shadow: var(--shadow-sm);
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
 }
 
 .room-card-top {
@@ -703,10 +721,71 @@
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-bottom: 1.25rem;
+  flex-wrap: wrap;
 }
 
 .room-card-actions {
   display: flex;
   gap: 0.6rem;
   margin-top: auto;
+}
+
+/* Tối ưu hóa trên Mobile */
+@media (max-width: 768px) {
+  .battle-manager-container {
+    padding: 1rem 0.75rem 3rem;
+  }
+  .battle-manager-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+  .battle-manager-header h1 {
+    font-size: 1.35rem !important;
+  }
+  .battle-manager-header p {
+    font-size: 0.85rem !important;
+  }
+  .rooms-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .battle-lobby-layout {
+    grid-template-columns: 1fr;
+    padding: 1rem;
+    gap: 1rem;
+  }
+  .lobby-left-card {
+    padding: 1.25rem;
+  }
+  .lobby-qr-img {
+    width: 180px;
+    height: 180px;
+  }
+  .question-text {
+    font-size: 1.45rem;
+  }
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .option-card {
+    padding: 1.1rem 1.25rem;
+  }
+  .option-label {
+    font-size: 1.1rem;
+  }
+  .podium-stage {
+    gap: 0.5rem;
+    margin: 2rem 0;
+  }
+  .step-name {
+    font-size: 1rem;
+  }
+  .step-emoji {
+    font-size: 2rem;
+  }
+  .block-1 { height: 160px; font-size: 2rem; }
+  .block-2 { height: 120px; font-size: 1.8rem; }
+  .block-3 { height: 90px; font-size: 1.6rem; }
 }

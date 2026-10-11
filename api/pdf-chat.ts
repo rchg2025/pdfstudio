@@ -31,10 +31,37 @@ const DEFAULT_GEMINI_FALLBACKS = [
   'gemini-1.5-pro'
 ];
 
-async function callGemini(prompt: string, customApiKey?: string): Promise<string> {
-  const apiKey = customApiKey?.trim() || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+async function getEffectiveApiKey(prisma: any, customApiKey?: string): Promise<string> {
+  if (customApiKey && customApiKey.trim().length > 0) {
+    return customApiKey.trim();
+  }
+
+  // Fallback 1: Biến môi trường
+  if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim().length > 0) {
+    return process.env.GEMINI_API_KEY.trim();
+  }
+  if (process.env.VITE_GEMINI_API_KEY && process.env.VITE_GEMINI_API_KEY.trim().length > 0) {
+    return process.env.VITE_GEMINI_API_KEY.trim();
+  }
+
+  // Fallback 2: Lấy từ cấu hình Admin trong Database (Bảng Setting: key='geminiApiKey')
+  try {
+    const setting = await prisma.setting.findUnique({
+      where: { key: 'geminiApiKey' }
+    });
+    if (setting?.value && setting.value.trim().length > 0) {
+      return setting.value.trim();
+    }
+  } catch (err) {
+    console.warn('[PdfChat] Failed to read Setting geminiApiKey:', err);
+  }
+
+  return '';
+}
+
+async function callGemini(prompt: string, apiKey: string): Promise<string> {
   if (!apiKey) {
-    throw new Error('Chưa cấu hình Google Gemini API Key. Bạn có thể nhập API Key riêng ở phần Cài đặt.');
+    throw new Error('Chưa cấu hình Google Gemini API Key trong hệ thống. Vui lòng nhập API Key riêng ở phần Cài đặt.');
   }
 
   for (const model of DEFAULT_GEMINI_FALLBACKS) {
@@ -89,6 +116,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // Nhờ Gemini tóm tắt tài liệu ban đầu
       let summary = '';
       try {
+        const apiKey = await getEffectiveApiKey(prisma, customApiKey);
         const summaryPrompt = `Bạn là một trợ lý AI thông minh, chuyên phân tích và giải thích tài liệu học tập, giáo trình, báo cáo cho người Việt Nam.
 Dưới đây là nội dung của tài liệu PDF tên là: "${fileName}".
 
@@ -102,7 +130,7 @@ YÊU CẦU:
 2. Đề xuất 3 câu hỏi gợi ý hay nhất mà người đọc nên hỏi về tài liệu này (định dạng: "❓ Gợi ý: ...").
 3. Trả lời bằng tiếng Việt chuẩn xác, thân thiện, định dạng Markdown rõ ràng.`;
 
-        summary = await callGemini(summaryPrompt, customApiKey);
+        summary = await callGemini(summaryPrompt, apiKey);
       } catch (err: any) {
         summary = `Đã tải tài liệu "${fileName}" (${pageCount} trang). Bạn có thể đặt bất kỳ câu hỏi nào để tôi giải đáp ngay!`;
       }
@@ -169,7 +197,8 @@ QUY TẮC TRẢ LỜI:
 2. Nếu thông tin không có trong tài liệu, hãy thành thật nêu rõ "Tài liệu không trực tiếp đề cập..." và sau đó có thể bổ sung kiến thức chuyên môn hữu ích (nếu phù hợp).
 3. Sử dụng Markdown đẹp mắt: in đậm từ khóa, dùng danh sách có thứ tự hoặc gạch đầu dòng, giải thích ngắn gọn, xúc tích, dễ hiểu.`;
 
-      const aiReplyText = await callGemini(prompt, customApiKey);
+      const apiKey = await getEffectiveApiKey(prisma, customApiKey);
+      const aiReplyText = await callGemini(prompt, apiKey);
 
       const aiMessage = {
         role: 'assistant',
@@ -219,7 +248,8 @@ Yêu cầu trả về DUY NHẤT một chuỗi JSON hợp lệ theo schema sau (
   }
 ]`;
 
-      const aiReply = await callGemini(prompt, customApiKey);
+      const apiKey = await getEffectiveApiKey(prisma, customApiKey);
+      const aiReply = await callGemini(prompt, apiKey);
       let quizData: any[] = [];
       try {
         const cleanJson = aiReply.replace(/```json/g, '').replace(/```/g, '').trim();

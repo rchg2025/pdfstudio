@@ -421,45 +421,92 @@ export default function ChatWithPdf() {
 
       {/* Modal Cài Đặt Gemini API Key */}
       {showKeyModal && (
-        <div className="modal-overlay">
-          <div className="modal-container" style={{ maxWidth: '500px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Key size={18} color="var(--primary)" /> Cài Đặt Google Gemini API Key
-              </h3>
-              <button className="btn-close" onClick={() => setShowKeyModal(false)}>×</button>
+        <div className="pdf-modal-overlay" onClick={() => setShowKeyModal(false)}>
+          <div className="pdf-modal-card" onClick={e => e.stopPropagation()}>
+            <div className="pdf-modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <div className="pdf-key-icon-badge">
+                  <Key size={18} color="#2563eb" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+                    Cài Đặt Google Gemini API Key
+                  </h3>
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                    Cấu hình kết nối trí tuệ nhân tạo đọc tài liệu
+                  </span>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                className="pdf-modal-close" 
+                onClick={() => setShowKeyModal(false)}
+                aria-label="Đóng"
+              >
+                ✕
+              </button>
             </div>
-            <div style={{ padding: '1.25rem' }}>
-              <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', marginBottom: '1rem', lineHeight: 1.5 }}>
-                Mặc định hệ thống dùng chung API Key máy chủ. Nếu muốn tăng tốc độ xử lý hoặc tránh giới hạn hạn mức trong giờ cao điểm, bạn có thể nhập Gemini API Key miễn phí của riêng bạn.
-              </p>
-              <input 
-                type="password"
-                value={customApiKey}
-                onChange={e => setCustomApiKey(e.target.value)}
-                placeholder="AIzaSy..."
-                className="form-input"
-                style={{ marginBottom: '1rem' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+
+            <div className="pdf-modal-body">
+              <div className="pdf-key-notice">
+                <div style={{ fontWeight: 700, color: '#059669', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Check size={16} /> Đã tích hợp sẵn API Key máy chủ của Quản trị viên
+                </div>
+                <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Nếu bạn không nhập Key riêng, hệ thống sẽ <strong>tự động sử dụng API Key Admin</strong> có sẵn trong cơ sở dữ liệu để phục vụ việc tóm tắt và hỏi đáp tài liệu. Bạn hoàn toàn có thể sử dụng ngay mà không cần cài đặt gì thêm.
+                </div>
+              </div>
+
+              <div style={{ marginTop: '1.25rem' }}>
+                <label style={{ display: 'block', fontWeight: 700, fontSize: '0.85rem', marginBottom: '0.45rem', color: 'var(--text-primary)' }}>
+                  API Key cá nhân của bạn (Tùy chọn):
+                </label>
+                <input 
+                  type="text"
+                  value={customApiKey}
+                  onChange={e => setCustomApiKey(e.target.value)}
+                  placeholder="AIzaSy... (hoặc để trống để dùng Key mặc định)"
+                  className="pdf-key-input"
+                />
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', display: 'block' }}>
+                  💡 Nhập API Key riêng giúp bạn không bị ảnh hưởng bởi giới hạn lượt hỏi của hệ thống chung trong giờ cao điểm.
+                </span>
+              </div>
+
+              <div className="pdf-modal-actions">
+                {customApiKey ? (
+                  <button 
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => {
+                      localStorage.removeItem('rchg_gemini_api_key');
+                      setCustomApiKey('');
+                      showToast('Đã chuyển về sử dụng API Key mặc định của hệ thống', 'info');
+                      setShowKeyModal(false);
+                    }}
+                  >
+                    Xóa & Dùng Key Mặc Định
+                  </button>
+                ) : (
+                  <div style={{ fontSize: '0.82rem', color: '#059669', fontWeight: 600 }}>
+                    ✓ Đang sử dụng Key mặc định của hệ thống
+                  </div>
+                )}
+                
                 <button 
-                  className="btn btn-outline"
-                  onClick={() => {
-                    localStorage.removeItem('rchg_gemini_api_key');
-                    setCustomApiKey('');
-                    showToast('Đã xóa API Key cá nhân', 'info');
-                    setShowKeyModal(false);
-                  }}
-                >
-                  Dùng Key Mặc Định
-                </button>
-                <button 
+                  type="button"
                   className="btn btn-primary"
                   onClick={() => {
-                    localStorage.setItem('rchg_gemini_api_key', customApiKey.trim());
-                    showToast('Đã lưu API Key thành công!', 'success');
+                    if (customApiKey.trim()) {
+                      localStorage.setItem('rchg_gemini_api_key', customApiKey.trim());
+                      showToast('Đã lưu API Key cá nhân thành công!', 'success');
+                    } else {
+                      localStorage.removeItem('rchg_gemini_api_key');
+                      showToast('Đã thiết lập dùng Key mặc định!', 'success');
+                    }
                     setShowKeyModal(false);
                   }}
+                  style={{ fontWeight: 700, padding: '0.6rem 1.4rem' }}
                 >
                   Lưu Cấu Hình
                 </button>
