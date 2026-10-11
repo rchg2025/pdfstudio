@@ -94,6 +94,23 @@ const Navbar = () => {
             ref={navRef}
             onScroll={checkScroll}
           >
+            {/* Nhóm nổi bật: Điểm danh QR & Thi Trắc Nghiệm */}
+            <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"}>
+              <span className="nav-badge-new">MỚI</span>
+              📍 Điểm Danh QR
+            </NavLink>
+            <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "nav-link active font-medium text-violet-600" : "nav-link font-medium text-violet-600"}>
+              📝 Thi Trắc Nghiệm
+            </NavLink>
+            <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>
+              ✨ Soạn Đề AI
+            </NavLink>
+            <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
+            <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Xuất Mã Nhúng</NavLink>
+            
+            <div className="nav-link-separator"></div>
+
+            {/* Công cụ PDF */}
             <NavLink to="/pdf-editor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Chỉnh sửa PDF</NavLink>
             <NavLink to="/pdf-merge-split" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nối tách PDF</NavLink>
             <NavLink to="/xoa-trang-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa trang PDF</NavLink>
@@ -103,29 +120,32 @@ const Navbar = () => {
             <NavLink to="/jpg-sang-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>JPG sang PDF</NavLink>
             <NavLink to="/dong-dau-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đóng Dấu PDF</NavLink>
             <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
+            
+            <div className="nav-link-separator"></div>
+
+            {/* Công cụ Ảnh */}
             <NavLink to="/image-converter" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đổi Đuôi Ảnh</NavLink>
             <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>
             <NavLink to="/crop-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Crop ảnh</NavLink>
             <NavLink to="/resize-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Resize ảnh</NavLink>
             <NavLink to="/tang-do-net-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Tăng độ nét</NavLink>
             <NavLink to="/xoa-nen-mau" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Nền Màu</NavLink>
+            <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
+            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Ảnh Thẻ AI</NavLink>
+            <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
+            
+            <div className="nav-link-separator"></div>
+
+            {/* Tiện ích E-Learning & Khác */}
+            <NavLink to="/anh-tuong-tac-hotspot" className={({isActive}) => isActive ? "nav-link active font-medium text-teal-600" : "nav-link font-medium text-teal-600"}>Ảnh Tương Tác</NavLink>
+            <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>Vòng Quay</NavLink>
+            <NavLink to="/phieu-bai-tap-tuong-tac" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Phiếu Bài Tập</NavLink>
+            <NavLink to="/tinh-huong-phan-nhanh" className={({isActive}) => isActive ? "nav-link active font-medium text-fuchsia-600" : "nav-link font-medium text-fuchsia-600"}>Tình Huống Phân Nhánh</NavLink>
             <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>
             <NavLink to="/xoa-dau-tieng-viet" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Dấu File</NavLink>
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
             <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
-            <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Xuất Mã Nhúng</NavLink>
-            <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
-            <NavLink to="/anh-tuong-tac-hotspot" className={({isActive}) => isActive ? "nav-link active font-medium text-teal-600" : "nav-link font-medium text-teal-600"}>Ảnh Tương Tác</NavLink>
-            <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>Vòng Quay</NavLink>
-            <NavLink to="/phieu-bai-tap-tuong-tac" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Phiếu Bài Tập</NavLink>
-            <NavLink to="/tinh-huong-phan-nhanh" className={({isActive}) => isActive ? "nav-link active font-medium text-fuchsia-600" : "nav-link font-medium text-fuchsia-600"}>Tình Huống Phân Nhánh</NavLink>
-            <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "nav-link active font-medium text-violet-600" : "nav-link font-medium text-violet-600"}>Thi Trắc Nghiệm</NavLink>
-            <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Điểm Danh QR</NavLink>
-            <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Soạn Đề AI</NavLink>
-            <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
-            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Ảnh Thẻ AI</NavLink>
-            <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
           </nav>
 
           <button 
@@ -187,6 +207,49 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Nhóm nổi bật: Giảng dạy & Điểm danh trên mobile */}
+          <div className="mobile-section-heading">
+            <span>🎓 Giảng Dạy & Lớp Học</span>
+            <span className="mobile-section-tag">Khuyên Dùng</span>
+          </div>
+          <div className="mobile-featured-grid">
+            <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon bg-emerald">📍</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Điểm Danh QR <span className="mfc-badge">MỚI</span></div>
+                <div className="mfc-desc">Chống chụp màn hình, GPS</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon bg-violet">📝</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Thi Trắc Nghiệm</div>
+                <div className="mfc-desc">Tự luận, thực hành, tự chấm</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon bg-indigo">✨</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Soạn Đề AI</div>
+                <div className="mfc-desc">Bóc tách giáo trình ra đề</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon bg-blue">📇</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Flashcards AI</div>
+                <div className="mfc-desc">Ôn bài, trắc nghiệm nhanh</div>
+              </div>
+            </NavLink>
+          </div>
+
+          <div className="mobile-section-heading" style={{ marginTop: '0.5rem' }}>
+            <span>📄 Danh Mục Công Cụ Khác</span>
+          </div>
+
           <div className="mobile-links-grid">
             <NavLink to="/pdf-editor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Chỉnh sửa PDF</NavLink>
             <NavLink to="/pdf-merge-split" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nối tách PDF</NavLink>
@@ -203,23 +266,19 @@ const Navbar = () => {
             <NavLink to="/resize-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Resize ảnh</NavLink>
             <NavLink to="/tang-do-net-anh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Tăng độ nét</NavLink>
             <NavLink to="/xoa-nen-mau" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Nền Màu</NavLink>
+            <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Tạo Ảnh AI</NavLink>
+            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Ảnh Thẻ AI</NavLink>
+            <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Khung Hình</NavLink>
+            <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xuất Mã Nhúng</NavLink>
+            <NavLink to="/anh-tuong-tac-hotspot" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Ảnh Tương Tác</NavLink>
+            <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Vòng Quay</NavLink>
+            <NavLink to="/phieu-bai-tap-tuong-tac" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Phiếu Bài Tập</NavLink>
+            <NavLink to="/tinh-huong-phan-nhanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Tình Huống Phân Nhánh</NavLink>
             <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>
             <NavLink to="/xoa-dau-tieng-viet" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Dấu File</NavLink>
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
             <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
-            <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Xuất Mã Nhúng</NavLink>
-            <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
-            <NavLink to="/anh-tuong-tac-hotspot" className={({isActive}) => isActive ? "nav-link active font-medium text-teal-600" : "nav-link font-medium text-teal-600"}>Ảnh Tương Tác</NavLink>
-            <NavLink to="/vong-quay-lop-hoc" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>Vòng Quay</NavLink>
-            <NavLink to="/phieu-bai-tap-tuong-tac" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Phiếu Bài Tập</NavLink>
-            <NavLink to="/tinh-huong-phan-nhanh" className={({isActive}) => isActive ? "nav-link active font-medium text-fuchsia-600" : "nav-link font-medium text-fuchsia-600"}>Tình Huống Phân Nhánh</NavLink>
-            <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "nav-link active font-medium text-violet-600" : "nav-link font-medium text-violet-600"}>Thi Trắc Nghiệm</NavLink>
-            <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Điểm Danh QR</NavLink>
-            <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Soạn Đề AI</NavLink>
-            <NavLink to="/tao-anh-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Tạo Ảnh AI</NavLink>
-            <NavLink to="/tao-anh-the" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Ảnh Thẻ AI</NavLink>
-            <NavLink to="/tao-khung" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>Khung Hình</NavLink>
           </div>
 
           {user && (
