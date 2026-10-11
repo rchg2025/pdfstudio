@@ -319,28 +319,31 @@ const Home = () => {
           <Link to="/quan-ly-diem-danh" className="quick-shortcut-pill featured-qr">
             <span className="qsp-icon">📍</span>
             <div className="qsp-text">
-              <span className="qsp-title">Điểm Danh QR Động <span className="hot-tag">MỚI</span></span>
-              <span className="qsp-sub">Chống gian lận, GPS & 8s đổi mã</span>
+              <span className="qsp-title">
+                Điểm Danh QR Động
+                <span className="hot-tag">MỚI</span>
+              </span>
+              <span className="qsp-sub">Chống gian lận, GPS & đổi mã 8s</span>
             </div>
-            <ArrowRight size={16} className="qsp-arrow" />
+            <ArrowRight size={18} className="qsp-arrow" />
           </Link>
 
           <Link to="/quan-ly-thi-trac-nghiem" className="quick-shortcut-pill featured-exam">
             <span className="qsp-icon">📝</span>
             <div className="qsp-text">
               <span className="qsp-title">Khảo Thí & Thi Trắc Nghiệm</span>
-              <span className="qsp-sub">Tự luận, thực hành, xuất mã LMS</span>
+              <span className="qsp-sub">Tự luận, thực hành, xuất LMS</span>
             </div>
-            <ArrowRight size={16} className="qsp-arrow" />
+            <ArrowRight size={18} className="qsp-arrow" />
           </Link>
 
           <Link to="/soan-de-thi-ai" className="quick-shortcut-pill featured-ai">
             <span className="qsp-icon">✨</span>
             <div className="qsp-text">
-              <span className="qsp-title">Soạn Đề Thi Giáo Trình AI</span>
-              <span className="qsp-sub">Bóc tách chương mục, ra đề chuẩn</span>
+              <span className="qsp-title">Soạn Đề Thi AI</span>
+              <span className="qsp-sub">Bóc tách giáo trình ra đề</span>
             </div>
-            <ArrowRight size={16} className="qsp-arrow" />
+            <ArrowRight size={18} className="qsp-arrow" />
           </Link>
         </div>
       </section>
