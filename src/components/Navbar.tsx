@@ -94,10 +94,13 @@ const Navbar = () => {
             ref={navRef}
             onScroll={checkScroll}
           >
-            {/* Nhóm nổi bật: Điểm danh QR & Thi Trắc Nghiệm */}
+            {/* Nhóm nổi bật: Điểm danh QR & Vinh Danh & Thi Trắc Nghiệm */}
             <NavLink to="/quan-ly-diem-danh" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"}>
               <span className="nav-badge-new">MỚI</span>
               📍 Điểm Danh QR
+            </NavLink>
+            <NavLink to="/bang-vinh-danh" className={({isActive}) => isActive ? "nav-link active font-medium text-amber-600" : "nav-link font-medium text-amber-600"}>
+              🏆 Bảng Vinh Danh
             </NavLink>
             <NavLink to="/quan-ly-thi-trac-nghiem" className={({isActive}) => isActive ? "nav-link active font-medium text-violet-600" : "nav-link font-medium text-violet-600"}>
               📝 Thi Trắc Nghiệm
@@ -218,6 +221,14 @@ const Navbar = () => {
               <div className="mfc-info">
                 <div className="mfc-title">Điểm Danh QR <span className="mfc-badge">MỚI</span></div>
                 <div className="mfc-desc">Chống chụp màn hình, GPS</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/bang-vinh-danh" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon bg-amber" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>🏆</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Bảng Vinh Danh <span className="mfc-badge" style={{ background: '#f59e0b' }}>HOT</span></div>
+                <div className="mfc-desc">Tích điểm, Top 1-2-3, Huy hiệu</div>
               </div>
             </NavLink>
 

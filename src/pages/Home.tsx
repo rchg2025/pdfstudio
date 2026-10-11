@@ -40,6 +40,7 @@ import {
   CheckSquare,
   CreditCard,
   QrCode,
+  Trophy,
   Grid,
   ArrowRight
 } from 'lucide-react';
@@ -205,6 +206,13 @@ const edTechTools = [
     icon: <QrCode size={24} />,
     title: 'Điểm Danh Sinh Viên Bằng QR Động (Dynamic QR)',
     desc: 'Mã QR đổi mới sau mỗi 8 giây chống chụp ảnh điểm danh hộ, nhận diện thiết bị duy nhất và khóa định vị GPS phòng học.',
+    isHot: true
+  },
+  {
+    path: '/bang-vinh-danh',
+    icon: <Trophy size={24} />,
+    title: 'Bảng Vinh Danh & Tích Điểm (Gamification)',
+    desc: 'Cộng điểm phát biểu 1-click, bục vinh danh Quán quân Top 1-2-3 lộng lẫy trên máy chiếu và trao huy hiệu học tập hào hứng.',
     isHot: true
   },
   {

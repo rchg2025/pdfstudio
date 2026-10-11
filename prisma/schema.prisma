@@ -199,3 +199,67 @@ model AttendanceRecord {
   @@unique([sessionId, studentId]) // 1 sinh viên chỉ điểm danh 1 lần trong 1 buổi
 }
 
+// ==========================================
+// MODULE 2: BẢNG VINH DANH & TÍCH ĐIỂM HỌC TẬP
+// ==========================================
+
+model LeaderboardGroup {
+  id          String         @id @default(cuid())
+  userId      String         // Giảng viên quản lý nhóm
+  name        String         // Tên lớp / Nhóm thi đua (Ví dụ: Dược K18 - Học kỳ 1)
+  className   String?        // Tên lớp học
+  description String?
+  theme       String?        @default("default") // theme giao diện vinh danh
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  students    StudentScore[]
+}
+
+model StudentScore {
+  id           String             @id @default(cuid())
+  groupId      String
+  group        LeaderboardGroup   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  studentName  String             // Họ và tên học viên
+  studentId    String             // Mã số sinh viên
+  className    String?            // Lớp
+  avatar       String?            // URL avatar hoặc emoji hoạt hình
+  totalPoints  Int                @default(0) // Tổng điểm tích lũy
+  level        Int                @default(1) // Cấp độ (1, 2, 3...)
+  streak       Int                @default(0) // Chuỗi tích cực
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  transactions PointTransaction[]
+  badges       StudentBadge[]
+
+  @@unique([groupId, studentId]) // Mỗi SV duy nhất trong 1 nhóm
+}
+
+model PointTransaction {
+  id             String       @id @default(cuid())
+  studentScoreId String
+  studentScore   StudentScore @relation(fields: [studentScoreId], references: [id], onDelete: Cascade)
+  points         Int          // Số điểm (+1, +2, +5, -1...)
+  reason         String       // Lý do cộng/trừ điểm (Phát biểu, Làm bài tốt...)
+  createdAt      DateTime     @default(now())
+}
+
+model Badge {
+  id          String         @id @default(cuid())
+  code        String         @unique // speech_master, speed_demon, full_attendance, top_performer
+  name        String         // Tên danh hiệu (Chiến thần phát biểu, Bách phát bách trúng...)
+  description String
+  icon        String         // Emoji hoặc icon name
+  minPoints   Int            @default(0) // Mốc điểm mở khóa tự động (nếu có)
+  students    StudentBadge[]
+}
+
+model StudentBadge {
+  id             String       @id @default(cuid())
+  studentScoreId String
+  studentScore   StudentScore @relation(fields: [studentScoreId], references: [id], onDelete: Cascade)
+  badgeId        String
+  badge          Badge        @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  awardedAt      DateTime     @default(now())
+
+  @@unique([studentScoreId, badgeId])
+}

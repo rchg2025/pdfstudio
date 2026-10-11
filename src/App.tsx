@@ -56,6 +56,7 @@ const SyllabusExamGenerator = React.lazy(() => import('./pages/SyllabusExamGener
 const IdPhotoStudio = React.lazy(() => import('./pages/IdPhotoStudio'));
 const AttendanceManager = React.lazy(() => import('./pages/AttendanceManager'));
 const AttendanceCheckIn = React.lazy(() => import('./pages/AttendanceCheckIn'));
+const LeaderboardManager = React.lazy(() => import('./pages/LeaderboardManager'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -231,6 +232,9 @@ function App() {
             } />
             <Route path="quan-ly-diem-danh" element={
               <Suspense fallback={<FallbackLoader />}><AttendanceManager /></Suspense>
+            } />
+            <Route path="bang-vinh-danh" element={
+              <Suspense fallback={<FallbackLoader />}><LeaderboardManager /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
