@@ -1036,26 +1036,30 @@ export default function LiveBattleHost() {
 
                 <div className="room-card-actions">
                   <button 
-                    className="btn btn-primary"
+                    type="button"
+                    className="room-btn-open"
                     onClick={() => navigate(`/dau-truong-live/${r.id}`)}
-                    style={{ flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', fontSize: '0.88rem' }}
+                    title="Mở màn hình máy chiếu cho lớp học"
                   >
-                    <Play size={16} /> Mở Máy Chiếu
+                    <Play size={16} fill="currentColor" />
+                    <span>Mở Máy Chiếu</span>
                   </button>
+
                   <button 
-                    className="btn btn-outline"
+                    type="button"
+                    className="room-btn-players"
                     onClick={() => handleInspectRoom(r.id)}
-                    style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem', fontSize: '0.85rem' }}
-                    title="Xem danh sách học viên đã tham gia"
+                    title="Xem chi tiết danh sách học viên & bảng điểm"
                   >
-                    <Eye size={16} color="var(--primary)" />
+                    <Eye size={15} />
                     <span>Học viên ({r._count?.players || 0})</span>
                   </button>
+
                   <button 
-                    className="btn btn-outline"
+                    type="button"
+                    className="room-btn-delete"
                     onClick={() => handleDeleteRoom(r.id, r.title)}
-                    style={{ color: '#ef4444' }}
-                    title="Xóa phòng"
+                    title="Xóa phòng thi này"
                   >
                     <Trash2 size={16} />
                   </button>
