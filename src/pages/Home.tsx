@@ -42,6 +42,7 @@ import {
   QrCode,
   Trophy,
   Grid,
+  Bot,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -201,6 +202,20 @@ const otherTools = [
 ];
 
 const edTechTools = [
+  {
+    path: '/dau-truong-live',
+    icon: <Sparkles size={24} color="#ef4444" />,
+    title: '⚡ Đấu Trường Đố Vui Trực Tiếp (Live Quiz Battle)',
+    desc: 'Tổ chức minigame trắc nghiệm trực tiếp phong cách Kahoot & Quizizz. Học viên quét mã QR tham gia bằng điện thoại, bảng xếp hạng Top 1-2-3 cập nhật kịch tính trên máy chiếu.',
+    isHot: true
+  },
+  {
+    path: '/hoi-dap-pdf-ai',
+    icon: <Bot size={24} color="#2563eb" />,
+    title: '🤖 Trợ Lý Hỏi Đáp Với Tài Liệu PDF (Chat with PDF)',
+    desc: 'Đọc hiểu tài liệu giáo trình chuyên ngành bằng Google Gemini AI, tự động tóm tắt 3 ý chính và sinh 5 câu trắc nghiệm kiểm tra độ hiểu bài ngay lập tức.',
+    isHot: true
+  },
   {
     path: '/quan-ly-diem-danh',
     icon: <QrCode size={24} />,
