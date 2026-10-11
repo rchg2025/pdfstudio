@@ -6,9 +6,10 @@ const Layout = () => {
   const location = useLocation();
   const isExamRoom = location.pathname.startsWith('/phong-thi');
   
-  // Ẩn hoàn toàn Navbar và Footer khi đang ở màn hình Máy chiếu Đấu trường (/dau-truong-live/:roomId) hoặc màn hình điện thoại học viên (/dau-truong)
+  // Ẩn hoàn toàn Navbar và Footer khi đang ở màn hình Máy chiếu Đấu trường (/dau-truong-live/:roomId) hoặc màn hình điện thoại học viên (/dau-truong hoặc /dau-truong/:pinCode)
+  // LƯU Ý: Không được ẩn ở trang Dashboard quản lý (/dau-truong-live)
   const isLiveBattleProjector = /^\/dau-truong-live\/[^/]+/.test(location.pathname);
-  const isLiveBattlePlayer = location.pathname.startsWith('/dau-truong');
+  const isLiveBattlePlayer = /^\/dau-truong(\/[^/]+)?\/?$/.test(location.pathname);
 
   if (isExamRoom || isLiveBattleProjector || isLiveBattlePlayer) {
     return (
