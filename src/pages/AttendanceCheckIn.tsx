@@ -42,6 +42,8 @@ export default function AttendanceCheckIn() {
   const [className, setClassName] = useState(() => localStorage.getItem('rchg_last_class_name') || '');
 
   const [session, setSession] = useState<AttendanceSession | null>(null);
+  const [scanSessionToken, setScanSessionToken] = useState<string>('');
+  const [isScanVerified, setIsScanVerified] = useState<boolean>(false);
   const [loadingSession, setLoadingSession] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [successResult, setSuccessResult] = useState<any>(null);
@@ -63,10 +65,18 @@ export default function AttendanceCheckIn() {
     setLoadingSession(true);
     setErrorMsg('');
     try {
-      const res = await fetch(`/api/attendance?action=get-session-details&code=${encodeURIComponent(codeToFetch.trim())}`);
+      let url = `/api/attendance?action=get-session-details&code=${encodeURIComponent(codeToFetch.trim())}`;
+      if (tokenFromUrl) {
+        url += `&token=${encodeURIComponent(tokenFromUrl.trim())}`;
+      }
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setSession(data.session);
+        if (data.scanSessionToken) {
+          setScanSessionToken(data.scanSessionToken);
+          setIsScanVerified(true);
+        }
         if (data.session?.className && !className) {
           setClassName(data.session.className);
         }
@@ -127,6 +137,7 @@ export default function AttendanceCheckIn() {
         body: JSON.stringify({
           code: targetCode,
           token: tokenFromUrl,
+          scanSessionToken,
           studentName: studentName.trim(),
           studentId: studentId.trim(),
           className: className.trim(),
@@ -237,6 +248,12 @@ export default function AttendanceCheckIn() {
             {/* Thông tin phòng học nhận diện được */}
             {session ? (
               <div style={{ padding: '0.85rem 1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: 'var(--radius-md)', border: '1px solid rgba(99, 102, 241, 0.25)' }}>
+                {isScanVerified && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#059669', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem' }}>
+                    <CheckCircle2 size={16} />
+                    <span>Đã quét mã QR thành công (Hợp lệ trong 20 phút)</span>
+                  </div>
+                )}
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
                   Buổi học đang điểm danh:
                 </div>

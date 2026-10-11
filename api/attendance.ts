@@ -35,14 +35,57 @@ function generateDynamicToken(secretKey: string, periodSeconds: number, windowOf
 }
 
 /**
- * Xác thực token: chấp nhận cửa sổ hiện tại và cửa sổ trước đó để bù độ trễ mạng
+ * Xác thực token: chấp nhận cửa sổ hiện tại và mở rộng dung sai (-3 đến +1 chu kỳ) để bù trễ mạng
  */
 function verifyDynamicToken(secretKey: string, periodSeconds: number, clientToken: string): boolean {
   if (!clientToken || !secretKey) return false;
-  const current = generateDynamicToken(secretKey, periodSeconds, 0).token;
-  const prev = generateDynamicToken(secretKey, periodSeconds, -1).token;
-  const next = generateDynamicToken(secretKey, periodSeconds, 1).token;
-  return clientToken === current || clientToken === prev || clientToken === next;
+  // Cửa sổ kiểm tra từ -3 đến +1 chu kỳ
+  for (let offset = -3; offset <= 1; offset++) {
+    if (clientToken === generateDynamicToken(secretKey, periodSeconds, offset).token) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Cấp vé quét hợp lệ (Scan Session Token) cho sinh viên sau khi quét mã QR thành công.
+ * Có hiệu lực trong 20 phút để sinh viên thoải mái điền Họ tên, MSSV mà không bị hết hạn.
+ */
+function createScanSessionToken(sessionId: string, secretKey: string): string {
+  const timestamp = Math.floor(Date.now() / 1000);
+  const signature = crypto
+    .createHmac('sha256', secretKey)
+    .update(`scan:${sessionId}:${timestamp}`)
+    .digest('hex')
+    .substring(0, 16);
+  return `${timestamp}.${signature}`;
+}
+
+/**
+ * Xác thực vé quét hợp lệ (Scan Session Token) trong vòng 20 phút (1200 giây)
+ */
+function verifyScanSessionToken(sessionId: string, secretKey: string, scanToken: string): boolean {
+  if (!scanToken || !secretKey || !sessionId) return false;
+  const parts = scanToken.split('.');
+  if (parts.length !== 2) return false;
+  const [timeStr, sign] = parts;
+  const timestamp = parseInt(timeStr, 10);
+  if (isNaN(timestamp)) return false;
+
+  const now = Math.floor(Date.now() / 1000);
+  // Vé có hiệu lực 20 phút (1200s), không cho phép thời gian tương lai quá 60s
+  if (now - timestamp > 1200 || timestamp - now > 60) {
+    return false;
+  }
+
+  const expectedSign = crypto
+    .createHmac('sha256', secretKey)
+    .update(`scan:${sessionId}:${timestamp}`)
+    .digest('hex')
+    .substring(0, 16);
+
+  return sign === expectedSign;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -134,6 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (action === 'get-session-details') {
       const sessionId = req.query.sessionId as string;
       const code = req.query.code as string;
+      const qrToken = (req.query.token as string) || '';
 
       if (!sessionId && !code) {
         return res.status(400).json({ message: 'Thiếu sessionId hoặc mã PIN code' });
@@ -152,7 +196,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(404).json({ message: 'Không tìm thấy buổi điểm danh' });
       }
 
-      return res.status(200).json({ success: true, session });
+      // Nếu học viên quét QR có token, xác thực ngay lúc vừa quét để cấp vé nhập liệu
+      let scanSessionToken: string | null = null;
+      let isScanValid = false;
+
+      if (qrToken) {
+        isScanValid = verifyDynamicToken(session.secretKey, session.refreshSeconds, qrToken.trim());
+        if (isScanValid) {
+          scanSessionToken = createScanSessionToken(session.id, session.secretKey);
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        session,
+        isScanValid,
+        scanSessionToken
+      });
     }
 
     // -------------------------------------------------------------
@@ -190,6 +250,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const {
         code,
         token,
+        scanSessionToken,
         studentName,
         studentId,
         className,
@@ -215,14 +276,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(403).json({ message: 'Giảng viên đã kết thúc hoặc tạm khóa buổi điểm danh này!' });
       }
 
-      // Kiểm tra Dynamic QR Token (chống chụp ảnh mã QR gửi đi xa)
-      if (token) {
-        const isValidToken = verifyDynamicToken(session.secretKey, session.refreshSeconds, String(token).trim());
-        if (!isValidToken) {
-          return res.status(400).json({
-            message: 'Mã QR đã hết hạn! Vui lòng nhìn máy chiếu và quét lại mã mới nhất đang hiển thị.'
-          });
-        }
+      // Kiểm tra Dynamic QR Token hoặc Vé quét scanSessionToken (chống chụp ảnh mã QR gửi đi xa)
+      // Nếu có scanSessionToken (được cấp khi sinh viên vừa quét mã QR mở form), kiểm tra hạn 20 phút
+      let isTokenValid = false;
+      if (scanSessionToken) {
+        isTokenValid = verifyScanSessionToken(session.id, session.secretKey, String(scanSessionToken).trim());
+      }
+      
+      // Nếu không có scanSessionToken hoặc hết hạn, kiểm tra token dynamic trực tiếp
+      if (!isTokenValid && token) {
+        isTokenValid = verifyDynamicToken(session.secretKey, session.refreshSeconds, String(token).trim());
+      }
+
+      // Nếu client có truyền token/scanSessionToken nhưng cả 2 đều không hợp lệ
+      if ((token || scanSessionToken) && !isTokenValid) {
+        return res.status(400).json({
+          message: 'Mã QR đã hết hạn! Vui lòng nhìn máy chiếu và quét lại mã mới nhất đang hiển thị.'
+        });
       }
 
       // Kiểm tra GPS nếu giảng viên yêu cầu
