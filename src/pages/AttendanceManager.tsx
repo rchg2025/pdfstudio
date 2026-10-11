@@ -14,7 +14,8 @@ import {
   Unlock, 
   MapPin, 
   Search, 
-  UserCheck
+  UserCheck,
+  ExternalLink
 } from 'lucide-react';
 import QRCode from 'qrcode';
 import * as XLSX from 'xlsx';
@@ -309,6 +310,7 @@ export default function AttendanceManager() {
       'Lớp',
       'Thời gian điểm danh',
       'Khoảng cách GPS (mét)',
+      'Link Google Maps vị trí SV',
       'Trạng thái'
     ];
 
@@ -319,6 +321,7 @@ export default function AttendanceManager() {
       r.className || '',
       new Date(r.checkedInAt).toLocaleString('vi-VN'),
       r.distanceMeters !== null ? `${r.distanceMeters}m` : 'Không bắt buộc',
+      r.latitude && r.longitude ? `https://www.google.com/maps?q=${r.latitude},${r.longitude}` : '',
       r.status === 'PRESENT' ? 'Có mặt' : (r.status === 'LATE' ? 'Đi muộn' : 'Có phép')
     ]);
 
@@ -332,6 +335,7 @@ export default function AttendanceManager() {
       { wch: 16 },
       { wch: 24 },
       { wch: 22 },
+      { wch: 45 },
       { wch: 16 }
     ];
 
@@ -564,7 +568,20 @@ export default function AttendanceManager() {
               <div className="attendance-stat-number" style={{ color: activeSession.requireGps ? '#eab308' : 'var(--text-muted)' }}>
                 {activeSession.requireGps ? `< ${activeSession.maxDistanceMeters}m` : 'Tắt'}
               </div>
-              <div className="attendance-stat-label">Khóa vị trí GPS</div>
+              <div className="attendance-stat-label" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                <span>Khóa vị trí GPS</span>
+                {activeSession.requireGps && activeSession.latitude && activeSession.longitude && (
+                  <a 
+                    href={`https://www.google.com/maps?q=${activeSession.latitude},${activeSession.longitude}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    title="Xem vị trí phòng học trên Google Maps"
+                    style={{ color: 'var(--primary)', display: 'inline-flex', alignItems: 'center' }}
+                  >
+                    <ExternalLink size={12} />
+                  </a>
+                )}
+              </div>
             </div>
           </div>
 
@@ -627,16 +644,40 @@ export default function AttendanceManager() {
                       </td>
                       <td style={{ padding: '0.75rem 1rem' }}>
                         {r.distanceMeters !== null ? (
-                          <span style={{ 
-                            fontSize: '0.78rem', 
-                            padding: '0.2rem 0.5rem', 
-                            borderRadius: '4px',
-                            background: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                            color: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? '#10b981' : '#ef4444',
-                            fontWeight: 600
-                          }}>
-                            {r.distanceMeters}m
-                          </span>
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
+                            <span style={{ 
+                              fontSize: '0.78rem', 
+                              padding: '0.2rem 0.5rem', 
+                              borderRadius: '4px',
+                              background: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                              color: r.distanceMeters <= (activeSession.maxDistanceMeters || 100) ? '#10b981' : '#ef4444',
+                              fontWeight: 700
+                            }}>
+                              {r.distanceMeters}m
+                            </span>
+                            {r.latitude && r.longitude ? (
+                              <a
+                                href={`https://www.google.com/maps?q=${r.latitude},${r.longitude}`}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={`Xem vị trí của ${r.studentName} trên Google Maps (Cách lớp ${r.distanceMeters}m)`}
+                                style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: 24,
+                                  height: 24,
+                                  borderRadius: '4px',
+                                  background: 'var(--bg-tertiary)',
+                                  color: 'var(--primary)',
+                                  border: '1px solid var(--border)',
+                                  transition: 'all 0.15s ease'
+                                }}
+                              >
+                                <ExternalLink size={13} />
+                              </a>
+                            ) : null}
+                          </div>
                         ) : (
                           <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>Không đo</span>
                         )}
