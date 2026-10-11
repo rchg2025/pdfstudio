@@ -37,7 +37,8 @@ import {
   Timer,
   MessageSquare,
   CheckSquare,
-  CreditCard
+  CreditCard,
+  QrCode
 } from 'lucide-react';
 import './Home.css';
 
@@ -273,6 +274,12 @@ const edTechTools = [
     icon: <CheckSquare size={24} />,
     title: 'Khảo Thí & Ngân Hàng Câu Hỏi Trắc Nghiệm',
     desc: 'Quản lý ngân hàng câu hỏi, tạo đề thi bằng AI, phân độ khó, nhạc nền thư giãn và tự động chấm điểm trên LMS.'
+  },
+  {
+    path: '/quan-ly-diem-danh',
+    icon: <QrCode size={24} />,
+    title: 'Điểm Danh Sinh Viên Bằng QR Động (Dynamic QR)',
+    desc: 'Mã QR đổi mới sau mỗi 8 giây chống chụp ảnh điểm danh hộ, nhận diện thiết bị duy nhất và khóa định vị GPS phòng học.'
   },
   {
     path: '/soan-de-thi-ai',

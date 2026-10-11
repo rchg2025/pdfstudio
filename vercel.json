@@ -59,6 +59,8 @@
     { "source": "/quan-ly-thi-trac-nghiem", "destination": "/index.html" },
     { "source": "/phong-thi/(.*)", "destination": "/index.html" },
     { "source": "/phong-thi", "destination": "/index.html" },
+    { "source": "/diem-danh/(.*)", "destination": "/index.html" },
+    { "source": "/diem-danh", "destination": "/index.html" },
     { "source": "/embed-player", "destination": "/index.html" },
     { "source": "/f/(.*)", "destination": "/api/frame-og?slug=$1" },
     { "source": "/", "destination": "/index.html" },

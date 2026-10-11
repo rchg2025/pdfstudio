@@ -54,6 +54,8 @@ const QuizManager = React.lazy(() => import('./pages/QuizManager'));
 const QuizExam = React.lazy(() => import('./pages/QuizExam'));
 const SyllabusExamGenerator = React.lazy(() => import('./pages/SyllabusExamGenerator'));
 const IdPhotoStudio = React.lazy(() => import('./pages/IdPhotoStudio'));
+const AttendanceManager = React.lazy(() => import('./pages/AttendanceManager'));
+const AttendanceCheckIn = React.lazy(() => import('./pages/AttendanceCheckIn'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -220,6 +222,15 @@ function App() {
             } />
             <Route path="anh-the-ai" element={
               <Suspense fallback={<FallbackLoader />}><IdPhotoStudio /></Suspense>
+            } />
+            <Route path="diem-danh" element={
+              <Suspense fallback={<FallbackLoader />}><AttendanceCheckIn /></Suspense>
+            } />
+            <Route path="diem-danh/:code" element={
+              <Suspense fallback={<FallbackLoader />}><AttendanceCheckIn /></Suspense>
+            } />
+            <Route path="quan-ly-diem-danh" element={
+              <Suspense fallback={<FallbackLoader />}><AttendanceManager /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

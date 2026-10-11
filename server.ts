@@ -18,6 +18,7 @@ import framesSlugHandler from './api/frames/[slug].js';
 import utilsActionHandler from './api/utils/[action].js';
 import uploadHandler from './api/upload/index.js';
 import edgeTtsHandler from './api/edge-tts.js';
+import attendanceHandler from './api/attendance.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,6 +94,9 @@ app.all('/api/edge-tts', adaptVercelHandler(edgeTtsHandler));
 // Short URL Redirect
 app.get('/api/redirect', adaptVercelHandler(redirectHandler));
 
+// Attendance API (Điểm danh QR động)
+app.all('/api/attendance', adaptVercelHandler(attendanceHandler));
+
 // Static files from Vite build
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
@@ -141,6 +145,8 @@ if (fs.existsSync(distPath)) {
     '/soan-de-thi-ai',
     '/phong-thi',
     '/phong-thi/:id',
+    '/diem-danh',
+    '/diem-danh/:code',
     '/embed-player'
   ];
 

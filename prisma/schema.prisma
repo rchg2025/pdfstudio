@@ -161,3 +161,41 @@ model SyllabusSubject {
   updatedAt      DateTime? @default(now())
 }
 
+model AttendanceSession {
+  id               String             @id @default(cuid())
+  userId           String             // Giảng viên tạo buổi điểm danh
+  title            String             // Tên môn học hoặc chủ đề: ví dụ "Điều dưỡng cơ bản - Buổi 3"
+  className        String?            // Lớp học: ví dụ "DƯỢC-K18"
+  code             String             @unique // Mã PIN 6 chữ số: ví dụ "739182"
+  secretKey        String             // Secret key để sinh dynamic QR token
+  isOpen           Boolean            @default(true)
+  requireGps       Boolean            @default(false)
+  latitude         Float?
+  longitude        Float?
+  maxDistanceMeters Int?              @default(100)
+  refreshSeconds   Int                @default(8) // Chu kỳ đổi mã QR (mặc định 8s)
+  allowMultiplePerDevice Boolean      @default(false)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  records          AttendanceRecord[]
+}
+
+model AttendanceRecord {
+  id         String            @id @default(cuid())
+  sessionId  String
+  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentName String           // Họ và tên sinh viên
+  studentId  String            // Mã số sinh viên
+  className  String?           // Lớp
+  email      String?
+  deviceHash String?           // Hash thiết bị / browser fingerprint chống điểm danh hộ
+  latitude   Float?
+  longitude  Float?
+  distanceMeters Float?
+  status     String            @default("PRESENT") // PRESENT, LATE, EXCUSED
+  note       String?
+  checkedInAt DateTime         @default(now())
+
+  @@unique([sessionId, studentId]) // 1 sinh viên chỉ điểm danh 1 lần trong 1 buổi
+}
+
