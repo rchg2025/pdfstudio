@@ -251,7 +251,7 @@ export default function AttendanceCheckIn() {
                 {isScanVerified && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#059669', fontSize: '0.8rem', fontWeight: 700, marginBottom: '0.35rem' }}>
                     <CheckCircle2 size={16} />
-                    <span>Đã quét mã QR thành công (Hợp lệ trong 20 phút)</span>
+                    <span>Đã quét mã QR thành công (Hợp lệ trong 5 phút)</span>
                   </div>
                 )}
                 <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '1px' }}>

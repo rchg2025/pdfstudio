@@ -665,31 +665,31 @@ export default function AttendanceManager() {
       {showProjector && activeSession && (
         <div className="attendance-projector-modal animate-fade-in">
           {/* Header máy chiếu */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="attendance-projector-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div>
-              <span style={{ fontSize: '0.9rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700 }}>
+              <span style={{ fontSize: '0.85rem', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '2px', fontWeight: 700 }}>
                 HỆ THỐNG ĐIỂM DANH THỜI GIAN THỰC
               </span>
-              <h2 style={{ fontSize: '2rem', fontWeight: 900, margin: '0.25rem 0 0', color: '#ffffff' }}>
+              <h2 style={{ fontSize: '2rem', fontWeight: 900, margin: '0.25rem 0 0', color: '#ffffff', lineHeight: 1.2 }}>
                 {activeSession.title}
               </h2>
               {activeSession.className && (
-                <p style={{ margin: 0, color: '#38bdf8', fontSize: '1.1rem', fontWeight: 600 }}>
+                <p style={{ margin: 0, color: '#38bdf8', fontSize: '1.05rem', fontWeight: 600 }}>
                   Lớp: {activeSession.className}
                 </p>
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
               <div className="attendance-pin-badge">
-                <span style={{ fontSize: '0.9rem', color: '#94a3b8' }}>MÃ PIN:</span>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>MÃ PIN:</span>
                 <span>{activeSession.code}</span>
               </div>
               <button 
                 type="button" 
                 className="btn btn-outline"
                 onClick={() => setShowProjector(false)}
-                style={{ borderRadius: '50%', width: 44, height: 44, padding: 0, color: '#fff', borderColor: 'rgba(255,255,255,0.3)' }}
+                style={{ borderRadius: '50%', width: 44, height: 44, padding: 0, color: '#fff', borderColor: 'rgba(255,255,255,0.3)', flexShrink: 0 }}
                 title="Đóng chế độ máy chiếu"
               >
                 <Minimize2 size={20} />
@@ -736,7 +736,7 @@ export default function AttendanceManager() {
           </div>
 
           {/* Footer máy chiếu: Số lượng sinh viên có mặt cập nhật Live */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '1rem' }}>
+          <div className="attendance-projector-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,0.15)', paddingTop: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div style={{ width: 14, height: 14, borderRadius: '50%', background: '#10b981', boxShadow: '0 0 12px #10b981' }} />
               <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#e2e8f0' }}>
@@ -744,7 +744,7 @@ export default function AttendanceManager() {
               </span>
             </div>
 
-            <div style={{ fontSize: '0.9rem', color: '#94a3b8' }}>
+            <div style={{ fontSize: '0.85rem', color: '#94a3b8' }}>
               💡 Nhấn phím <strong>ESC</strong> hoặc nút thu nhỏ ở góc trên để quay lại bảng quản trị
             </div>
           </div>

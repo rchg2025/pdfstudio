@@ -97,9 +97,10 @@
 }
 
 .attendance-student-checkin {
-  max-width: 460px;
-  margin: 2rem auto;
-  padding: 2rem 1.5rem;
+  width: 100%;
+  max-width: 480px;
+  margin: 1.5rem auto;
+  padding: 1.85rem 1.35rem;
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
@@ -125,4 +126,76 @@
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-top: 0.25rem;
+}
+
+/* Tối ưu responsive cho Mobile */
+@media (max-width: 768px) {
+  .attendance-container {
+    padding: 1rem 0.75rem 3rem;
+  }
+
+  .attendance-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .attendance-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .attendance-student-checkin {
+    margin: 0.75rem auto;
+    padding: 1.35rem 1rem;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  }
+
+  /* Chế độ hiển thị mã QR trên điện thoại hoặc máy chiếu */
+  .attendance-projector-modal {
+    padding: 1rem 0.85rem;
+    overflow-y: auto;
+    justify-content: flex-start;
+    gap: 1.25rem;
+  }
+
+  .attendance-projector-modal h2 {
+    font-size: 1.35rem !important;
+  }
+
+  .attendance-projector-modal .attendance-pin-badge {
+    font-size: 1.05rem;
+    padding: 0.35rem 0.75rem;
+    letter-spacing: 2px;
+  }
+
+  .attendance-qr-box {
+    padding: 1.2rem 1rem;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .attendance-qr-box img {
+    width: 100% !important;
+    height: auto !important;
+    max-width: 250px;
+    max-height: 250px;
+  }
+
+  .attendance-pin-badge {
+    font-size: 1.15rem;
+    padding: 0.4rem 0.85rem;
+    letter-spacing: 2px;
+  }
+
+  .attendance-stat-box {
+    padding: 0.75rem 0.5rem;
+  }
+
+  .attendance-stat-number {
+    font-size: 1.45rem;
+  }
 }

@@ -50,7 +50,7 @@ function verifyDynamicToken(secretKey: string, periodSeconds: number, clientToke
 
 /**
  * Cấp vé quét hợp lệ (Scan Session Token) cho sinh viên sau khi quét mã QR thành công.
- * Có hiệu lực trong 20 phút để sinh viên thoải mái điền Họ tên, MSSV mà không bị hết hạn.
+ * Có hiệu lực trong 5 phút để sinh viên thoải mái điền Họ tên, MSSV mà không bị hết hạn.
  */
 function createScanSessionToken(sessionId: string, secretKey: string): string {
   const timestamp = Math.floor(Date.now() / 1000);
@@ -63,7 +63,7 @@ function createScanSessionToken(sessionId: string, secretKey: string): string {
 }
 
 /**
- * Xác thực vé quét hợp lệ (Scan Session Token) trong vòng 20 phút (1200 giây)
+ * Xác thực vé quét hợp lệ (Scan Session Token) trong vòng 5 phút (300 giây)
  */
 function verifyScanSessionToken(sessionId: string, secretKey: string, scanToken: string): boolean {
   if (!scanToken || !secretKey || !sessionId) return false;
@@ -74,8 +74,8 @@ function verifyScanSessionToken(sessionId: string, secretKey: string, scanToken:
   if (isNaN(timestamp)) return false;
 
   const now = Math.floor(Date.now() / 1000);
-  // Vé có hiệu lực 20 phút (1200s), không cho phép thời gian tương lai quá 60s
-  if (now - timestamp > 1200 || timestamp - now > 60) {
+  // Vé có hiệu lực 5 phút (300s), không cho phép thời gian tương lai quá 60s
+  if (now - timestamp > 300 || timestamp - now > 60) {
     return false;
   }
 
@@ -277,7 +277,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // Kiểm tra Dynamic QR Token hoặc Vé quét scanSessionToken (chống chụp ảnh mã QR gửi đi xa)
-      // Nếu có scanSessionToken (được cấp khi sinh viên vừa quét mã QR mở form), kiểm tra hạn 20 phút
+      // Nếu có scanSessionToken (được cấp khi sinh viên vừa quét mã QR mở form), kiểm tra hạn 5 phút
       let isTokenValid = false;
       if (scanSessionToken) {
         isTokenValid = verifyScanSessionToken(session.id, session.secretKey, String(scanSessionToken).trim());
