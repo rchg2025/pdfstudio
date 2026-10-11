@@ -154,8 +154,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ message: 'Thiếu nội dung văn bản PDF' });
       }
 
-      // Giới hạn độ dài nội dung để tối ưu token (lấy tối đa 120,000 ký tự đầu tiên)
-      const trimmedText = extractedText.substring(0, 120000);
+      // Cho phép đọc toàn bộ tài liệu (lấy tới 500,000 ký tự đầu tiên để hỗ trợ tài liệu dài hàng trăm trang)
+      const trimmedText = extractedText.length > 500000 ? extractedText.substring(0, 500000) : extractedText;
 
       // Nhờ Gemini tóm tắt tài liệu ban đầu
       let summary = '';
@@ -166,7 +166,7 @@ Dưới đây là nội dung của tài liệu PDF tên là: "${fileName}".
 
 TÀI LIỆU TRÍCH XUẤT:
 """
-${trimmedText.substring(0, 30000)}
+${trimmedText.substring(0, 80000)}
 """
 
 YÊU CẦU:
@@ -222,12 +222,13 @@ YÊU CẦU:
         timestamp: new Date().toISOString()
       };
 
-      // Xây dựng Prompt phân tích ngữ cảnh từ tài liệu
-      const prompt = `Bạn là trợ lý AI chuyên nghiệp đang hỗ trợ người dùng đọc hiểu tài liệu PDF "${session.fileName}".
-Dưới đây là một phần nội dung trích xuất từ tài liệu:
+      // Xây dựng Prompt phân tích ngữ cảnh từ tài liệu (hỗ trợ tới 120,000 ký tự)
+      const docContext = (session.extractedText || '').substring(0, 120000);
+      const prompt = `Bạn là chuyên gia cố vấn và trợ lý AI cao cấp đang hỗ trợ người dùng đọc hiểu tài liệu PDF "${session.fileName}".
+Dưới đây là nội dung trích xuất từ tài liệu (có kèm đánh dấu các trang):
 
 """
-${(session.extractedText || '').substring(0, 45000)}
+${docContext}
 """
 
 LỊCH SỬ HỘI THOẠI GẦN ĐÂY:
@@ -237,9 +238,14 @@ CÂU HỎI MỚI CỦA NGƯỜI DÙNG:
 "${question.trim()}"
 
 QUY TẮC TRẢ LỜI:
-1. Trả lời căn cứ chính xác theo nội dung có trong tài liệu trên. Nếu tài liệu có đề cập đến phần nào hoặc trang nào, hãy trích dẫn cụ thể.
-2. Nếu thông tin không có trong tài liệu, hãy thành thật nêu rõ "Tài liệu không trực tiếp đề cập..." và sau đó có thể bổ sung kiến thức chuyên môn hữu ích (nếu phù hợp).
-3. Sử dụng Markdown đẹp mắt: in đậm từ khóa, dùng danh sách có thứ tự hoặc gạch đầu dòng, giải thích ngắn gọn, xúc tích, dễ hiểu.`;
+1. Trả lời căn cứ chính xác theo nội dung có trong tài liệu trên. Nếu thông tin nằm ở trang nào (ví dụ [TRANG X]), hãy trích dẫn cụ thể trang đó để người dùng dễ tra cứu.
+2. Trình bày câu trả lời thật đẹp mắt, khoa học bằng Markdown:
+   - Sử dụng tiêu đề (###, ####) để phân chia các phần rõ ràng.
+   - Dùng danh sách gạch đầu dòng (-) hoặc số thứ tự (1., 2.) cho các ý phân tích.
+   - Sử dụng **in đậm** cho các từ khóa cốt lõi, khái niệm quan trọng.
+   - Sử dụng trích dẫn (>) hoặc hộp thông tin (💡 Gợi ý:, 📌 Lưu ý:, ⚠️ Cảnh báo:) nếu cần nhấn mạnh.
+   - Sử dụng bảng Markdown (| Tiêu đề | ...) hoặc khối mã (code block) nếu so sánh hoặc trình bày dữ liệu kỹ thuật.
+3. Nếu câu hỏi không có thông tin trong tài liệu, hãy thành thật nêu rõ "Tài liệu không trực tiếp đề cập..." và có thể mở rộng kiến thức chuyên môn hữu ích liên quan.`;
 
       const apiKey = await getEffectiveApiKey(prisma, customApiKey);
       const aiReplyText = await callGemini(prompt, apiKey);

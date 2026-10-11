@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, type ReactNode } from 'react';
 import { 
   FileText, Upload, Sparkles, Send, Bot, User, 
-  BookOpen, Key, Check
+  BookOpen, Key, Check, Copy, CheckCircle2, AlertCircle, Lightbulb
 } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,299 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: string;
+}
+
+// Hàm render inline styling (bold, italic, inline code, links)
+function renderInlineFormatting(text: string): ReactNode[] {
+  // Regex tìm `code`, **bold**, *italic*
+  const parts: ReactNode[] = [];
+  let remaining = text;
+  let keyIndex = 0;
+
+  // Xử lý các token inline
+  while (remaining.length > 0) {
+    // 1. Inline code: `code`
+    const codeMatch = remaining.match(/^`([^`]+)`/);
+    if (codeMatch) {
+      parts.push(
+        <code key={`code-${keyIndex++}`} className="markdown-inline-code">
+          {codeMatch[1]}
+        </code>
+      );
+      remaining = remaining.slice(codeMatch[0].length);
+      continue;
+    }
+
+    // 2. Bold text: **text** hoặc __text__
+    const boldMatch = remaining.match(/^(\*\*|__)(.*?)\1/);
+    if (boldMatch) {
+      parts.push(
+        <strong key={`bold-${keyIndex++}`} className="markdown-bold">
+          {renderInlineFormatting(boldMatch[2])}
+        </strong>
+      );
+      remaining = remaining.slice(boldMatch[0].length);
+      continue;
+    }
+
+    // 3. Italic text: *text* hoặc _text_
+    const italicMatch = remaining.match(/^(\*|_)(.*?)\1/);
+    if (italicMatch && !italicMatch[2].startsWith('*')) {
+      parts.push(
+        <em key={`italic-${keyIndex++}`} className="markdown-italic">
+          {renderInlineFormatting(italicMatch[2])}
+        </em>
+      );
+      remaining = remaining.slice(italicMatch[0].length);
+      continue;
+    }
+
+    // 4. Page badge: [TRANG X] hoặc [Trang X]
+    const pageMatch = remaining.match(/^\[(TRANG|Trang|trang)\s*(\d+)\]/i);
+    if (pageMatch) {
+      parts.push(
+        <span key={`page-${keyIndex++}`} className="markdown-page-badge">
+          📖 Trang {pageMatch[2]}
+        </span>
+      );
+      remaining = remaining.slice(pageMatch[0].length);
+      continue;
+    }
+
+    // 5. Normal text chunk up to next special char (` or * or _ or [)
+    const nextSpecial = remaining.search(/[`*_\[]/);
+    if (nextSpecial === -1) {
+      parts.push(remaining);
+      break;
+    } else if (nextSpecial === 0) {
+      parts.push(remaining[0]);
+      remaining = remaining.slice(1);
+    } else {
+      parts.push(remaining.slice(0, nextSpecial));
+      remaining = remaining.slice(nextSpecial);
+    }
+  }
+
+  return parts;
+}
+
+// Component render nội dung Markdown chuyên nghiệp cho câu trả lời của AI
+function MarkdownResponse({ content }: { content: string }) {
+  const [copiedCodeIdx, setCopiedCodeIdx] = useState<number | null>(null);
+
+  const copyToClipboard = (text: string, idx: number) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCodeIdx(idx);
+    setTimeout(() => setCopiedCodeIdx(null), 2000);
+  };
+
+  // Chia nội dung thành các dòng và xử lý block
+  const lines = content.split('\n');
+  const elements: ReactNode[] = [];
+  let i = 0;
+  let elementKey = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+    const trimmed = line.trim();
+
+    // 1. Code block ```
+    if (trimmed.startsWith('```')) {
+      const lang = trimmed.slice(3).trim();
+      const codeLines: string[] = [];
+      i++;
+      while (i < lines.length && !lines[i].trim().startsWith('```')) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      i++; // Skip closing ```
+      const fullCode = codeLines.join('\n');
+      const blockIdx = elementKey;
+      elements.push(
+        <div key={`code-block-${elementKey++}`} className="markdown-code-block-wrapper">
+          <div className="markdown-code-header">
+            <span className="code-lang-tag">{lang || 'Code'}</span>
+            <button
+              type="button"
+              className="btn-copy-code"
+              onClick={() => copyToClipboard(fullCode, blockIdx)}
+              title="Sao chép mã"
+            >
+              {copiedCodeIdx === blockIdx ? (
+                <>
+                  <CheckCircle2 size={13} color="#10b981" /> Đã chép
+                </>
+              ) : (
+                <>
+                  <Copy size={13} /> Sao chép
+                </>
+              )}
+            </button>
+          </div>
+          <pre className="markdown-pre">
+            <code>{fullCode}</code>
+          </pre>
+        </div>
+      );
+      continue;
+    }
+
+    // 2. Headings (###, ##, #)
+    if (trimmed.startsWith('### ')) {
+      elements.push(
+        <h4 key={`h4-${elementKey++}`} className="markdown-h4">
+          {renderInlineFormatting(trimmed.slice(4))}
+        </h4>
+      );
+      i++;
+      continue;
+    }
+    if (trimmed.startsWith('## ')) {
+      elements.push(
+        <h3 key={`h3-${elementKey++}`} className="markdown-h3">
+          {renderInlineFormatting(trimmed.slice(3))}
+        </h3>
+      );
+      i++;
+      continue;
+    }
+    if (trimmed.startsWith('# ')) {
+      elements.push(
+        <h2 key={`h2-${elementKey++}`} className="markdown-h2">
+          {renderInlineFormatting(trimmed.slice(2))}
+        </h2>
+      );
+      i++;
+      continue;
+    }
+
+    // 3. Blockquotes (> ...) hoặc Callout
+    if (trimmed.startsWith('>')) {
+      const quoteLines: string[] = [trimmed.replace(/^>\s?/, '')];
+      i++;
+      while (i < lines.length && lines[i].trim().startsWith('>')) {
+        quoteLines.push(lines[i].trim().replace(/^>\s?/, ''));
+        i++;
+      }
+      const quoteText = quoteLines.join(' ');
+      
+      // Nhận diện callout box
+      const isTip = quoteText.includes('💡') || quoteText.toLowerCase().includes('gợi ý');
+      const isWarning = quoteText.includes('⚠️') || quoteText.toLowerCase().includes('lưu ý') || quoteText.toLowerCase().includes('chú ý');
+
+      let calloutClass = 'markdown-blockquote';
+      let icon = null;
+      if (isTip) {
+        calloutClass = 'markdown-callout callout-tip';
+        icon = <Lightbulb size={18} className="callout-icon" />;
+      } else if (isWarning) {
+        calloutClass = 'markdown-callout callout-warning';
+        icon = <AlertCircle size={18} className="callout-icon" />;
+      }
+
+      elements.push(
+        <div key={`quote-${elementKey++}`} className={calloutClass}>
+          {icon}
+          <div className="callout-content">{renderInlineFormatting(quoteText)}</div>
+        </div>
+      );
+      continue;
+    }
+
+    // 4. Bullet lists (*, -, •)
+    if (trimmed.match(/^(\*|-|•)\s+/)) {
+      const listItems: string[] = [];
+      while (i < lines.length && lines[i].trim().match(/^(\*|-|•)\s+/)) {
+        listItems.push(lines[i].trim().replace(/^(\*|-|•)\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ul key={`ul-${elementKey++}`} className="markdown-ul">
+          {listItems.map((item, idx) => (
+            <li key={idx} className="markdown-li">
+              {renderInlineFormatting(item)}
+            </li>
+          ))}
+        </ul>
+      );
+      continue;
+    }
+
+    // 5. Numbered lists (1., 2., 3.)
+    if (trimmed.match(/^\d+\.\s+/)) {
+      const listItems: string[] = [];
+      while (i < lines.length && lines[i].trim().match(/^\d+\.\s+/)) {
+        listItems.push(lines[i].trim().replace(/^\d+\.\s+/, ''));
+        i++;
+      }
+      elements.push(
+        <ol key={`ol-${elementKey++}`} className="markdown-ol">
+          {listItems.map((item, idx) => (
+            <li key={idx} className="markdown-li">
+              {renderInlineFormatting(item)}
+            </li>
+          ))}
+        </ol>
+      );
+      continue;
+    }
+
+    // 6. Markdown Table (| Col 1 | Col 2 |)
+    if (trimmed.startsWith('|') && trimmed.endsWith('|')) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith('|') && lines[i].trim().endsWith('|')) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      if (tableLines.length >= 2) {
+        const headerRow = tableLines[0].split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1);
+        // Bỏ qua separator line (|-|---|)
+        const bodyRows = tableLines.slice(2).map(r => 
+          r.split('|').map(c => c.trim()).filter((_, idx, arr) => idx > 0 && idx < arr.length - 1)
+        );
+
+        elements.push(
+          <div key={`table-wrapper-${elementKey++}`} className="markdown-table-wrapper">
+            <table className="markdown-table">
+              <thead>
+                <tr>
+                  {headerRow.map((cell, idx) => (
+                    <th key={idx}>{renderInlineFormatting(cell)}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {bodyRows.map((row, rIdx) => (
+                  <tr key={rIdx}>
+                    {row.map((cell, cIdx) => (
+                      <td key={cIdx}>{renderInlineFormatting(cell)}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        );
+        continue;
+      }
+    }
+
+    // 7. Dòng trống hoặc đoạn văn thông thường
+    if (trimmed === '') {
+      i++;
+      continue;
+    }
+
+    // Đoạn văn thông thường
+    elements.push(
+      <p key={`p-${elementKey++}`} className="markdown-p">
+        {renderInlineFormatting(trimmed)}
+      </p>
+    );
+    i++;
+  }
+
+  return <div className="formatted-ai-response">{elements}</div>;
 }
 
 export default function ChatWithPdf() {
@@ -83,17 +376,20 @@ export default function ChatWithPdf() {
       setPageCount(totalPages);
 
       let fullText = '';
-      // Trích xuất tối đa 50 trang đầu để tránh vượt dung lượng RAM trình duyệt
-      const maxPagesToRead = Math.min(totalPages, 50);
-
-      for (let i = 1; i <= maxPagesToRead; i++) {
+      // Đọc toàn bộ các trang của tài liệu không giới hạn số trang
+      for (let i = 1; i <= totalPages; i++) {
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
         const pageText = textContent.items
           .map((item: any) => item.str || '')
           .join(' ');
         fullText += `\n--- [TRANG ${i}] ---\n` + pageText;
-        setExtractProgress(Math.round(10 + (i / maxPagesToRead) * 70));
+        setExtractProgress(Math.round(10 + (i / totalPages) * 75));
+        
+        // Cho trình duyệt nghỉ một chút mỗi 5 trang để giữ UI mượt mà, không đơ tab
+        if (i % 5 === 0 || i === totalPages) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
       }
 
       setExtractedText(fullText);
@@ -369,9 +665,13 @@ export default function ChatWithPdf() {
                     {m.role === 'user' ? <User size={18} /> : <Bot size={18} />}
                   </div>
                   <div className="msg-bubble">
-                    <div className="msg-text" style={{ whiteSpace: 'pre-wrap' }}>
-                      {m.content}
-                    </div>
+                    {m.role === 'assistant' ? (
+                      <MarkdownResponse content={m.content} />
+                    ) : (
+                      <div className="msg-text" style={{ whiteSpace: 'pre-wrap' }}>
+                        {m.content}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))

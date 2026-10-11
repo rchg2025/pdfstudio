@@ -627,3 +627,271 @@
   border-top: 1px solid var(--border);
   flex-wrap: wrap;
 }
+
+/* =========================================================
+   STYLE CHO CÂU TRẢ LỜI CỦA AI (MARKDOWN ĐẸP MẮT & CHUYÊN NGHIỆP)
+   ========================================================= */
+
+.msg-ai .msg-bubble {
+  max-width: 100%;
+  padding: 1.1rem 1.35rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px -3px rgba(0, 0, 0, 0.05), 0 2px 6px -2px rgba(0, 0, 0, 0.03);
+}
+
+.formatted-ai-response {
+  font-family: inherit;
+  color: #1e293b;
+  line-height: 1.68;
+  font-size: 0.93rem;
+  word-break: break-word;
+}
+
+/* Headings */
+.formatted-ai-response .markdown-h2 {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 1.2rem 0 0.6rem 0;
+  padding-bottom: 0.35rem;
+  border-bottom: 1.5px solid #f1f5f9;
+}
+.formatted-ai-response .markdown-h2:first-child {
+  margin-top: 0;
+}
+
+.formatted-ai-response .markdown-h3 {
+  font-size: 1.1rem;
+  font-weight: 750;
+  color: #1e293b;
+  margin: 1rem 0 0.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.formatted-ai-response .markdown-h3:first-child {
+  margin-top: 0;
+}
+
+.formatted-ai-response .markdown-h4 {
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 0.85rem 0 0.4rem 0;
+}
+
+/* Paragraphs */
+.formatted-ai-response .markdown-p {
+  margin: 0 0 0.75rem 0;
+  color: #334155;
+  line-height: 1.7;
+}
+.formatted-ai-response .markdown-p:last-child {
+  margin-bottom: 0;
+}
+
+/* Inline Styles */
+.formatted-ai-response .markdown-bold {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.formatted-ai-response .markdown-italic {
+  font-style: italic;
+  color: #475569;
+}
+
+.formatted-ai-response .markdown-inline-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.86em;
+  background: #f1f5f9;
+  color: #0f766e;
+  padding: 0.18rem 0.45rem;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  font-weight: 600;
+}
+
+/* Badge số trang PDF */
+.formatted-ai-response .markdown-page-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%);
+  color: #4338ca;
+  padding: 0.15rem 0.55rem;
+  border-radius: 20px;
+  border: 1px solid #c7d2fe;
+  margin: 0 0.2rem;
+  box-shadow: 0 1px 2px rgba(67, 56, 202, 0.08);
+}
+
+/* Lists */
+.formatted-ai-response .markdown-ul {
+  margin: 0.4rem 0 0.85rem 0;
+  padding-left: 1.4rem;
+  list-style-type: disc;
+}
+
+.formatted-ai-response .markdown-ol {
+  margin: 0.4rem 0 0.85rem 0;
+  padding-left: 1.4rem;
+  list-style-type: decimal;
+}
+
+.formatted-ai-response .markdown-li {
+  margin-bottom: 0.45rem;
+  color: #334155;
+  line-height: 1.65;
+}
+.formatted-ai-response .markdown-li:last-child {
+  margin-bottom: 0;
+}
+
+/* Blockquotes & Callout Boxes */
+.formatted-ai-response .markdown-blockquote {
+  margin: 0.85rem 0;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border-left: 4px solid #6366f1;
+  border-radius: 0 10px 10px 0;
+  color: #475569;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.formatted-ai-response .markdown-callout {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 0.9rem 0;
+  padding: 0.85rem 1.1rem;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.formatted-ai-response .callout-tip {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  color: #166534;
+}
+.formatted-ai-response .callout-tip .callout-icon {
+  color: #16a34a;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.formatted-ai-response .callout-warning {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  color: #92400e;
+}
+.formatted-ai-response .callout-warning .callout-icon {
+  color: #d97706;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+
+.formatted-ai-response .callout-content {
+  flex: 1;
+}
+
+/* Code Blocks */
+.formatted-ai-response .markdown-code-block-wrapper {
+  margin: 0.95rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #0f172a;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  border: 1px solid #334155;
+}
+
+.formatted-ai-response .markdown-code-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+}
+
+.formatted-ai-response .code-lang-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+}
+
+.formatted-ai-response .btn-copy-code {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #cbd5e1;
+  font-size: 0.74rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.formatted-ai-response .btn-copy-code:hover {
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.formatted-ai-response .markdown-pre {
+  margin: 0;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: #f8fafc;
+}
+
+/* Markdown Table */
+.formatted-ai-response .markdown-table-wrapper {
+  margin: 1rem 0;
+  overflow-x: auto;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.formatted-ai-response .markdown-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.formatted-ai-response .markdown-table th {
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 750;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.formatted-ai-response .markdown-table td {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #334155;
+}
+
+.formatted-ai-response .markdown-table tr:last-child td {
+  border-bottom: none;
+}
+
+.formatted-ai-response .markdown-table tr:hover td {
+  background: #f8fafc;
+}
+
