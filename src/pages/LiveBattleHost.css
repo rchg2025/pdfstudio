@@ -1336,34 +1336,235 @@
   }
 }
 
-/* Fullscreen Projector Enhancements */
-:fullscreen .battle-host-screen,
-:-webkit-full-screen .battle-host-screen {
-  width: 100vw;
-  height: 100vh;
-  min-height: 100vh;
-  box-sizing: border-box;
+/* Mobile Responsive Optimizations for LiveBattleHost */
+@media (max-width: 768px) {
+  /* Dashboard Quản Lý Phòng trên điện thoại */
+  .battle-manager-container {
+    padding: 1rem 0.85rem 3rem;
+  }
+
+  .battle-manager-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+  }
+
+  .battle-manager-header h1 {
+    font-size: 1.35rem !important;
+  }
+
+  .battle-manager-header p {
+    font-size: 0.85rem !important;
+  }
+
+  .battle-manager-header .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .rooms-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .room-card {
+    padding: 1rem;
+  }
+
+  .room-card-actions {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .room-btn-open {
+    flex: 1 1 100%;
+    order: 1;
+    padding: 0.7rem;
+    font-size: 0.9rem;
+  }
+
+  .room-btn-players {
+    flex: 1 1 auto;
+    order: 2;
+    padding: 0.55rem;
+    font-size: 0.8rem;
+  }
+
+  .room-btn-delete {
+    order: 3;
+    width: 38px;
+    height: 38px;
+  }
+
+  /* Màn hình Host / Chiếu trên màn hình điện thoại */
+  .battle-topbar {
+    padding: 0.75rem 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .battle-brand {
+    gap: 0.5rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .battle-room-title {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  .battle-logo-badge {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+  }
+
+  .battle-top-actions {
+    gap: 0.4rem;
+  }
+
+  .battle-pin-badge {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+  }
+
+  .battle-pin-badge .pin-number {
+    font-size: 0.95rem;
+  }
+
+  /* Lobby trên điện thoại */
+  .battle-lobby-layout {
+    flex-direction: column;
+    padding: 1rem;
+    gap: 1.25rem;
+  }
+
+  .lobby-left-card {
+    padding: 1.25rem;
+  }
+
+  .lobby-left-card h2 {
+    font-size: 1.15rem;
+  }
+
+  .lobby-qr-box {
+    padding: 0.5rem;
+  }
+
+  .lobby-qr-img {
+    width: 160px;
+    height: 160px;
+  }
+
+  .lobby-pin-display .pin-digits {
+    font-size: 2rem;
+    letter-spacing: 4px;
+  }
+
+  /* Câu hỏi trên điện thoại */
+  .battle-question-layout {
+    padding: 1rem;
+  }
+
+  .question-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+
+  .question-timer-circle {
+    width: 55px;
+    height: 55px;
+    font-size: 1.4rem;
+    margin: 0 auto;
+  }
+
+  .question-card {
+    padding: 1.25rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .question-text {
+    font-size: 1.2rem;
+    line-height: 1.4;
+  }
+
+  .options-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .option-btn {
+    padding: 0.85rem 1rem;
+    min-height: 54px;
+  }
+
+  .option-label {
+    font-size: 1rem;
+  }
+
+  .option-icon {
+    font-size: 1.3rem;
+  }
+
+  /* Bục vinh danh Podium trên điện thoại */
+  .battle-podium-layout {
+    padding: 1rem 0.5rem;
+  }
+
+  .podium-title h1 {
+    font-size: 1.6rem;
+  }
+
+  .podium-container {
+    height: 320px;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+
+  .podium-step {
+    width: 31%;
+  }
+
+  .podium-step.step-1 .step-block { height: 160px; }
+  .podium-step.step-2 .step-block { height: 120px; }
+  .podium-step.step-3 .step-block { height: 90px; }
+
+  .step-emoji {
+    font-size: 2.2rem;
+  }
+
+  .step-name {
+    font-size: 0.82rem;
+    max-width: 90px;
+  }
+
+  .step-score {
+    font-size: 0.75rem;
+  }
+
+  /* Bảng tổng sắp học viên */
+  .battle-all-players-card {
+    padding: 1rem 0.75rem;
+  }
+
+  .all-players-header h3 {
+    font-size: 1.05rem;
+  }
+
+  .battle-finish-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .battle-finish-actions button,
+  .battle-finish-actions a {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
-:fullscreen .battle-question-layout,
-:-webkit-full-screen .battle-question-layout {
-  max-width: 95vw;
-  padding: 1.5rem 3rem 2.5rem;
-}
-
-:fullscreen .question-text,
-:-webkit-full-screen .question-text {
-  font-size: 2.6rem;
-}
-
-:fullscreen .option-label,
-:-webkit-full-screen .option-label {
-  font-size: 1.75rem;
-}
-
-:fullscreen .battle-lobby-layout,
-:-webkit-full-screen .battle-lobby-layout {
-  max-width: 95vw;
-  padding: 2rem 3rem;
-}
 
