@@ -16,6 +16,7 @@ export default function LiveBattlePlayer() {
   const [pinCode, setPinCode] = useState(initialPin || '');
   const [nickname, setNickname] = useState('');
   const [studentId, setStudentId] = useState('');
+  const [className, setClassName] = useState('');
   const [avatarEmoji, setAvatarEmoji] = useState(EMOJI_LIST[0]);
   const [isJoining, setIsJoining] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -40,9 +41,11 @@ export default function LiveBattlePlayer() {
   useEffect(() => {
     const savedNick = localStorage.getItem('live_battle_nickname');
     const savedId = localStorage.getItem('live_battle_studentid');
+    const savedClass = localStorage.getItem('live_battle_classname');
     const savedEmoji = localStorage.getItem('live_battle_emoji');
     if (savedNick) setNickname(savedNick);
     if (savedId) setStudentId(savedId);
+    if (savedClass) setClassName(savedClass);
     if (savedEmoji) setAvatarEmoji(savedEmoji);
   }, []);
 
@@ -65,6 +68,7 @@ export default function LiveBattlePlayer() {
           pinCode: pinCode.trim(),
           nickname: nickname.trim(),
           studentId: studentId.trim() || undefined,
+          className: className.trim() || undefined,
           avatarEmoji
         })
       });
@@ -80,6 +84,7 @@ export default function LiveBattlePlayer() {
       // Lưu cache
       localStorage.setItem('live_battle_nickname', nickname.trim());
       if (studentId) localStorage.setItem('live_battle_studentid', studentId.trim());
+      if (className) localStorage.setItem('live_battle_classname', className.trim());
       localStorage.setItem('live_battle_emoji', avatarEmoji);
     } catch (err: any) {
       setErrorMsg(err.message || 'Lỗi kết nối tới máy chủ');
@@ -226,6 +231,17 @@ export default function LiveBattlePlayer() {
                 value={studentId}
                 onChange={e => setStudentId(e.target.value)}
                 placeholder="Ví dụ: 22D18012"
+                className="input-text"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Lớp học (Tùy chọn):</label>
+              <input 
+                type="text" 
+                value={className}
+                onChange={e => setClassName(e.target.value)}
+                placeholder="Ví dụ: TC26-CSNDT, Dược K18..."
                 className="input-text"
               />
             </div>

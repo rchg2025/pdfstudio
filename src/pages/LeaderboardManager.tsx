@@ -15,13 +15,14 @@ import {
   Search, 
   ChevronLeft, 
   ChevronRight, 
-  Crown
+  Crown,
+  Swords
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import './LeaderboardManager.css';
 
 export default function LeaderboardManager() {
-  const { token } = useAuth();
+  const { user, token } = useAuth();
   const { showToast } = useNotification();
 
   const [groups, setGroups] = useState<LeaderboardGroup[]>([]);
@@ -50,10 +51,11 @@ export default function LeaderboardManager() {
   const [newGroupClass, setNewGroupClass] = useState('');
   const [newGroupDesc, setNewGroupDesc] = useState('');
 
-  // Modal thêm học viên / import từ điểm danh
+  // Modal thêm học viên / import từ điểm danh / đấu trường
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [inputStudentText, setInputStudentText] = useState('');
   const [importAttendanceList, setImportAttendanceList] = useState<any[]>([]);
+  const [importBattleRooms, setImportBattleRooms] = useState<any[]>([]);
 
   // 1. Tải danh sách nhóm thi đua của giảng viên
   const fetchGroups = async () => {
@@ -261,7 +263,7 @@ export default function LeaderboardManager() {
     }
   };
 
-  // 8. Đồng bộ danh sách học viên từ Buổi Điểm Danh QR
+  // 8. Đồng bộ danh sách học viên từ Buổi Điểm Danh QR & Đấu Trường Live Battle
   const loadAttendanceSessions = async () => {
     try {
       const res = await fetch('/api/attendance?action=get-my-sessions', {
@@ -270,6 +272,17 @@ export default function LeaderboardManager() {
       if (res.ok) {
         const data = await res.json();
         setImportAttendanceList(data.sessions || []);
+      }
+    } catch {}
+  };
+
+  const loadBattleRooms = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`/api/live-battle?action=get-my-rooms&userId=${encodeURIComponent(user.id)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setImportBattleRooms(data.rooms || []);
       }
     } catch {}
   };
@@ -310,6 +323,30 @@ export default function LeaderboardManager() {
       }
     } catch {
       showToast('Lỗi đồng bộ từ điểm danh', 'error');
+    }
+  };
+
+  const importFromBattleRoom = async (roomId: string) => {
+    if (!activeGroup) return;
+    try {
+      const res = await fetch('/api/live-battle?action=sync-to-leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId,
+          targetGroupId: activeGroup.id
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || 'Đã đồng bộ kết quả đấu trường thành công!', 'success');
+        setShowAddStudentModal(false);
+        fetchGroupDetails(activeGroup.id);
+      } else {
+        showToast(data.message || 'Lỗi khi đồng bộ kết quả đấu trường', 'warning');
+      }
+    } catch {
+      showToast('Lỗi khi đồng bộ kết quả đấu trường', 'error');
     }
   };
 
@@ -584,6 +621,7 @@ export default function LeaderboardManager() {
                 onClick={() => {
                   setShowAddStudentModal(true);
                   loadAttendanceSessions();
+                  loadBattleRooms();
                 }}
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', borderRadius: '50px' }}
               >
@@ -1129,7 +1167,7 @@ export default function LeaderboardManager() {
             </p>
 
             {/* Cách 1: Đồng bộ từ buổi điểm danh */}
-            <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(99, 102, 241, 0.2)', marginBottom: '1.25rem' }}>
+            <div style={{ padding: '1rem', background: 'rgba(99, 102, 241, 0.08)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(99, 102, 241, 0.2)', marginBottom: '1rem' }}>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '0.4rem' }}>
                 ⚡ Cách 1: Lấy danh sách từ Buổi Điểm Danh QR
               </div>
@@ -1162,10 +1200,45 @@ export default function LeaderboardManager() {
               </div>
             </div>
 
-            {/* Cách 2: Paste danh sách text */}
+            {/* Cách 2: Đồng bộ từ kết quả Đấu Trường Live Battle */}
+            <div style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.08)', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(245, 158, 11, 0.25)', marginBottom: '1.25rem' }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f59e0b', marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <Swords size={16} /> Cách 2: Lấy kết quả từ Đấu Trường Trực Tiếp (Live Battle)
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <select
+                  id="import-battle-select"
+                  style={{ flex: 1, padding: '0.65rem 0.75rem', borderRadius: '0.6rem', border: '1px solid var(--border)', background: 'var(--bg-secondary)', color: 'var(--text-primary)', fontSize: '0.88rem', outline: 'none' }}
+                >
+                  <option value="">-- Chọn phòng đấu trường để lấy danh sách & điểm thi đua --</option>
+                  {importBattleRooms.map(r => (
+                    <option key={r.id} value={r.id}>
+                      {r.title} (PIN: {r.pinCode}) - {r._count?.players || 0} SV
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', color: '#000', fontWeight: 700 }}
+                  onClick={() => {
+                    const sel = document.getElementById('import-battle-select') as HTMLSelectElement;
+                    if (sel && sel.value) {
+                      importFromBattleRoom(sel.value);
+                    } else {
+                      showToast('Vui lòng chọn 1 phòng đấu trường', 'warning');
+                    }
+                  }}
+                >
+                  Đồng bộ điểm
+                </button>
+              </div>
+            </div>
+
+            {/* Cách 3: Paste danh sách text */}
             <div>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.4rem' }}>
-                📝 Cách 2: Dán danh sách học viên (Mỗi dòng 1 học viên)
+                📝 Cách 3: Dán danh sách học viên (Mỗi dòng 1 học viên)
               </div>
               <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0 0 0.4rem' }}>
                 Định dạng: <code>Họ và tên, Mã SV, Lớp</code> (hoặc copy từ Excel sang)

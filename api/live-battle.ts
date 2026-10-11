@@ -411,6 +411,105 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, message: 'Đã xóa phòng đấu trường' });
     }
 
+    // 10. ĐỒNG BỘ KẾT QUẢ ĐẤU TRƯỜNG SANG BẢNG VINH DANH (SYNC TO LEADERBOARD)
+    if (action === 'sync-to-leaderboard') {
+      if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
+      const { roomId, targetGroupId, targetGroupName } = req.body;
+
+      if (!roomId) return res.status(400).json({ message: 'Thiếu roomId' });
+
+      const room = await (prisma as any).liveBattleRoom.findUnique({
+        where: { id: roomId },
+        include: {
+          players: {
+            orderBy: { totalScore: 'desc' }
+          }
+        }
+      });
+
+      if (!room) return res.status(404).json({ message: 'Không tìm thấy phòng đấu trường' });
+      const players = room.players || [];
+      if (players.length === 0) {
+        return res.status(400).json({ message: 'Phòng thi này chưa có học viên tham gia nào!' });
+      }
+
+      // Xác định nhóm thi đua đích (hoặc tạo mới nếu chưa có)
+      let groupId = targetGroupId;
+      if (!groupId) {
+        const groupName = targetGroupName?.trim() || `${room.title} (Đấu trường)`;
+        const newGroup = await prisma.leaderboardGroup.create({
+          data: {
+            userId: room.userId,
+            name: groupName,
+            description: `Tự động lưu từ kết quả đấu trường Live Battle ngày ${new Date().toLocaleDateString('vi-VN')}`
+          }
+        });
+        groupId = newGroup.id;
+      }
+
+      // Thêm / cộng điểm cho từng học viên vào Leaderboard
+      let syncedCount = 0;
+      for (let idx = 0; idx < players.length; idx++) {
+        const p = players[idx];
+        const sName = p.nickname.trim();
+        const sId = p.studentId?.trim() || `LB_${p.id.slice(-6)}`;
+        const cName = p.className?.trim() || null;
+        const pts = Math.max(0, p.totalScore || 0);
+
+        // Quy đổi điểm đấu trường thành điểm tích lũy thi đua:
+        // Điểm thưởng xếp hạng Top 3 + Điểm theo tỷ lệ 100 pts đấu trường = 1 điểm thi đua (tối thiểu 1đ nếu có tham gia)
+        let rankBonus = 0;
+        if (idx === 0) rankBonus = 10; // Quán Quân +10đ
+        else if (idx === 1) rankBonus = 7; // Á Quân +7đ
+        else if (idx === 2) rankBonus = 5; // Quý Quân +5đ
+        const battlePoints = Math.max(1, Math.round(pts / 100)) + rankBonus;
+
+        const scoreRecord = await prisma.studentScore.upsert({
+          where: {
+            groupId_studentId: {
+              groupId,
+              studentId: sId
+            }
+          },
+          update: {
+            studentName: sName,
+            className: cName || undefined,
+            avatar: p.avatarEmoji || undefined,
+            totalPoints: { increment: battlePoints },
+            streak: { increment: 1 }
+          },
+          create: {
+            groupId,
+            studentName: sName,
+            studentId: sId,
+            className: cName,
+            avatar: p.avatarEmoji || '🦊',
+            totalPoints: battlePoints,
+            level: Math.max(1, Math.floor(battlePoints / 10) + 1),
+            streak: 1
+          }
+        });
+
+        // Ghi transaction lịch sử
+        await prisma.pointTransaction.create({
+          data: {
+            studentScoreId: scoreRecord.id,
+            points: battlePoints,
+            reason: `Về đích Hạng #${idx + 1} Đấu trường Live Battle "${room.title}" (${pts} pts)`
+          }
+        });
+
+        syncedCount++;
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: `Đã vinh danh và cộng điểm thành công cho ${syncedCount} dũng sĩ vào Bảng Vinh Danh!`,
+        groupId,
+        syncedCount
+      });
+    }
+
     return res.status(404).json({ message: 'Không tìm thấy action API LiveBattle' });
   } catch (error: any) {
     console.error('[LiveBattle API Error]', error);

@@ -4,7 +4,7 @@ import {
   Play, Users, Trophy, Volume2, VolumeX, Flame, 
   RotateCcw, Sparkles, ChevronRight, Award, 
   Clock, ArrowLeft, Plus, Trash2, Layers,
-  Copy, Check, Swords, AlertCircle
+  Copy, Check, Swords, AlertCircle, ArrowUpRight, ListOrdered
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
@@ -33,7 +33,7 @@ interface PlayerItem {
 }
 
 export default function LiveBattleHost() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const { showToast } = useNotification();
@@ -42,6 +42,12 @@ export default function LiveBattleHost() {
   // Danh sách phòng của GV
   const [rooms, setRooms] = useState<any[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(false);
+
+  // Danh sách nhóm bảng vinh danh để chọn đồng bộ
+  const [leaderboardGroups, setLeaderboardGroups] = useState<any[]>([]);
+  const [isSyncingLeaderboard, setIsSyncingLeaderboard] = useState(false);
+  const [selectedLeaderboardGroupId, setSelectedLeaderboardGroupId] = useState('');
+  const [showSyncModal, setShowSyncModal] = useState(false);
 
   // Modal tạo phòng
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
@@ -271,6 +277,54 @@ export default function LiveBattleHost() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  // Tải danh sách nhóm Bảng Vinh Danh
+  const loadLeaderboardGroups = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch('/api/leaderboard?action=get-my-groups', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeaderboardGroups(data.groups || []);
+        if (data.groups && data.groups.length > 0) {
+          setSelectedLeaderboardGroupId(data.groups[0].id);
+        }
+      }
+    } catch (err) {
+      console.error('Lỗi tải nhóm vinh danh:', err);
+    }
+  };
+
+  // Đồng bộ kết quả đấu trường sang Bảng Vinh Danh
+  const handleSyncToLeaderboard = async () => {
+    if (!currentRoom) return;
+    setIsSyncingLeaderboard(true);
+    try {
+      const res = await fetch('/api/live-battle?action=sync-to-leaderboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roomId: currentRoom.id,
+          targetGroupId: selectedLeaderboardGroupId || undefined,
+          targetGroupName: `${currentRoom.title} (Đấu trường)`
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        showToast(data.message || 'Đã đồng bộ sang Bảng Vinh Danh!', 'success');
+        setShowSyncModal(false);
+      } else {
+        showAlert(data.message || 'Không thể đồng bộ', 'Lỗi đồng bộ');
+      }
+    } catch (err: any) {
+      showAlert(err.message || 'Lỗi kết nối máy chủ', 'Lỗi đồng bộ');
+    } finally {
+      setIsSyncingLeaderboard(false);
     }
   };
 
@@ -669,6 +723,72 @@ export default function LiveBattleHost() {
               )}
             </div>
 
+            {/* BẢNG TỔNG SẮP TOÀN BỘ HỌC VIÊN THAM GIA ĐẤU TRƯỜNG */}
+            <div className="battle-all-players-card">
+              <div className="all-players-header">
+                <h3>
+                  <ListOrdered size={22} color="#f59e0b" />
+                  Bảng Tổng Sắp & Danh Sách Học Viên Tham Gia ({players.length} dũng sĩ)
+                </h3>
+                <span className="all-players-hint">Toàn bộ kết quả, điểm số và chuỗi trả lời đúng</span>
+              </div>
+
+              {players.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: '#94a3b8' }}>
+                  Chưa có thông tin học viên nào tham gia vòng đấu này.
+                </div>
+              ) : (
+                <div className="all-players-table-wrapper">
+                  <table className="battle-players-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '60px', textAlign: 'center' }}>Hạng</th>
+                        <th>Học viên</th>
+                        <th>MSSV</th>
+                        <th>Lớp</th>
+                        <th style={{ textAlign: 'center' }}>Chuỗi đúng</th>
+                        <th style={{ textAlign: 'center' }}>Đúng/Tổng</th>
+                        <th style={{ textAlign: 'right' }}>Tổng điểm</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {players.map((p, idx) => {
+                        const correctCount = (p.answers || []).filter((a: any) => a.isCorrect).length;
+                        return (
+                          <tr key={p.id} className={idx < 3 ? `top-rank-row rank-${idx + 1}` : ''}>
+                            <td style={{ textAlign: 'center', fontWeight: 800 }}>
+                              {idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`}
+                            </td>
+                            <td>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                <span style={{ fontSize: '1.4rem' }}>{p.avatarEmoji || '🦊'}</span>
+                                <span style={{ fontWeight: 700 }}>{p.nickname}</span>
+                              </div>
+                            </td>
+                            <td style={{ color: '#94a3b8', fontFamily: 'monospace' }}>{p.studentId || '—'}</td>
+                            <td style={{ color: '#cbd5e1' }}>{p.className || '—'}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              {p.streak > 1 ? (
+                                <span className="streak-tag">🔥 {p.streak}</span>
+                              ) : (
+                                <span style={{ color: '#64748b' }}>—</span>
+                              )}
+                            </td>
+                            <td style={{ textAlign: 'center', fontWeight: 600 }}>
+                              <span style={{ color: '#10b981' }}>{correctCount}</span> / {totalQ}
+                            </td>
+                            <td style={{ textAlign: 'right', fontWeight: 800, color: '#f59e0b', fontSize: '1.1rem' }}>
+                              {p.totalScore.toLocaleString()} pts
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
             <div className="podium-actions">
               <button 
                 className="btn-restart"
@@ -676,10 +796,85 @@ export default function LiveBattleHost() {
               >
                 <RotateCcw size={18} /> Chơi Lại Từ Đầu
               </button>
-              <Link to="/bang-vinh-danh" className="btn-sync-leaderboard">
-                <Trophy size={18} /> Mở Bảng Vinh Danh Lớp Học
+
+              <button 
+                className="btn-sync-leaderboard"
+                onClick={() => {
+                  loadLeaderboardGroups();
+                  setShowSyncModal(true);
+                }}
+              >
+                <Trophy size={18} /> Lưu & Vinh Danh Vào Bảng Điểm Lớp
+              </button>
+
+              <Link to="/bang-vinh-danh" className="btn-view-leaderboard-link">
+                <ArrowUpRight size={18} /> Xem Trang Bảng Vinh Danh
               </Link>
             </div>
+
+            {/* MODAL XÁC NHẬN ĐỒNG BỘ VÀO BẢNG VINH DANH */}
+            {showSyncModal && (
+              <div className="battle-modal-overlay" onClick={() => setShowSyncModal(false)}>
+                <div className="battle-modal-card" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+                  <div className="battle-modal-header">
+                    <div className="battle-modal-title-group">
+                      <div className="battle-modal-icon-badge" style={{ background: '#f59e0b', color: '#000' }}>
+                        <Trophy size={22} />
+                      </div>
+                      <div>
+                        <h3 className="battle-modal-title">Lưu Vào Bảng Vinh Danh Lớp</h3>
+                        <p className="battle-modal-subtitle">Cộng điểm tích lũy thi đua học tập cho toàn bộ học viên</p>
+                      </div>
+                    </div>
+                    <button type="button" className="battle-modal-close" onClick={() => setShowSyncModal(false)}>✕</button>
+                  </div>
+
+                  <div className="battle-modal-body" style={{ padding: '1.5rem' }}>
+                    <div style={{ padding: '1rem', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)', borderRadius: '12px', marginBottom: '1.25rem', fontSize: '0.9rem', color: '#fef08a' }}>
+                      ✨ <strong>Cơ chế cộng điểm thi đua:</strong><br />
+                      • Top 1 (Quán Quân): +10đ thưởng<br />
+                      • Top 2 (Á Quân): +7đ thưởng<br />
+                      • Top 3 (Quý Quân): +5đ thưởng<br />
+                      • Tất cả dũng sĩ: Quy đổi 100 điểm đấu trường = 1 điểm tích lũy học tập.
+                    </div>
+
+                    <div className="battle-form-group">
+                      <label className="battle-form-label">
+                        <span>Chọn nhóm / lớp thi đua nhận điểm:</span>
+                      </label>
+                      <select 
+                        value={selectedLeaderboardGroupId} 
+                        onChange={e => setSelectedLeaderboardGroupId(e.target.value)}
+                        className="battle-modal-select"
+                        style={{ color: '#fff', background: '#1e293b' }}
+                      >
+                        <option value="">+ Tự động tạo nhóm mới: "{currentRoom.title} (Đấu trường)"</option>
+                        {leaderboardGroups.map(g => (
+                          <option key={g.id} value={g.id}>
+                            {g.name} {g.className ? `(Lớp: ${g.className})` : ''} - {g._count?.students || 0} SV
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1.5rem' }}>
+                      <button type="button" className="btn btn-outline" onClick={() => setShowSyncModal(false)}>
+                        Hủy
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn btn-primary" 
+                        onClick={handleSyncToLeaderboard}
+                        disabled={isSyncingLeaderboard}
+                        style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)', border: 'none', color: '#000', fontWeight: 800 }}
+                      >
+                        {isSyncingLeaderboard ? 'Đang lưu...' : '⚡ Xác Nhận Lưu & Cộng Điểm'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
