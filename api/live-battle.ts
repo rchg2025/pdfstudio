@@ -30,6 +30,8 @@ async function ensureTables(prisma: any) {
         "studentId" TEXT,
         "className" TEXT,
         "avatarEmoji" TEXT NOT NULL DEFAULT '🦊',
+        "teamId" TEXT,
+        "teamName" TEXT,
         "totalScore" INTEGER NOT NULL DEFAULT 0,
         "streak" INTEGER NOT NULL DEFAULT 0,
         "isOnline" BOOLEAN NOT NULL DEFAULT true,
@@ -39,6 +41,12 @@ async function ensureTables(prisma: any) {
         CONSTRAINT "LiveBattlePlayer_roomId_nickname_key" UNIQUE ("roomId", "nickname")
       )
     `);
+
+    // Ensure columns teamId, teamName exist if table already created
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "LiveBattlePlayer" ADD COLUMN IF NOT EXISTS "teamId" TEXT;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "LiveBattlePlayer" ADD COLUMN IF NOT EXISTS "teamName" TEXT;`);
+    } catch {}
 
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "LiveBattleAnswer" (
@@ -157,7 +165,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           title: true,
           status: true,
           timePerQuestion: true,
-          currentQuestionIndex: true
+          currentQuestionIndex: true,
+          settings: true
         }
       });
 
@@ -168,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // 5. SINH VIÊN THAM GIA PHÒNG (JOIN ROOM)
     if (action === 'join-room') {
       if (req.method !== 'POST') return res.status(405).json({ message: 'Method not allowed' });
-      const { pinCode, nickname, studentId, className, avatarEmoji } = req.body;
+      const { pinCode, nickname, studentId, className, avatarEmoji, teamId, teamName } = req.body;
 
       if (!pinCode || !nickname) {
         return res.status(400).json({ message: 'Vui lòng nhập Mã PIN và Biệt danh' });
@@ -197,6 +206,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           studentId: studentId?.trim() || undefined,
           className: className?.trim() || undefined,
           avatarEmoji: avatarEmoji || '🦊',
+          teamId: teamId || undefined,
+          teamName: teamName || undefined,
           isOnline: true
         },
         create: {
@@ -205,6 +216,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           studentId: studentId?.trim() || null,
           className: className?.trim() || null,
           avatarEmoji: avatarEmoji || '🦊',
+          teamId: teamId || null,
+          teamName: teamName || null,
           totalScore: 0,
           streak: 0,
           isOnline: true
@@ -220,7 +233,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           title: room.title,
           status: room.status,
           currentQuestionIndex: room.currentQuestionIndex,
-          timePerQuestion: room.timePerQuestion
+          timePerQuestion: room.timePerQuestion,
+          settings: room.settings
         }
       });
     }

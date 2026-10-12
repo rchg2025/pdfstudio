@@ -292,6 +292,8 @@ model LiveBattlePlayer {
   studentId        String?            // Mã số sinh viên
   className        String?            // Lớp học
   avatarEmoji      String             @default("🦊") // Emoji đại diện
+  teamId           String?            // ID Đội (ví dụ 'red', 'blue', 'yellow', 'green', 'purple', 'orange')
+  teamName         String?            // Tên Đội (ví dụ 'Team Đỏ 🔴', 'Team Xanh 🔵')
   totalScore       Int                @default(0) // Tổng điểm tích lũy
   streak           Int                @default(0) // Chuỗi câu trả lời đúng liên tiếp
   isOnline         Boolean            @default(true)

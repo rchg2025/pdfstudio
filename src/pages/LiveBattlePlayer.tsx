@@ -18,8 +18,33 @@ export default function LiveBattlePlayer() {
   const [studentId, setStudentId] = useState('');
   const [className, setClassName] = useState('');
   const [avatarEmoji, setAvatarEmoji] = useState(EMOJI_LIST[0]);
+  const [selectedTeamId, setSelectedTeamId] = useState<string>('red');
+  const [roomPreview, setRoomPreview] = useState<any | null>(null);
   const [isJoining, setIsJoining] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  // Tự động kiểm tra phòng khi mã PIN đủ 6 số
+  useEffect(() => {
+    const cleanPin = pinCode.trim();
+    if (cleanPin.length === 6) {
+      fetch(`/api/live-battle?action=find-by-pin&pinCode=${encodeURIComponent(cleanPin)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && data.room) {
+            setRoomPreview(data.room);
+            const rSettings = data.room.settings || {};
+            if (rSettings.battleMode === 'team' && Array.isArray(rSettings.teams) && rSettings.teams.length > 0) {
+              setSelectedTeamId(rSettings.teams[0].id);
+            }
+          } else {
+            setRoomPreview(null);
+          }
+        })
+        .catch(() => setRoomPreview(null));
+    } else {
+      setRoomPreview(null);
+    }
+  }, [pinCode]);
 
   // Thông tin sau khi vào phòng
   const [player, setPlayer] = useState<any | null>(null);
@@ -61,6 +86,9 @@ export default function LiveBattlePlayer() {
     setErrorMsg('');
 
     try {
+      const roomTeams = roomPreview?.settings?.teams || [];
+      const currentTeam = roomTeams.find((t: any) => t.id === selectedTeamId);
+
       const res = await fetch('/api/live-battle?action=join-room', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -69,7 +97,9 @@ export default function LiveBattlePlayer() {
           nickname: nickname.trim(),
           studentId: studentId.trim() || undefined,
           className: className.trim() || undefined,
-          avatarEmoji
+          avatarEmoji,
+          teamId: currentTeam?.id || undefined,
+          teamName: currentTeam?.name || undefined
         })
       });
 
@@ -246,6 +276,44 @@ export default function LiveBattlePlayer() {
               />
             </div>
 
+            {/* CHỌN ĐỘI KHI PHÒNG BẬT CHẾ ĐỘ TEAM BATTLE */}
+            {roomPreview?.settings?.battleMode === 'team' && Array.isArray(roomPreview.settings.teams) && roomPreview.settings.teams.length > 0 && (
+              <div className="form-group" style={{ background: '#f8fafc', padding: '0.85rem', borderRadius: '12px', border: '1.5px dashed #cbd5e1' }}>
+                <label style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#1e293b', fontWeight: 800 }}>
+                  <span>⚔️ CHỌN ĐỘI LIÊN MINH:</span>
+                  <span style={{ fontSize: '0.78rem', color: '#3b82f6' }}>Team Battle</span>
+                </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem', marginTop: '0.5rem' }}>
+                  {roomPreview.settings.teams.map((t: any) => {
+                    const isSelected = selectedTeamId === t.id;
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => setSelectedTeamId(t.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.45rem',
+                          padding: '0.55rem 0.65rem',
+                          borderRadius: '8px',
+                          border: `2px solid ${isSelected ? t.color : '#e2e8f0'}`,
+                          background: isSelected ? `${t.color}15` : '#fff',
+                          cursor: 'pointer',
+                          fontWeight: 700,
+                          fontSize: '0.86rem',
+                          color: isSelected ? t.color : '#475569',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        <span style={{ fontSize: '1.2rem' }}>{t.mascot}</span>
+                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="form-group">
               <label>Chọn linh vật Avatar:</label>
               <div className="emoji-picker-row">
@@ -286,6 +354,23 @@ export default function LiveBattlePlayer() {
           <div className="wait-avatar-box">
             <span className="wait-emoji">{player.avatarEmoji}</span>
             <h2 className="wait-name">{player.nickname}</h2>
+            {player.teamName && (
+              <span style={{ 
+                marginTop: '0.35rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.35rem',
+                background: 'rgba(255, 255, 255, 0.15)',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '9999px',
+                fontSize: '0.85rem',
+                fontWeight: 800,
+                color: '#fff',
+                border: '1px solid rgba(255, 255, 255, 0.3)'
+              }}>
+                ⚔️ {player.teamName}
+              </span>
+            )}
             {player.studentId && <span className="wait-mssv">MSSV: {player.studentId}</span>}
           </div>
 
@@ -315,6 +400,11 @@ export default function LiveBattlePlayer() {
           <div className="p-stat-item">
             <span className="p-avatar">{player.avatarEmoji}</span>
             <span className="p-name">{player.nickname}</span>
+            {player.teamName && (
+              <span style={{ fontSize: '0.72rem', background: 'rgba(255,255,255,0.15)', padding: '0.15rem 0.45rem', borderRadius: 9999, fontWeight: 700 }}>
+                {player.teamName}
+              </span>
+            )}
           </div>
 
           <div className="p-stat-item">

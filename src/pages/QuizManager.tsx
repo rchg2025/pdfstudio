@@ -812,6 +812,7 @@ export default function QuizManager() {
       'Tổng điểm đạt',
       'Tỷ lệ %',
       'Xếp loại',
+      'Vi phạm rời tab (lần)',
       'Thời gian làm bài (giây)',
       'Thời gian nộp bài'
     ];
@@ -825,6 +826,7 @@ export default function QuizManager() {
       `${s.score}/${s.totalPoints}`,
       `${s.percentage}%`,
       s.passed ? 'ĐẠT' : 'CHƯA ĐẠT',
+      s.violationCount || 0,
       s.timeSpentSeconds || 0,
       new Date(s.submittedAt).toLocaleString('vi-VN')
     ]);
@@ -834,14 +836,15 @@ export default function QuizManager() {
 
     ws['!cols'] = [
       { wch: 6 },
-      { wch: 26 },
-      { wch: 16 },
+      { wch: 25 },
+      { wch: 18 },
       { wch: 18 },
       { wch: 14 },
       { wch: 15 },
       { wch: 12 },
       { wch: 14 },
-      { wch: 22 },
+      { wch: 22 }, // Vi phạm rời tab
+      { wch: 24 },
       { wch: 22 }
     ];
 

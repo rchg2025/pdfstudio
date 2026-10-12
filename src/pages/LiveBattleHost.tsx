@@ -29,10 +29,20 @@ interface PlayerItem {
   studentId?: string;
   className?: string;
   avatarEmoji: string;
+  teamId?: string;
+  teamName?: string;
   totalScore: number;
   streak: number;
   answers?: any[];
 }
+
+export const PRESET_TEAMS = [
+  { id: 'red', name: 'Team Đỏ 🔴', color: '#ef4444', mascot: '🦁' },
+  { id: 'blue', name: 'Team Xanh 🔵', color: '#3b82f6', mascot: '🦅' },
+  { id: 'yellow', name: 'Team Vàng 🟡', color: '#f59e0b', mascot: '🐯' },
+  { id: 'green', name: 'Team Lục 🟢', color: '#10b981', mascot: '🐲' },
+  { id: 'purple', name: 'Team Tím 🟣', color: '#8b5cf6', mascot: '🦄' }
+];
 
 export default function LiveBattleHost() {
   const { user, token } = useAuth();
@@ -58,6 +68,8 @@ export default function LiveBattleHost() {
   const [isCreatingRoom, setIsCreatingRoom] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [timePerQ, setTimePerQ] = useState(20);
+  const [battleMode, setBattleMode] = useState<'individual' | 'team'>('individual');
+  const [teamCount, setTeamCount] = useState<number>(3);
   const [quizSource, setQuizSource] = useState<'bank' | 'manual' | 'custom'>('manual');
   const [myQuizPackages, setMyQuizPackages] = useState<any[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState('');
@@ -494,7 +506,12 @@ export default function LiveBattleHost() {
           userId: user.id,
           title: newTitle.trim(),
           timePerQuestion: timePerQ,
-          questions: finalQuestions
+          questions: finalQuestions,
+          settings: {
+            battleMode,
+            teamCount: battleMode === 'team' ? teamCount : undefined,
+            teams: battleMode === 'team' ? PRESET_TEAMS.slice(0, teamCount) : undefined
+          }
         })
       });
       const data = await res.json();
@@ -568,10 +585,13 @@ export default function LiveBattleHost() {
 
     const totalQ = Array.isArray(room.questions) ? room.questions.length : 0;
     
+    const isTeamRoom = room.settings?.battleMode === 'team';
+    
     // Header thông tin chung
     const headerInfo = [
       ['BẢNG XẾP HẠNG & DANH SÁCH HỌC VIÊN - ĐẤU TRƯỜNG TRỰC TIẾP'],
       ['Tên phòng thi:', room.title],
+      ['Hình thức thi đấu:', isTeamRoom ? 'Đấu Đội Kháng Chiến (Team Battle)' : 'Cá Nhân Tự Do (Free For All)'],
       ['Mã PIN phòng:', room.pinCode],
       ['Thời gian mỗi câu:', `${room.timePerQuestion || 20} giây/câu`],
       ['Tổng số câu hỏi:', `${totalQ} câu`],
@@ -583,6 +603,7 @@ export default function LiveBattleHost() {
     const tableHeaders = [
       'Thứ hạng',
       'Họ và tên học viên',
+      ...(isTeamRoom ? ['Đội thi đấu'] : []),
       'Mã số sinh viên (MSSV)',
       'Lớp học',
       'Tổng điểm (pts)',
@@ -597,6 +618,7 @@ export default function LiveBattleHost() {
       return [
         idx === 0 ? 'Hạng 1 (Quán quân)' : idx === 1 ? 'Hạng 2 (Á quân)' : idx === 2 ? 'Hạng 3 (Quý quân)' : `Hạng ${idx + 1}`,
         p.nickname,
+        ...(isTeamRoom ? [p.teamName || 'Chưa vào đội'] : []),
         p.studentId || '',
         p.className || '',
         p.totalScore,
@@ -613,6 +635,7 @@ export default function LiveBattleHost() {
     ws['!cols'] = [
       { wch: 20 }, // Thứ hạng
       { wch: 28 }, // Họ và tên
+      ...(isTeamRoom ? [{ wch: 20 }] : []), // Đội
       { wch: 22 }, // MSSV
       { wch: 18 }, // Lớp học
       { wch: 18 }, // Tổng điểm
@@ -638,6 +661,22 @@ export default function LiveBattleHost() {
     const currentQ = questions[currentRoom.currentQuestionIndex];
     const players: PlayerItem[] = currentRoom.players || [];
     const totalQ = questions.length;
+    const isTeamMode = currentRoom.settings?.battleMode === 'team';
+    const roomTeams: any[] = currentRoom.settings?.teams || PRESET_TEAMS.slice(0, 3);
+
+    // Tính toán tổng điểm và điểm trung bình cho từng đội
+    const teamStats = roomTeams.map(t => {
+      const teamPlayers = players.filter(p => p.teamId === t.id);
+      const totalScore = teamPlayers.reduce((acc, cur) => acc + (cur.totalScore || 0), 0);
+      const avgScore = teamPlayers.length > 0 ? Math.round(totalScore / teamPlayers.length) : 0;
+      return {
+        ...t,
+        players: teamPlayers,
+        playerCount: teamPlayers.length,
+        totalScore,
+        avgScore
+      };
+    }).sort((a, b) => b.totalScore - a.totalScore);
 
     return (
       <div className="battle-host-screen">
@@ -723,6 +762,32 @@ export default function LiveBattleHost() {
                   <div className="pulse-radar"></div>
                   <p>Đang đợi các dũng sĩ gia nhập phòng...</p>
                 </div>
+              ) : isTeamMode ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                  {teamStats.map(team => (
+                    <div key={team.id} style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 12, padding: '0.75rem 1rem', border: `1.5px solid ${team.color}50` }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontWeight: 800, color: team.color, display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.95rem' }}>
+                          <span style={{ fontSize: '1.2rem' }}>{team.mascot}</span> {team.name}
+                        </span>
+                        <span style={{ fontSize: '0.8rem', background: 'rgba(255,255,255,0.1)', padding: '0.15rem 0.5rem', borderRadius: 20 }}>
+                          {team.playerCount} thành viên
+                        </span>
+                      </div>
+                      <div className="lobby-players-grid">
+                        {team.players.map((p: any) => (
+                          <div key={p.id} className="player-lobby-chip" style={{ borderLeft: `3px solid ${team.color}` }}>
+                            <span className="player-emoji">{p.avatarEmoji || '🦊'}</span>
+                            <span className="player-name">{p.nickname}</span>
+                          </div>
+                        ))}
+                        {team.playerCount === 0 && (
+                          <span style={{ fontSize: '0.8rem', color: '#94a3b8', fontStyle: 'italic' }}>Chưa có thành viên</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="lobby-players-grid">
                   {players.map((p, idx) => (
@@ -780,29 +845,79 @@ export default function LiveBattleHost() {
               <p>Top học viên có điểm số cao nhất hiện tại</p>
             </div>
 
-            <div className="leaderboard-list">
-              {players.slice(0, 5).map((p, idx) => (
-                <div key={p.id} className={`leaderboard-row rank-${idx + 1}`}>
-                  <div className="rank-pos">#{idx + 1}</div>
-                  <div className="rank-avatar">{p.avatarEmoji || '🦊'}</div>
-                  <div className="rank-name-box">
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
-                      <span className="rank-name">{p.nickname}</span>
-                      {p.studentId && (
-                        <span className="rank-badge-sub">MSSV: {p.studentId}</span>
-                      )}
-                      {p.className && (
-                        <span className="rank-badge-sub">Lớp: {p.className}</span>
+            {/* NẾU LÀ ĐẤU ĐỘI: HIỂN THỊ BẢNG ĐIỂM CÁC ĐỘI LIÊN MINH */}
+            {isTeamMode ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '800px', margin: '0 auto 1.5rem' }}>
+                {teamStats.map((team, idx) => (
+                  <div 
+                    key={team.id} 
+                    style={{ 
+                      background: 'rgba(15, 23, 42, 0.75)', 
+                      borderRadius: 16, 
+                      padding: '1.25rem 1.5rem', 
+                      border: `2px solid ${team.color}`,
+                      boxShadow: `0 8px 25px ${team.color}30`
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{ fontSize: '1.75rem' }}>{team.mascot}</span>
+                        <div>
+                          <div style={{ fontSize: '1.2rem', fontWeight: 900, color: team.color }}>
+                            #{idx + 1} {team.name}
+                          </div>
+                          <span style={{ fontSize: '0.82rem', color: '#94a3b8' }}>
+                            {team.playerCount} thành viên • Điểm TB: {team.avgScore} pts
+                          </span>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '1.6rem', fontWeight: 900, color: '#38bdf8' }}>
+                          {team.totalScore.toLocaleString()} pts
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Thanh năng lượng điểm số */}
+                    <div style={{ height: 10, background: 'rgba(255,255,255,0.1)', borderRadius: 9999, overflow: 'hidden' }}>
+                      <div 
+                        style={{ 
+                          height: '100%', 
+                          width: `${teamStats[0]?.totalScore > 0 ? Math.min(100, (team.totalScore / teamStats[0].totalScore) * 100) : 0}%`, 
+                          background: team.color,
+                          borderRadius: 9999,
+                          transition: 'width 0.8s ease'
+                        }} 
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="leaderboard-list">
+                {players.slice(0, 5).map((p, idx) => (
+                  <div key={p.id} className={`leaderboard-row rank-${idx + 1}`}>
+                    <div className="rank-pos">#{idx + 1}</div>
+                    <div className="rank-avatar">{p.avatarEmoji || '🦊'}</div>
+                    <div className="rank-name-box">
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                        <span className="rank-name">{p.nickname}</span>
+                        {p.studentId && (
+                          <span className="rank-badge-sub">MSSV: {p.studentId}</span>
+                        )}
+                        {p.className && (
+                          <span className="rank-badge-sub">Lớp: {p.className}</span>
+                        )}
+                      </div>
+                      {p.streak > 1 && (
+                        <span className="rank-streak"><Flame size={14} /> Chuỗi đúng {p.streak} câu liên tiếp 🔥</span>
                       )}
                     </div>
-                    {p.streak > 1 && (
-                      <span className="rank-streak"><Flame size={14} /> Chuỗi đúng {p.streak} câu liên tiếp 🔥</span>
-                    )}
+                    <div className="rank-score">{p.totalScore.toLocaleString()} pts</div>
                   </div>
-                  <div className="rank-score">{p.totalScore.toLocaleString()} pts</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
 
             <div className="leaderboard-actions">
               {currentRoom.currentQuestionIndex + 1 < totalQ ? (
@@ -833,6 +948,46 @@ export default function LiveBattleHost() {
               <p>Xin chúc mừng các học viên xuất sắc nhất của buổi học!</p>
             </div>
 
+            {/* BỤC VINH DANH ĐỘI VÔ ĐỊCH (NẾU LÀ ĐẤU ĐỘI) */}
+            {isTeamMode && teamStats.length > 0 && (
+              <div className="team-podium-section" style={{ marginBottom: '2.5rem', width: '100%', maxWidth: '800px' }}>
+                <h3 style={{ textAlign: 'center', color: '#f59e0b', fontSize: '1.25rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                  <span>🛡️</span> LIÊN MINH ĐỘI QUÁN QUÂN <span>🏆</span>
+                </h3>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(teamStats.length, 3)}, 1fr)`, gap: '1rem' }}>
+                  {teamStats.slice(0, 3).map((team, idx) => (
+                    <div 
+                      key={team.id}
+                      style={{
+                        background: idx === 0 
+                          ? 'linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(15, 23, 42, 0.9))' 
+                          : 'rgba(30, 41, 59, 0.85)',
+                        border: `2px solid ${idx === 0 ? '#f59e0b' : idx === 1 ? '#94a3b8' : '#cd7f32'}`,
+                        borderRadius: '16px',
+                        padding: '1.25rem 1rem',
+                        textAlign: 'center',
+                        position: 'relative',
+                        boxShadow: idx === 0 ? '0 10px 25px -5px rgba(245, 158, 11, 0.3)' : 'none'
+                      }}
+                    >
+                      <div style={{ fontSize: '1.8rem', position: 'absolute', top: '-14px', right: '12px' }}>
+                        {idx === 0 ? '👑' : idx === 1 ? '🥈' : '🥉'}
+                      </div>
+                      <div style={{ fontSize: '2.5rem', marginBottom: '0.4rem' }}>{team.mascot}</div>
+                      <div style={{ fontWeight: 800, fontSize: '1.1rem', color: team.color }}>{team.name}</div>
+                      <div style={{ fontSize: '0.8rem', color: '#94a3b8', margin: '0.2rem 0 0.5rem' }}>{team.count} thành viên</div>
+                      <div style={{ fontSize: '1.25rem', fontWeight: 900, color: '#fef08a' }}>
+                        {team.totalScore.toLocaleString()} <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>pts</span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: '#38bdf8', marginTop: '0.25rem' }}>
+                        ĐTB: {team.avgScore.toLocaleString()} pts/người
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="podium-stage">
               {/* Hạng 2 */}
               {players[1] && (
@@ -841,6 +996,11 @@ export default function LiveBattleHost() {
                     <span className="step-medal">🥈 Á Quân</span>
                     <span className="step-emoji">{players[1].avatarEmoji}</span>
                     <span className="step-name">{players[1].nickname}</span>
+                    {isTeamMode && players[1].teamName && (
+                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>
+                        {players[1].teamName}
+                      </span>
+                    )}
                     <span className="step-score">{players[1].totalScore.toLocaleString()} pts</span>
                   </div>
                   <div className="step-block block-2">2</div>
@@ -855,6 +1015,11 @@ export default function LiveBattleHost() {
                     <span className="step-medal">🥇 Quán Quân</span>
                     <span className="step-emoji">{players[0].avatarEmoji}</span>
                     <span className="step-name">{players[0].nickname}</span>
+                    {isTeamMode && players[0].teamName && (
+                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>
+                        {players[0].teamName}
+                      </span>
+                    )}
                     <span className="step-score">{players[0].totalScore.toLocaleString()} pts</span>
                   </div>
                   <div className="step-block block-1">1</div>
@@ -868,6 +1033,11 @@ export default function LiveBattleHost() {
                     <span className="step-medal">🥉 Quý Quân</span>
                     <span className="step-emoji">{players[2].avatarEmoji}</span>
                     <span className="step-name">{players[2].nickname}</span>
+                    {isTeamMode && players[2].teamName && (
+                      <span style={{ fontSize: '0.8rem', color: '#cbd5e1', background: 'rgba(255,255,255,0.1)', padding: '2px 8px', borderRadius: '12px' }}>
+                        {players[2].teamName}
+                      </span>
+                    )}
                     <span className="step-score">{players[2].totalScore.toLocaleString()} pts</span>
                   </div>
                   <div className="step-block block-3">3</div>
@@ -896,6 +1066,7 @@ export default function LiveBattleHost() {
                       <tr>
                         <th style={{ width: '60px', textAlign: 'center' }}>Hạng</th>
                         <th>Học viên</th>
+                        {isTeamMode && <th>Đội</th>}
                         <th>MSSV</th>
                         <th>Lớp</th>
                         <th style={{ textAlign: 'center' }}>Chuỗi đúng</th>
@@ -917,6 +1088,22 @@ export default function LiveBattleHost() {
                                 <span style={{ fontWeight: 700 }}>{p.nickname}</span>
                               </div>
                             </td>
+                            {isTeamMode && (
+                              <td>
+                                <span style={{ 
+                                  display: 'inline-block',
+                                  padding: '2px 8px', 
+                                  borderRadius: '6px', 
+                                  fontSize: '0.85rem',
+                                  fontWeight: 600,
+                                  background: 'rgba(255,255,255,0.08)',
+                                  color: '#e2e8f0',
+                                  border: '1px solid rgba(255,255,255,0.15)'
+                                }}>
+                                  {p.teamName || '—'}
+                                </span>
+                              </td>
+                            )}
                             <td style={{ color: '#94a3b8', fontFamily: 'monospace' }}>{p.studentId || '—'}</td>
                             <td style={{ color: '#cbd5e1' }}>{p.className || '—'}</td>
                             <td style={{ textAlign: 'center' }}>
@@ -1198,6 +1385,75 @@ export default function LiveBattleHost() {
                   </select>
                 </div>
 
+                {/* CHỌN HÌNH THỨC THI ĐẤU: CÁ NHÂN HOẶC ĐỘI NHÓM */}
+                <div className="battle-form-group">
+                  <label className="battle-form-label">
+                    <span>Hình thức thi đấu</span>
+                    <span className="battle-form-label-hint">Cá nhân hoặc Đội nhóm đối kháng</span>
+                  </label>
+                  <div className="battle-source-options" style={{ gridTemplateColumns: 'repeat(2, 1fr)', marginBottom: '0.6rem' }}>
+                    <div 
+                      className={`battle-source-card ${battleMode === 'individual' ? 'active' : ''}`}
+                      onClick={() => setBattleMode('individual')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <input 
+                        type="radio" 
+                        name="battleMode" 
+                        checked={battleMode === 'individual'} 
+                        onChange={() => setBattleMode('individual')} 
+                      />
+                      <div className="battle-source-card-text">
+                        <span className="battle-source-card-title">👤 Cá Nhân (FFA)</span>
+                        <span className="battle-source-card-desc">Từng học viên đua top</span>
+                      </div>
+                    </div>
+
+                    <div 
+                      className={`battle-source-card ${battleMode === 'team' ? 'active' : ''}`}
+                      onClick={() => setBattleMode('team')}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <input 
+                        type="radio" 
+                        name="battleMode" 
+                        checked={battleMode === 'team'} 
+                        onChange={() => setBattleMode('team')} 
+                      />
+                      <div className="battle-source-card-text">
+                        <span className="battle-source-card-title">⚔️ Đấu Đội (Team vs Team)</span>
+                        <span className="battle-source-card-desc">Thi đấu theo nhóm liên minh</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {battleMode === 'team' && (
+                    <div style={{ padding: '0.85rem 1rem', background: 'rgba(59, 130, 246, 0.08)', borderRadius: 10, border: '1px solid rgba(59, 130, 246, 0.25)', marginTop: '0.4rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>Số lượng đội thi đấu:</span>
+                        <select 
+                          value={teamCount} 
+                          onChange={e => setTeamCount(Number(e.target.value))}
+                          className="battle-modal-select"
+                          style={{ width: 'auto', padding: '0.3rem 0.75rem', fontSize: '0.85rem' }}
+                        >
+                          <option value={2}>2 Đội (Đỏ vs Xanh)</option>
+                          <option value={3}>3 Đội (Đỏ, Xanh, Vàng)</option>
+                          <option value={4}>4 Đội (Đỏ, Xanh, Vàng, Lục)</option>
+                          <option value={5}>5 Đội (Đỏ, Xanh, Vàng, Lục, Tím)</option>
+                        </select>
+                      </div>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {PRESET_TEAMS.slice(0, teamCount).map(t => (
+                          <span key={t.id} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#fff', border: `1.5px solid ${t.color}`, color: t.color, fontWeight: 700, fontSize: '0.8rem', padding: '0.25rem 0.6rem', borderRadius: 9999 }}>
+                            <span>{t.mascot}</span> {t.name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <div className="battle-form-group">
                   <label className="battle-form-label">
                     <span>Nguồn câu hỏi trắc nghiệm</span>
@@ -1408,6 +1664,9 @@ D. Lựa chọn thứ tư
                       <tr style={{ background: '#f8fafc' }}>
                         <th style={{ width: '60px', textAlign: 'center', color: '#64748b' }}>Hạng</th>
                         <th style={{ color: '#64748b' }}>Học viên</th>
+                        {inspectingRoom.settings?.battleMode === 'team' && (
+                          <th style={{ color: '#64748b' }}>Đội</th>
+                        )}
                         <th style={{ color: '#64748b' }}>MSSV</th>
                         <th style={{ color: '#64748b' }}>Lớp</th>
                         <th style={{ textAlign: 'center', color: '#64748b' }}>Chuỗi đúng</th>
@@ -1430,6 +1689,22 @@ D. Lựa chọn thứ tư
                                 <span style={{ fontWeight: 700, color: '#0f172a' }}>{p.nickname}</span>
                               </div>
                             </td>
+                            {inspectingRoom.settings?.battleMode === 'team' && (
+                              <td>
+                                <span style={{ 
+                                  display: 'inline-block',
+                                  padding: '2px 8px', 
+                                  borderRadius: '6px', 
+                                  fontSize: '0.85rem',
+                                  fontWeight: 600,
+                                  background: '#f1f5f9',
+                                  color: '#334155',
+                                  border: '1px solid #cbd5e1'
+                                }}>
+                                  {p.teamName || '—'}
+                                </span>
+                              </td>
+                            )}
                             <td style={{ color: '#64748b', fontFamily: 'monospace' }}>{p.studentId || '—'}</td>
                             <td style={{ color: '#475569' }}>{p.className || '—'}</td>
                             <td style={{ textAlign: 'center' }}>

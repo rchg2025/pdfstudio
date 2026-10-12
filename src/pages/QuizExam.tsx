@@ -212,8 +212,20 @@ export default function QuizExam() {
 
   // === BẢO MẬT & CHỐNG GIAN LẬN: KHÓA CHUYỂN TRANG / CHUYỂN APP ===
   const triggerViolation = (reason: string) => {
+    const maxAllowed = quiz?.settings?.antiCheat?.maxViolations || 3;
+    const shouldAutoSubmit = quiz?.settings?.antiCheat?.autoSubmitOnViolations ?? true;
+
     setViolationReason(reason);
-    setViolationCount(prev => prev + 1);
+    setViolationCount(prev => {
+      const nextCount = prev + 1;
+      if (shouldAutoSubmit && nextCount >= maxAllowed) {
+        showToast(`CẢNH BÁO VI PHẠM: Bạn đã vi phạm quy chế ${nextCount}/${maxAllowed} lần! Hệ thống tự động thu bài và khóa bài thi.`, 'error');
+        setTimeout(() => {
+          handleSubmitExam(true);
+        }, 1200);
+      }
+      return nextCount;
+    });
     setShowViolationModal(true);
     quizAudio.playWarningSound();
   };
@@ -349,12 +361,57 @@ export default function QuizExam() {
       }
     };
 
+    // 6. Chặn chuột phải (Context Menu) chống sao chép đề hoặc inspect
+    const handleContextMenu = (e: MouseEvent) => {
+      const qType = currentQRef.current?.type;
+      if (qType === 'essay' || qType === 'practical') return;
+      e.preventDefault();
+      showToast('Đã khóa chuột phải trong khi thi nhằm bảo mật đề thi!', 'warning');
+    };
+
+    // 7. Chặn phím tắt tra cứu & DevTools (F12, Ctrl+U, Ctrl+S, Ctrl+C trên câu trắc nghiệm)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const key = e.key.toLowerCase();
+      // Chặn F12
+      if (e.key === 'F12') {
+        e.preventDefault();
+        triggerViolation('mở bảng công cụ lập trình (F12)');
+        return;
+      }
+      // Chặn Ctrl+U, Ctrl+S, Ctrl+P
+      if ((e.ctrlKey || e.metaKey) && (key === 'u' || key === 's' || key === 'p')) {
+        e.preventDefault();
+        showToast('Thao tác phím tắt này bị vô hiệu hóa trong phòng thi!', 'warning');
+        return;
+      }
+      // Chặn Ctrl+C / Ctrl+A khi đang không ở ô nhập văn bản (textarea / input)
+      const target = e.target as HTMLElement;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+      if ((e.ctrlKey || e.metaKey) && (key === 'c' || key === 'a') && !isInput) {
+        e.preventDefault();
+        showToast('Sao chép nội dung câu hỏi bị nghiêm cấm theo quy chế thi!', 'warning');
+      }
+    };
+
+    // 8. Chặn sự kiện copy trực tiếp
+    const handleCopy = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA');
+      if (!isInput) {
+        e.preventDefault();
+        showToast('Sao chép nội dung bị cấm trong phòng thi!', 'warning');
+      }
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     window.addEventListener('popstate', handlePopState);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleWindowBlur);
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('copy', handleCopy);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -363,6 +420,9 @@ export default function QuizExam() {
       window.removeEventListener('blur', handleWindowBlur);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('copy', handleCopy);
     };
   }, [step]);
 
@@ -431,6 +491,18 @@ export default function QuizExam() {
 
     if (quiz.settings?.shuffleQuestions) {
       pool = pool.sort(() => 0.5 - Math.random());
+    }
+
+    // Xáo trộn 4 đáp án (shuffleOptions) cho từng câu hỏi nếu được bật
+    const shouldShuffleOptions = Boolean(quiz.settings?.shuffleOptions || quiz.settings?.antiCheat?.shuffleOptions);
+    if (shouldShuffleOptions) {
+      pool = pool.map(q => {
+        if ((q.type === 'choice' || q.type === 'multiple_choice') && Array.isArray(q.options) && q.options.length > 1) {
+          const shuffledOpts = [...q.options].sort(() => 0.5 - Math.random());
+          return { ...q, options: shuffledOpts };
+        }
+        return q;
+      });
     }
 
     setActiveQuestions(pool);
@@ -882,7 +954,10 @@ export default function QuizExam() {
                 <li>Thời gian làm bài: <strong>{(quiz.settings?.timeLimitMinutes || 0) > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
                 <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings?.passingScorePercent || 50}%</strong> trở lên.</li>
                 <li style={{ color: '#ef4444', fontWeight: 600 }}>
-                  ⚠️ Hệ thống khóa chuyển tab/ứng dụng: Rời khỏi màn hình bài thi hoặc chuyển sang cửa sổ khác sẽ bị ghi nhận vi phạm quy chế.
+                  ⚠️ Hệ thống giám sát chống gian lận đa tầng: Khóa chuột phải, cấm sao chép câu hỏi, phát hiện rời tab/thu nhỏ ứng dụng (Tối đa {quiz.settings?.antiCheat?.maxViolations || 3} lần vi phạm sẽ tự động thu bài).
+                </li>
+                <li>
+                  🔀 Đề thi và các đáp án A-B-C-D được xáo trộn ngẫu nhiên riêng biệt cho từng thí sinh.
                 </li>
                 <li>
                   {(quiz.settings?.questionFormatFilter === 'essay_practical_only' || (!quiz.settings?.questionFormatFilter && quiz.questions.some(q => q.type === 'essay' || q.type === 'practical')))
@@ -1615,12 +1690,20 @@ export default function QuizExam() {
               CẢNH BÁO VI PHẠM QUY CHẾ
             </h3>
 
-            <div style={{ display: 'inline-block', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 700, padding: '0.3rem 0.85rem', borderRadius: 20, fontSize: '0.88rem', marginBottom: '1rem' }}>
-              Số lần vi phạm phát hiện: {violationCount}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 700, padding: '0.4rem 1rem', borderRadius: 20, fontSize: '0.9rem', marginBottom: '1rem' }}>
+              <span>Số lần vi phạm: <strong>{violationCount}</strong> / {quiz?.settings?.antiCheat?.maxViolations || 3}</span>
+              {(violationCount >= (quiz?.settings?.antiCheat?.maxViolations || 3)) && (
+                <span style={{ color: '#b91c1c' }}>(Đã đạt giới hạn - Đang tự động thu bài!)</span>
+              )}
             </div>
 
             <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.6, margin: '0 0 1.5rem' }}>
-              Hệ thống phát hiện bạn vừa {violationReason ? <strong>{violationReason}</strong> : <strong>rời khỏi màn hình bài thi</strong>}. Hành vi này đã được ghi nhận vào nhật ký bài thi của thí sinh.
+              Hệ thống phát hiện bạn vừa {violationReason ? <strong>{violationReason}</strong> : <strong>rời khỏi màn hình bài thi</strong>}. 
+              {(quiz?.settings?.antiCheat?.autoSubmitOnViolations ?? true) && (
+                <span style={{ display: 'block', marginTop: '0.4rem', color: '#ef4444', fontWeight: 600 }}>
+                  ⚠️ Quy chế thi: Rời màn hình quá {quiz?.settings?.antiCheat?.maxViolations || 3} lần hệ thống sẽ tự động khóa và nộp bài thi ngay lập tức!
+                </span>
+              )}
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
