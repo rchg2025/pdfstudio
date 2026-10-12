@@ -50,7 +50,7 @@ export default function LiveBattleHost() {
   const { roomId } = useParams<{ roomId?: string }>();
   const navigate = useNavigate();
   const { showToast } = useNotification();
-  const { showAlert } = useDialogs();
+  const { showAlert, DialogsComponent } = useDialogs();
 
   // Danh sách phòng của GV
   const [rooms, setRooms] = useState<any[]>([]);
@@ -427,13 +427,19 @@ export default function LiveBattleHost() {
 
   // Tạo phòng mới
   const handleCreateRoom = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
     if (!user) {
-      showAlert('Vui lòng đăng nhập để tạo phòng đấu trường!', 'Chưa đăng nhập');
+      showToast('Vui lòng đăng nhập để tạo phòng đấu trường!', 'error');
+      showAlert('Vui lòng đăng nhập tài khoản giảng viên để tạo và quản trị phòng đấu trường trực tiếp!', 'Chưa đăng nhập');
       return;
     }
     if (!newTitle.trim()) {
-      showAlert('Vui lòng nhập tên phòng thi!', 'Thiếu thông tin');
+      showToast('Vui lòng nhập tiêu đề phòng thi!', 'warning');
+      showAlert('Vui lòng nhập tên phòng thi (Ví dụ: Đấu trường Sinh lý bệnh)!', 'Thiếu thông tin');
       return;
     }
 
@@ -441,6 +447,7 @@ export default function LiveBattleHost() {
 
     if (quizSource === 'bank') {
       if (!selectedPackageId) {
+        showToast('Vui lòng chọn một đề thi từ danh sách!', 'warning');
         showAlert('Vui lòng chọn một đề thi từ danh sách ngân hàng đề thi!', 'Chưa chọn đề');
         return;
       }
@@ -479,12 +486,14 @@ export default function LiveBattleHost() {
       }
 
       if (finalQuestions.length === 0) {
+        showToast('Bộ đề bạn chọn không có câu trắc nghiệm hợp lệ!', 'error');
         showAlert('Bộ đề thi bạn chọn không có câu hỏi trắc nghiệm hợp lệ!', 'Bộ đề rỗng');
         return;
       }
     } else if (quizSource === 'custom') {
       finalQuestions = parseCustomTextQuestions(customQuestionsText);
       if (finalQuestions.length === 0) {
+        showToast('Không nhận diện được câu hỏi trắc nghiệm từ văn bản!', 'error');
         showAlert('Không nhận diện được câu hỏi trắc nghiệm từ văn bản bạn dán. Vui lòng kiểm tra định dạng mẫu: Câu 1, A, B, C, D, Đáp án: A', 'Lỗi định dạng');
         return;
       }
@@ -493,6 +502,7 @@ export default function LiveBattleHost() {
     }
 
     if (finalQuestions.length === 0) {
+      showToast('Vui lòng thêm ít nhất 1 câu hỏi cho phòng thi!', 'warning');
       showAlert('Vui lòng thêm ít nhất 1 câu hỏi cho phòng thi!', 'Thiếu câu hỏi');
       return;
     }
@@ -520,10 +530,10 @@ export default function LiveBattleHost() {
         setIsCreatingRoom(false);
         navigate(`/dau-truong-live/${data.room.id}`);
       } else {
-        showAlert(data.message || 'Lỗi khi tạo phòng', 'Lỗi');
+        showAlert(data.message || 'Lỗi khi tạo phòng', 'Lỗi tạo phòng');
       }
     } catch (err: any) {
-      showAlert(err.message || 'Lỗi khi tạo phòng', 'Lỗi');
+      showAlert(err.message || 'Lỗi khi tạo phòng', 'Lỗi tạo phòng');
     } finally {
       setIsSubmittingRoom(false);
     }
@@ -1242,6 +1252,7 @@ export default function LiveBattleHost() {
             )}
           </div>
         )}
+        <DialogsComponent />
       </div>
     );
   }
@@ -1366,6 +1377,26 @@ export default function LiveBattleHost() {
 
             <form onSubmit={handleCreateRoom} style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
               <div className="battle-modal-body">
+                {!user && (
+                  <div className="battle-info-banner" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#b91c1c', marginBottom: '1rem' }}>
+                    <AlertCircle size={20} style={{ flexShrink: 0, marginTop: '2px', color: '#ef4444' }} />
+                    <div style={{ fontSize: '0.88rem' }}>
+                      <strong>Bạn chưa đăng nhập tài khoản!</strong>
+                      <p style={{ margin: '0.25rem 0 0.5rem', lineHeight: 1.4 }}>
+                        Hệ thống yêu cầu tài khoản để tạo và lưu trữ phòng đấu trường. Vui lòng đăng nhập để tiếp tục.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => navigate('/login', { state: { returnUrl: '/dau-truong-live' } })}
+                        className="btn btn-primary"
+                        style={{ padding: '0.4rem 0.9rem', fontSize: '0.82rem', background: '#ef4444', borderColor: '#ef4444' }}
+                      >
+                        Đăng nhập ngay
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="battle-form-group">
                   <label className="battle-form-label">
                     <span>Tiêu đề phòng thi <span style={{ color: '#ef4444' }}>*</span></span>
@@ -1621,6 +1652,10 @@ D. Lựa chọn thứ tư
                   type="submit" 
                   className="btn-battle-submit" 
                   disabled={isSubmittingRoom}
+                  onClick={(e) => {
+                    // Đảm bảo kích hoạt ngay cả khi click trực tiếp
+                    handleCreateRoom(e);
+                  }}
                 >
                   {isSubmittingRoom ? (
                     <span>Đang khởi tạo...</span>
@@ -1779,6 +1814,8 @@ D. Lựa chọn thứ tư
           </div>
         </div>
       )}
+      {/* Custom Dialogs */}
+      <DialogsComponent />
     </div>
   );
 }
