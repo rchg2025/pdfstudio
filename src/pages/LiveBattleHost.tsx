@@ -13,6 +13,7 @@ import { useNotification } from '../contexts/NotificationContext';
 import { useDialogs } from '../components/CustomDialogs';
 import QRCode from 'qrcode';
 import { triggerConfetti } from '../utils/confetti';
+import AuthGate from '../components/AuthGate';
 import './LiveBattleHost.css';
 
 interface QuestionItem {
@@ -266,13 +267,12 @@ export default function LiveBattleHost() {
   };
 
   useEffect(() => {
+    if (!user) return;
     if (roomId) {
       fetchHostRoom(roomId);
     } else {
       setCurrentRoom(null);
-      if (user) {
-        loadMyRooms();
-      }
+      loadMyRooms();
     }
   }, [roomId, user]);
 
@@ -652,6 +652,21 @@ export default function LiveBattleHost() {
     XLSX.writeFile(wb, fileName);
     showToast('Đã xuất và tải xuống file Excel (.xlsx) thành công!', 'success');
   };
+
+  // -------------------------------------------------------------
+  // BẮT BUỘC ĐĂNG NHẬP MỚI ĐƯỢC SỬ DỤNG TÍNH NĂNG ĐẤU TRƯỜNG LIVE
+  // -------------------------------------------------------------
+  if (!user) {
+    return (
+      <AuthGate
+        featureTitle="Đấu Trường Đố Vui Trực Tiếp (Live Battle)"
+        featureDescription="Tính năng Tạo và Điều hành Đấu trường trực tiếp trong lớp học yêu cầu Giảng viên / Quản trị viên phải đăng nhập tài khoản để quản lý phòng và lưu điểm học viên."
+        returnUrl={roomId ? `/dau-truong-live/${roomId}` : '/dau-truong-live'}
+      >
+        <div />
+      </AuthGate>
+    );
+  }
 
   // -------------------------------------------------------------
   // RENDER MÀN HÌNH ĐIỀU KHIỂN ĐẤU TRƯỜNG CHO MÁY CHIẾU (HOST VIEW)
