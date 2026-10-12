@@ -211,6 +211,9 @@ export default function QuizManager() {
   const [newQuizSubject, setNewQuizSubject] = useState('');
   const [newQuizDesc, setNewQuizDesc] = useState('');
 
+  // Modal chỉnh sửa thông tin/đổi tên bộ đề thi
+  const [editingQuizData, setEditingQuizData] = useState<{ id: string; title: string; subject: string; description: string } | null>(null);
+
   // Modal thêm/sửa câu hỏi thủ công
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<QuizQuestion | null>(null);
@@ -582,6 +585,36 @@ export default function QuizManager() {
     setActiveTab('questions');
     showToast('Đang tạo và lưu bộ đề mới vào cơ sở dữ liệu...', 'info');
     await saveQuizToBackend(newQ, true);
+  };
+
+  // Cập nhật tên/thông tin bộ đề thi đã có
+  const handleUpdateQuizInfo = async () => {
+    if (!editingQuizData) return;
+    if (!editingQuizData.title.trim()) {
+      showToast('Vui lòng nhập tên bộ đề thi!', 'warning');
+      return;
+    }
+
+    let targetToSave: QuizPackage | null = null;
+    setQuizzes(prev => prev.map(q => {
+      if (q.id === editingQuizData.id) {
+        targetToSave = {
+          ...q,
+          title: editingQuizData.title.trim(),
+          subject: editingQuizData.subject.trim(),
+          description: editingQuizData.description.trim(),
+          updatedAt: new Date().toISOString()
+        };
+        return targetToSave;
+      }
+      return q;
+    }));
+
+    setEditingQuizData(null);
+    showToast('Đang cập nhật tên bộ đề vào cơ sở dữ liệu...', 'info');
+    if (targetToSave) {
+      await saveQuizToBackend(targetToSave, true);
+    }
   };
 
   // Xóa bộ đề thi
@@ -1734,9 +1767,31 @@ export default function QuizManager() {
                       <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginLeft: 'auto' }}>Mã: #{q.code}</span>
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '0.75rem 0 0.4rem', color: 'var(--text-primary)' }}>
-                      {q.title}
-                    </h3>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '0.5rem', margin: '0.75rem 0 0.4rem' }}>
+                      <h3 
+                        style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, color: 'var(--text-primary)', flex: 1 }}
+                        title="Bấm để chọn bộ đề thi này"
+                      >
+                        {q.title}
+                      </h3>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-xs"
+                        style={{ padding: '0.2rem 0.45rem', fontSize: '0.75rem', display: 'inline-flex', alignItems: 'center', gap: '0.25rem', borderColor: '#cbd5e1', color: 'var(--text-secondary)', flexShrink: 0 }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingQuizData({
+                            id: q.id,
+                            title: q.title,
+                            subject: q.subject || '',
+                            description: q.description || ''
+                          });
+                        }}
+                        title="Đổi tên hoặc chỉnh sửa thông tin bộ đề này"
+                      >
+                        <Edit3 size={12} color="var(--primary)" /> Đổi tên
+                      </button>
+                    </div>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, lineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {q.description || 'Chưa có mô tả cho đề thi này.'}
                     </p>
@@ -1785,8 +1840,25 @@ export default function QuizManager() {
         <div className="qm-panel animate-fade-in">
           <div className="qm-panel-header">
             <div>
-              <h2 className="qm-panel-title">
-                <FileText size={20} color="var(--primary)" /> Ngân Hàng Câu Hỏi: {activeQuiz.title}
+              <h2 className="qm-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+                <FileText size={20} color="var(--primary)" /> 
+                <span>Ngân Hàng Câu Hỏi: <strong>{activeQuiz.title}</strong></span>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-xs"
+                  style={{ padding: '0.2rem 0.5rem', fontSize: '0.78rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem', borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  onClick={() => {
+                    setEditingQuizData({
+                      id: activeQuiz.id,
+                      title: activeQuiz.title,
+                      subject: activeQuiz.subject || '',
+                      description: activeQuiz.description || ''
+                    });
+                  }}
+                  title="Đổi tên bộ đề thi này"
+                >
+                  <Edit3 size={13} /> Đổi tên đề
+                </button>
               </h2>
               <p style={{ margin: '0.25rem 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
                 Tổng cộng {activeQuiz.questions.length} câu hỏi. Hỗ trợ trắc nghiệm ABCD, kéo thả, điền khuyết và tự luận ngắn.
@@ -3328,6 +3400,57 @@ export default function QuizManager() {
             <div className="modal-footer">
               <button type="button" className="btn btn-outline btn-sm" onClick={() => setShowNewQuizModal(false)}>Hủy</button>
               <button type="button" className="btn btn-primary btn-sm" onClick={handleCreateQuiz}>Tạo Bộ Đề</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL ĐỔI TÊN & CHỈNH SỬA BỘ ĐỀ THI */}
+      {editingQuizData && (
+        <div className="modal-overlay" onClick={() => setEditingQuizData(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3><Edit3 size={18} color="var(--primary)" /> Đổi Tên & Thông Tin Bộ Đề Thi</h3>
+              <button type="button" className="modal-close-btn" onClick={() => setEditingQuizData(null)}>✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="qm-form-group">
+                <label className="qm-label">Tên bộ đề thi <span style={{ color: '#ef4444' }}>*</span></label>
+                <input 
+                  type="text" 
+                  className="qm-input" 
+                  placeholder="Nhập tên mới cho bộ đề thi..."
+                  value={editingQuizData.title}
+                  onChange={(e) => setEditingQuizData({ ...editingQuizData, title: e.target.value })}
+                  autoFocus
+                />
+              </div>
+              <div className="qm-form-group">
+                <label className="qm-label">Môn học / Chuyên mục</label>
+                <input 
+                  type="text" 
+                  className="qm-input" 
+                  placeholder="Ví dụ: Cơ sở công nghệ chế tạo máy, Y Dược..."
+                  value={editingQuizData.subject}
+                  onChange={(e) => setEditingQuizData({ ...editingQuizData, subject: e.target.value })}
+                />
+              </div>
+              <div className="qm-form-group">
+                <label className="qm-label">Mô tả / Hướng dẫn thi</label>
+                <textarea 
+                  className="qm-textarea" 
+                  rows={3}
+                  placeholder="Mô tả tóm tắt nội dung đề thi..."
+                  value={editingQuizData.description}
+                  onChange={(e) => setEditingQuizData({ ...editingQuizData, description: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button type="button" className="btn btn-outline btn-sm" onClick={() => setEditingQuizData(null)}>Hủy</button>
+              <button type="button" className="btn btn-primary btn-sm" onClick={handleUpdateQuizInfo}>
+                <Check size={16} /> Lưu Thay Đổi
+              </button>
             </div>
           </div>
         </div>
