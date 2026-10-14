@@ -1448,14 +1448,22 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       const preferredModel = modelRes.rows[0]?.value?.trim();
       const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
 
-      const numScenes = Math.min(Math.max(Number(sceneCount) || 6, 2), 16);
+      const numScenes = Math.min(Math.max(Number(sceneCount) || 6, 1), 30);
 
       let durationRule = "Mỗi cảnh bắt buộc có thời lượng từ 6 đến 10 giây (khuyến nghị 7-9 giây).";
       if (scenePacing === 'dynamic_6_8s') durationRule = "Mỗi cảnh bắt buộc từ 6 đến 8 giây (nhịp nhanh, dứt khoát).";
       if (scenePacing === 'exact_8s') durationRule = "Mỗi cảnh chính xác 8 giây (để dễ đồng bộ nhịp nhạc).";
 
-      const systemInstruction = `Bạn là Đạo diễn hình ảnh và Biên kịch chuyên gia hàng đầu về AI Video (Runway Gen-3, Kling AI 1.5/2.0, Luma Dream Machine, Sora, Midjourney+Pika).
-Nhiệm vụ của bạn là tạo kịch bản video AI chuyên nghiệp gồm chính xác ${numScenes} phân cảnh.
+      const systemInstruction = `Bạn là Đạo diễn hình ảnh và Biên kịch chuyên gia hàng đầu về AI Video thế hệ mới (Google Veo 2 / Gemini Video, Google Flow FX, Runway Gen-3, Kling AI 2.0, Luma Dream Machine, Sora).
+Nhiệm vụ của bạn là tạo kịch bản video AI chuyên nghiệp gồm chính xác ${numScenes} phân cảnh với độ liền mạch tuyệt đối.
+
+TỐI ƯU CÂU LỆNH PROMPT ĐẶC BIỆT CHO GOOGLE GEMINI VIDEO & GOOGLE FLOW:
+1. ĐỐI VỚI GOOGLE GEMINI / VEO 2:
+   - Cú pháp câu lệnh trực diện, chi tiết theo cấu trúc phân tầng điện ảnh: [Shot Type & Camera Movement] + [Subject Action & Physics] + [Environment & Lighting (Chroma, Ray-tracing, Color Temperature)] + [Atmosphere & Cine Aesthetic (Volumetric smoke, 35mm lens, Depth of field, 4K/8K)].
+   - Tránh các từ khóa spam vô nghĩa ("hyper quality", "best"), thay bằng các mô tả vật lý quang học và chuyển động thực tế chân thực mà Google Veo & Gemini xử lý tốt nhất (VD: "subsurface scattering on skin", "fluid simulation", "natural motion blur", "cinematic anamorphic lens flare").
+2. ĐỐI VỚI GOOGLE FLOW (Workflow liền mạch đa phân cảnh & Motion Transitions):
+   - Chú trọng tính liên tục đa luồng (Flow continuity): Nêu rõ chuyển động dòng chảy hình ảnh tiếp nối (Camera flow vector: e.g. "Continuous forward camera track transitioning seamlessly into...", "Match-cut motion of the subject's right hand turning the knob...").
+   - Xác lập rõ điểm neo cố định (Keyframe anchor points & semantic tags) để Flow giữ nguyên định danh đối tượng qua từng khung hình (Identity preservation).
 
 QUY TẮC BẮT BUỘC VỀ SỰ LIỀN MẠCH (CONTINUITY DIRECTIVES):
 1. Mỗi phân cảnh có thời lượng từ 6 đến 10 giây.
@@ -1464,20 +1472,20 @@ QUY TẮC BẮT BUỘC VỀ SỰ LIỀN MẠCH (CONTINUITY DIRECTIVES):
    - Sử dụng các thủ pháp điện ảnh: Match-cut (chuyển động tay hoặc vật thể), Camera panning continuation (Pan phải nối tiếp Pan phải hoặc Dolly lướt tiếp), Zoom-in nối tiếp Macro close-up, Over-the-shoulder nối tiếp Screen POV.
    - Giữ khóa đồng nhất (Anchor consistency): Cùng một nhân vật (màu áo, bàn tay, đồng hồ), cùng một bối cảnh (màu đèn, bề mặt bàn), cùng giao diện UI hoặc thiết bị.
 3. NGÔN NGỮ & NỘI DUNG:
-   - "englishPrompt": Viết bằng TIẾNG ANH CHUYÊN SÂU cho công cụ tạo video AI (${aiToolTarget}). Bao gồm: Shot type (Over-the-shoulder, Macro, Medium, Top-down), Subject & Action chi tiết, Camera movement (Dolly in, Pan right, Orbit, Crane down), Lighting & Atmosphere, Resolution & Render tags (8k, photorealistic, cinematic volumetric light, 60fps).
+   - "englishPrompt": Viết bằng TIẾNG ANH CHUYÊN SÂU tối ưu chuẩn cho Google Gemini / Veo 2, Google Flow và ${aiToolTarget}. Bao gồm: Shot type (Over-the-shoulder, Macro, Medium, Top-down), Subject & Action chi tiết, Camera movement (Dolly in, Pan right, Orbit, Crane down), Lighting & Atmosphere, Resolution & Render tags (8k, photorealistic, cinematic volumetric light, 60fps).
    - "vietnameseVoiceover": Lời thuyết minh bằng TIẾNG VIỆT tự nhiên, đúng tông giọng (${voiceTone}). Số từ phải vừa khớp thời lượng 6-10s (khoảng 15 đến 25 từ tiếng Việt, tốc độ nói tiêu chuẩn ~2.5 từ/giây).
    - "continuityBridge": Giải thích bằng tiếng Việt cách cảnh này nối tiếp trơn tru từ cảnh trước đó (hoặc cảnh mở màn).
    - "cameraMotion": Tóm tắt ngắn chuyển động camera (VD: "Slow forward push-in", "45° orbital turn").
-   - "continuityTags": Các từ khóa neo giữ tính nhất quán (VD: "Same navy blue blazer, 3200K warm desk lamp, black smartphone").
+   - "continuityTags": Các từ khóa neo giữ tính nhất quán theo chuẩn Flow (VD: "Same navy blue blazer, 3200K warm desk lamp, black smartphone, consistent studio background").
    - "audioSfx": Gợi ý hiệu ứng âm thanh cụ thể (SFX) và nền nhạc (BGM) cho cảnh này.`;
 
       const userPrompt = `Hãy tạo kịch bản video AI liền mạch cho:
 - Chủ đề: ${String(topic).trim()}
 - Loại video: ${videoType}
 - Phong cách hình ảnh: ${visualStyle}
-- Công cụ mục tiêu: ${aiToolTarget}
+- Công cụ mục tiêu: ${aiToolTarget} (Tối ưu đặc biệt cho Google Gemini Video & Google Flow)
 - Tông giọng thuyết minh: ${voiceTone}
-- Số lượng phân cảnh: ${numScenes} cảnh
+- Số lượng phân cảnh: ${numScenes} cảnh (ĐẢM BẢO TẠO ĐỦ CHÍNH XÁC ${numScenes} PHÂN CẢNH, KHÔNG ĐƯỢC THIẾU HOẶC THỪA)
 - Yêu cầu thời lượng: ${durationRule}
 - Tiêu chí liền mạch: Match-cut: ${matchCut ? 'BẬT' : 'TẮT'}, Camera Flow: ${cameraFlow ? 'BẬT' : 'TẮT'}, Subject Lock: ${subjectLock ? 'BẬT' : 'TẮT'}.
 

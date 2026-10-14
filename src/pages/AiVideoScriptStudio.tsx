@@ -272,7 +272,7 @@ export default function AiVideoScriptStudio() {
   const [videoType, setVideoType] = useState('tutorial_simulation');
   const [scenePacing, setScenePacing] = useState('standard_8_10s');
   const [visualStyle, setVisualStyle] = useState('hyperrealistic_studio');
-  const [aiToolTarget, setAiToolTarget] = useState('runway_gen3');
+  const [aiToolTarget, setAiToolTarget] = useState('google_veo_gemini');
   const [sceneCount, setSceneCount] = useState(6);
   const [voiceTone, setVoiceTone] = useState('clear_tutorial_guide');
   const [matchCut, setMatchCut] = useState(true);
@@ -1116,26 +1116,79 @@ export default function AiVideoScriptStudio() {
                       onChange={(e) => setAiToolTarget(e.target.value)}
                       style={{ width: '100%', background: '#020617', border: '1px solid #334155', borderRadius: '0.65rem', padding: '0.55rem 0.65rem', color: '#f8fafc', fontSize: '0.8rem' }}
                     >
+                      <option value="google_veo_gemini">🌟 Google Gemini / Veo 2 (Khuyên Dùng)</option>
+                      <option value="google_flow">🌊 Google Flow (Multi-scene Motion FX)</option>
                       <option value="runway_gen3">Runway Gen-3 Alpha</option>
                       <option value="kling_ai">Kling AI 1.5 / 2.0</option>
                       <option value="luma_dream_machine">Luma Dream Machine</option>
-                      <option value="sora">OpenAI Sora / Veo 2</option>
+                      <option value="sora">OpenAI Sora</option>
                       <option value="midjourney_pika">Midjourney + Pika/Hailuo</option>
                     </select>
                   </div>
                 </div>
 
-                {/* Số lượng phân cảnh & Tông giọng */}
+                {/* Số lượng phân cảnh tùy chọn & Tông giọng */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                   <div>
-                    <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.35rem' }}>
+                    <label style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.8rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.35rem' }}>
                       <span>Số phân cảnh:</span>
-                      <span style={{ color: '#818cf8', fontWeight: 700, fontFamily: 'monospace' }}>{sceneCount} cảnh (~{sceneCount * 8}s)</span>
+                      <span style={{ color: '#818cf8', fontWeight: 700, fontFamily: 'monospace' }}>
+                        ~{sceneCount * 8}s tổng ({sceneCount} cảnh)
+                      </span>
                     </label>
+
+                    {/* Numeric Input & Quick Pills */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                      <input
+                        type="number"
+                        min={1}
+                        max={30}
+                        value={sceneCount}
+                        onChange={(e) => {
+                          const val = parseInt(e.target.value, 10);
+                          if (!isNaN(val)) setSceneCount(Math.min(Math.max(val, 1), 30));
+                        }}
+                        style={{
+                          width: '75px',
+                          background: '#020617',
+                          border: '1px solid #6366f1',
+                          borderRadius: '0.4rem',
+                          padding: '0.3rem 0.5rem',
+                          color: '#fff',
+                          fontSize: '0.85rem',
+                          fontWeight: 700,
+                          textAlign: 'center',
+                          fontFamily: 'monospace'
+                        }}
+                        title="Tự nhập số lượng phân cảnh tùy thích (1 - 30 cảnh)"
+                      />
+                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                        {[3, 5, 6, 8, 10, 12].map(n => (
+                          <button
+                            key={n}
+                            type="button"
+                            onClick={() => setSceneCount(n)}
+                            style={{
+                              background: sceneCount === n ? '#6366f1' : '#020617',
+                              border: sceneCount === n ? '1px solid #818cf8' : '1px solid #334155',
+                              color: sceneCount === n ? '#fff' : '#94a3b8',
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              padding: '0.2rem 0.45rem',
+                              borderRadius: '0.35rem',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            {n}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
                     <input
                       type="range"
-                      min={3}
-                      max={12}
+                      min={1}
+                      max={20}
                       value={sceneCount}
                       onChange={(e) => setSceneCount(Number(e.target.value))}
                       style={{ width: '100%', accentColor: '#6366f1', height: '6px' }}
@@ -1384,7 +1437,7 @@ export default function AiVideoScriptStudio() {
                       <div style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '0.75rem', padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '0.35rem' }}>
                           <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#818cf8', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                            <span>🇺🇸 AI Video Prompt (English)</span>
+                            <span>🎬 Video Prompt (Gemini / Flow / AI Video)</span>
                           </span>
                           <button
                             type="button"
@@ -1399,7 +1452,7 @@ export default function AiVideoScriptStudio() {
                           value={scene.englishPrompt}
                           onChange={(e) => handleUpdateScene(index, 'englishPrompt', e.target.value)}
                           style={{ width: '100%', background: 'transparent', border: 'none', color: '#e2e8f0', fontSize: '0.8rem', fontFamily: 'monospace', lineHeight: 1.5, resize: 'vertical', boxSizing: 'border-box' }}
-                          placeholder="Detailed prompt for Runway Gen-3 / Kling AI..."
+                          placeholder="Detailed prompt optimized for Google Gemini / Veo 2, Google Flow, Runway Gen-3..."
                         />
                         {scene.continuityTags && (
                           <div style={{ borderTop: '1px solid #1e293b', paddingTop: '0.35rem', fontSize: '0.72rem', color: '#64748b', display: 'flex', gap: '0.35rem' }}>
