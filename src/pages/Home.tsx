@@ -340,7 +340,9 @@ const Home = () => {
           fetchPriority="high"
           style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover', marginBottom: '1.5rem', boxShadow: '0 8px 24px rgba(0,0,0,0.15)' }} 
         />
-        <h1 className="home-title text-gradient">Công Cụ PDF & Tiện Ích Trực Tuyến</h1>
+        <h1 className="home-title text-gradient">
+          Công Cụ PDF & Tiện Ích <span style={{ whiteSpace: 'nowrap' }}>Trực Tuyến</span>
+        </h1>
         <p className="home-subtitle">
           Nền tảng tất cả trong một phục vụ công việc văn phòng, xử lý PDF, đồ họa hình ảnh và bộ công cụ số hóa giảng dạy trực quan.
         </p>

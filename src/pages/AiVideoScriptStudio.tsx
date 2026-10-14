@@ -13,7 +13,9 @@ import {
   FileText, 
   Compass,
   Loader2,
-  FileAudio
+  FileAudio,
+  Anchor,
+  ShieldCheck
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -45,6 +47,7 @@ export interface VideoScriptProject {
   projectTitle: string;
   videoType: string;
   totalDurationSeconds: number;
+  globalVisualAnchor?: string;
   scenes: VideoScene[];
 }
 
@@ -400,6 +403,7 @@ export default function AiVideoScriptStudio() {
           projectTitle: data.projectTitle || topic.trim().substring(0, 60),
           videoType,
           totalDurationSeconds: data.scenes.reduce((acc: number, s: any) => acc + (s.durationSec || 8), 0),
+          globalVisualAnchor: data.globalVisualAnchor || '',
           scenes: data.scenes
         });
         showToast(`Đã tạo thành công ${data.scenes.length} phân cảnh video liền mạch!`, 'success');
@@ -712,13 +716,17 @@ export default function AiVideoScriptStudio() {
 
   const handleCopyAllPrompts = () => {
     if (project.scenes.length === 0) return;
-    const text = project.scenes.map((s, idx) => 
+    let header = '';
+    if (project.globalVisualAnchor) {
+      header = `=== GLOBAL VISUAL ANCHOR (BỘ NEO ĐỒNG NHẤT TOÀN BỘ CẢNH) ===\n${project.globalVisualAnchor}\n\n`;
+    }
+    const text = header + project.scenes.map((s, idx) => 
       `--- SCENE ${idx + 1} (${s.durationSec}s) ---\n` +
       `Title: ${s.title}\n` +
       `Camera Motion: ${s.cameraMotion || 'Smooth'}\n` +
       `Prompt: ${s.englishPrompt}\n`
     ).join('\n');
-    copyToClipboard(text, `Đã sao chép toàn bộ ${project.scenes.length} Prompt tiếng Anh!`);
+    copyToClipboard(text, `Đã sao chép toàn bộ ${project.scenes.length} Prompt tiếng Anh (Kèm Bộ Neo Đồng Nhất)!`);
   };
 
   const handleCopyAllVoiceover = () => {
@@ -858,6 +866,9 @@ export default function AiVideoScriptStudio() {
       content += `- **Tổng thời lượng**: ${totalDuration}s (~${(totalDuration / 60).toFixed(1)} phút)\n`;
       content += `- **Tổng số phân cảnh**: ${project.scenes.length} cảnh\n`;
       content += `- **Ước tính từ thuyết minh**: ${totalWords} từ\n\n`;
+      if (project.globalVisualAnchor) {
+        content += `> [!NOTE]\n> **BỘ NEO ĐỒNG NHẤT TOÀN BỘ CẢNH (GLOBAL VISUAL ANCHOR):**\n> \`${project.globalVisualAnchor}\`\n\n`;
+      }
       content += `## Chi Tiết Các Phân Cảnh Liền Mạch (6-10s)\n\n`;
 
       project.scenes.forEach((s, i) => {
@@ -875,7 +886,11 @@ export default function AiVideoScriptStudio() {
       content = JSON.stringify(project, null, 2);
     } else if (format === 'prompts_txt') {
       filename = `${slug}-prompts.txt`;
-      content = project.scenes.map((s, i) => 
+      let header = '';
+      if (project.globalVisualAnchor) {
+        header = `=== GLOBAL VISUAL ANCHOR (BỘ NEO ĐỒNG NHẤT TOÀN BỘ CẢNH) ===\n${project.globalVisualAnchor}\n\n`;
+      }
+      content = header + project.scenes.map((s, i) => 
         `Scene ${i + 1} (${s.durationSec}s):\n${s.englishPrompt}\n`
       ).join('\n');
     } else if (format === 'voiceover_txt') {
@@ -1386,6 +1401,40 @@ export default function AiVideoScriptStudio() {
                 <div style={{ width: '48px', height: '48px', border: '4px solid rgba(99, 102, 241, 0.2)', borderTopColor: '#6366f1', borderRadius: '50%', margin: '0 auto 1.25rem', animation: 'spin 1s linear infinite' }}></div>
                 <h4 style={{ margin: '0 0 0.5rem', fontSize: '1.05rem', fontWeight: 700 }}>Đang tạo kịch bản video AI liền mạch...</h4>
                 <p style={{ margin: 0, fontSize: '0.82rem', color: '#94a3b8', fontFamily: 'monospace' }}>{loadingStatus}</p>
+              </div>
+            )}
+
+            {/* Global Visual Anchor Banner (Khóa định danh đồng nhất toàn bộ video) */}
+            {!isGenerating && project.globalVisualAnchor && (
+              <div style={{ background: 'linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95))', border: '1px solid rgba(99, 102, 241, 0.35)', borderRadius: '1rem', padding: '1rem 1.25rem', color: '#fff', boxShadow: '0 4px 15px -3px rgba(0, 0, 0, 0.25)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.45rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '24px', height: '24px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.25)', color: '#818cf8' }}>
+                      <Anchor size={14} />
+                    </span>
+                    <strong style={{ fontSize: '0.85rem', color: '#a5b4fc', letterSpacing: '0.02em' }}>
+                      BỘ NEO ĐỒNG NHẤT TOÀN CẢNH (GLOBAL VISUAL ANCHOR LOCK)
+                    </strong>
+                    <span style={{ fontSize: '0.7rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.1rem 0.45rem', borderRadius: '1rem', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                      <ShieldCheck size={11} /> Đã khóa nhân vật & bối cảnh
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => copyToClipboard(project.globalVisualAnchor || '', 'Đã sao chép Bộ Neo Đồng Nhất!')}
+                    style={{ background: '#1e293b', border: '1px solid #334155', color: '#cbd5e1', fontSize: '0.72rem', padding: '0.2rem 0.55rem', borderRadius: '0.4rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                    title="Sao chép bộ neo để dùng làm Reference Prompt trong Runway/Flow/Kling"
+                  >
+                    <Copy size={11} /> Copy Anchor
+                  </button>
+                </div>
+                <p style={{ margin: 0, fontSize: '0.78rem', color: '#cbd5e1', lineHeight: 1.5, fontFamily: 'monospace', background: '#020617', padding: '0.6rem 0.85rem', borderRadius: '0.5rem', border: '1px solid #1e293b' }}>
+                  {project.globalVisualAnchor}
+                </p>
+                <div style={{ marginTop: '0.45rem', fontSize: '0.7rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <span>💡</span>
+                  <span>Toàn bộ {project.scenes.length} phân cảnh dưới đây đều đã được tự động gắn mã khóa này để khi xuất video AI, nhân vật, trang phục, góc ánh sáng và không gian sẽ hoàn toàn khớp nhau!</span>
+                </div>
               </div>
             )}
 
