@@ -590,31 +590,41 @@ export default function QuizManager() {
   // Cập nhật tên/thông tin bộ đề thi đã có
   const handleUpdateQuizInfo = async () => {
     if (!editingQuizData) return;
-    if (!editingQuizData.title.trim()) {
+    const trimmedTitle = editingQuizData.title.trim();
+    if (!trimmedTitle) {
       showToast('Vui lòng nhập tên bộ đề thi!', 'warning');
       return;
     }
 
-    let targetToSave: QuizPackage | null = null;
-    setQuizzes(prev => prev.map(q => {
-      if (q.id === editingQuizData.id) {
-        targetToSave = {
-          ...q,
-          title: editingQuizData.title.trim(),
-          subject: editingQuizData.subject.trim(),
-          description: editingQuizData.description.trim(),
-          updatedAt: new Date().toISOString()
-        };
-        return targetToSave;
-      }
-      return q;
-    }));
+    const existingQuiz = quizzes.find(q => q.id === editingQuizData.id);
+    if (!existingQuiz) {
+      showToast('Không tìm thấy bộ đề cần cập nhật!', 'error');
+      return;
+    }
 
+    const updatedQuiz: QuizPackage = {
+      ...existingQuiz,
+      title: trimmedTitle,
+      subject: editingQuizData.subject.trim(),
+      description: editingQuizData.description.trim(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. Cập nhật state UI
+    setQuizzes(prev => prev.map(q => q.id === updatedQuiz.id ? updatedQuiz : q));
     setEditingQuizData(null);
     showToast('Đang cập nhật tên bộ đề vào cơ sở dữ liệu...', 'info');
-    if (targetToSave) {
-      await saveQuizToBackend(targetToSave, true);
+
+    // 2. Cập nhật ngay vào localStorage của user
+    if (user) {
+      try {
+        const nextQuizzes = quizzes.map(q => q.id === updatedQuiz.id ? updatedQuiz : q);
+        localStorage.setItem(`rchg_quiz_packages_${user.id}`, JSON.stringify(nextQuizzes));
+      } catch {}
     }
+
+    // 3. Gửi thẳng lên cơ sở dữ liệu PostgreSQL
+    await saveQuizToBackend(updatedQuiz, true);
   };
 
   // Xóa bộ đề thi
@@ -2572,6 +2582,59 @@ export default function QuizManager() {
                         🔒 <strong>Mặc định tắt</strong>: Sau khi nộp bài, thí sinh chỉ xem được tổng điểm và xếp loại Đạt/Chưa đạt (hoàn toàn không lộ đề thi và đáp án).
                       </span>
                     )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Cấu hình Giám sát & Chống gian lận đa tầng */}
+              <div className="qm-form-group">
+                <label className="qm-label">Giám sát phòng thi & Giới hạn vi phạm</label>
+                <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={activeQuiz.settings?.antiCheat?.autoSubmitOnViolations ?? true} 
+                      onChange={(e) => updateActiveQuiz({ 
+                        settings: { 
+                          ...activeQuiz.settings, 
+                          antiCheat: { 
+                            ...activeQuiz.settings?.antiCheat, 
+                            autoSubmitOnViolations: e.target.checked,
+                            maxViolations: activeQuiz.settings?.antiCheat?.maxViolations || 10
+                          } 
+                        } 
+                      })}
+                    />
+                    <span>Tự động thu bài khi thí sinh rời tab / chuyển ứng dụng</span>
+                  </label>
+
+                  <div style={{ paddingLeft: '1.6rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Số lần vi phạm tối đa trước khi tự nộp:</span>
+                    <input 
+                      type="number" 
+                      min={1} 
+                      max={50}
+                      className="qm-input" 
+                      style={{ width: '80px', padding: '0.25rem 0.5rem', textAlign: 'center', fontWeight: 700 }}
+                      value={activeQuiz.settings?.antiCheat?.maxViolations ?? 10} 
+                      onChange={(e) => {
+                        const val = Math.max(1, parseInt(e.target.value) || 10);
+                        updateActiveQuiz({ 
+                          settings: { 
+                            ...activeQuiz.settings, 
+                            antiCheat: { 
+                              ...activeQuiz.settings?.antiCheat, 
+                              maxViolations: val 
+                            } 
+                          } 
+                        });
+                      }}
+                    />
+                    <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: 600 }}>lần (Mặc định: 10 lần)</span>
+                  </div>
+
+                  <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-muted)', paddingLeft: '1.6rem', lineHeight: 1.4 }}>
+                    💡 Thí sinh rời khỏi bài thi hoặc chuyển sang cửa sổ khác quá số lần trên sẽ bị hệ thống tự động khóa và nộp bài. Áp dụng cho cả thi trực tiếp và mã nhúng LMS.
                   </p>
                 </div>
               </div>

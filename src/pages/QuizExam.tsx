@@ -212,7 +212,7 @@ export default function QuizExam() {
 
   // === BẢO MẬT & CHỐNG GIAN LẬN: KHÓA CHUYỂN TRANG / CHUYỂN APP ===
   const triggerViolation = (reason: string) => {
-    const maxAllowed = quiz?.settings?.antiCheat?.maxViolations || 3;
+    const maxAllowed = quiz?.settings?.antiCheat?.maxViolations || 10;
     const shouldAutoSubmit = quiz?.settings?.antiCheat?.autoSubmitOnViolations ?? true;
 
     setViolationReason(reason);
@@ -954,7 +954,7 @@ export default function QuizExam() {
                 <li>Thời gian làm bài: <strong>{(quiz.settings?.timeLimitMinutes || 0) > 0 ? `${quiz.settings.timeLimitMinutes} phút` : 'Không giới hạn thời gian'}</strong>.</li>
                 <li>Điểm chuẩn đạt yêu cầu: <strong>{quiz.settings?.passingScorePercent || 50}%</strong> trở lên.</li>
                 <li style={{ color: '#ef4444', fontWeight: 600 }}>
-                  ⚠️ Hệ thống giám sát chống gian lận đa tầng: Khóa chuột phải, cấm sao chép câu hỏi, phát hiện rời tab/thu nhỏ ứng dụng (Tối đa {quiz.settings?.antiCheat?.maxViolations || 3} lần vi phạm sẽ tự động thu bài).
+                  ⚠️ Hệ thống giám sát chống gian lận đa tầng: Khóa chuột phải, cấm sao chép câu hỏi, phát hiện rời tab/thu nhỏ ứng dụng (Tối đa {quiz.settings?.antiCheat?.maxViolations || 10} lần vi phạm sẽ tự động thu bài).
                 </li>
                 <li>
                   🔀 Đề thi và các đáp án A-B-C-D được xáo trộn ngẫu nhiên riêng biệt cho từng thí sinh.
@@ -1691,8 +1691,8 @@ export default function QuizExam() {
             </h3>
 
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', fontWeight: 700, padding: '0.4rem 1rem', borderRadius: 20, fontSize: '0.9rem', marginBottom: '1rem' }}>
-              <span>Số lần vi phạm: <strong>{violationCount}</strong> / {quiz?.settings?.antiCheat?.maxViolations || 3}</span>
-              {(violationCount >= (quiz?.settings?.antiCheat?.maxViolations || 3)) && (
+              <span>Số lần vi phạm: <strong>{violationCount}</strong> / {quiz?.settings?.antiCheat?.maxViolations || 10}</span>
+              {(violationCount >= (quiz?.settings?.antiCheat?.maxViolations || 10)) && (
                 <span style={{ color: '#b91c1c' }}>(Đã đạt giới hạn - Đang tự động thu bài!)</span>
               )}
             </div>
@@ -1701,7 +1701,7 @@ export default function QuizExam() {
               Hệ thống phát hiện bạn vừa {violationReason ? <strong>{violationReason}</strong> : <strong>rời khỏi màn hình bài thi</strong>}. 
               {(quiz?.settings?.antiCheat?.autoSubmitOnViolations ?? true) && (
                 <span style={{ display: 'block', marginTop: '0.4rem', color: '#ef4444', fontWeight: 600 }}>
-                  ⚠️ Quy chế thi: Rời màn hình quá {quiz?.settings?.antiCheat?.maxViolations || 3} lần hệ thống sẽ tự động khóa và nộp bài thi ngay lập tức!
+                  ⚠️ Quy chế thi: Rời màn hình quá {quiz?.settings?.antiCheat?.maxViolations || 10} lần hệ thống sẽ tự động khóa và nộp bài thi ngay lập tức!
                 </span>
               )}
             </p>

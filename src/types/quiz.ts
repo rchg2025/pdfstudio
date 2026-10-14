@@ -58,7 +58,7 @@ export interface QuizSettings {
   // Cấu hình chống gian lận & giám sát thi
   antiCheat?: {
     enabled?: boolean; // Bật chế độ chống gian lận
-    maxViolations?: number; // Số lần vi phạm tối đa cho phép trước khi tự động nộp bài (mặc định 3)
+    maxViolations?: number; // Số lần vi phạm tối đa cho phép trước khi tự động nộp bài (mặc định 10)
     autoSubmitOnViolations?: boolean; // Tự động khóa và nộp bài khi vượt quá số lần vi phạm
     blockCopyPaste?: boolean; // Khóa sao chép, dán, chuột phải và phím tắt F12/Ctrl+U
     shuffleOptions?: boolean; // Xáo trộn ngẫu nhiên thứ tự 4 đáp án A, B, C, D cho từng thí sinh
