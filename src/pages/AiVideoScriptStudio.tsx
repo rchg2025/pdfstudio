@@ -1582,16 +1582,56 @@ export default function AiVideoScriptStudio() {
           </div>
         </div>
 
-        {/* Modal: Kịch bản mẫu (Presets) */}
+        {/* Modal: Kịch bản mẫu (Presets) Popup */}
         {showTemplateModal && (
-          <div className="modal-overlay" onClick={() => setShowTemplateModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(6px)' }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '680px', width: '92%', background: '#0f172a', border: '1px solid #1e293b', borderRadius: '1rem', color: '#fff', padding: '1.5rem' }}>
+          <div
+            onClick={() => setShowTemplateModal(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(2, 6, 23, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: '1rem'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: '680px',
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                background: '#0f172a',
+                border: '1px solid #334155',
+                borderRadius: '1.25rem',
+                color: '#fff',
+                padding: '1.5rem',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+                animation: 'popupFadeIn 0.2s ease-out'
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '0.85rem', marginBottom: '1.25rem' }}>
                 <div>
-                  <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800 }}>Thư Viện Kịch Bản Mẫu Chuẩn Liền Mạch</h3>
+                  <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Layers size={20} color="#818cf8" /> Thư Viện Kịch Bản Mẫu Chuẩn Liền Mạch
+                  </h3>
                   <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: '#94a3b8' }}>Chọn kịch bản mẫu để khám phá cấu trúc prompt và mối nối chuyển cảnh 6-10s</p>
                 </div>
-                <button type="button" onClick={() => setShowTemplateModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                <button
+                  type="button"
+                  onClick={() => setShowTemplateModal(false)}
+                  style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.5rem', color: '#94a3b8', cursor: 'pointer', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}
+                >
+                  ✕
+                </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
@@ -1600,8 +1640,14 @@ export default function AiVideoScriptStudio() {
                     key={key}
                     onClick={() => handleApplyPreset(key)}
                     style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '0.75rem', padding: '1rem', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}
-                    onMouseEnter={(e) => e.currentTarget.style.borderColor = '#6366f1'}
-                    onMouseLeave={(e) => e.currentTarget.style.borderColor = '#1e293b'}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = '#6366f1';
+                      e.currentTarget.style.background = '#0a1024';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = '#1e293b';
+                      e.currentTarget.style.background = '#020617';
+                    }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#818cf8' }}>{p.name}</span>
@@ -1617,15 +1663,51 @@ export default function AiVideoScriptStudio() {
           </div>
         )}
 
-        {/* Modal: Cấu hình Gemini API Key cá nhân */}
+        {/* Modal: Cấu hình Gemini API Key cá nhân Popup */}
         {showApiKeyModal && (
-          <div className="modal-overlay" onClick={() => setShowApiKeyModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(6px)' }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '520px', width: '92%', background: '#0f172a', border: '1px solid #1e293b', borderRadius: '1rem', color: '#fff', padding: '1.5rem' }}>
+          <div
+            onClick={() => setShowApiKeyModal(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(2, 6, 23, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: '1rem'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: '520px',
+                width: '100%',
+                background: '#0f172a',
+                border: '1px solid #334155',
+                borderRadius: '1.25rem',
+                color: '#fff',
+                padding: '1.5rem',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+                animation: 'popupFadeIn 0.2s ease-out'
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Key size={18} color="#6366f1" /> Cấu Hình Google Gemini API Key
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+                  <Key size={20} color="#6366f1" /> Cấu Hình Google Gemini API Key
                 </h3>
-                <button type="button" onClick={() => setShowApiKeyModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                <button
+                  type="button"
+                  onClick={() => setShowApiKeyModal(false)}
+                  style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.5rem', color: '#94a3b8', cursor: 'pointer', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}
+                >
+                  ✕
+                </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', fontSize: '0.85rem' }}>
@@ -1676,13 +1758,53 @@ export default function AiVideoScriptStudio() {
           </div>
         )}
 
-        {/* Modal: Xuất Kịch Bản */}
+        {/* Modal: Xuất Kịch Bản Popup */}
         {showExportModal && (
-          <div className="modal-overlay" onClick={() => setShowExportModal(false)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(6px)' }}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '580px', width: '92%', background: '#0f172a', border: '1px solid #1e293b', borderRadius: '1rem', color: '#fff', padding: '1.5rem' }}>
+          <div
+            onClick={() => setShowExportModal(false)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(2, 6, 23, 0.85)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: '1rem'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: '600px',
+                width: '100%',
+                maxHeight: '90vh',
+                overflowY: 'auto',
+                background: '#0f172a',
+                border: '1px solid #334155',
+                borderRadius: '1.25rem',
+                color: '#fff',
+                padding: '1.5rem',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.75)',
+                animation: 'popupFadeIn 0.2s ease-out'
+              }}
+            >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
-                <h3 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 800 }}>Xuất Kịch Bản Video</h3>
-                <button type="button" onClick={() => setShowExportModal(false)} style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '1.2rem' }}>✕</button>
+                <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Download size={20} color="#6366f1" /> Xuất Kịch Bản Video
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setShowExportModal(false)}
+                  style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.5rem', color: '#94a3b8', cursor: 'pointer', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}
+                >
+                  ✕
+                </button>
               </div>
 
               <p style={{ margin: '0 0 1rem', fontSize: '0.82rem', color: '#94a3b8' }}>
