@@ -146,8 +146,8 @@ const imageTools = [
   {
     path: '/tang-do-net-anh',
     icon: <Wand2 size={24} />,
-    title: 'Tăng độ nét ảnh',
-    desc: 'Cải thiện chất lượng hình ảnh, độ sáng, độ tương phản ngay trên trình duyệt.'
+    title: 'Tăng Độ Nét Ảnh & Chuẩn In Ấn 300 DPI',
+    desc: 'Làm nét ảnh mờ bằng Unsharp Masking, nhân độ phân giải 2X/4X/A4 không vỡ hạt và nhúng thẻ 300 DPI chuẩn tiệm in.'
   },
   {
     path: '/watermark-studio',

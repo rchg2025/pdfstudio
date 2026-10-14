@@ -366,11 +366,12 @@ export const ALL_TOOLS: ToolItem[] = [
   },
   {
     path: '/tang-do-net-anh',
-    title: 'Tăng Độ Nét & Làm Đẹp Ảnh Online',
-    desc: 'Cải thiện chất lượng hình ảnh, độ sáng, độ tương phản ngay trên trình duyệt.',
+    title: 'Tăng Độ Nét Ảnh & Phóng To Chuẩn In Ấn 300 DPI',
+    desc: 'Làm nét ảnh mờ bằng Unsharp Masking, nhân độ phân giải 2X/4X/A4 không vỡ hạt và nhúng thẻ 300 DPI chuẩn tiệm in.',
     category: 'image',
-    keywords: ['tăng độ nét ảnh', 'làm rõ ảnh mờ', 'nâng cấp chất lượng ảnh'],
-    priority: 0.8,
+    isHot: true,
+    keywords: ['tăng độ nét ảnh', 'làm rõ ảnh mờ', 'phóng to ảnh in ấn 300 dpi', 'ảnh in khổ a4 a3', 'unsharp mask online'],
+    priority: 0.9,
     changefreq: 'weekly'
   },
   {
