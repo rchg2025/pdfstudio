@@ -562,11 +562,11 @@ export default function AiVideoScriptStudio() {
       featureDescription="Công cụ biên kịch và tạo kịch bản video AI liền mạch phân cảnh 6-10s cho bài giảng và mô phỏng thao tác yêu cầu đăng nhập tài khoản."
       returnUrl="/kich-ban-video-ai"
     >
-      <div style={{ maxWidth: '1720px', margin: '0 auto', padding: '1.25rem 1.5rem', minHeight: 'calc(100vh - 140px)' }}>
+      <div style={{ width: '100%', maxWidth: '100%', margin: '0', padding: '1rem 1.5rem 3rem', minHeight: 'calc(100vh - 140px)', boxSizing: 'border-box' }}>
         {/* Header Bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', background: '#0f172a', padding: '1.25rem 1.5rem', borderRadius: '1rem', border: '1px solid #1e293b', color: '#fff' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #6366f1, #22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.4)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem', background: '#0f172a', padding: '1.25rem 1.75rem', borderRadius: '1rem', border: '1px solid #1e293b', color: '#fff', boxShadow: '0 4px 20px -2px rgba(0, 0, 0, 0.4)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '14px', background: 'linear-gradient(135deg, #6366f1, #22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 16px -4px rgba(99, 102, 241, 0.4)', flexShrink: 0 }}>
               <Film size={26} color="#fff" />
             </div>
             <div>
@@ -579,25 +579,47 @@ export default function AiVideoScriptStudio() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', flexWrap: 'wrap' }}>
             <button
               type="button"
               onClick={() => setShowApiKeyModal(true)}
-              className="btn btn-outline btn-sm"
-              style={{ borderColor: customApiKey ? '#10b981' : '#475569', color: customApiKey ? '#34d399' : '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
+              className="btn btn-sm"
+              style={{
+                background: customApiKey ? 'rgba(16, 185, 129, 0.15)' : 'rgba(30, 41, 59, 0.9)',
+                border: customApiKey ? '1px solid #10b981' : '1px solid #475569',
+                color: customApiKey ? '#34d399' : '#f1f5f9',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                padding: '0.5rem 0.9rem',
+                borderRadius: '0.6rem'
+              }}
               title="Cấu hình Google Gemini API Key cá nhân"
             >
-              <Key size={14} />
+              <Key size={15} color={customApiKey ? '#34d399' : '#f59e0b'} />
               <span>{customApiKey ? 'Gemini Key (Đã cấu hình)' : 'Cấu hình Gemini Key'}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setShowTemplateModal(true)}
-              className="btn btn-outline btn-sm"
-              style={{ borderColor: '#475569', color: '#cbd5e1', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
+              className="btn btn-sm"
+              style={{
+                background: 'rgba(99, 102, 241, 0.15)',
+                border: '1px solid rgba(99, 102, 241, 0.4)',
+                color: '#c7d2fe',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                padding: '0.5rem 0.9rem',
+                borderRadius: '0.6rem'
+              }}
             >
-              <Layers size={14} color="#818cf8" />
+              <Layers size={15} color="#818cf8" />
               <span>Kịch bản mẫu</span>
             </button>
 
@@ -605,33 +627,118 @@ export default function AiVideoScriptStudio() {
               type="button"
               onClick={() => setShowExportModal(true)}
               className="btn btn-primary btn-sm"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', background: '#6366f1', borderColor: '#6366f1' }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                border: 'none',
+                padding: '0.5rem 1rem',
+                borderRadius: '0.6rem'
+              }}
             >
-              <Download size={14} />
+              <Download size={15} />
               <span>Xuất kịch bản</span>
             </button>
           </div>
         </div>
 
         {/* Main 2-Column Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(320px, 420px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(340px, 440px) 1fr', gap: '1.5rem', alignItems: 'start' }}>
           
           {/* LEFT COLUMN: Controls & Generation Form */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
             <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '1rem', padding: '1.25rem', color: '#f8fafc', boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.85rem', marginBottom: '1rem', borderBottom: '1px solid #1e293b' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: '0.85rem', marginBottom: '1rem', borderBottom: '1px solid #1e293b', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#22c55e', display: 'inline-block' }}></span>
                   <h3 style={{ margin: 0, fontSize: '0.88rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#e2e8f0' }}>
                     Cấu Hình Kịch Bản Video AI
                   </h3>
                 </div>
-                <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontFamily: 'monospace' }}>
-                  Gemini Flash AI
-                </span>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowTemplateModal(true)}
+                    style={{
+                      background: 'rgba(99, 102, 241, 0.12)',
+                      border: '1px solid rgba(99, 102, 241, 0.3)',
+                      color: '#a5b4fc',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '0.4rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                    title="Chọn kịch bản mẫu nhanh"
+                  >
+                    <Layers size={12} color="#818cf8" />
+                    <span>Mẫu có sẵn</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowApiKeyModal(true)}
+                    style={{
+                      background: customApiKey ? 'rgba(16, 185, 129, 0.12)' : 'rgba(245, 158, 11, 0.12)',
+                      border: customApiKey ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(245, 158, 11, 0.3)',
+                      color: customApiKey ? '#34d399' : '#fbbf24',
+                      fontSize: '0.72rem',
+                      fontWeight: 600,
+                      padding: '0.2rem 0.55rem',
+                      borderRadius: '0.4rem',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '0.25rem'
+                    }}
+                    title="Cấu hình Google Gemini API Key"
+                  >
+                    <Key size={12} />
+                    <span>{customApiKey ? 'Key riêng: OK' : 'Gemini Key'}</span>
+                  </button>
+
+                  <span style={{ fontSize: '0.72rem', background: 'rgba(16, 185, 129, 0.15)', color: '#34d399', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '0.15rem 0.5rem', borderRadius: '9999px', fontFamily: 'monospace' }}>
+                    Gemini Flash
+                  </span>
+                </div>
               </div>
 
               <form onSubmit={handleGenerateScript} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {/* Quick Preset Selector Buttons Bar */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflowX: 'auto', paddingBottom: '0.25rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#94a3b8', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    ⚡ Gợi ý:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('tutorial_crypto')}
+                    style={{ background: '#020617', border: '1px solid #334155', borderRadius: '0.4rem', padding: '0.2rem 0.5rem', color: '#cbd5e1', fontSize: '0.72rem', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                  >
+                    🔐 Ví Web3 (Mô phỏng)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('lecture_ai')}
+                    style={{ background: '#020617', border: '1px solid #334155', borderRadius: '0.4rem', padding: '0.2rem 0.5rem', color: '#cbd5e1', fontSize: '0.72rem', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                  >
+                    🎓 Attention AI (Bài giảng)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPreset('product_espresso')}
+                    style={{ background: '#020617', border: '1px solid #334155', borderRadius: '0.4rem', padding: '0.2rem 0.5rem', color: '#cbd5e1', fontSize: '0.72rem', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                  >
+                    ☕ Espresso (Cinematic)
+                  </button>
+                </div>
+
                 {/* Chủ đề chính */}
                 <div>
                   <label style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', fontWeight: 600, color: '#cbd5e1', marginBottom: '0.4rem' }}>
