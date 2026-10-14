@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pdfstudio.vn/sitemap.xml
+# Disallow private user/admin dashboards from being indexed
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /thong-tin-ca-nhan
+Disallow: /profile
+Disallow: /api/
+
+Sitemap: https://tienich.ite.id.vn/sitemap.xml

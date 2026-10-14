@@ -105,6 +105,20 @@ app.all('/api/live-battle', adaptVercelHandler(liveBattleHandler));
 // Chat with PDF API (Hỏi đáp tài liệu PDF bằng AI)
 app.all('/api/pdf-chat', adaptVercelHandler(pdfChatHandler));
 
+// Sitemaps XML Route (Tự động phục vụ file sitemap.xml cập nhật mới nhất cho Googlebot)
+app.get('/sitemap.xml', (_req, res) => {
+  const publicSitemap = path.join(__dirname, 'public', 'sitemap.xml');
+  const distSitemap = path.join(__dirname, 'dist', 'sitemap.xml');
+  const targetPath = fs.existsSync(distSitemap) ? distSitemap : (fs.existsSync(publicSitemap) ? publicSitemap : null);
+
+  if (targetPath) {
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=3600');
+    return res.sendFile(targetPath);
+  }
+  return res.status(404).send('Sitemap not found');
+});
+
 // Static files from Vite build
 const distPath = path.join(__dirname, 'dist');
 if (fs.existsSync(distPath)) {
@@ -161,6 +175,21 @@ if (fs.existsSync(distPath)) {
     '/dau-truong-live/:roomId',
     '/dau-truong',
     '/dau-truong/:pinCode',
+    '/kich-ban-video-ai',
+    '/ai-video-script',
+    '/crop-anh',
+    '/resize-anh',
+    '/tang-do-net-anh',
+    '/tao-anh-ai',
+    '/tao-anh-the',
+    '/anh-the-ai',
+    '/xoa-dau-tieng-viet',
+    '/xoa-trang-pdf',
+    '/dong-dau-pdf',
+    '/bao-mat-pdf',
+    '/jpg-sang-pdf',
+    '/xoa-nen-mau',
+    '/pdf-compare',
     '/hoi-dap-pdf-ai',
     '/embed-player'
   ];

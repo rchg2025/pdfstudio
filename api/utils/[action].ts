@@ -3,6 +3,7 @@ import statsHandler from './_stats.js';
 import shortenHandler from './_shorten.js';
 import proxyImageHandler from './_proxy-image.js';
 import googleConfigHandler from './_google.js';
+import indexSitemapHandler from './_index-sitemap.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const action = req.query?.action || (req as any).params?.action;
@@ -17,6 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await proxyImageHandler(req, res);
       case 'google':
         return await googleConfigHandler(req, res);
+      case 'index-sitemap':
+        return await indexSitemapHandler(req, res);
       default:
         return res.status(404).json({ message: 'API Route Not Found' });
     }

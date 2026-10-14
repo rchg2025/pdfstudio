@@ -5,6 +5,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import GoogleAuthProviderWrapper from './components/GoogleAuthProviderWrapper';
+import SeoHeadManager from './components/SeoHeadManager';
 
 // Lazy load heavy components
 const PdfEditor = React.lazy(() => import('./pages/PdfEditor'));
@@ -77,6 +78,7 @@ function App() {
       <NotificationProvider>
         <AuthProvider>
           <BrowserRouter>
+          <SeoHeadManager />
           <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
