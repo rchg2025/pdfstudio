@@ -59,6 +59,7 @@ const AttendanceCheckIn = React.lazy(() => import('./pages/AttendanceCheckIn'));
 const LeaderboardManager = React.lazy(() => import('./pages/LeaderboardManager'));
 const LiveBattleHost = React.lazy(() => import('./pages/LiveBattleHost'));
 const LiveBattlePlayer = React.lazy(() => import('./pages/LiveBattlePlayer'));
+const AiVideoScriptStudio = React.lazy(() => import('./pages/AiVideoScriptStudio'));
 const ChatWithPdf = React.lazy(() => import('./pages/ChatWithPdf'));
 
 const FallbackLoader = () => (
@@ -247,6 +248,12 @@ function App() {
             } />
             <Route path="dau-truong" element={
               <Suspense fallback={<FallbackLoader />}><LiveBattlePlayer /></Suspense>
+            } />
+            <Route path="kich-ban-video-ai" element={
+              <Suspense fallback={<FallbackLoader />}><AiVideoScriptStudio /></Suspense>
+            } />
+            <Route path="ai-video-script" element={
+              <Suspense fallback={<FallbackLoader />}><AiVideoScriptStudio /></Suspense>
             } />
             <Route path="dau-truong/:pinCode" element={
               <Suspense fallback={<FallbackLoader />}><LiveBattlePlayer /></Suspense>

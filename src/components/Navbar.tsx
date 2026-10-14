@@ -114,6 +114,9 @@ const Navbar = () => {
             <NavLink to="/soan-de-thi-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>
               ✨ Soạn Đề AI
             </NavLink>
+            <NavLink to="/kich-ban-video-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>
+              🎬 Kịch Bản Video AI
+            </NavLink>
             <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
             <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Xuất Mã Nhúng</NavLink>
             
@@ -267,6 +270,14 @@ const Navbar = () => {
               <div className="mfc-info">
                 <div className="mfc-title">Soạn Đề AI</div>
                 <div className="mfc-desc">Bóc tách giáo trình ra đề</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/kich-ban-video-ai" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}>🎬</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Kịch Bản Video AI</div>
+                <div className="mfc-desc">Phân cảnh 6-10s liền mạch</div>
               </div>
             </NavLink>
 

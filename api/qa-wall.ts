@@ -1408,6 +1408,151 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       return res.status(200).json({ success: true });
     }
 
+    // 18. TẠO KỊCH BẢN VIDEO LIỀN MẠCH BẰNG AI (AI VIDEO SCRIPT CONTINUITY STUDIO)
+    if (req.method === 'POST' && action === 'generate-video-script') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const {
+        topic,
+        videoType = 'tutorial_simulation',
+        scenePacing = 'standard_8_10s',
+        visualStyle = 'hyperrealistic_studio',
+        aiToolTarget = 'runway_gen3',
+        sceneCount = 6,
+        voiceTone = 'clear_tutorial_guide',
+        matchCut = true,
+        cameraFlow = true,
+        subjectLock = true,
+        customApiKey
+      } = body || {};
+
+      if (!topic || !String(topic).trim()) {
+        return res.status(400).json({ error: 'Chủ đề / mục tiêu video không được để trống.' });
+      }
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({
+          error: 'Chưa cấu hình Google Gemini API Key trong hệ thống! Vui lòng vào Quản trị > Cấu hình AI (Gemini) để lưu key hoặc nhập key cá nhân trực tiếp.'
+        });
+      }
+
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
+
+      const numScenes = Math.min(Math.max(Number(sceneCount) || 6, 2), 16);
+
+      let durationRule = "Mỗi cảnh bắt buộc có thời lượng từ 6 đến 10 giây (khuyến nghị 7-9 giây).";
+      if (scenePacing === 'dynamic_6_8s') durationRule = "Mỗi cảnh bắt buộc từ 6 đến 8 giây (nhịp nhanh, dứt khoát).";
+      if (scenePacing === 'exact_8s') durationRule = "Mỗi cảnh chính xác 8 giây (để dễ đồng bộ nhịp nhạc).";
+
+      const systemInstruction = `Bạn là Đạo diễn hình ảnh và Biên kịch chuyên gia hàng đầu về AI Video (Runway Gen-3, Kling AI 1.5/2.0, Luma Dream Machine, Sora, Midjourney+Pika).
+Nhiệm vụ của bạn là tạo kịch bản video AI chuyên nghiệp gồm chính xác ${numScenes} phân cảnh.
+
+QUY TẮC BẮT BUỘC VỀ SỰ LIỀN MẠCH (CONTINUITY DIRECTIVES):
+1. Mỗi phân cảnh có thời lượng từ 6 đến 10 giây.
+2. TÍNH LIỀN MẠCH GIỮA CÁC CẢNH (CỰC KỲ QUAN TRỌNG):
+   - Cảnh sau PHẢI nối tiếp hợp lý góc máy, chuyển động hoặc hành động của cảnh trước (Continuity Bridge).
+   - Sử dụng các thủ pháp điện ảnh: Match-cut (chuyển động tay hoặc vật thể), Camera panning continuation (Pan phải nối tiếp Pan phải hoặc Dolly lướt tiếp), Zoom-in nối tiếp Macro close-up, Over-the-shoulder nối tiếp Screen POV.
+   - Giữ khóa đồng nhất (Anchor consistency): Cùng một nhân vật (màu áo, bàn tay, đồng hồ), cùng một bối cảnh (màu đèn, bề mặt bàn), cùng giao diện UI hoặc thiết bị.
+3. NGÔN NGỮ & NỘI DUNG:
+   - "englishPrompt": Viết bằng TIẾNG ANH CHUYÊN SÂU cho công cụ tạo video AI (${aiToolTarget}). Bao gồm: Shot type (Over-the-shoulder, Macro, Medium, Top-down), Subject & Action chi tiết, Camera movement (Dolly in, Pan right, Orbit, Crane down), Lighting & Atmosphere, Resolution & Render tags (8k, photorealistic, cinematic volumetric light, 60fps).
+   - "vietnameseVoiceover": Lời thuyết minh bằng TIẾNG VIỆT tự nhiên, đúng tông giọng (${voiceTone}). Số từ phải vừa khớp thời lượng 6-10s (khoảng 15 đến 25 từ tiếng Việt, tốc độ nói tiêu chuẩn ~2.5 từ/giây).
+   - "continuityBridge": Giải thích bằng tiếng Việt cách cảnh này nối tiếp trơn tru từ cảnh trước đó (hoặc cảnh mở màn).
+   - "cameraMotion": Tóm tắt ngắn chuyển động camera (VD: "Slow forward push-in", "45° orbital turn").
+   - "continuityTags": Các từ khóa neo giữ tính nhất quán (VD: "Same navy blue blazer, 3200K warm desk lamp, black smartphone").
+   - "audioSfx": Gợi ý hiệu ứng âm thanh cụ thể (SFX) và nền nhạc (BGM) cho cảnh này.`;
+
+      const userPrompt = `Hãy tạo kịch bản video AI liền mạch cho:
+- Chủ đề: ${String(topic).trim()}
+- Loại video: ${videoType}
+- Phong cách hình ảnh: ${visualStyle}
+- Công cụ mục tiêu: ${aiToolTarget}
+- Tông giọng thuyết minh: ${voiceTone}
+- Số lượng phân cảnh: ${numScenes} cảnh
+- Yêu cầu thời lượng: ${durationRule}
+- Tiêu chí liền mạch: Match-cut: ${matchCut ? 'BẬT' : 'TẮT'}, Camera Flow: ${cameraFlow ? 'BẬT' : 'TẮT'}, Subject Lock: ${subjectLock ? 'BẬT' : 'TẮT'}.
+
+BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown, không có \`\`\`json ở đầu cuối):
+{
+  "projectTitle": "Tên kịch bản súc tích",
+  "scenes": [
+    {
+      "sceneNumber": 1,
+      "durationSec": 8,
+      "title": "Tên phân cảnh ngắn gọn",
+      "continuityBridge": "Mô tả mối nối chuyển cảnh mượt mà từ cảnh trước",
+      "englishPrompt": "English detailed AI video generation prompt with camera, subject, lighting, and style...",
+      "vietnameseVoiceover": "Lời thuyết minh tiếng Việt chuẩn xác khoảng 15-25 từ phù hợp thời lượng...",
+      "cameraMotion": "Tên chuyển động camera",
+      "continuityTags": "Từ khóa neo giữ đồng bộ hình ảnh",
+      "audioSfx": "Hiệu ứng âm thanh gợi ý"
+    }
+  ]
+}`;
+
+      let generatedResult: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue) {
+        try {
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: userPrompt }] }],
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              generationConfig: {
+                responseMimeType: "application/json"
+              }
+            })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+              const parsed = JSON.parse(cleaned);
+              if (parsed && Array.isArray(parsed.scenes) && parsed.scenes.length > 0) {
+                generatedResult = parsed;
+                usedModel = m;
+                break;
+              }
+            }
+          } else {
+            const errText = await response.text();
+            attemptErrors.push(`[${m}]: ${response.status} - ${errText.substring(0, 150)}`);
+          }
+        } catch (e: any) {
+          attemptErrors.push(`[${m}]: ${e.message}`);
+        }
+      }
+
+      if (!generatedResult) {
+        return res.status(500).json({
+          error: 'Tất cả mô hình AI đều gặp sự cố khi tạo kịch bản video.',
+          details: attemptErrors.join(' | ')
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        usedModel,
+        projectTitle: generatedResult.projectTitle || String(topic).substring(0, 60),
+        scenes: generatedResult.scenes
+      });
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);

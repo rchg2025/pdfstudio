@@ -43,6 +43,7 @@ import {
   Trophy,
   Grid,
   Bot,
+  Film,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -242,6 +243,13 @@ const edTechTools = [
     icon: <BookOpen size={24} />,
     title: 'Soạn Đề Thi Giáo Trình AI & Cây Mục Lục',
     desc: 'Bóc tách đề mục (Chương/Bài/Sub) từ Word/PDF/Drive/Web, sinh đề trắc nghiệm & tự luận theo phạm vi chọn lọc, xuất Word chuẩn mẫu.'
+  },
+  {
+    path: '/kich-ban-video-ai',
+    icon: <Film size={24} color="#f43f5e" />,
+    title: '🎬 AI Video Script Continuity Studio (Kịch Bản 6-10s)',
+    desc: 'Biên kịch video bài giảng & mô phỏng thao tác: Phân cảnh 6-10s liền mạch góc quay, prompt tiếng Anh chuẩn Runway/Kling/Luma và thuyết minh tiếng Việt.',
+    isHot: true
   },
   {
     path: '/the-ghi-nho-flashcard',
