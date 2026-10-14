@@ -31,6 +31,7 @@ export interface VideoScene {
   continuityTags: string;
   audioSfx: string;
   audioUrl?: string;
+  audioVoice?: string;
 }
 
 export const EDGE_VOICES_PREVIEW = [
@@ -500,8 +501,8 @@ export default function AiVideoScriptStudio() {
       window.speechSynthesis.cancel();
     }
 
-    // 1. Kiểm tra nếu đã có sẵn audioUrl trong cache của scene
-    if (scene.audioUrl) {
+    // 1. Kiểm tra nếu đã có sẵn audioUrl trong cache của scene VÀ cùng giọng đọc được chọn
+    if (scene.audioUrl && scene.audioVoice === selectedEdgeVoice) {
       const audio = new Audio(scene.audioUrl);
       audioPlayerRef.current = audio;
       setPlayingIndex(index);
@@ -509,7 +510,8 @@ export default function AiVideoScriptStudio() {
       audio.onended = () => setPlayingIndex(null);
       audio.onerror = () => {
         setPlayingIndex(null);
-        showToast('Lỗi phát âm thanh đã lưu.', 'error');
+        showToast('Lỗi phát âm thanh đã lưu. Đang tạo lại...', 'warning');
+        handleUpdateScene(index, 'audioUrl', undefined);
       };
 
       audio.play().catch(e => {
@@ -522,6 +524,7 @@ export default function AiVideoScriptStudio() {
     // 2. Gọi Edge TTS qua backend API
     setLoadingAudioIndex(index);
     try {
+      const authToken = token || localStorage.getItem('token') || '';
       let chunkText = scene.vietnameseVoiceover
         .replace(/\bAI\b/g, 'A.I')
         .replace(/\bPDF\b/g, 'P.D.F')
@@ -533,7 +536,7 @@ export default function AiVideoScriptStudio() {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
         },
         body: JSON.stringify({
           text: chunkText,
@@ -553,8 +556,22 @@ export default function AiVideoScriptStudio() {
         throw new Error('Dữ liệu âm thanh từ Microsoft Edge AI rỗng.');
       }
 
-      const url = window.URL.createObjectURL(blob);
-      handleUpdateScene(index, 'audioUrl', url);
+      // Tạo Blob audio/mpeg chuẩn
+      const audioBlob = new Blob([blob], { type: 'audio/mpeg' });
+      const url = window.URL.createObjectURL(audioBlob);
+      
+      // Lưu url và voice vào state của scene
+      setProject(prev => {
+        const newScenes = [...prev.scenes];
+        if (newScenes[index]) {
+          newScenes[index] = { 
+            ...newScenes[index], 
+            audioUrl: url,
+            audioVoice: selectedEdgeVoice 
+          };
+        }
+        return { ...prev, scenes: newScenes };
+      });
 
       const audio = new Audio(url);
       audioPlayerRef.current = audio;
@@ -567,29 +584,11 @@ export default function AiVideoScriptStudio() {
       };
 
       await audio.play();
-      showToast(`Đang nghe Microsoft Edge AI cảnh #${index + 1}...`, 'info');
+      const voiceInfo = EDGE_VOICES_PREVIEW.find(v => v.id === selectedEdgeVoice);
+      showToast(`Đang nghe [${voiceInfo?.name || selectedEdgeVoice}] cảnh #${index + 1}...`, 'info');
     } catch (edgeErr: any) {
-      console.warn('Edge TTS failed, falling back to Web Speech Synthesis:', edgeErr);
-      showToast(`Dùng Web Speech (Edge AI: ${edgeErr.message || 'Lỗi mạng'})`, 'warning');
-
-      if (!('speechSynthesis' in window)) {
-        showToast('Trình duyệt không hỗ trợ bộ đọc giọng nói Web Speech.', 'warning');
-        return;
-      }
-
-      const utterance = new SpeechSynthesisUtterance(scene.vietnameseVoiceover);
-      utterance.lang = 'vi-VN';
-      utterance.rate = 0.95;
-
-      const voices = window.speechSynthesis.getVoices();
-      const viVoice = voices.find(v => v.lang.includes('vi') || v.lang.includes('VN'));
-      if (viVoice) utterance.voice = viVoice;
-
-      utterance.onstart = () => setPlayingIndex(index);
-      utterance.onend = () => setPlayingIndex(null);
-      utterance.onerror = () => setPlayingIndex(null);
-
-      window.speechSynthesis.speak(utterance);
+      console.error('Edge TTS error:', edgeErr);
+      showToast(`Lỗi Microsoft Edge AI: ${edgeErr.message || 'Không thể tạo âm thanh'}`, 'error');
     } finally {
       setLoadingAudioIndex(null);
     }
@@ -604,12 +603,27 @@ export default function AiVideoScriptStudio() {
     }
 
     try {
-      let downloadUrl = scene.audioUrl;
+      let downloadBlob: Blob | null = null;
 
-      if (!downloadUrl) {
+      // Nếu đã có audioUrl và đúng giọng đọc hiện tại, lấy blob từ URL
+      if (scene.audioUrl && scene.audioVoice === selectedEdgeVoice) {
+        try {
+          const res = await fetch(scene.audioUrl);
+          if (res.ok) {
+            downloadBlob = await res.blob();
+          }
+        } catch {
+          downloadBlob = null;
+        }
+      }
+
+      // Nếu chưa có hoặc đổi giọng, tạo mới từ API Edge TTS
+      if (!downloadBlob) {
         setLoadingAudioIndex(index);
-        showToast(`Đang tạo âm thanh Microsoft Edge AI cho cảnh #${index + 1}...`, 'info');
+        const voiceInfo = EDGE_VOICES_PREVIEW.find(v => v.id === selectedEdgeVoice);
+        showToast(`Đang tạo file MP3 (${voiceInfo?.name || selectedEdgeVoice}) cảnh #${index + 1}...`, 'info');
 
+        const authToken = token || localStorage.getItem('token') || '';
         let chunkText = scene.vietnameseVoiceover
           .replace(/\bAI\b/g, 'A.I')
           .replace(/\bPDF\b/g, 'P.D.F')
@@ -621,7 +635,7 @@ export default function AiVideoScriptStudio() {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
           },
           body: JSON.stringify({
             text: chunkText,
@@ -636,9 +650,25 @@ export default function AiVideoScriptStudio() {
           throw new Error(errorData.error || `HTTP ${response.status}`);
         }
 
-        const blob = await response.blob();
-        downloadUrl = window.URL.createObjectURL(blob);
-        handleUpdateScene(index, 'audioUrl', downloadUrl);
+        const rawBlob = await response.blob();
+        if (rawBlob.size < 50) {
+          throw new Error('Dữ liệu âm thanh Microsoft Edge AI rỗng.');
+        }
+
+        downloadBlob = new Blob([rawBlob], { type: 'audio/mpeg' });
+        const newUrl = window.URL.createObjectURL(downloadBlob);
+        
+        setProject(prev => {
+          const newScenes = [...prev.scenes];
+          if (newScenes[index]) {
+            newScenes[index] = { 
+              ...newScenes[index], 
+              audioUrl: newUrl,
+              audioVoice: selectedEdgeVoice 
+            };
+          }
+          return { ...prev, scenes: newScenes };
+        });
       }
 
       const safeTitle = (scene.title || `Canh_${index + 1}`)
@@ -648,12 +678,19 @@ export default function AiVideoScriptStudio() {
         .replace(/_+/g, '_');
       const filename = `canh_${index + 1}_${safeTitle}.mp3`;
 
+      // Tạo link download an toàn chuẩn HTML5 download
+      const blobUrl = window.URL.createObjectURL(downloadBlob);
       const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = filename;
+      link.style.display = 'none';
+      link.href = blobUrl;
+      link.setAttribute('download', filename);
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
+      
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      }, 300);
 
       showToast(`Đã tải file âm thanh "${filename}"!`, 'success');
     } catch (err: any) {
@@ -778,11 +815,12 @@ export default function AiVideoScriptStudio() {
       .replace(/\bTTS\b/g, 'T.T.S')
       .replace(/\bURL\b/g, 'U.R.L');
 
+    const authToken = token || localStorage.getItem('token') || '';
     const response = await fetch('/api/edge-tts', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
       },
       body: JSON.stringify({
         text: chunkText,

@@ -7,19 +7,26 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
+    // Xác thực người dùng
     try {
       await requireActiveSubscription(req);
     } catch (authErr: any) {
       if (authErr.message === 'Unauthorized') {
         return res.status(401).json({ error: 'Vui lòng đăng nhập để sử dụng tính năng Đọc Văn Bản' });
       }
-      if (authErr.message === 'SUBSCRIPTION_EXPIRED' || authErr.code === 'SUBSCRIPTION_EXPIRED') {
-        return res.status(403).json({ error: 'Tài khoản của bạn đã hết hạn sử dụng. Vui lòng gia hạn để tiếp tục.' });
-      }
       if (authErr.message === 'DISABLED_ACCOUNT') {
         return res.status(403).json({ error: 'Tài khoản của bạn đang bị tạm khóa.' });
       }
-      return res.status(401).json({ error: 'Yêu cầu đăng nhập tài khoản hợp lệ.' });
+      if (authErr.message === 'SUBSCRIPTION_EXPIRED' || authErr.code === 'SUBSCRIPTION_EXPIRED') {
+        return res.status(403).json({ error: 'Tài khoản của bạn đã hết hạn sử dụng. Vui lòng gia hạn để tiếp tục.' });
+      }
+      // Nếu lỗi do database Neon pool timeout/mất kết nối nhưng token JWT đã giải mã hợp lệ -> Vẫn cho phép
+      const { getUserFromRequest } = await import('./_lib/auth.js');
+      const validUser = getUserFromRequest(req);
+      if (!validUser) {
+        return res.status(401).json({ error: 'Yêu cầu đăng nhập tài khoản hợp lệ.' });
+      }
+      console.warn('requireActiveSubscription DB warning, fallback to valid JWT user:', authErr.message);
     }
 
     const { text, voice = 'vi-VN-HoaiMyNeural', rate = '+0%', pitch = '+0Hz' } = req.body;
