@@ -1513,9 +1513,13 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
 
       for (const m of modelQueue) {
         try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 28000);
+
           const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               contents: [{ parts: [{ text: userPrompt }] }],
               systemInstruction: { parts: [{ text: systemInstruction }] },
@@ -1524,6 +1528,7 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
               }
             })
           });
+          clearTimeout(timeoutId);
 
           if (response.ok) {
             const data = await response.json();
@@ -1542,7 +1547,7 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
             attemptErrors.push(`[${m}]: ${response.status} - ${errText.substring(0, 150)}`);
           }
         } catch (e: any) {
-          attemptErrors.push(`[${m}]: ${e.message}`);
+          attemptErrors.push(`[${m}]: ${e.name === 'AbortError' ? 'Timeout 28s' : e.message}`);
         }
       }
 

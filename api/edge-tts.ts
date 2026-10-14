@@ -1,4 +1,4 @@
-import { Communicate } from 'edge-tts-universal';
+import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 import { requireActiveSubscription } from './_lib/auth.js';
 
 export default async function handler(req: any, res: any) {
@@ -35,14 +35,34 @@ export default async function handler(req: any, res: any) {
       return res.status(400).json({ error: 'Text is required' });
     }
 
+    const tts = new MsEdgeTTS();
+    await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
+
+    const streamResult = await tts.toStream(text, {
+      rate: rate || '+0%',
+      pitch: pitch || '+0Hz'
+    });
+
     const audioChunks: Buffer[] = [];
-    const communicate = new Communicate(text, { voice, rate, pitch });
-    
-    for await (const chunk of communicate.stream()) {
-      if (chunk.type === 'audio' && chunk.data) {
-        audioChunks.push(chunk.data);
-      }
-    }
+    await new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Microsoft Edge AI phản hồi quá lâu (quá 15s)'));
+      }, 15000);
+
+      streamResult.audioStream.on('data', (chunk: Buffer) => {
+        audioChunks.push(chunk);
+      });
+
+      streamResult.audioStream.on('end', () => {
+        clearTimeout(timeout);
+        resolve();
+      });
+
+      streamResult.audioStream.on('error', (err: any) => {
+        clearTimeout(timeout);
+        reject(err);
+      });
+    });
 
     if (audioChunks.length === 0) {
       return res.status(500).json({ error: 'Không nhận được dữ liệu âm thanh từ Microsoft AI' });

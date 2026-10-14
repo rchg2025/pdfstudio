@@ -39,6 +39,7 @@
     "jszip": "^3.10.1",
     "lucide-react": "^1.22.0",
     "mammoth": "^1.12.1",
+    "msedge-tts": "^2.1.0",
     "nodemailer": "^9.0.3",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^6.1.200",
