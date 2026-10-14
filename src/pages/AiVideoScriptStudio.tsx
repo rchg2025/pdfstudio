@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Film, 
   Sparkles, 
@@ -11,10 +11,14 @@ import {
   Key, 
   Layers, 
   FileText, 
-  Compass
+  Compass,
+  Loader2,
+  FileAudio
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
+import { useAuth } from '../contexts/AuthContext';
 import AuthGate from '../components/AuthGate';
+import JSZip from 'jszip';
 
 export interface VideoScene {
   sceneNumber: number;
@@ -26,7 +30,15 @@ export interface VideoScene {
   cameraMotion: string;
   continuityTags: string;
   audioSfx: string;
+  audioUrl?: string;
 }
+
+export const EDGE_VOICES_PREVIEW = [
+  { id: 'vi-VN-HoaiMyNeural', name: 'Hoài My (Nữ - Bắc Bộ, chuẩn phát thanh viên)', gender: 'Nữ' },
+  { id: 'vi-VN-NamMinhNeural', name: 'Nam Minh (Nam - Bắc Bộ, truyền cảm, rõ nét)', gender: 'Nam' },
+  { id: 'en-US-AvaMultilingualNeural', name: 'Ava (Nữ - Song ngữ Anh & Việt hiện đại)', gender: 'Nữ' },
+  { id: 'en-US-AndrewMultilingualNeural', name: 'Andrew (Nam - Song ngữ Anh & Việt quốc tế)', gender: 'Nam' }
+];
 
 export interface VideoScriptProject {
   projectTitle: string;
@@ -281,6 +293,8 @@ export default function AiVideoScriptStudio() {
     };
   });
 
+  const { token } = useAuth();
+
   // UI state
   const [isGenerating, setIsGenerating] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState('');
@@ -289,7 +303,25 @@ export default function AiVideoScriptStudio() {
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [customApiKey, setCustomApiKey] = useState(() => localStorage.getItem('rchg_gemini_api_key') || '');
   const [apiKeyInput, setApiKeyInput] = useState(() => localStorage.getItem('rchg_gemini_api_key') || '');
+  const [selectedEdgeVoice, setSelectedEdgeVoice] = useState('vi-VN-HoaiMyNeural');
   const [playingIndex, setPlayingIndex] = useState<number | null>(null);
+  const [loadingAudioIndex, setLoadingAudioIndex] = useState<number | null>(null);
+  const [isExportingAudio, setIsExportingAudio] = useState(false);
+  const [audioExportProgress, setAudioExportProgress] = useState('');
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+
+  // Dọn dẹp âm thanh khi unmount
+  useEffect(() => {
+    return () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current = null;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    };
+  }, []);
 
   // Save project to LocalStorage
   useEffect(() => {
@@ -438,37 +470,198 @@ export default function AiVideoScriptStudio() {
     showToast(`Đã thêm phân cảnh mới #${nextNum}`, 'success');
   };
 
-  // Voiceover Preview (Web Speech Synthesis)
-  const handlePlayVoiceover = (index: number) => {
+  // Voiceover Preview (Microsoft Edge AI TTS & Web Speech fallback)
+  const handlePlayVoiceover = async (index: number) => {
     const scene = project.scenes[index];
-    if (!scene || !scene.vietnameseVoiceover) return;
-
-    if (!('speechSynthesis' in window)) {
-      showToast('Trình duyệt của bạn không hỗ trợ bộ đọc giọng nói Web Speech.', 'warning');
+    if (!scene || !scene.vietnameseVoiceover?.trim()) {
+      showToast('Phân cảnh này chưa có lời thuyết minh.', 'warning');
       return;
     }
 
+    // Nếu đang phát cảnh này -> Dừng lại
     if (playingIndex === index) {
-      window.speechSynthesis.cancel();
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        audioPlayerRef.current.currentTime = 0;
+      }
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       setPlayingIndex(null);
       return;
     }
 
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(scene.vietnameseVoiceover);
-    utterance.lang = 'vi-VN';
-    utterance.rate = 0.95;
+    // Dừng audio cũ nếu có
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.pause();
+      audioPlayerRef.current.currentTime = 0;
+    }
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+    }
 
-    const voices = window.speechSynthesis.getVoices();
-    const viVoice = voices.find(v => v.lang.includes('vi') || v.lang.includes('VN'));
-    if (viVoice) utterance.voice = viVoice;
+    // 1. Kiểm tra nếu đã có sẵn audioUrl trong cache của scene
+    if (scene.audioUrl) {
+      const audio = new Audio(scene.audioUrl);
+      audioPlayerRef.current = audio;
+      setPlayingIndex(index);
 
-    utterance.onstart = () => setPlayingIndex(index);
-    utterance.onend = () => setPlayingIndex(null);
-    utterance.onerror = () => setPlayingIndex(null);
+      audio.onended = () => setPlayingIndex(null);
+      audio.onerror = () => {
+        setPlayingIndex(null);
+        showToast('Lỗi phát âm thanh đã lưu.', 'error');
+      };
 
-    window.speechSynthesis.speak(utterance);
-    showToast(`Đang đọc thuyết minh cảnh #${index + 1}...`, 'info');
+      audio.play().catch(e => {
+        console.error(e);
+        setPlayingIndex(null);
+      });
+      return;
+    }
+
+    // 2. Gọi Edge TTS qua backend API
+    setLoadingAudioIndex(index);
+    try {
+      let chunkText = scene.vietnameseVoiceover
+        .replace(/\bAI\b/g, 'A.I')
+        .replace(/\bPDF\b/g, 'P.D.F')
+        .replace(/\bAPI\b/g, 'A.P.I')
+        .replace(/\bTTS\b/g, 'T.T.S')
+        .replace(/\bURL\b/g, 'U.R.L');
+
+      const response = await fetch('/api/edge-tts', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          text: chunkText,
+          voice: selectedEdgeVoice,
+          rate: '+0%',
+          pitch: '+0Hz'
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      if (blob.size < 50) {
+        throw new Error('Dữ liệu âm thanh từ Microsoft Edge AI rỗng.');
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      handleUpdateScene(index, 'audioUrl', url);
+
+      const audio = new Audio(url);
+      audioPlayerRef.current = audio;
+      setPlayingIndex(index);
+
+      audio.onended = () => setPlayingIndex(null);
+      audio.onerror = () => {
+        setPlayingIndex(null);
+        showToast('Lỗi phát âm thanh Microsoft Edge AI.', 'error');
+      };
+
+      await audio.play();
+      showToast(`Đang nghe Microsoft Edge AI cảnh #${index + 1}...`, 'info');
+    } catch (edgeErr: any) {
+      console.warn('Edge TTS failed, falling back to Web Speech Synthesis:', edgeErr);
+      showToast(`Dùng Web Speech (Edge AI: ${edgeErr.message || 'Lỗi mạng'})`, 'warning');
+
+      if (!('speechSynthesis' in window)) {
+        showToast('Trình duyệt không hỗ trợ bộ đọc giọng nói Web Speech.', 'warning');
+        return;
+      }
+
+      const utterance = new SpeechSynthesisUtterance(scene.vietnameseVoiceover);
+      utterance.lang = 'vi-VN';
+      utterance.rate = 0.95;
+
+      const voices = window.speechSynthesis.getVoices();
+      const viVoice = voices.find(v => v.lang.includes('vi') || v.lang.includes('VN'));
+      if (viVoice) utterance.voice = viVoice;
+
+      utterance.onstart = () => setPlayingIndex(index);
+      utterance.onend = () => setPlayingIndex(null);
+      utterance.onerror = () => setPlayingIndex(null);
+
+      window.speechSynthesis.speak(utterance);
+    } finally {
+      setLoadingAudioIndex(null);
+    }
+  };
+
+  // Tải file MP3 thuyết minh của từng cảnh
+  const handleDownloadSceneAudio = async (index: number) => {
+    const scene = project.scenes[index];
+    if (!scene || !scene.vietnameseVoiceover?.trim()) {
+      showToast('Phân cảnh này chưa có lời thuyết minh.', 'warning');
+      return;
+    }
+
+    try {
+      let downloadUrl = scene.audioUrl;
+
+      if (!downloadUrl) {
+        setLoadingAudioIndex(index);
+        showToast(`Đang tạo âm thanh Microsoft Edge AI cho cảnh #${index + 1}...`, 'info');
+
+        let chunkText = scene.vietnameseVoiceover
+          .replace(/\bAI\b/g, 'A.I')
+          .replace(/\bPDF\b/g, 'P.D.F')
+          .replace(/\bAPI\b/g, 'A.P.I')
+          .replace(/\bTTS\b/g, 'T.T.S')
+          .replace(/\bURL\b/g, 'U.R.L');
+
+        const response = await fetch('/api/edge-tts', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+          },
+          body: JSON.stringify({
+            text: chunkText,
+            voice: selectedEdgeVoice,
+            rate: '+0%',
+            pitch: '+0Hz'
+          })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        downloadUrl = window.URL.createObjectURL(blob);
+        handleUpdateScene(index, 'audioUrl', downloadUrl);
+      }
+
+      const safeTitle = (scene.title || `Canh_${index + 1}`)
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, '_')
+        .replace(/_+/g, '_');
+      const filename = `canh_${index + 1}_${safeTitle}.mp3`;
+
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Đã tải file âm thanh "${filename}"!`, 'success');
+    } catch (err: any) {
+      console.error(err);
+      showToast(`Không thể tải audio: ${err.message}`, 'error');
+    } finally {
+      setLoadingAudioIndex(null);
+    }
   };
 
   // Copy helper
@@ -497,6 +690,118 @@ export default function AiVideoScriptStudio() {
       `[Cảnh ${idx + 1} - ${s.durationSec}s]: ${s.vietnameseVoiceover}`
     ).join('\n\n');
     copyToClipboard(text, 'Đã sao chép toàn bộ lời thuyết minh tiếng Việt!');
+  };
+
+  // Tải trọn bộ file MP3 thuyết minh của tất cả phân cảnh dưới dạng file nén ZIP
+  const handleExportAllVoiceoverAudio = async () => {
+    if (project.scenes.length === 0) {
+      showToast('Kịch bản chưa có phân cảnh nào!', 'warning');
+      return;
+    }
+
+    const scenesToProcess = project.scenes.filter(s => s.vietnameseVoiceover?.trim());
+    if (scenesToProcess.length === 0) {
+      showToast('Chưa có lời thuyết minh nào được nhập!', 'warning');
+      return;
+    }
+
+    setIsExportingAudio(true);
+    setAudioExportProgress(`Bắt đầu tạo âm thanh Microsoft Edge AI (0/${scenesToProcess.length})...`);
+
+    try {
+      const zip = new JSZip();
+      let completed = 0;
+
+      for (let i = 0; i < project.scenes.length; i++) {
+        const scene = project.scenes[i];
+        if (!scene.vietnameseVoiceover?.trim()) continue;
+
+        setAudioExportProgress(`Đang chuyển âm thanh cảnh #${i + 1} (${completed + 1}/${scenesToProcess.length})...`);
+
+        let audioBlob: Blob;
+
+        // Nếu đã có trong blob url
+        if (scene.audioUrl) {
+          try {
+            const res = await fetch(scene.audioUrl);
+            audioBlob = await res.blob();
+          } catch {
+            audioBlob = await fetchEdgeAudioBlob(scene.vietnameseVoiceover);
+          }
+        } else {
+          audioBlob = await fetchEdgeAudioBlob(scene.vietnameseVoiceover);
+          const newUrl = window.URL.createObjectURL(audioBlob);
+          handleUpdateScene(i, 'audioUrl', newUrl);
+        }
+
+        const safeTitle = (scene.title || `Canh_${i + 1}`)
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, '_')
+          .replace(/_+/g, '_');
+        const filename = `canh_${String(i + 1).padStart(2, '0')}_${safeTitle}.mp3`;
+
+        zip.file(filename, audioBlob);
+        completed++;
+      }
+
+      setAudioExportProgress('Đang nén file ZIP âm thanh...');
+      const zipBlob = await zip.generateAsync({ type: 'blob' });
+
+      const title = project.projectTitle || 'kich-ban-ai-video';
+      const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+      const zipFilename = `${slug}-thuyet-minh-mp3.zip`;
+
+      const link = document.createElement('a');
+      link.href = window.URL.createObjectURL(zipBlob);
+      link.download = zipFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      showToast(`Đã xuất trọn bộ ${completed} file MP3 (${zipFilename})!`, 'success');
+      setShowExportModal(false);
+    } catch (err: any) {
+      console.error(err);
+      showToast(`Lỗi khi tạo gói âm thanh: ${err.message}`, 'error');
+    } finally {
+      setIsExportingAudio(false);
+      setAudioExportProgress('');
+    }
+  };
+
+  const fetchEdgeAudioBlob = async (text: string): Promise<Blob> => {
+    let chunkText = text
+      .replace(/\bAI\b/g, 'A.I')
+      .replace(/\bPDF\b/g, 'P.D.F')
+      .replace(/\bAPI\b/g, 'A.P.I')
+      .replace(/\bTTS\b/g, 'T.T.S')
+      .replace(/\bURL\b/g, 'U.R.L');
+
+    const response = await fetch('/api/edge-tts', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify({
+        text: chunkText,
+        voice: selectedEdgeVoice,
+        rate: '+0%',
+        pitch: '+0Hz'
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    if (blob.size < 50) {
+      throw new Error('Dữ liệu âm thanh từ Microsoft Edge AI rỗng.');
+    }
+    return blob;
   };
 
   // Export functions
@@ -925,12 +1230,28 @@ export default function AiVideoScriptStudio() {
             
             {/* Action Toolbar */}
             <div style={{ background: '#0f172a', border: '1px solid #1e293b', borderRadius: '1rem', padding: '0.85rem 1.25rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', color: '#fff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', flexWrap: 'wrap' }}>
                 <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1', display: 'inline-block' }}></span>
                 <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 700 }}>Dòng Thời Gian Phân Cảnh (Timeline)</h3>
-                <span style={{ fontSize: '0.75rem', background: '#1e293b', color: '#94a3b8', padding: '0.15rem 0.5rem', borderRadius: '0.35rem', border: '1px solid #334155' }}>
-                  {project.projectTitle}
-                </span>
+                
+                {/* Voice Model Selector (Microsoft Edge AI) */}
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', background: '#020617', border: '1px solid rgba(16, 185, 129, 0.4)', padding: '0.2rem 0.55rem', borderRadius: '0.45rem' }}>
+                  <span style={{ fontSize: '0.72rem', color: '#34d399', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    🎙️ Edge AI:
+                  </span>
+                  <select
+                    value={selectedEdgeVoice}
+                    onChange={(e) => setSelectedEdgeVoice(e.target.value)}
+                    style={{ background: 'transparent', border: 'none', color: '#f8fafc', fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer', outline: 'none' }}
+                    title="Chọn giọng đọc thuyết minh Microsoft Edge AI chất lượng cao"
+                  >
+                    {EDGE_VOICES_PREVIEW.map(v => (
+                      <option key={v.id} value={v.id} style={{ background: '#0f172a', color: '#fff' }}>
+                        {v.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -1098,20 +1419,76 @@ export default function AiVideoScriptStudio() {
                             </span>
                           </div>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            {/* Nút Nghe thử với Microsoft Edge AI */}
                             <button
                               type="button"
                               onClick={() => handlePlayVoiceover(index)}
-                              style={{ background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: '#34d399', fontSize: '0.72rem', padding: '0.15rem 0.5rem', borderRadius: '0.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              disabled={loadingAudioIndex === index}
+                              style={{ 
+                                background: playingIndex === index ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.15)', 
+                                border: playingIndex === index ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(16, 185, 129, 0.3)', 
+                                color: playingIndex === index ? '#f87171' : '#34d399', 
+                                fontSize: '0.72rem', 
+                                padding: '0.2rem 0.55rem', 
+                                borderRadius: '0.35rem', 
+                                cursor: loadingAudioIndex === index ? 'not-allowed' : 'pointer', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem',
+                                fontWeight: 600
+                              }}
+                              title="Nghe thử lời thuyết minh bằng mô hình Microsoft Edge AI"
                             >
-                              {playingIndex === index ? <VolumeX size={11} /> : <Volume2 size={11} />}
-                              <span>{playingIndex === index ? 'Dừng' : 'Nghe'}</span>
+                              {loadingAudioIndex === index ? (
+                                <>
+                                  <Loader2 size={12} className="animate-spin" />
+                                  <span>Đang tạo AI...</span>
+                                </>
+                              ) : playingIndex === index ? (
+                                <>
+                                  <VolumeX size={12} />
+                                  <span>Dừng</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 size={12} />
+                                  <span>Nghe thử AI</span>
+                                </>
+                              )}
                             </button>
+
+                            {/* Nút Tải xuống file MP3 lời đã đọc */}
+                            <button
+                              type="button"
+                              onClick={() => handleDownloadSceneAudio(index)}
+                              disabled={loadingAudioIndex === index}
+                              style={{ 
+                                background: 'rgba(56, 189, 248, 0.12)', 
+                                border: '1px solid rgba(56, 189, 248, 0.3)', 
+                                color: '#38bdf8', 
+                                fontSize: '0.72rem', 
+                                padding: '0.2rem 0.55rem', 
+                                borderRadius: '0.35rem', 
+                                cursor: loadingAudioIndex === index ? 'not-allowed' : 'pointer', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.25rem',
+                                fontWeight: 600
+                              }}
+                              title="Tải xuống file âm thanh MP3 của phân cảnh này"
+                            >
+                              <Download size={12} />
+                              <span>Tải MP3</span>
+                            </button>
+
+                            {/* Nút Copy Lời thoại */}
                             <button
                               type="button"
                               onClick={() => copyToClipboard(scene.vietnameseVoiceover, `Đã copy Lời thoại cảnh #${index + 1}`)}
-                              style={{ background: '#1e293b', border: 'none', color: '#94a3b8', fontSize: '0.72rem', padding: '0.15rem 0.5rem', borderRadius: '0.3rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              style={{ background: '#1e293b', border: '1px solid #334155', color: '#94a3b8', fontSize: '0.72rem', padding: '0.2rem 0.5rem', borderRadius: '0.35rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                              title="Sao chép lời thoại thuyết minh"
                             >
-                              <Copy size={11} /> Copy
+                              <Copy size={12} />
                             </button>
                           </div>
                         </div>
@@ -1294,6 +1671,42 @@ export default function AiVideoScriptStudio() {
                 >
                   <strong style={{ color: '#38bdf8' }}>🎙️ Lời Thuyết Minh (Text)</strong>
                   <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Chỉ gồm lời thoại tiếng Việt căn chỉnh theo từng cảnh</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleExportAllVoiceoverAudio}
+                  disabled={isExportingAudio}
+                  style={{ 
+                    gridColumn: '1 / -1',
+                    background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(6, 182, 212, 0.2))', 
+                    border: '1px solid rgba(16, 185, 129, 0.4)', 
+                    borderRadius: '0.75rem', 
+                    padding: '1rem', 
+                    textAlign: 'left', 
+                    color: '#fff', 
+                    cursor: isExportingAudio ? 'not-allowed' : 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    gap: '0.75rem' 
+                  }}
+                >
+                  <div>
+                    <strong style={{ color: '#34d399', fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <FileAudio size={16} /> Tải Trọn Bộ File Âm Thanh MP3 (.zip)
+                    </strong>
+                    <span style={{ fontSize: '0.75rem', color: '#94a3b8', display: 'block', marginTop: '0.2rem' }}>
+                      {isExportingAudio 
+                        ? audioExportProgress 
+                        : `Tự động tạo âm thanh Microsoft Edge AI cho tất cả ${project.scenes.length} cảnh và đóng gói thành 1 file ZIP`}
+                    </span>
+                  </div>
+                  {isExportingAudio ? (
+                    <Loader2 size={18} className="animate-spin" color="#34d399" />
+                  ) : (
+                    <Download size={18} color="#34d399" />
+                  )}
                 </button>
               </div>
             </div>
