@@ -30,21 +30,20 @@ function generateCuidLike() {
   return 'c' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 }
 
-// Danh sách các model fallback theo thứ tự ưu tiên từ thế hệ mới nhất đến cũ
+// Danh sách các model fallback theo thứ tự ưu tiên: các model flash-lite phản hồi cực nhanh (~1-2s), ổn định, không bị quá tải
 const DEFAULT_GEMINI_FALLBACKS = [
-  'gemini-3.8-flash',
-  'gemini-3.0-flash',
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
-  'gemini-2.0-flash-lite',
-  'gemini-1.5-pro'
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-3.1-flash-lite',
+  'gemini-3.1-flash-lite-preview',
+  'gemini-3-flash-preview',
+  'gemini-3.5-flash',
+  'gemini-3.8-flash'
 ];
 
 /**
  * Tự động truy vấn danh sách model hiện khả dụng của chính Google Gemini API Key này.
- * Nhờ đó API key mới tạo hoặc các model mới nhất (3.8-flash, 3.0-flash, 2.5-flash...) sẽ luôn được chọn đúng.
+ * Lọc bỏ các model TTS/Audio/Image và ưu tiên các model Flash-Lite / Flash phản hồi siêu tốc.
  */
 async function resolveGeminiModels(apiKey: string, preferredModel?: string): Promise<string[]> {
   const modelsSet = new Set<string>();
@@ -63,17 +62,29 @@ async function resolveGeminiModels(apiKey: string, preferredModel?: string): Pro
           .map((m: any) => (m.name || '').replace(/^models\//, ''))
           .filter(Boolean);
 
-        // Ưu tiên các model flash văn bản chính thống trước (loại trừ TTS hoặc audio chuyên biệt)
-        const textFlashModels = supported
-          .filter((m: string) => m.includes('flash') && !m.includes('tts') && !m.includes('audio'))
-          .reverse();
-        const otherTextModels = supported
-          .filter((m: string) => !m.includes('flash') && !m.includes('tts') && !m.includes('audio'))
-          .reverse();
-        const remainingModels = supported
-          .filter((m: string) => m.includes('tts') || m.includes('audio'));
+        // Lọc bỏ các model không phải văn bản tổng quát (TTS, Audio, Image, Embedding, Transcribe, Banana, Lyria, v.v.)
+        const textModels = supported.filter((m: string) => 
+          !m.includes('tts') && 
+          !m.includes('audio') && 
+          !m.includes('image') && 
+          !m.includes('embedding') &&
+          !m.includes('transcribe') &&
+          !m.includes('banana') &&
+          !m.includes('lyria') &&
+          !m.includes('computer-use') &&
+          !m.includes('robotics') &&
+          !m.includes('aqa')
+        );
 
-        for (const m of [...textFlashModels, ...otherTextModels, ...remainingModels]) {
+        // Phân loại: 
+        // 1. flash-lite: Tốc độ phản hồi cực nhanh ~1s, tỷ lệ thành công cao, không bị 503 Spike overload
+        const flashLite = textModels.filter((m: string) => m.includes('flash-lite') || m.includes('lite')).reverse();
+        // 2. flash tiêu chuẩn
+        const flashStandard = textModels.filter((m: string) => m.includes('flash') && !m.includes('flash-lite') && !m.includes('lite')).reverse();
+        // 3. Các model còn lại
+        const otherModels = textModels.filter((m: string) => !m.includes('flash')).reverse();
+
+        for (const m of [...flashLite, ...flashStandard, ...otherModels]) {
           modelsSet.add(m);
         }
       }
@@ -838,7 +849,8 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               contents: [{ parts: [{ text: 'Trả lời đúng 1 chữ: OK' }] }]
-            })
+            }),
+            signal: AbortSignal.timeout(12000)
           });
 
           if (testRes.ok) {
@@ -949,7 +961,8 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
                 temperature: 0.7,
                 responseMimeType: 'application/json'
               }
-            })
+            }),
+            signal: AbortSignal.timeout(30000)
           });
 
           if (!gRes.ok) {
@@ -961,13 +974,15 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
 
           const data = await gRes.json();
           const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
           let parsed: any[] = [];
           try {
             parsed = JSON.parse(cleaned);
           } catch {
             const match = cleaned.match(/\[[\s\S]*\]/);
-            if (match) parsed = JSON.parse(match[0]);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
           }
 
           if (Array.isArray(parsed) && parsed.length > 0) {
@@ -1076,7 +1091,8 @@ Quy tắc:
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { temperature: 0.2, responseMimeType: 'application/json' }
-            })
+            }),
+            signal: AbortSignal.timeout(25000)
           });
 
           if (!gRes.ok) {
@@ -1094,13 +1110,15 @@ Quy tắc:
 
           const data = await gRes.json();
           const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
           let parsed: any[] = [];
           try {
             parsed = JSON.parse(cleaned);
           } catch {
             const match = cleaned.match(/\[[\s\S]*\]/);
-            if (match) parsed = JSON.parse(match[0]);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
           }
           if (Array.isArray(parsed) && parsed.length > 0) {
             parsedTree = parsed;
@@ -1111,7 +1129,7 @@ Quy tắc:
           }
         } catch (e: any) {
           attemptErrors.push(`[${m}]: ${e.message || 'Lỗi kết nối'}`);
-          console.warn(`Lỗi model ${m} khi trích xuất cây giáo trình:`, e);
+          console.warn(`Lỗi model ${m} khi trích xuất cây giáo trình:`, e.message);
         }
       }
 
@@ -1216,7 +1234,8 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: { temperature: 0.6, responseMimeType: 'application/json' }
-            })
+            }),
+            signal: AbortSignal.timeout(35000)
           });
 
           if (!gRes.ok) {
@@ -1234,13 +1253,15 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
 
           const data = await gRes.json();
           const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-          const cleaned = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
           let parsed: any[] = [];
           try {
             parsed = JSON.parse(cleaned);
           } catch {
             const match = cleaned.match(/\[[\s\S]*\]/);
-            if (match) parsed = JSON.parse(match[0]);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
           }
 
           if (Array.isArray(parsed) && parsed.length > 0) {
