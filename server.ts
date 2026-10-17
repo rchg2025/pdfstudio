@@ -191,6 +191,8 @@ if (fs.existsSync(distPath)) {
     '/xoa-nen-mau',
     '/pdf-compare',
     '/hoi-dap-pdf-ai',
+    '/ai-podcast-studio',
+    '/podcast-ai',
     '/embed-player'
   ];
 
