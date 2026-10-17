@@ -252,6 +252,13 @@ const edTechTools = [
     isHot: true
   },
   {
+    path: '/ai-podcast-studio',
+    icon: <Mic size={24} color="#9333ea" />,
+    title: '🎙️ AI Voiceover Studio & Trợ Lý Tạo Podcast Bài Giảng',
+    desc: 'Tự động biên kịch đối thoại 2 người (Thầy & Trò / Chuyên gia), phân vai lồng tiếng Microsoft Edge TTS chuẩn cảm xúc và hòa âm nhạc nền Lofi thư giãn xuất MP3/WAV hoàn chỉnh.',
+    isHot: true
+  },
+  {
     path: '/the-ghi-nho-flashcard',
     icon: <BookOpen size={24} />,
     title: 'Thẻ Ghi Nhớ AI (Flashcards)',
