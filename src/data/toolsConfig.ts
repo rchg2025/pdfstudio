@@ -108,6 +108,16 @@ export const ALL_TOOLS: ToolItem[] = [
     changefreq: 'weekly'
   },
   {
+    path: '/ai-podcast-studio',
+    title: '🎙️ AI Voiceover Studio & Trợ Lý Tạo Podcast Bài Giảng',
+    desc: 'Tự động biên kịch đối thoại 2 người (Thầy & Trò / Chuyên gia), phân vai lồng tiếng Microsoft Edge TTS chuẩn cảm xúc và hòa âm nhạc nền Lofi thư giãn xuất MP3/WAV hoàn chỉnh.',
+    category: 'edtech',
+    isHot: true,
+    keywords: ['ai podcast studio', 'tạo podcast bài giảng', 'lồng tiếng đối thoại ai', 'edge tts tiếng việt', 'podcast giáo dục', 'podcast đối thoại thầy trò'],
+    priority: 0.9,
+    changefreq: 'weekly'
+  },
+  {
     path: '/the-ghi-nho-flashcard',
     title: 'Thẻ Ghi Nhớ AI (Flashcards 3D)',
     desc: '1-click tạo bộ thẻ lật 3D ôn tập kiến thức từ bài học bằng AI, xuất HTML nhúng LMS học tập.',

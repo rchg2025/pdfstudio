@@ -50,11 +50,16 @@ import {
   Filter,
   BookOpen,
   Globe,
-  FileCode
+  FileCode,
+  BarChart3,
+  TrendingUp,
+  Target,
+  BrainCircuit
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useDialogs } from '../components/CustomDialogs';
 import SubscriptionModal from '../components/SubscriptionModal';
 import type { 
   QuizPackage, 
@@ -170,6 +175,7 @@ const DEFAULT_QUIZ: QuizPackage = {
 export default function QuizManager() {
   const { user, token, isExpired } = useAuth();
   const { showToast } = useNotification();
+  const { showAlert } = useDialogs();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryQuizId = searchParams.get('quizId');
@@ -199,7 +205,7 @@ export default function QuizManager() {
     }
     return quizzes[0]?.id || DEFAULT_QUIZ.id;
   });
-  const [activeTab, setActiveTab] = useState<'quizzes' | 'questions' | 'settings' | 'submissions'>('quizzes');
+  const [activeTab, setActiveTab] = useState<'quizzes' | 'questions' | 'settings' | 'submissions' | 'analytics'>('quizzes');
 
   // Lọc ngân hàng câu hỏi
   const [filterDifficulty, setFilterDifficulty] = useState<string>('all');
@@ -313,6 +319,19 @@ export default function QuizManager() {
   const [gradingScores, setGradingScores] = useState<Record<string, number>>({});
   const [teacherFeedbackText, setTeacherFeedbackText] = useState('');
   const [isSubmittingGrade, setIsSubmittingGrade] = useState(false);
+
+  // Tab 5: Phân tích năng lực học viên & Đề xuất ôn tập AI
+  const [aiAnalysisResult, setAiAnalysisResult] = useState<{
+    generalAssessment?: string;
+    strengths?: string[];
+    weaknesses?: string[];
+    recommendations?: string[];
+    remedialTopics?: string[];
+    usedModel?: string;
+  } | null>(null);
+  const [isAnalyzingQuiz, setIsAnalyzingQuiz] = useState(false);
+  const [selectedStudentForAiFeedback, setSelectedStudentForAiFeedback] = useState<StudentSubmission | null>(null);
+  const [aiStudentFeedbackText, setAiStudentFeedbackText] = useState('');
 
   const activeQuiz = quizzes.find(q => q.id === activeQuizId) || quizzes[0] || DEFAULT_QUIZ;
 
@@ -1417,6 +1436,162 @@ export default function QuizManager() {
     ? Math.round((passCount / activeQuizSubmissions.length) * 100) 
     : 0;
 
+  // Điểm cao nhất / Điểm thấp nhất
+  const numericScores = activeQuizSubmissions.map(s => Number(s.score) || 0);
+  const highestScore = numericScores.length > 0 ? Math.max(...numericScores) : 0;
+  const lowestScore = numericScores.length > 0 ? Math.min(...numericScores) : 0;
+
+  // Phổ điểm (Grade distribution)
+  const scoreDistribution = {
+    weak: activeQuizSubmissions.filter(s => Number(s.score) < 5).length,
+    average: activeQuizSubmissions.filter(s => Number(s.score) >= 5 && Number(s.score) < 6.5).length,
+    good: activeQuizSubmissions.filter(s => Number(s.score) >= 6.5 && Number(s.score) < 8.0).length,
+    excellent: activeQuizSubmissions.filter(s => Number(s.score) >= 8.0).length,
+  };
+
+  // Phân tích ma trận câu hỏi: Tính tỷ lệ đúng/sai theo từng câu hỏi trong đề
+  const questionAnalytics = (activeQuiz.questions || []).map(q => {
+    let totalAttempts = 0;
+    let correctAttempts = 0;
+    const wrongAnswersCount: Record<string, number> = {};
+
+    activeQuizSubmissions.forEach(sub => {
+      const studentAns = sub.answers?.[q.id];
+      if (studentAns !== undefined && studentAns !== null && studentAns !== '') {
+        totalAttempts++;
+        let isRight = false;
+        if (q.type === 'multiple_choice' && Array.isArray(q.correctAnswers)) {
+          if (Array.isArray(studentAns)) {
+            isRight = studentAns.length === q.correctAnswers.length && studentAns.every(a => q.correctAnswers!.includes(a));
+          }
+        } else if (q.type === 'matching' && Array.isArray(q.matchingPairs)) {
+          if (typeof studentAns === 'object') {
+            isRight = q.matchingPairs.every(p => studentAns[p.left] === p.right);
+          }
+        } else {
+          isRight = String(studentAns).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase();
+        }
+
+        if (isRight) {
+          correctAttempts++;
+        } else {
+          const wrongKey = typeof studentAns === 'object' ? JSON.stringify(studentAns) : String(studentAns).slice(0, 40);
+          wrongAnswersCount[wrongKey] = (wrongAnswersCount[wrongKey] || 0) + 1;
+        }
+      }
+    });
+
+    const correctRate = totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0;
+    // Tìm phương án sai phổ biến nhất
+    let mostCommonWrong = '';
+    let maxWrongCount = 0;
+    Object.entries(wrongAnswersCount).forEach(([ans, cnt]) => {
+      if (cnt > maxWrongCount) {
+        maxWrongCount = cnt;
+        mostCommonWrong = ans;
+      }
+    });
+
+    return {
+      questionId: q.id,
+      question: q.question,
+      type: q.type,
+      difficulty: q.difficulty,
+      correctAnswer: q.type === 'multiple_choice' ? (q.correctAnswers || []).join(', ') : (q.correctAnswer || 'Xem barem'),
+      totalAttempts,
+      correctAttempts,
+      correctRate,
+      mostCommonWrong
+    };
+  });
+
+  // Top 5 câu hỏi có tỷ lệ làm đúng THẤP NHẤT (cần ôn tập củng cố)
+  const topMissedQuestions = [...questionAnalytics]
+    .filter(q => q.totalAttempts > 0)
+    .sort((a, b) => a.correctRate - b.correctRate)
+    .slice(0, 5);
+
+  // Gọi AI phân tích năng lực cả lớp
+  const handleRunAiAnalysis = async () => {
+    if (activeQuizSubmissions.length === 0) {
+      showAlert('Chưa có lượt nộp bài nào cho bộ đề này để AI có thể phân tích.', 'Chưa có dữ liệu');
+      return;
+    }
+    setIsAnalyzingQuiz(true);
+    try {
+      const summaryStats = {
+        totalSubmissions: activeQuizSubmissions.length,
+        averageScore: avgScore,
+        highestScore,
+        lowestScore,
+        passRate,
+        distribution: {
+          weak: scoreDistribution.weak,
+          avg: scoreDistribution.average,
+          good: scoreDistribution.good,
+          excellent: scoreDistribution.excellent
+        }
+      };
+
+      const res = await fetch('/api/quiz-api?action=analyze-quiz-performance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quizTitle: activeQuiz.title,
+          subject: activeQuiz.subject || 'Kiểm tra',
+          summaryStats,
+          topMissedQuestions,
+          customApiKey: customAiKey.trim() || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Lỗi khi gọi AI phân tích.');
+      }
+
+      setAiAnalysisResult({
+        ...data.analysis,
+        usedModel: data.usedModel
+      });
+      showToast('Đã hoàn tất phân tích năng lực học viên bằng AI!', 'success');
+    } catch (err: any) {
+      showAlert(err.message || 'Không thể thực hiện phân tích AI.', 'Lỗi phân tích');
+    } finally {
+      setIsAnalyzingQuiz(false);
+    }
+  };
+
+  // Sinh nhận xét cá nhân hóa cho từng sinh viên
+  const handleGeneratePersonalFeedback = (student: StudentSubmission) => {
+    setSelectedStudentForAiFeedback(student);
+    const score = Number(student.score) || 0;
+    const name = student.studentName;
+    
+    // Tự động phân tích điểm mạnh / yếu của học sinh này dựa vào câu trả lời
+    let studentWrongList: string[] = [];
+    (activeQuiz.questions || []).forEach((q, idx) => {
+      const ans = student.answers?.[q.id];
+      const isRight = ans !== undefined && String(ans).trim().toLowerCase() === String(q.correctAnswer).trim().toLowerCase();
+      if (!isRight) {
+        studentWrongList.push(`Câu ${idx + 1}`);
+      }
+    });
+
+    let draft = '';
+    if (score >= 8.5) {
+      draft = `Em ${name} có kết quả thi xuất sắc (${score}/10đ). Em nắm rất vững kiến thức cốt lõi và tư duy logic tốt. Cần tiếp tục duy trì phong độ và thử sức với các bài tập nâng cao hơn.`;
+    } else if (score >= 6.5) {
+      draft = `Em ${name} đạt kết quả Khá (${score}/10đ). Em nắm vững các phần lý thuyết cơ bản. Một số câu hỏi vận dụng hoặc tình huống thực hành (${studentWrongList.slice(0, 3).join(', ') || 'các câu cuối'}) em còn nhầm lẫn nhẹ, cần xem lại kỹ lưỡng để tối ưu điểm số.`;
+    } else if (score >= 5.0) {
+      draft = `Em ${name} đã vượt qua bài thi đạt yêu cầu (${score}/10đ). Tuy nhiên nhiều phần kiến thức trọng tâm em còn chưa thực sự chắc chắn (${studentWrongList.slice(0, 4).join(', ')}). Em nên xem lại phần bài giảng và giải lại các câu hỏi chưa chính xác.`;
+    } else {
+      draft = `Em ${name} có kết quả chưa đạt yêu cầu (${score}/10đ). Em còn hổng nhiều kiến thức ở các câu hỏi (${studentWrongList.slice(0, 5).join(', ')}). Em cần dành thêm thời gian ôn tập lại bài học, liên hệ giảng viên để được hướng dẫn củng cố lại kiến thức trước kỳ thi chính thức.`;
+    }
+
+    setAiStudentFeedbackText(draft);
+  };
+
   // Lọc thông minh danh sách bài nộp & sinh viên
   const filteredSubmissions = activeQuizSubmissions.filter(s => {
     // 1. Lọc theo kết quả Đạt / Chưa đạt / Chờ chấm điểm
@@ -1719,6 +1894,25 @@ export default function QuizManager() {
           onClick={() => setActiveTab('submissions')}
         >
           <Users size={17} /> Bảng Điểm & Sinh Viên ({activeQuizSubmissions.length})
+        </button>
+        <button 
+          type="button" 
+          className={`qm-tab-btn ${activeTab === 'analytics' ? 'active' : ''}`}
+          onClick={() => setActiveTab('analytics')}
+          style={{ position: 'relative' }}
+        >
+          <BarChart3 size={17} /> Phân Tích & AI Nhận Xét
+          <span style={{ 
+            fontSize: '0.68rem', 
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', 
+            color: '#fff', 
+            padding: '1px 6px', 
+            borderRadius: '999px',
+            marginLeft: '4px',
+            fontWeight: 700 
+          }}>
+            AI Mới
+          </span>
         </button>
       </div>
 
@@ -3103,6 +3297,493 @@ export default function QuizManager() {
                 </div>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: BÁO CÁO PHÂN TÍCH NĂNG LỰC HỌC VIÊN & ĐỀ XUẤT ÔN TẬP AI */}
+      {activeTab === 'analytics' && (
+        <div className="qm-panel animate-fade-in">
+          <div className="qm-panel-header">
+            <div>
+              <h2 className="qm-panel-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <BarChart3 size={22} color="var(--primary)" /> Báo Cáo Phân Tích Năng Lực & Đề Xuất Ôn Tập AI
+              </h2>
+              <p style={{ margin: '0.25rem 0 0', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
+                Đánh giá ma trận kiến thức, phát hiện các câu hỏi bẫy/dễ làm sai và để AI chuẩn đoán lỗ hổng kiến thức cho bộ đề: <strong>"{activeQuiz.title}"</strong>
+              </p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleRunAiAnalysis}
+                disabled={isAnalyzingQuiz || activeQuizSubmissions.length === 0}
+                style={{
+                  background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                  border: 'none',
+                  boxShadow: '0 4px 14px rgba(99, 102, 241, 0.35)',
+                  fontWeight: 700
+                }}
+              >
+                {isAnalyzingQuiz ? (
+                  <>
+                    <Loader2 size={16} className="spin" /> Đang Phân Tích Bằng AI...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} /> {aiAnalysisResult ? 'Phân Tích Lại Với AI' : '1-Click AI Chuẩn Đoán & Đề Xuất'}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {activeQuizSubmissions.length === 0 ? (
+            <div className="qm-empty" style={{ padding: '3.5rem 1rem' }}>
+              <div className="qm-empty-icon" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)' }}>
+                <BarChart3 size={32} />
+              </div>
+              <h3 className="qm-empty-title">Chưa có bài thi nào được nộp cho bộ đề này</h3>
+              <p className="qm-empty-desc" style={{ maxWidth: '520px', margin: '0.5rem auto 1.5rem' }}>
+                Cần có ít nhất 1 bài nộp của học viên để hệ thống phân tích phổ điểm, các câu hỏi dễ sai và đưa ra đề xuất ôn tập sư phạm.
+              </p>
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => navigate(`/phong-thi/${activeQuiz.id}`)}
+              >
+                <Play size={15} /> Làm bài thi mẫu ngay
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+              
+              {/* Thẻ KPIs thống kê chuyên sâu */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '1rem'
+              }}>
+                <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.15rem' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Tổng lượt nộp bài</div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)' }}>{activeQuizSubmissions.length}</div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Thí sinh đã hoàn thành</div>
+                </div>
+
+                <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.15rem' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Điểm trung bình lớp</div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--primary)' }}>{avgScore} <span style={{ fontSize: '1rem', fontWeight: 500 }}>/ 10</span></div>
+                  <div style={{ fontSize: '0.78rem', color: Number(avgScore) >= 6.5 ? '#10b981' : '#f59e0b', marginTop: '0.25rem' }}>
+                    {Number(avgScore) >= 8 ? '★ Xuất sắc' : (Number(avgScore) >= 6.5 ? '✓ Khá' : '⚠️ Cần củng cố')}
+                  </div>
+                </div>
+
+                <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.15rem' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Điểm Cao Nhất / Thấp Nhất</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: 800, color: '#10b981' }}>
+                    {highestScore} <span style={{ fontSize: '1rem', color: '#ef4444' }}>/ {lowestScore} đ</span>
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Biên độ chênh lệch: {(highestScore - lowestScore).toFixed(1)} đ</div>
+                </div>
+
+                <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: '1.15rem' }}>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Tỷ lệ đạt chuẩn (&ge; 5đ)</div>
+                  <div style={{ fontSize: '1.75rem', fontWeight: 800, color: passRate >= 70 ? '#10b981' : '#ef4444' }}>
+                    {passRate}%
+                  </div>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
+                    {passCount} / {activeQuizSubmissions.length} học viên đạt
+                  </div>
+                </div>
+              </div>
+
+              {/* Phổ điểm & Phân bổ học lực dạng Progress Visualizer */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)' }}>
+                    <TrendingUp size={18} color="var(--primary)" /> Phổ Điểm & Phân Loại Học Lực Lớp
+                  </h3>
+                  <span style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Căn cứ theo thang điểm 10</span>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                  {/* Giỏi */}
+                  <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <span style={{ fontWeight: 700, color: '#10b981', fontSize: '0.88rem' }}>Giỏi (8.0 - 10)</span>
+                      <strong style={{ fontSize: '0.9rem' }}>{scoreDistribution.excellent} em</strong>
+                    </div>
+                    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: `${(scoreDistribution.excellent / activeQuizSubmissions.length) * 100}%`, height: '100%', background: '#10b981' }} />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
+                      {Math.round((scoreDistribution.excellent / activeQuizSubmissions.length) * 100)}%
+                    </div>
+                  </div>
+
+                  {/* Khá */}
+                  <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <span style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.88rem' }}>Khá (6.5 - 7.9)</span>
+                      <strong style={{ fontSize: '0.9rem' }}>{scoreDistribution.good} em</strong>
+                    </div>
+                    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: `${(scoreDistribution.good / activeQuizSubmissions.length) * 100}%`, height: '100%', background: 'var(--primary)' }} />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
+                      {Math.round((scoreDistribution.good / activeQuizSubmissions.length) * 100)}%
+                    </div>
+                  </div>
+
+                  {/* Trung bình */}
+                  <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <span style={{ fontWeight: 700, color: '#f59e0b', fontSize: '0.88rem' }}>Trung bình (5.0 - 6.4)</span>
+                      <strong style={{ fontSize: '0.9rem' }}>{scoreDistribution.average} em</strong>
+                    </div>
+                    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: `${(scoreDistribution.average / activeQuizSubmissions.length) * 100}%`, height: '100%', background: '#f59e0b' }} />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
+                      {Math.round((scoreDistribution.average / activeQuizSubmissions.length) * 100)}%
+                    </div>
+                  </div>
+
+                  {/* Yếu/Kém */}
+                  <div style={{ background: 'var(--bg-primary)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                      <span style={{ fontWeight: 700, color: '#ef4444', fontSize: '0.88rem' }}>Chưa đạt (&lt; 5.0)</span>
+                      <strong style={{ fontSize: '0.9rem' }}>{scoreDistribution.weak} em</strong>
+                    </div>
+                    <div style={{ height: '8px', background: 'var(--border)', borderRadius: '999px', overflow: 'hidden' }}>
+                      <div style={{ width: `${(scoreDistribution.weak / activeQuizSubmissions.length) * 100}%`, height: '100%', background: '#ef4444' }} />
+                    </div>
+                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem', textAlign: 'right' }}>
+                      {Math.round((scoreDistribution.weak / activeQuizSubmissions.length) * 100)}%
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* KẾT QUẢ PHÂN TÍCH VÀ ĐỀ XUẤT SƯ PHẠM CỦA AI */}
+              {aiAnalysisResult && (
+                <div style={{
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.08))',
+                  border: '1.5px solid rgba(99, 102, 241, 0.35)',
+                  borderRadius: 'var(--radius-xl)',
+                  padding: '1.5rem',
+                  boxShadow: '0 8px 24px rgba(99, 102, 241, 0.08)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
+                        <BrainCircuit size={20} />
+                      </div>
+                      <div>
+                        <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                          Báo Cáo Chuẩn Đoán Sư Phạm & Lộ Trình Ôn Tập AI
+                        </h3>
+                        <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          Khởi tạo bởi Google Gemini ({aiAnalysisResult.usedModel || 'Flash-Lite'}) • Dựa trên ma trận làm bài thực tế
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Đánh giá chung */}
+                  {aiAnalysisResult.generalAssessment && (
+                    <div style={{
+                      background: 'var(--bg-primary)',
+                      padding: '1rem 1.25rem',
+                      borderRadius: 'var(--radius-md)',
+                      borderLeft: '4px solid var(--primary)',
+                      fontSize: '0.92rem',
+                      lineHeight: 1.6,
+                      color: 'var(--text-primary)',
+                      marginBottom: '1.25rem'
+                    }}>
+                      <strong>💡 Nhận xét chung:</strong> {aiAnalysisResult.generalAssessment}
+                    </div>
+                  )}
+
+                  {/* 2 Cột: Điểm mạnh & Lỗ hổng kiến thức */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '1.25rem' }}>
+                    {/* Điểm mạnh */}
+                    <div style={{ background: 'var(--bg-primary)', padding: '1.15rem', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                      <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', fontWeight: 700, color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <CheckCircle2 size={16} /> Điểm Mạnh Của Lớp
+                      </h4>
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        {(aiAnalysisResult.strengths || ['Phần lớn học viên nắm chắc câu hỏi lý thuyết cơ bản.']).map((s, idx) => (
+                          <li key={idx} style={{ marginBottom: '0.35rem' }}>{s}</li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    {/* Lỗ hổng */}
+                    <div style={{ background: 'var(--bg-primary)', padding: '1.15rem', borderRadius: 'var(--radius-lg)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', fontWeight: 700, color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <AlertCircle size={16} /> Lỗ Hổng Kiến Thức Cần Khắc Phục
+                      </h4>
+                      <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                        {(aiAnalysisResult.weaknesses || ['Một số học viên còn nhầm lẫn ở các câu hỏi bẫy hoặc vận dụng cao.']).map((w, idx) => (
+                          <li key={idx} style={{ marginBottom: '0.35rem' }}>{w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Kế hoạch hành động & Chủ đề bổ trợ */}
+                  <div style={{ background: 'var(--bg-primary)', padding: '1.15rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                    <h4 style={{ margin: '0 0 0.75rem', fontSize: '0.95rem', fontWeight: 700, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                      <Target size={16} /> Kế Hoạch Giảng Dạy & Ôn Tập Khuyến Nghị
+                    </h4>
+                    <ul style={{ margin: 0, paddingLeft: '1.25rem', fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '0.85rem' }}>
+                      {(aiAnalysisResult.recommendations || ['Dành 15 phút đầu tiết tới để giải đáp chi tiết các câu hỏi có tỷ lệ sai cao.']).map((r, idx) => (
+                        <li key={idx} style={{ marginBottom: '0.35rem' }}>{r}</li>
+                      ))}
+                    </ul>
+
+                    {Array.isArray(aiAnalysisResult.remedialTopics) && aiAnalysisResult.remedialTopics.length > 0 && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', borderTop: '1px dashed var(--border)', paddingTop: '0.75rem' }}>
+                        <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-primary)' }}>Chủ đề trọng tâm cần ôn lại:</span>
+                        {aiAnalysisResult.remedialTopics.map((top, i) => (
+                          <span key={i} className="qm-badge" style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--primary)', fontWeight: 600 }}>
+                            #{top}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* BẢNG ĐIỂM NÓNG CÂU HỎI LÀM SAI NHIỀU NHẤT */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)' }}>
+                      <AlertCircle size={18} color="#ef4444" /> Điểm Nóng: Top Câu Hỏi Bị Làm Sai Nhiều Nhất
+                    </h3>
+                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      Những câu hỏi có tỷ lệ làm đúng thấp, cần giảng giải lại cho học viên trên lớp.
+                    </p>
+                  </div>
+                </div>
+
+                {topMissedQuestions.length === 0 ? (
+                  <div style={{ padding: '1.5rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+                    Chưa có đủ dữ liệu câu trả lời để xếp hạng điểm nóng.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {topMissedQuestions.map((q, idx) => (
+                      <div key={q.questionId} style={{
+                        background: 'var(--bg-primary)',
+                        padding: '1rem 1.15rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: '1px solid var(--border)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.5rem'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.35rem' }}>
+                              <span style={{ 
+                                background: '#ef4444', 
+                                color: '#fff', 
+                                padding: '1px 7px', 
+                                borderRadius: '999px', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 800 
+                              }}>
+                                #{idx + 1}
+                              </span>
+                              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                                Độ khó: {q.difficulty === 'hard' ? 'Khó' : (q.difficulty === 'easy' ? 'Dễ' : 'Trung bình')}
+                              </span>
+                            </div>
+                            <div style={{ fontWeight: 600, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                              {q.question}
+                            </div>
+                          </div>
+
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: '1.15rem', fontWeight: 800, color: q.correctRate <= 40 ? '#ef4444' : '#f59e0b' }}>
+                              {q.correctRate}%
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {q.correctAttempts}/{q.totalAttempts} em đúng
+                            </div>
+                          </div>
+                        </div>
+
+                        <div style={{
+                          background: 'var(--bg-secondary)',
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: 'var(--radius-sm)',
+                          fontSize: '0.82rem',
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: '1rem',
+                          color: 'var(--text-secondary)'
+                        }}>
+                          <span>✓ Đáp án đúng: <strong style={{ color: '#10b981' }}>{q.correctAnswer}</strong></span>
+                          {q.mostCommonWrong && (
+                            <span>⚠️ Lựa chọn sai phổ biến: <strong style={{ color: '#ef4444' }}>{q.mostCommonWrong}</strong></span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* BẢNG TỔNG HỢP HỌC VIÊN & CÔNG CỤ TẠO NHẬN XÉT CÁ NHÂN HÓA */}
+              <div style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.25rem'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)' }}>
+                      <Users size={18} color="var(--primary)" /> Phiếu Nhận Xét Năng Lực Học Viên Cá Nhân Hóa (1-Click)
+                    </h3>
+                    <p style={{ margin: '0.2rem 0 0', fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+                      Chọn bất kỳ học viên nào để sinh lời nhận xét kết quả học tập tự động gửi qua Zalo/LMS.
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="qm-table" style={{ fontSize: '0.88rem' }}>
+                    <thead>
+                      <tr>
+                        <th>Học viên</th>
+                        <th>MSSV / Lớp</th>
+                        <th style={{ textAlign: 'center' }}>Điểm số</th>
+                        <th style={{ textAlign: 'center' }}>Kết quả</th>
+                        <th style={{ textAlign: 'right' }}>Hành động</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {activeQuizSubmissions.slice(0, 15).map(sub => (
+                        <tr key={sub.id}>
+                          <td style={{ fontWeight: 600 }}>{sub.studentName}</td>
+                          <td style={{ color: 'var(--text-secondary)' }}>{sub.studentId || '—'} / {sub.className || 'Tự do'}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 700, color: sub.passed ? '#10b981' : '#ef4444' }}>
+                            {sub.score}/10
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className="qm-badge" style={{ background: sub.passed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: sub.passed ? '#10b981' : '#ef4444' }}>
+                              {sub.passed ? 'ĐẠT' : 'CHƯA ĐẠT'}
+                            </span>
+                          </td>
+                          <td style={{ textAlign: 'right' }}>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-xs"
+                              onClick={() => handleGeneratePersonalFeedback(sub)}
+                              style={{ color: 'var(--primary)', borderColor: 'var(--primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                            >
+                              <Sparkles size={13} /> Tạo Nhận Xét AI
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {activeQuizSubmissions.length > 15 && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textAlign: 'center', marginTop: '0.75rem' }}>
+                      (Đang hiển thị 15 học viên tiêu biểu. Xem đầy đủ danh sách tại tab "Bảng Điểm & Sinh Viên")
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* MODAL SINH NHẬN XÉT CÁ NHÂN HÓA CHO SINH VIÊN */}
+      {selectedStudentForAiFeedback && (
+        <div className="modal-overlay" onClick={() => setSelectedStudentForAiFeedback(null)}>
+          <div className="modal-content" style={{ maxWidth: '600px' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 style={{ margin: 0, fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <BrainCircuit size={18} color="var(--primary)" /> Nhận Xét Năng Lực Học Viên
+              </h3>
+              <button type="button" className="modal-close-btn" onClick={() => setSelectedStudentForAiFeedback(null)}>✕</button>
+            </div>
+
+            <div className="modal-body" style={{ padding: '1.25rem' }}>
+              <div style={{ background: 'var(--bg-secondary)', padding: '0.85rem 1rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{selectedStudentForAiFeedback.studentName}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    Lớp: {selectedStudentForAiFeedback.className || 'Tự do'} • MSSV: {selectedStudentForAiFeedback.studentId || 'Chưa có'}
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: '1.25rem', fontWeight: 800, color: selectedStudentForAiFeedback.passed ? '#10b981' : '#ef4444' }}>
+                    {selectedStudentForAiFeedback.score}/10
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                    {selectedStudentForAiFeedback.passed ? 'Đạt chuẩn' : 'Chưa đạt'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="qm-form-group">
+                <label className="qm-label" style={{ marginBottom: '0.4rem', display: 'block' }}>
+                  Nội dung nhận xét & đề xuất ôn tập (Có thể chỉnh sửa trước khi sao chép):
+                </label>
+                <textarea
+                  className="qm-textarea"
+                  rows={5}
+                  value={aiStudentFeedbackText}
+                  onChange={(e) => setAiStudentFeedbackText(e.target.value)}
+                  style={{ width: '100%', fontSize: '0.9rem', lineHeight: 1.6 }}
+                />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(aiStudentFeedbackText);
+                    showToast('Đã sao chép nhận xét vào bộ nhớ tạm!', 'success');
+                  }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}
+                >
+                  <Copy size={14} /> Sao Chép Nhận Xét
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => setSelectedStudentForAiFeedback(null)}
+                >
+                  Đóng
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

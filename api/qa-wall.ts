@@ -1587,6 +1587,270 @@ BẮT BUỘC trả về định dạng JSON thuần túy như đã hướng dẫ
       });
     }
 
+    // 17. BÁO CÁO PHÂN TÍCH NĂNG LỰC HỌC VIÊN & ĐỀ XUẤT ÔN TẬP BẰNG AI
+    if (req.method === 'POST' && action === 'analyze-quiz-performance') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const {
+        quizTitle,
+        subject,
+        summaryStats,
+        topMissedQuestions,
+        customApiKey
+      } = body || {};
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa cấu hình Google Gemini API Key trong hệ thống!' });
+      }
+
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
+
+      const prompt = `Bạn là chuyên gia Khảo thí và Đo lường đánh giá chất lượng giáo dục đại học / cao đẳng.
+Dưới đây là số liệu phân tích kết quả bài thi của một lớp học:
+- Tên bài thi: "${quizTitle || 'Bài kiểm tra trắc nghiệm'}"
+- Môn học / Lĩnh vực: "${subject || 'Chuyên ngành'}"
+- Thống kê tổng quan:
+  + Tổng số lượt thi: ${summaryStats?.totalSubmissions || 0} thí sinh
+  + Điểm trung bình: ${summaryStats?.averageScore || 0}/10
+  + Điểm cao nhất: ${summaryStats?.highestScore || 0}/10
+  + Điểm thấp nhất: ${summaryStats?.lowestScore || 0}/10
+  + Tỷ lệ đạt chuẩn (>= 5.0): ${summaryStats?.passRate || 0}%
+  + Phổ điểm: Yếu/Kém (<5): ${summaryStats?.distribution?.weak || 0} bài, Trung bình (5-6.5): ${summaryStats?.distribution?.avg || 0} bài, Khá (6.5-8): ${summaryStats?.distribution?.good || 0} bài, Giỏi (8-10): ${summaryStats?.distribution?.excellent || 0} bài
+
+- Danh sách các câu hỏi học sinh làm SAI NHIỀU NHẤT:
+${Array.isArray(topMissedQuestions) && topMissedQuestions.length > 0 
+  ? topMissedQuestions.map((q: any, i: number) => `  ${i + 1}. [Tỷ lệ làm đúng chỉ ${q.correctRate}%]: "${q.question}" (Đáp án đúng: "${q.correctAnswer}"). Lỗi thường gặp: ${q.mostCommonWrong || 'chọn phương án nhiễu'}`).join('\n')
+  : '  Không có câu hỏi nào bị sai quá nhiều.'}
+
+Nhiệm vụ: Hãy phân tích sư phạm toàn diện và đưa ra đề xuất kế hoạch giảng dạy cải tiến.
+Yêu cầu trả về BẮT BUỘC định dạng JSON thuần túy (không markdown, không chữ \`\`\`json ở đầu cuối):
+{
+  "generalAssessment": "Nhận xét tổng quan chất lượng bài thi và mặt bằng học lực của cả lớp (ngắn gọn 2-3 câu).",
+  "strengths": [
+    "Điểm mạnh 1 mà phần lớn học sinh đã làm tốt",
+    "Điểm mạnh 2"
+  ],
+  "weaknesses": [
+    "Lỗ hổng kiến thức chính 1",
+    "Lỗ hổng kiến thức chính 2 (nguyên nhân vì sao nhiều em chọn sai)"
+  ],
+  "recommendations": [
+    "Đề xuất nội dung cụ thể giáo viên cần giảng lại hoặc nhấn mạnh trong tiết học tới",
+    "Phương pháp ôn tập hoặc dạng bài tập củng cố cần giao thêm"
+  ],
+  "remedialTopics": [
+    "Tên chủ đề 1 cần bổ trợ",
+    "Tên chủ đề 2 cần bổ trợ"
+  ]
+}`;
+
+      let resultJson: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.4,
+                responseMimeType: 'application/json'
+              }
+            }),
+            signal: AbortSignal.timeout(28000)
+          });
+
+          if (!gRes.ok) {
+            const errText = await gRes.text();
+            attemptErrors.push(`[${m}]: HTTP ${gRes.status}`);
+            continue;
+          }
+
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\{[\s\S]*\}/);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
+          }
+
+          if (parsed && (parsed.generalAssessment || parsed.weaknesses)) {
+            resultJson = parsed;
+            usedModel = m;
+            break;
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message || 'Lỗi kết nối'}`);
+        }
+      }
+
+      if (!resultJson) {
+        return res.status(500).json({
+          error: `Không thể hoàn tất phân tích AI: ${attemptErrors[0] || 'Lỗi kết nối tới mô hình AI'}.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        usedModel,
+        analysis: resultJson
+      });
+    }
+
+    // ================= ACTION: GENERATE PODCAST DIALOGUE (AI PODCAST STUDIO) =================
+    if (action === 'generate-podcast-dialogue') {
+      const { 
+        topic, 
+        sourceContent, 
+        format = 'teacher_student', // teacher_student | co_hosts | expert_interview | story_narration
+        targetAudience = 'students', // students | general | professionals
+        durationMinutes = 3, // 2, 3, 5, 8
+        customApiKey 
+      } = req.body;
+
+      if (!topic && !sourceContent) {
+        return res.status(400).json({ error: 'Cần cung cấp Chủ đề hoặc Nội dung bài giảng đầu vào.' });
+      }
+
+      const apiKey = customApiKey || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa cấu hình GEMINI_API_KEY trên hệ thống.' });
+      }
+
+      const modelQueue = await resolveGeminiModels(apiKey, 'auto');
+
+      const formatDescriptions: Record<string, string> = {
+        teacher_student: 'Đối thoại giữa Giảng viên (Thầy Minh - am hiểu, ân cần, giải thích sâu sắc) và Học viên (Mai - tò mò, ham học, đặt câu hỏi thông minh, phản biện thực tế).',
+        co_hosts: 'Đối thoại giữa 2 Host Podcast năng động (Host Nam & Host Nữ) dẫn dắt câu chuyện tự nhiên, dí dỏm, tương tác qua lại liền mạch.',
+        expert_interview: 'Phỏng vấn chuyên sâu giữa Nhà báo/Người phỏng vấn (Hỏi sắc bén) và Chuyên gia hàng đầu (Phân tích dẫn chứng, số liệu cụ thể).',
+        story_narration: 'Dẫn chuyện truyền cảm hứng theo lối kể chuyện (Storytelling), kết hợp 2 giọng đọc thay phiên nhau tái hiện các góc nhìn.'
+      };
+
+      const prompt = `Bạn là Đạo diễn âm thanh và Biên kịch Podcast Giáo dục & EdTech hàng đầu.
+Nhiệm vụ của bạn là chuyển thể kiến thức bài học sau thành một kịch bản Podcast đối thoại âm thanh sống động, tự nhiên như trò chuyện ngoài đời thực giữa 2 người nói.
+
+ĐỊNH DẠNG PODCAST: ${formatDescriptions[format] || formatDescriptions.teacher_student}
+ĐỐI TƯỢNG NGHE: ${targetAudience}
+THỜI LƯỢNG ƯỚC TÍNH: Khoảng ${durationMinutes} phút (tương đương ${Math.max(6, Math.min(20, Math.round(durationMinutes * 2.5)))} lượt thoại đối đáp qua lại).
+
+CHỦ ĐỀ PODCAST: ${topic || 'Bài giảng chuyên đề'}
+${sourceContent ? `\nTÀI LIỆU / GIÁO TRÌNH GỐC NỘI DUNG:\n"""\n${String(sourceContent).slice(0, 12000)}\n"""` : ''}
+
+YÊU CẦU BIÊN TẬP QUAN TRỌNG:
+1. Giọng văn tự nhiên, có ngữ điệu trò chuyện (dùng các thán từ như "À", "Ồ", "Đúng rồi", "Thầy ơi", "Chính xác", "Vậy thì...", "Thật bất ngờ là...").
+2. TUYỆT ĐỐI KHÔNG đọc trơ trụi như văn bản sách giáo khoa. Hãy dùng phép ẩn dụ, ví dụ đời thường để minh họa khái niệm phức tạp.
+3. Chia kịch bản thành từng lượt thoại đối ứng (turns), xen kẽ giữa Speaker 1 (Mặc định: Thầy Minh / Host Nam) và Speaker 2 (Mặc định: Mai / Host Nữ).
+4. Mỗi câu thoại tiếng Việt có độ dài vừa phải (15 - 45 từ) để bộ tổng hợp giọng đọc AI (Edge TTS) phát âm tròn vành rõ chữ, có nhịp thở tự nhiên.
+5. Cung cấp gợi ý Hiệu ứng âm thanh (SFX) hoặc gợi ý chuyển cảnh âm nhạc cho từng đoạn nếu phù hợp (intro chime, page turn, thinking sound, aha moment, outro music).
+
+Trả về ĐÚNG VÀ DUY NHẤT định dạng JSON (không có markdown khác ngoài json block) theo cấu trúc sau:
+{
+  "podcastTitle": "Tiêu đề tập Podcast hấp dẫn, giật tít sư phạm",
+  "synopsis": "Tóm tắt ngắn 2-3 câu về nội dung tập podcast này",
+  "speaker1Name": "Thầy Minh",
+  "speaker1Role": "Giảng viên",
+  "speaker2Name": "Bạn Mai",
+  "speaker2Role": "Sinh viên",
+  "suggestedBgm": "lofi_study",
+  "dialogues": [
+    {
+      "turnNumber": 1,
+      "speaker": 1,
+      "speakerName": "Thầy Minh",
+      "text": "Chào mừng các bạn sinh viên đã quay trở lại với chuỗi Podcast học tập thông minh! Mai này, hôm nay thầy trò mình sẽ cùng 'giải mã' một chủ đề rất thú vị đấy.",
+      "emotion": "friendly_welcome",
+      "suggestedSfx": "intro_chime"
+    },
+    {
+      "turnNumber": 2,
+      "speaker": 2,
+      "speakerName": "Bạn Mai",
+      "text": "Em chào thầy ạ! Có phải là bài học về...? Em đã đọc qua tài liệu tuần này và có một thắc mắc lớn muốn hỏi thầy ngay đây ạ!",
+      "emotion": "excited_curious",
+      "suggestedSfx": "paper_flip"
+    }
+  ]
+}`;
+
+      let resultJson: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.7,
+                responseMimeType: 'application/json'
+              }
+            }),
+            signal: AbortSignal.timeout(35000)
+          });
+
+          if (!gRes.ok) {
+            attemptErrors.push(`[${m}]: HTTP ${gRes.status}`);
+            continue;
+          }
+
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\{[\s\S]*\}/);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
+          }
+
+          if (parsed && Array.isArray(parsed.dialogues) && parsed.dialogues.length > 0) {
+            resultJson = parsed;
+            usedModel = m;
+            break;
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message || 'Lỗi kết nối'}`);
+        }
+      }
+
+      if (!resultJson) {
+        return res.status(500).json({
+          error: `Không thể tạo kịch bản Podcast: ${attemptErrors[0] || 'Lỗi kết nối AI'}. Vui lòng thử lại.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        usedModel,
+        podcast: resultJson
+      });
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);

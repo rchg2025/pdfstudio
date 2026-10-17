@@ -117,6 +117,9 @@ const Navbar = () => {
             <NavLink to="/kich-ban-video-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>
               🎬 Kịch Bản Video AI
             </NavLink>
+            <NavLink to="/ai-podcast-studio" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>
+              🎙️ AI Podcast Studio
+            </NavLink>
             <NavLink to="/the-ghi-nho-flashcard" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>Flashcards</NavLink>
             <NavLink to="/xuat-ma-nhung" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Xuất Mã Nhúng</NavLink>
             
@@ -278,6 +281,14 @@ const Navbar = () => {
               <div className="mfc-info">
                 <div className="mfc-title">Kịch Bản Video AI</div>
                 <div className="mfc-desc">Phân cảnh 6-10s liền mạch</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/ai-podcast-studio" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(168, 85, 247, 0.15)', color: '#9333ea' }}>🎙️</div>
+              <div className="mfc-info">
+                <div className="mfc-title">AI Podcast Studio <span className="mfc-badge" style={{ background: '#9333ea' }}>MỚI</span></div>
+                <div className="mfc-desc">Đối thoại 2 người & Nhạc Lofi</div>
               </div>
             </NavLink>
 

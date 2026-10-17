@@ -62,6 +62,7 @@ const LiveBattleHost = React.lazy(() => import('./pages/LiveBattleHost'));
 const LiveBattlePlayer = React.lazy(() => import('./pages/LiveBattlePlayer'));
 const AiVideoScriptStudio = React.lazy(() => import('./pages/AiVideoScriptStudio'));
 const ChatWithPdf = React.lazy(() => import('./pages/ChatWithPdf'));
+const AiPodcastStudio = React.lazy(() => import('./pages/AiPodcastStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -262,6 +263,12 @@ function App() {
             } />
             <Route path="hoi-dap-pdf-ai" element={
               <Suspense fallback={<FallbackLoader />}><ChatWithPdf /></Suspense>
+            } />
+            <Route path="ai-podcast-studio" element={
+              <Suspense fallback={<FallbackLoader />}><AiPodcastStudio /></Suspense>
+            } />
+            <Route path="podcast-ai" element={
+              <Suspense fallback={<FallbackLoader />}><AiPodcastStudio /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
