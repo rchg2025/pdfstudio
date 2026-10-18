@@ -22,7 +22,8 @@ import {
   Globe,
   BookOpen,
   PieChart,
-  FileSpreadsheet
+  FileSpreadsheet,
+  FileDown
 } from 'lucide-react';
 import mammoth from 'mammoth';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -103,8 +104,24 @@ export default function DocComplianceChecker() {
 
       if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
         const arrayBuffer = await file.arrayBuffer();
-        const res = await mammoth.extractRawText({ arrayBuffer });
-        extracted = res.value || '';
+        try {
+          const res = await mammoth.extractRawText({ arrayBuffer });
+          extracted = res.value || '';
+        } catch (docxErr: any) {
+          // Trường hợp file là định dạng Word 97-2003 (.doc binary) không phải zip
+          console.warn('Mammoth docx failed, falling back to text stream extraction:', docxErr);
+          const rawText = await file.text();
+          // Lọc các chuỗi ký tự in được từ binary
+          const cleanReadable = rawText
+            .replace(/[^\x20-\x7E\u00A0-\u024F\u1EA0-\u1EF9\n\r\t]/g, ' ')
+            .replace(/\s{2,}/g, ' ')
+            .trim();
+          if (cleanReadable.length > 50) {
+            extracted = cleanReadable;
+          } else {
+            throw new Error('Định dạng tệp .doc cũ (Word 97-2003) không chứa cấu trúc XML. Vui lòng mở và Lưu dưới dạng .docx hoặc .pdf để kết quả quét chuẩn xác nhất!');
+          }
+        }
       } else if (lower.endsWith('.pdf')) {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
@@ -283,6 +300,76 @@ export default function DocComplianceChecker() {
     showToast('Đã tải xuống Báo cáo Đạo văn Turnitin (.txt)!', 'success');
   };
 
+  // Tải xuống file văn bản có đánh dấu màu các đoạn trùng lặp & số thứ tự nguồn (.doc)
+  const handleDownloadMarkedDoc = () => {
+    if (!result) return;
+    const title = fileName.replace(/\.[^/.]+$/, '') + '_Danh_Dau_Dao_Van_Turnitin';
+    const simScore = result.plagiarismAnalysis.similarityScore;
+
+    // Chuyển đổi mã HTML highlight sang định dạng Word hỗ trợ màu nền và chú thích nguồn
+    const highlightedContent = result.highlightedHtml || inputText;
+
+    const markedWordHtml = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <title>${title}</title>
+        <style>
+          body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.6; color: #111; padding: 2cm; }
+          h1 { font-size: 16pt; text-align: center; margin-bottom: 8px; color: #b91c1c; text-transform: uppercase; }
+          .report-header { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 24px; border-radius: 6px; }
+          .report-header p { margin: 4px 0; font-size: 11pt; }
+          .sim-badge { font-size: 14pt; font-weight: bold; color: ${simScore > 35 ? '#b91c1c' : simScore > 15 ? '#b45309' : '#15803d'}; }
+          .sources-legend { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 10pt; }
+          .source-item { display: inline-block; margin-right: 14px; margin-bottom: 4px; padding: 2px 6px; font-weight: bold; }
+          
+          /* Match highlights */
+          mark.turnitin-match { padding: 2px 4px; }
+          mark.match-1 { background-color: #fee2e2; color: #991b1b; border-bottom: 2px solid #ef4444; }
+          mark.match-2 { background-color: #fef3c7; color: #92400e; border-bottom: 2px solid #f59e0b; }
+          mark.match-3 { background-color: #e0e7ff; color: #3730a3; border-bottom: 2px solid #6366f1; }
+          mark.match-4 { background-color: #fce7f3; color: #9d174d; border-bottom: 2px solid #ec4899; }
+          mark.match-5 { background-color: #dcfce7; color: #166534; border-bottom: 2px solid #22c55e; }
+          .source-sup { font-size: 9pt; font-weight: bold; vertical-align: super; margin-left: 2px; }
+          
+          .doc-body { text-align: justify; white-space: pre-wrap; margin-top: 20px; line-height: 1.8; }
+        </style>
+      </head>
+      <body>
+        <h1>Bản Thẩm Định Đánh Dấu Trùng Lặp & Đạo Văn</h1>
+        <div class="report-header">
+          <p><strong>Tệp gốc:</strong> ${fileName}</p>
+          <p><strong>Chỉ số tương đồng (Similarity Index):</strong> <span class="sim-badge">${simScore}%</span> (${result.plagiarismAnalysis.riskLevel})</p>
+          <p><strong>Ngày kiểm tra:</strong> ${new Date().toLocaleString('vi-VN')} | <strong>Đơn vị kiểm định:</strong> ITE Academic Integrity System</p>
+          <div class="sources-legend">
+            <strong>Danh mục nguồn trùng khớp:</strong><br/>
+            ${(result.plagiarismAnalysis.matchedSources || []).map(s => `
+              <span class="source-item" style="background-color: ${s.sourceId === 1 ? '#fee2e2; color:#991b1b' : s.sourceId === 2 ? '#fef3c7; color:#92400e' : s.sourceId === 3 ? '#e0e7ff; color:#3730a3' : '#dcfce7; color:#166534'}">
+                [Nguồn #${s.sourceId}] ${s.similarityPercent}%: ${s.sourceTitle} (${s.authorOrDomain || s.sourceType})
+              </span>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="doc-body">
+          ${highlightedContent}
+        </div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', markedWordHtml], { type: 'application/msword;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${title}.doc`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('Đã tải xuống file Word có đánh dấu highlight trùng lặp (.doc)!', 'success');
+  };
+
   // Lọc danh sách lỗi chính tả
   const filteredIssues = result?.issues.filter(iss => {
     if (filterType === 'all') return true;
@@ -397,6 +484,16 @@ export default function DocComplianceChecker() {
                 <span className="word-count">
                   {inputText.trim() ? inputText.trim().split(/\s+/).length : 0} từ | {inputText.length} ký tự
                 </span>
+                {result && (
+                  <button
+                    className="action-pill-download"
+                    title="Tải tệp Word có highlight các đoạn văn trùng lặp (.doc)"
+                    onClick={handleDownloadMarkedDoc}
+                  >
+                    <FileDown size={14} />
+                    <span>Tải bản đánh dấu</span>
+                  </button>
+                )}
                 <button
                   className="icon-btn-ghost"
                   title="Xóa văn bản"
@@ -442,7 +539,7 @@ export default function DocComplianceChecker() {
             {result && (
               <div className="turnitin-summary-banner">
                 <div className="turnitin-badge-box">
-                  <div className="similarity-circle">
+                  <div className={`similarity-circle ${result.plagiarismAnalysis.similarityScore > 35 ? 'danger' : result.plagiarismAnalysis.similarityScore > 15 ? 'warning' : 'safe'}`}>
                     <span className="sim-percent">{result.plagiarismAnalysis.similarityScore}%</span>
                     <span className="sim-label">SIMILARITY</span>
                   </div>
@@ -475,9 +572,21 @@ export default function DocComplianceChecker() {
                 </div>
 
                 <div className="turnitin-actions-box">
-                  <button className="export-report-btn" onClick={handleExportTurnitinReport}>
+                  <button 
+                    className="export-report-btn primary-export" 
+                    onClick={handleDownloadMarkedDoc}
+                    title="Tải văn bản Word có highlight màu các câu trùng lặp & chú thích nguồn"
+                  >
+                    <FileDown size={15} />
+                    <span>Tải Bản Đánh Dấu (.doc)</span>
+                  </button>
+                  <button 
+                    className="export-report-btn" 
+                    onClick={handleExportTurnitinReport}
+                    title="Xuất bảng điểm chi tiết và các đoạn vi phạm (.txt)"
+                  >
                     <Download size={15} />
-                    <span>Xuất Báo Cáo (.txt)</span>
+                    <span>Báo Cáo (.txt)</span>
                   </button>
                 </div>
               </div>
