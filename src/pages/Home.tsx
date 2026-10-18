@@ -126,6 +126,12 @@ const imageTools = [
     desc: 'Tạo và quản lý các khung ảnh sự kiện, chiến dịch truyền thông của riêng bạn.'
   },
   {
+    path: '/bo-loc-anh',
+    icon: <Sparkles size={24} />,
+    title: 'Bộ Lọc Màu & Chỉnh Ảnh Điện Ảnh (Color Tone Studio)',
+    desc: 'Filter màu điện ảnh (Teal & Orange, Vintage, Cyberpunk, B&W), chỉnh sáng, tương phản, độ bão hòa và tối góc vignette.'
+  },
+  {
     path: '/ghep-anh-nghe-thuat',
     icon: <Grid size={24} />,
     title: 'Ghép Ảnh & Tạo Khung Lưới (Photo Collage)',

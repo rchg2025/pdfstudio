@@ -65,6 +65,7 @@ const ChatWithPdf = React.lazy(() => import('./pages/ChatWithPdf'));
 const AiPodcastStudio = React.lazy(() => import('./pages/AiPodcastStudio'));
 const PdfSign = React.lazy(() => import('./pages/PdfSign'));
 const PhotoCollage = React.lazy(() => import('./pages/PhotoCollage'));
+const PhotoFilterStudio = React.lazy(() => import('./pages/PhotoFilterStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -148,6 +149,12 @@ function App() {
             } />
             <Route path="photo-collage" element={
               <Suspense fallback={<FallbackLoader />}><PhotoCollage /></Suspense>
+            } />
+            <Route path="bo-loc-anh" element={
+              <Suspense fallback={<FallbackLoader />}><PhotoFilterStudio /></Suspense>
+            } />
+            <Route path="photo-filter" element={
+              <Suspense fallback={<FallbackLoader />}><PhotoFilterStudio /></Suspense>
             } />
             <Route path="login" element={
               <Suspense fallback={<FallbackLoader />}><Login /></Suspense>

@@ -143,6 +143,7 @@ const Navbar = () => {
             <div className="nav-link-separator"></div>
 
             {/* Công cụ Ảnh */}
+            <NavLink to="/bo-loc-anh" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Bộ Lọc Màu</NavLink>
             <NavLink to="/ghep-anh-nghe-thuat" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Ghép Ảnh Collage</NavLink>
             <NavLink to="/image-converter" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đổi Đuôi Ảnh</NavLink>
             <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>
@@ -319,6 +320,7 @@ const Navbar = () => {
           </div>
 
           <div className="mobile-links-grid">
+            <NavLink to="/bo-loc-anh" className={({isActive}) => isActive ? "nav-link active font-medium text-purple-600" : "nav-link font-medium text-purple-600"}>Bộ Lọc Màu</NavLink>
             <NavLink to="/ghep-anh-nghe-thuat" className={({isActive}) => isActive ? "nav-link active font-medium text-emerald-600" : "nav-link font-medium text-emerald-600"}>Ghép Ảnh Collage</NavLink>
             <NavLink to="/pdf-editor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Chỉnh sửa PDF</NavLink>
             <NavLink to="/pdf-merge-split" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nối tách PDF</NavLink>
