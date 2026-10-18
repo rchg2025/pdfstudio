@@ -458,6 +458,26 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['đọc văn bản', 'text to speech tiếng việt', 'chuyển văn bản thành mp3', 'giọng đọc hoài my'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/tai-video-am-thanh',
+    title: 'Tải Video & Âm Thanh Đa Nền Tảng (Media Downloader)',
+    desc: 'Tải video Full HD không logo watermark, tách âm thanh MP3 320kbps từ YouTube, TikTok, Facebook Reels, Instagram, CapCut, SoundCloud.',
+    category: 'other',
+    isHot: true,
+    keywords: ['tải video youtube', 'tải video tiktok không logo', 'tách mp3 youtube', 'tải facebook reels', 'media downloader'],
+    priority: 0.9,
+    changefreq: 'weekly'
+  },
+  {
+    path: '/quay-man-hinh',
+    title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',
+    desc: 'Quay video màn hình, webcam hoặc lồng tiếng trực tiếp trên trình duyệt, không cần cài phần mềm, chất lượng Full HD, bảo mật 100%.',
+    category: 'other',
+    isHot: true,
+    keywords: ['quay màn hình máy tính', 'screen recorder online', 'quay video webcam', 'quay bài giảng trực tuyến', 'ghi hình màn hình không cài app'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

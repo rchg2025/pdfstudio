@@ -165,9 +165,8 @@ const Navbar = () => {
             <NavLink to="/qr-link" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>QR & Link</NavLink>
             <NavLink to="/xoa-dau-tieng-viet" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Xóa Dấu File</NavLink>
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
-            <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
-            <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
             <NavLink to="/tai-video-am-thanh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>Tải Video / MP3</NavLink>
+            <NavLink to="/quay-man-hinh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>🎥 Quay Màn Hình</NavLink>
           </nav>
 
           <button 
@@ -352,6 +351,7 @@ const Navbar = () => {
             <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
             <NavLink to="/tai-video-am-thanh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>Tải Video / MP3</NavLink>
+            <NavLink to="/quay-man-hinh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>🎥 Quay Màn Hình</NavLink>
           </div>
 
           {user && (

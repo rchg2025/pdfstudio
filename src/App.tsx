@@ -67,6 +67,7 @@ const PdfSign = React.lazy(() => import('./pages/PdfSign'));
 const PhotoCollage = React.lazy(() => import('./pages/PhotoCollage'));
 const PhotoFilterStudio = React.lazy(() => import('./pages/PhotoFilterStudio'));
 const MediaDownloader = React.lazy(() => import('./pages/MediaDownloader'));
+const ScreenRecorder = React.lazy(() => import('./pages/ScreenRecorder'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -165,6 +166,12 @@ function App() {
             } />
             <Route path="tai-video" element={
               <Suspense fallback={<FallbackLoader />}><MediaDownloader /></Suspense>
+            } />
+            <Route path="quay-man-hinh" element={
+              <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
+            } />
+            <Route path="screen-recorder" element={
+              <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
             } />
             <Route path="login" element={
               <Suspense fallback={<FallbackLoader />}><Login /></Suspense>

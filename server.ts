@@ -201,6 +201,8 @@ if (fs.existsSync(distPath)) {
     '/photo-filter',
     '/tai-video-am-thanh',
     '/video-downloader',
+    '/quay-man-hinh',
+    '/screen-recorder',
     '/pdf-compare',
     '/hoi-dap-pdf-ai',
     '/ai-podcast-studio',

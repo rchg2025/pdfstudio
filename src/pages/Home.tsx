@@ -44,6 +44,7 @@ import {
   Grid,
   Bot,
   Film,
+  Video,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -223,6 +224,12 @@ const otherTools = [
     icon: <Film size={24} />,
     title: 'Tải Video & Âm Thanh Đa Nền Tảng (Media Downloader)',
     desc: 'Tải video Full HD không logo watermark, tách âm thanh MP3 320kbps từ YouTube, TikTok, Facebook Reels, Instagram, CapCut, SoundCloud.'
+  },
+  {
+    path: '/quay-man-hinh',
+    icon: <Video size={24} />,
+    title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',
+    desc: 'Quay video màn hình, webcam hoặc lồng tiếng trực tiếp trên trình duyệt, không cần cài phần mềm, chất lượng Full HD, bảo mật 100%.'
   }
 ];
 
