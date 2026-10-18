@@ -12,6 +12,16 @@ export interface ToolItem {
 export const ALL_TOOLS: ToolItem[] = [
   // ================= CÔNG CỤ GIẢNG DẠY & LMS (EDTECH) =================
   {
+    path: '/tro-choi-giang-day',
+    title: '🎮 Trò Chơi Giảng Dạy & Hoạt Náo Lớp Học (Classroom Games)',
+    desc: 'Tổ chức minigame khởi động bài học và củng cố kiến thức: Hộp quà bí mật (Lucky Boxes), Lật hình ghép đôi (Memory Match) và Giải mã đảo chữ (Word Scramble) tích hợp tính điểm theo đội và xuất nhúng LMS.',
+    category: 'edtech',
+    isHot: true,
+    keywords: ['trò chơi giảng dạy', 'classroom games', 'hộp quà bí mật', 'lucky boxes', 'lật hình ghép đôi', 'memory match', 'giải mã đảo chữ', 'hoạt náo lớp học', 'gamification giáo dục'],
+    priority: 0.9,
+    changefreq: 'weekly'
+  },
+  {
     path: '/dau-truong-live',
     title: '⚡ Đấu Trường Đố Vui Trực Tiếp (Live Quiz Battle)',
     desc: 'Tổ chức minigame trắc nghiệm trực tiếp phong cách Kahoot & Quizizz. Học viên quét mã QR tham gia bằng điện thoại, bảng xếp hạng Top 1-2-3 cập nhật kịch tính trên máy chiếu.',

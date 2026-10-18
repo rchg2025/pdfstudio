@@ -70,6 +70,7 @@ const MediaDownloader = React.lazy(() => import('./pages/MediaDownloader'));
 const ScreenRecorder = React.lazy(() => import('./pages/ScreenRecorder'));
 const CustomQrGenerator = React.lazy(() => import('./pages/CustomQrGenerator'));
 const VideoCutter = React.lazy(() => import('./pages/VideoCutter'));
+const TeachingGamesStudio = React.lazy(() => import('./pages/TeachingGamesStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -321,6 +322,12 @@ function App() {
             } />
             <Route path="podcast-ai" element={
               <Suspense fallback={<FallbackLoader />}><AiPodcastStudio /></Suspense>
+            } />
+            <Route path="tro-choi-giang-day" element={
+              <Suspense fallback={<FallbackLoader />}><TeachingGamesStudio /></Suspense>
+            } />
+            <Route path="classroom-games" element={
+              <Suspense fallback={<FallbackLoader />}><TeachingGamesStudio /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

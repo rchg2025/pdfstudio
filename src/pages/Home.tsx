@@ -46,6 +46,7 @@ import {
   Film,
   Video,
   Scissors,
+  Gamepad2,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -247,6 +248,13 @@ const otherTools = [
 ];
 
 const edTechTools = [
+  {
+    path: '/tro-choi-giang-day',
+    icon: <Gamepad2 size={24} color="#ec4899" />,
+    title: '🎮 Trò Chơi Giảng Dạy & Hoạt Náo (Classroom Games)',
+    desc: 'Tổ chức minigame khởi động bài học: Hộp quà bí mật, Lật hình ghép đôi, Giải mã đảo chữ tích hợp tính điểm theo đội và xuất nhúng LMS.',
+    isHot: true
+  },
   {
     path: '/dau-truong-live',
     icon: <Sparkles size={24} color="#ef4444" />,

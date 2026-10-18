@@ -217,6 +217,8 @@ if (fs.existsSync(distPath)) {
     '/hoi-dap-pdf-ai',
     '/ai-podcast-studio',
     '/podcast-ai',
+    '/tro-choi-giang-day',
+    '/classroom-games',
     '/embed-player'
   ];
 

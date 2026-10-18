@@ -103,6 +103,8 @@
     { "source": "/hoi-dap-pdf-ai", "destination": "/index.html" },
     { "source": "/ai-podcast-studio", "destination": "/index.html" },
     { "source": "/podcast-ai", "destination": "/index.html" },
+    { "source": "/tro-choi-giang-day", "destination": "/index.html" },
+    { "source": "/classroom-games", "destination": "/index.html" },
     { "source": "/forgot-password", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/thong-tin-ca-nhan", "destination": "/index.html" },
