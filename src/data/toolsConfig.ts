@@ -568,6 +568,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['kiểm tra bản quyền video', 'thẩm định video không tự xây dựng', 'luật bản quyền video', 'luật sở hữu trí tuệ video', 'luật báo chí video', 'video compliance checker'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/noi-video',
+    title: '🎬 Ghép Nối Video Trực Tuyến Thành 2 Video Dài (Dual Video Merger)',
+    desc: 'Tải lên hàng loạt video clip ngắn, linh hoạt phân bổ vào Video 1 và Video 2 (hoặc tự động chia đều/xen kẽ), sắp xếp thứ tự và render xuất 2 video dài độc lập trực tiếp trên trình duyệt.',
+    category: 'other',
+    isHot: true,
+    keywords: ['nối video online', 'ghép video thành 2 video', 'gộp video ngắn', 'video merger', 'nối video trực tuyến', 'ghép clip mp4 webm'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

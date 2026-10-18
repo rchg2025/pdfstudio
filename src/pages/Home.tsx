@@ -276,6 +276,13 @@ const otherTools = [
     title: '⚡ Tối Ưu Hiệu Suất & Dọn Dẹp Bộ Nhớ Tạm (System Optimizer)',
     desc: 'Giải phóng bộ nhớ RAM, xóa sạch cache web, sinh kịch bản dọn dẹp file rác hệ thống Windows (%TEMP%, Prefetch, Thùng rác) và macOS an toàn.',
     isHot: true
+  },
+  {
+    path: '/noi-video',
+    icon: <Film size={24} color="#ec4899" />,
+    title: '🎬 Ghép Nối Video Thành 2 Video Dài',
+    desc: 'Tải nhiều clip ngắn, phân bổ sang 2 luồng Video 1 và Video 2 (hoặc tự động chia đều/xen kẽ), render xuất 2 video dài độc lập trực tiếp trên trình duyệt.',
+    isHot: true
   }
 ];
 

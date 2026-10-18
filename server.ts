@@ -232,6 +232,8 @@ if (fs.existsSync(distPath)) {
     '/kiem-tra-dao-van-chinh-ta',
     '/kiem-tra-chinh-ta',
     '/doc-compliance',
+    '/noi-video',
+    '/video-merger',
     '/embed-player'
   ];
 

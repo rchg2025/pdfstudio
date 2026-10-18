@@ -1890,73 +1890,111 @@ Trả về ĐÚNG VÀ DUY NHẤT định dạng JSON (không có markdown khác 
       const preferredModel = modelRes.rows[0]?.value?.trim();
       const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
 
-      const prompt = `Bạn là Chuyên gia Cao cấp về Thẩm định Học thuật, Bản quyền Sở hữu Trí tuệ (Luật SHTT Việt Nam 2022) và Biên tập viên Ngôn ngữ (Tiếng Việt & Tiếng Anh).
-Hãy thẩm định và rà soát kỹ lưỡng văn bản dưới đây dành cho thể loại "${documentType}".
+      const prompt = `Bạn là Động cơ Thẩm định Đạo văn & Liêm chính Học thuật Độc lập (hoạt động theo tiêu chuẩn tương tự Turnitin Similarity Report kết hợp Luật Sở hữu Trí tuệ Việt Nam 2022).
+Nhiệm vụ của bạn là rà soát văn bản thể loại "${documentType}", đối chiếu với kho tài liệu học thuật số, ấn phẩm khoa học, internet và cơ sở dữ liệu luận văn để phát hiện trùng lặp, bóc tách tỷ lệ tương đồng (Similarity Index) và phân tích lỗi chính tả/ngữ pháp.
 
 NỘI DUNG VĂN BẢN CẦN RÀ SOÁT:
 """
 ${trimmedText}
 """
 
-YÊU CẦU PHÂN TÍCH TOÀN DIỆN:
-1. ĐÁNH GIÁ BẢN QUYỀN & NGUY CƠ ĐẠO VĂN (PLAGIARISM & CITATION COMPLIANCE):
-   - Ước tính chỉ số trùng lặp / nguy cơ đạo văn (plagiarismScore từ 0 đến 100%).
-   - Kiểm tra chuẩn trích dẫn nguồn học thuật (theo Điều 25 Luật SHTT 2022 về trích dẫn hợp lý để giảng dạy, trích dẫn tác phẩm khoa học).
-   - Phát hiện các đoạn văn bản có dấu hiệu sao chép nguyên văn mà không đặt trong ngoặc kép hoặc không có chú thích nguồn.
-   - Nhận diện nguy cơ trùng lặp với các định nghĩa, giáo trình, công trình phổ biến.
+YÊU CẦU PHÂN TÍCH ĐẠO VĂN CHUYÊN DỤNG (THEO CHUẨN TURNITIN):
+1. TỔNG HỢP CHỈ SỐ TRÙNG LẶP (SIMILARITY INDEX):
+   - similarityScore (0% đến 100%): Tỷ lệ phần trăm tổng số từ trong bài có sự tương đồng hoặc trùng khớp với các nguồn khác.
+   - breakdown: 
+     + internetSourcesPercent: % trùng từ website, báo điện tử, bách khoa toàn thư mở.
+     + publicationsPercent: % trùng từ sách, giáo trình, bài báo khoa học, kỷ yếu hội thảo.
+     + studentPapersPercent: % trùng từ kho tài liệu/luận văn/khóa luận của người học khác.
+   - riskLevel: "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)".
 
-2. RÀ SOÁT LỖI CHÍNH TẢ & NGỮ PHÁP (SPELLING, GRAMMAR, PUNCTUATION, STYLE):
-   - Phát hiện mọi lỗi chính tả (dấu câu, sai phụ âm/nguyên âm, telex, nhầm lẫn d/gi, s/x, ch/tr, l/n trong tiếng Việt; spelling/typo trong tiếng Anh).
-   - Phát hiện lỗi ngữ pháp: câu què, câu thiếu chủ ngữ - vị ngữ, lặp từ, dùng từ sai ngữ cảnh học thuật, ngữ pháp tiếng Anh sai thì/chia động từ/mạo từ.
-   - Với mỗi lỗi, chỉ rõ:
-     + original: Đoạn/từ ngữ bị lỗi nguyên bản trong bài.
-     + suggestion: Từ ngữ hoặc câu sửa đề xuất chuẩn mực.
-     + reason: Giải thích ngắn gọn tại sao lỗi (theo quy tắc chính tả/ngữ pháp).
-     + type: 'spelling' (chính tả) | 'grammar' (ngữ pháp) | 'style' (văn phong/diễn đạt) | 'citation' (trích dẫn/bản quyền).
+2. DANH SÁCH CÁC NGUỒN TRÙNG KHỚP CỤ THỂ (MATCHED SOURCES - ĐÁNH SỐ 1, 2, 3...):
+   - Nhận diện từ 2 đến 8 nguồn tương đồng tiềm năng nhất:
+     + sourceId: số nguyên từ 1 đến N.
+     + sourceTitle: tên giáo trình, bài báo, website hoặc đề tài tương đồng (VD: "Giáo trình Nguyên lý Triết học Mác - Lênin", "Luận văn ĐH Sư phạm Kỹ thuật 2023", "Wikipedia Tiếng Việt", v.v.).
+     + sourceType: "internet" | "publication" | "student_paper" | "journal".
+     + similarityPercent: tỷ lệ % đóng góp của nguồn này (VD: 6%, 4%, 2%...).
+     + url: đường link đại diện (nếu có, hoặc để trống).
+     + authorOrDomain: Tên tác giả hoặc cơ quan xuất bản / domain.
+     + matchedText: Đoạn văn bản đại diện tiêu biểu bị trùng.
 
-3. VĂN BẢN ĐÃ CHỈNH SỬA HOÀN THIỆN (REFINED TEXT):
-   - Tạo ra một bản văn bản hoàn chỉnh đã được sửa toàn bộ lỗi chính tả, chuẩn hóa dấu câu tiếng Việt/tiếng Anh, làm mượt ngữ pháp nhưng GIỮ NGUYÊN cấu trúc và ý nghĩa gốc của tài liệu để người dùng có thể lưu lại và dùng ngay.
+3. DANH SÁCH CÁC ĐOẠN VĂN BẢN NGHI VẤN ĐẠO VĂN (SUSPICIOUS PASSAGES):
+   - text: đoạn văn bản chính xác xuất hiện trong bài nộp của người dùng (từ 10 đến 40 từ).
+   - sourceIndex: số ID của nguồn tương ứng (1, 2, 3...) để người dùng đối chiếu.
+   - sourceTitle: tên nguồn tương ứng.
+   - similarityPercent: % tương đồng của đoạn này.
+   - reason: lý do nghi vấn (sao chép nguyên văn không trích dẫn, sao chép có thay đổi vài từ - patchwriting, thiếu chú thích tác giả theo Điều 25 Luật SHTT).
+   - recommendation: hướng dẫn cụ thể cách khắc phục.
+   - paraphraseSuggestion: gợi ý viết lại (paraphrase) đoạn này bằng giọng văn riêng của tác giả nhưng giữ nguyên bản chất kiến thức.
 
-4. BẢNG TỔNG HỢP & LỜI KHUYÊN NÂNG CẤP HỌC THUẬT:
-   - Tóm tắt tổng quan: Số từ, điểm số chất lượng (0-100), mức độ rủi ro bản quyền (Thấp/Trung bình/Cao).
-   - Lời khuyên cụ thể để hoàn thiện giáo án/giáo trình theo chuẩn sư phạm và quy định pháp luật.
+4. BẢN TEXT ĐÁNH DẤU HIGHLIGHT CHUẨN TURNITIN (highlightedHtml):
+   - Tạo một chuỗi HTML ngắn gọn từ văn bản gốc, trong đó các đoạn bị trùng khớp được bọc trong thẻ <mark class="turnitin-match match-1" data-source="1">đoạn trùng khớp</mark> với class match-1, match-2, match-3... tương ứng với sourceId. Các đoạn không bị trùng để text thông thường.
+
+5. RÀ SOÁT LỖI CHÍNH TẢ & NGỮ PHÁP (SPELLING, GRAMMAR, STYLE, CITATION):
+   - Bắt mọi lỗi chính tả tiếng Việt (dấu, telex, phụ âm s/x, tr/ch, d/gi, l/n) và tiếng Anh.
+   - Phát hiện câu què, ngữ pháp lủng củng, văn phong chưa chuẩn học thuật.
+
+6. VĂN BẢN ĐÃ CHỈNH SỬA HOÀN THIỆN (improvedText):
+   - Văn bản hoàn chỉnh đã được sửa chính tả, trau chuốt câu từ mượt mà để lưu lại dùng ngay.
 
 BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text ngoài, chỉ JSON thuần túy):
 {
   "summary": {
     "totalWords": 0,
+    "totalCharacters": 0,
     "qualityScore": 85,
     "plagiarismRisk": "THẤP" | "TRUNG BÌNH" | "CAO",
-    "plagiarismScore": 12,
+    "plagiarismScore": 14,
     "totalIssues": 0,
     "spellingIssuesCount": 0,
     "grammarIssuesCount": 0,
     "citationIssuesCount": 0
   },
   "plagiarismAnalysis": {
-    "riskLevel": "An toàn" | "Cần bổ sung nguồn" | "Rủi ro vi phạm",
-    "assessment": "Nhận xét chi tiết về bản quyền, tính nguyên bản và trích dẫn theo Luật SHTT",
-    "suspiciousPassages": [
+    "similarityScore": 14,
+    "riskLevel": "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)",
+    "assessment": "Nhận xét tổng quan của thẩm định viên chuyên ngành...",
+    "breakdown": {
+      "internetSourcesPercent": 8,
+      "publicationsPercent": 4,
+      "studentPapersPercent": 2
+    },
+    "matchedSources": [
       {
-        "text": "Đoạn văn có dấu hiệu sao chép hoặc thiếu nguồn",
-        "reason": "Lý do nghi vấn (thiếu tác giả, trích dẫn dài nguyên khối...)",
-        "recommendation": "Khuyến nghị xử lý (viết lại diễn đạt lại - paraphrase, hoặc thêm citation [Tác giả, Năm])"
+        "sourceId": 1,
+        "sourceTitle": "Tên nguồn tài liệu / giáo trình / website",
+        "sourceType": "internet" | "publication" | "student_paper" | "journal",
+        "similarityPercent": 7,
+        "url": "https://...",
+        "authorOrDomain": "Bộ GD&ĐT / Đại học Quốc gia",
+        "matchedText": "Đoạn trích từ nguồn..."
       }
     ],
-    "citationAdvice": "Hướng dẫn trích dẫn chuẩn cho tài liệu này"
+    "suspiciousPassages": [
+      {
+        "text": "Đoạn văn trong bài nộp",
+        "sourceIndex": 1,
+        "sourceTitle": "Tên nguồn 1",
+        "similarityPercent": 92,
+        "reason": "Sao chép nguyên khối định nghĩa mà không ghi nguồn",
+        "recommendation": "Cần thêm citation [Tác giả, năm] hoặc diễn đạt lại",
+        "paraphraseSuggestion": "Đoạn văn viết lại theo cách diễn đạt học thuật mới..."
+      }
+    ],
+    "citationAdvice": "Hướng dẫn trích dẫn chuẩn theo Điều 25 Luật SHTT 2022"
   },
+  "highlightedHtml": "<p>Đoạn mở đầu... <mark class=\\"turnitin-match match-1\\" data-source=\\"1\\">cụm từ trùng lặp</mark> tiếp theo...</p>",
   "issues": [
     {
       "id": "iss-1",
       "type": "spelling" | "grammar" | "style" | "citation",
-      "original": "từ hoặc cụm từ bị lỗi",
-      "suggestion": "từ hoặc cụm từ sửa lại đúng",
-      "reason": "Giải thích ngắn gọn lỗi",
-      "context": "Một đoạn câu ngắn chứa từ bị lỗi để dễ định vị"
+      "original": "từ lỗi",
+      "suggestion": "từ sửa đúng",
+      "reason": "Giải thích",
+      "context": "Ngữ cảnh câu"
     }
   ],
-  "improvedText": "Toàn bộ văn bản đã được biên tập, sửa lỗi chính tả ngữ pháp chuẩn chỉnh, sẵn sàng sao chép hoặc lưu về máy",
-  "pedagogicalAdvice": "Lời khuyên nâng cao chất lượng giáo án/giáo trình và tính chuẩn mực học thuật"
+  "improvedText": "Toàn văn bản đã được biên tập và sửa hoàn thiện",
+  "pedagogicalAdvice": "Lời khuyên cải thiện chất lượng sư phạm và liêm chính học thuật"
 }`;
 
       let resultJson: any = null;
