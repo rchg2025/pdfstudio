@@ -109,6 +109,8 @@
     { "source": "/pdf-page-number", "destination": "/index.html" },
     { "source": "/photo-enhancer", "destination": "/index.html" },
     { "source": "/nang-cap-anh", "destination": "/index.html" },
+    { "source": "/tim-file-trung", "destination": "/index.html" },
+    { "source": "/duplicate-finder", "destination": "/index.html" },
     { "source": "/forgot-password", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/thong-tin-ca-nhan", "destination": "/index.html" },

@@ -73,6 +73,7 @@ const VideoCutter = React.lazy(() => import('./pages/VideoCutter'));
 const TeachingGamesStudio = React.lazy(() => import('./pages/TeachingGamesStudio'));
 const PdfPageNumber = React.lazy(() => import('./pages/PdfPageNumber'));
 const PhotoEnhanceStudio = React.lazy(() => import('./pages/PhotoEnhanceStudio'));
+const DuplicateFileFinder = React.lazy(() => import('./pages/DuplicateFileFinder'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -342,6 +343,12 @@ function App() {
             } />
             <Route path="nang-cap-anh" element={
               <Suspense fallback={<FallbackLoader />}><PhotoEnhanceStudio /></Suspense>
+            } />
+            <Route path="tim-file-trung" element={
+              <Suspense fallback={<FallbackLoader />}><DuplicateFileFinder /></Suspense>
+            } />
+            <Route path="duplicate-finder" element={
+              <Suspense fallback={<FallbackLoader />}><DuplicateFileFinder /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

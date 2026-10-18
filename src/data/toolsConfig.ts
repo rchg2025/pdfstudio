@@ -528,6 +528,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['cắt video online', 'video cutter', 'trim video online', 'cắt mp4 không mất tiếng', 'cắt video trực tuyến'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/tim-file-trung',
+    title: '🔍 Rà Soát & Quét Tệp Trùng Tên Trong Thư Mục (Duplicate File Finder)',
+    desc: 'Quét toàn bộ thư mục và các thư mục con trên máy tính của bạn để tìm các tệp trùng tên hoặc trùng dung lượng, hiển thị cây đường dẫn tương đối và xuất báo cáo CSV chi tiết.',
+    category: 'other',
+    isHot: true,
+    keywords: ['tìm file trùng tên', 'rà soát file trùng lặp', 'duplicate file finder', 'quét tệp trùng lặp thư mục máy tính', 'lọc file trùng nhau'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

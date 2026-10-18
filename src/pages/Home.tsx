@@ -48,6 +48,7 @@ import {
   Scissors,
   Gamepad2,
   FileText,
+  FolderSearch,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -259,6 +260,13 @@ const otherTools = [
     icon: <Scissors size={24} />,
     title: 'Cắt Video Nhanh Trực Tuyến (Fast Video Cutter)',
     desc: 'Cắt tỉa phân đoạn video MP4, WebM, MOV theo mốc thời gian chính xác, xem trước trực quan, xử lý 100% bảo mật ngay trên trình duyệt.'
+  },
+  {
+    path: '/tim-file-trung',
+    icon: <FolderSearch size={24} color="#0284c7" />,
+    title: '🔍 Rà Soát Tệp Trùng Tên Trong Thư Mục (Duplicate Finder)',
+    desc: 'Quét toàn bộ thư mục và cây thư mục con trên máy tính của bạn để tìm các tệp trùng tên hoặc trùng dung lượng, hiển thị đường dẫn chi tiết và xuất báo cáo CSV.',
+    isHot: true
   }
 ];
 

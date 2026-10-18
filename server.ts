@@ -223,6 +223,8 @@ if (fs.existsSync(distPath)) {
     '/pdf-page-number',
     '/photo-enhancer',
     '/nang-cap-anh',
+    '/tim-file-trung',
+    '/duplicate-finder',
     '/embed-player'
   ];
 
