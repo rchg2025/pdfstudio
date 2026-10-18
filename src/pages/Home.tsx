@@ -126,6 +126,12 @@ const imageTools = [
     desc: 'Tạo và quản lý các khung ảnh sự kiện, chiến dịch truyền thông của riêng bạn.'
   },
   {
+    path: '/ghep-anh-nghe-thuat',
+    icon: <Grid size={24} />,
+    title: 'Ghép Ảnh & Tạo Khung Lưới (Photo Collage)',
+    desc: 'Ghép 2 đến 9 ảnh vào các bố cục khung lưới nghệ thuật, chỉnh viền, bo góc tròn và tỷ lệ khung hình chuẩn mạng xã hội.'
+  },
+  {
     path: '/image-compressor',
     icon: <ImageMinus size={24} />,
     title: 'Công cụ nén ảnh theo dung lượng',
