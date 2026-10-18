@@ -23,10 +23,9 @@ export default async function handler(req: any, res: any) {
     }
 
     try {
-      // Dùng yt-dlp trích xuất json thông tin
-      // --dump-single-json --no-warnings --no-playlist
+      // Dùng yt-dlp trích xuất json thông tin với client đa nền tảng tránh chặn 403
       const safeUrl = url.replace(/(["\s'$`\\])/g, '\\$1');
-      const cmd = `yt-dlp --dump-single-json --no-warnings --no-playlist "${safeUrl}"`;
+      const cmd = `yt-dlp --extractor-args "youtube:player_client=android,web" --dump-single-json --no-warnings --no-playlist "${safeUrl}"`;
 
       const { stdout } = await execPromise(cmd, { timeout: 30000 });
       const data = JSON.parse(stdout);
@@ -74,7 +73,6 @@ export default async function handler(req: any, res: any) {
         viewCount: data.view_count || null,
         webpage_url: data.webpage_url || url,
         extractor: data.extractor_key || data.extractor || 'media',
-        // Direct stream links nếu có sẵn
         directVideoUrl: data.url || null
       });
     } catch (err: any) {
@@ -87,7 +85,7 @@ export default async function handler(req: any, res: any) {
 
   // 2. Stream hoặc Tải file Video / MP3 trực tiếp về máy
   if (action === 'download') {
-    const { url, type = 'video', quality = 'best' } = req.query;
+    const { url, type = 'video' } = req.query;
     if (!url) {
       return res.status(400).send('Thiếu đường link video.');
     }
@@ -98,7 +96,7 @@ export default async function handler(req: any, res: any) {
       // Lấy title để đặt filename
       let filename = 'media_download';
       try {
-        const { stdout: titleOut } = await execPromise(`yt-dlp --get-title "${safeUrl}"`, { timeout: 10000 });
+        const { stdout: titleOut } = await execPromise(`yt-dlp --extractor-args "youtube:player_client=android,web" --get-title "${safeUrl}"`, { timeout: 10000 });
         if (titleOut.trim()) {
           filename = titleOut.trim().replace(/[/\\?%*:|"<>]/g, '_').substring(0, 100);
         }
@@ -110,24 +108,39 @@ export default async function handler(req: any, res: any) {
         res.setHeader('Content-Type', 'audio/mpeg');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}.mp3"`);
         
-        // Trích xuất audio mp3 trực tiếp qua stdout
-        const dlProc = exec(`yt-dlp -x --audio-format mp3 -o - "${safeUrl}"`);
+        // Tải stream video/audio rồi pipe qua ffmpeg chuyển đổi sang mp3 thời gian thực
+        const ytdlCmd = `yt-dlp --extractor-args "youtube:player_client=android,web" -f "b/ba/best" -o - "${safeUrl}" | ffmpeg -i pipe:0 -vn -acodec libmp3lame -ab 192k -f mp3 pipe:1`;
+        const dlProc = exec(ytdlCmd);
         dlProc.stdout?.pipe(res);
-        dlProc.stderr?.on('data', (d) => console.log('yt-dlp audio:', d.toString()));
+        dlProc.stderr?.on('data', (d) => {
+          // ignore verbose ffmpeg progress
+        });
+        dlProc.on('error', (err) => {
+          console.error('Lỗi stream audio:', err);
+        });
+        return;
       } else {
         res.setHeader('Content-Type', 'video/mp4');
         res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(filename)}.mp4"`);
 
-        // Tải video tốt nhất kèm âm thanh (merge sang mp4) qua stdout
-        const dlProc = exec(`yt-dlp -f "best[ext=mp4]/bestvideo+bestaudio/best" --recode-video mp4 -o - "${safeUrl}"`);
+        // Tải video tốt nhất có âm thanh (format 18 hoặc b/best) truyền trực tiếp về client
+        const ytdlCmd = `yt-dlp --extractor-args "youtube:player_client=android,web" -f "b/best[ext=mp4]/best" -o - "${safeUrl}"`;
+        const dlProc = exec(ytdlCmd);
         dlProc.stdout?.pipe(res);
-        dlProc.stderr?.on('data', (d) => console.log('yt-dlp video:', d.toString()));
+        dlProc.stderr?.on('data', (d) => {
+          // ignore verbose progress
+        });
+        dlProc.on('error', (err) => {
+          console.error('Lỗi stream video:', err);
+        });
+        return;
       }
     } catch (err: any) {
       console.error('Lỗi download media:', err);
       if (!res.headersSent) {
         return res.status(500).json({ error: `Lỗi tải: ${err.message}` });
       }
+      return;
     }
   }
 
