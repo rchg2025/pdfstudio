@@ -12,7 +12,11 @@ import {
   Gauge, 
   Copy, 
   Check, 
-  Activity
+  Activity,
+  FolderOpen,
+  FolderSync,
+  ShieldAlert,
+  HelpCircle
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './SystemOptimizer.css';
@@ -24,6 +28,15 @@ interface CleanCategory {
   sizeEstimate: string;
   risk: 'safe' | 'medium';
   icon: string;
+  pathHint: string;
+}
+
+interface ScannedTempItem {
+  name: string;
+  path: string;
+  size: number;
+  handle: any;
+  parentHandle: any;
 }
 
 export default function SystemOptimizer() {
@@ -38,6 +51,14 @@ export default function SystemOptimizer() {
   // RAM Benchmark / Memory Pressure Test
   const [isRamTesting, setIsRamTesting] = useState(false);
   const [ramFreedEstimate, setRamFreedEstimate] = useState<number | null>(null);
+
+  // FSA Direct Folder Cleaner State
+  const [fsaDirHandle, setFsaDirHandle] = useState<any>(null);
+  const [fsaFolderName, setFsaFolderName] = useState<string>('');
+  const [scannedTempFiles, setScannedTempFiles] = useState<ScannedTempItem[]>([]);
+  const [isDeletingFsa, setIsDeletingFsa] = useState(false);
+  const [fsaDeleteProgress, setFsaDeleteProgress] = useState<{ current: number; total: number; name: string } | null>(null);
+  const [fsaDeleteStats, setFsaDeleteStats] = useState<{ count: number; bytes: number } | null>(null);
 
   // System Cleaning Options Checklist
   const [selectedWinCategories, setSelectedWinCategories] = useState<string[]>([
@@ -84,23 +105,19 @@ export default function SystemOptimizer() {
   const handleClearBrowserStorage = async () => {
     setClearingBrowser(true);
     try {
-      // Clear localStorage (chỉ giữ auth)
       const authToken = localStorage.getItem('token');
       const authUser = localStorage.getItem('user');
       localStorage.clear();
       if (authToken) localStorage.setItem('token', authToken);
       if (authUser) localStorage.setItem('user', authUser);
 
-      // Clear sessionStorage
       sessionStorage.clear();
 
-      // Clear CacheStorage (service workers, cached assets)
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(name => caches.delete(name)));
       }
 
-      // Clear IndexedDB nếu có
       if (window.indexedDB && window.indexedDB.databases) {
         try {
           const dbs = await window.indexedDB.databases();
@@ -114,7 +131,6 @@ export default function SystemOptimizer() {
         }
       }
 
-      // Re-estimate
       if (navigator.storage && navigator.storage.estimate) {
         const est = await navigator.storage.estimate();
         setStorageEstimate({ quota: est.quota || 0, usage: est.usage || 0 });
@@ -136,13 +152,12 @@ export default function SystemOptimizer() {
     showToast('Đang quét và ép giải phóng bộ nhớ heap tạm thời...', 'info');
 
     setTimeout(() => {
-      // Kỹ thuật ép V8 Garbage Collector dọn dẹp memory heap
       try {
         let tempArr: any[] = [];
         for (let i = 0; i < 50; i++) {
-          tempArr.push(new ArrayBuffer(1024 * 1024)); // Cấp phát ngắn hạn
+          tempArr.push(new ArrayBuffer(1024 * 1024));
         }
-        tempArr = []; // Hủy tham chiếu ngay lập tức
+        tempArr = [];
         if (window.gc) {
           // @ts-ignore
           window.gc();
@@ -158,30 +173,116 @@ export default function SystemOptimizer() {
     }, 1200);
   };
 
+  // 3. CHỨC NĂNG XÓA TRỰC TIẾP TRÊN Ổ CỨNG QUA FILE SYSTEM ACCESS API
+  const handlePickAndScanTempFolder = async () => {
+    try {
+      // @ts-ignore
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      if (!dirHandle) return;
+
+      setFsaDirHandle(dirHandle);
+      setFsaFolderName(dirHandle.name);
+      setFsaDeleteStats(null);
+
+      const items: ScannedTempItem[] = [];
+
+      async function scanFolder(handle: any, curPath: string) {
+        // @ts-ignore
+        for await (const entry of handle.values()) {
+          const relPath = curPath ? `${curPath}/${entry.name}` : entry.name;
+          if (entry.kind === 'file') {
+            try {
+              const file = await entry.getFile();
+              items.push({
+                name: entry.name,
+                path: relPath,
+                size: file.size,
+                handle: entry,
+                parentHandle: handle
+              });
+            } catch (err) {
+              console.log('Skipped unreadable file', entry.name);
+            }
+          } else if (entry.kind === 'directory') {
+            await scanFolder(entry, relPath);
+          }
+        }
+      }
+
+      await scanFolder(dirHandle, '');
+      setScannedTempFiles(items);
+
+      const totalSize = items.reduce((acc, f) => acc + f.size, 0);
+      showToast(`Đã tìm thấy ${items.length} tệp rác trong "${dirHandle.name}" (${formatBytes(totalSize)})!`, 'success');
+    } catch (err: any) {
+      if (err.name !== 'AbortError') {
+        console.error(err);
+        showToast('Không thể quét thư mục: ' + err.message, 'error');
+      }
+    }
+  };
+
+  // Thực hiện XÓA TRỰC TIẾP các file tạm trong thư mục vừa chọn
+  const handleExecuteDirectDelete = async () => {
+    if (!fsaDirHandle || scannedTempFiles.length === 0) return;
+
+    if (!confirm(`XÁC NHẬN XÓA FILE TẠM:\nBạn sắp xóa vĩnh viễn ${scannedTempFiles.length} tệp tạm bên trong thư mục "${fsaFolderName}".\n\nBạn có chắc chắn muốn tiến hành xóa ngay trên ổ cứng không?`)) {
+      return;
+    }
+
+    setIsDeletingFsa(true);
+    setFsaDeleteProgress({ current: 0, total: scannedTempFiles.length, name: '' });
+
+    let deletedCount = 0;
+    let deletedBytes = 0;
+
+    for (let i = 0; i < scannedTempFiles.length; i++) {
+      const item = scannedTempFiles[i];
+      setFsaDeleteProgress({
+        current: i + 1,
+        total: scannedTempFiles.length,
+        name: item.name
+      });
+
+      try {
+        await item.parentHandle.removeEntry(item.name);
+        deletedCount++;
+        deletedBytes += item.size;
+      } catch (err) {
+        console.warn(`Bỏ qua file đang dùng: ${item.name}`);
+      }
+    }
+
+    setIsDeletingFsa(false);
+    setFsaDeleteProgress(null);
+    setFsaDeleteStats({ count: deletedCount, bytes: deletedBytes });
+    setScannedTempFiles([]);
+    showToast(`Đã dọn sạch ${deletedCount} tệp tạm! Giải phóng ${formatBytes(deletedBytes)} dung lượng ổ cứng.`, 'success');
+  };
+
   // DANH MỤC DỌN DẸP CHO WINDOWS
   const winCategories: CleanCategory[] = [
-    { id: 'user_temp', name: 'User Temp Files (%TEMP%)', desc: 'Tệp tạm của ứng dụng người dùng, bộ cài đặt cũ và file render rác', sizeEstimate: '1.5 GB - 15 GB', risk: 'safe', icon: '📁' },
-    { id: 'win_temp', name: 'Windows Temp Files (C:\\Windows\\Temp)', desc: 'Tệp tạm cấp hệ thống do dịch vụ Windows Service sinh ra', sizeEstimate: '500 MB - 5 GB', risk: 'safe', icon: '⚙️' },
-    { id: 'prefetch', name: 'Prefetch Cache (C:\\Windows\\Prefetch)', desc: 'Cache nạp trước các ứng dụng đã gỡ cài đặt từ lâu', sizeEstimate: '100 MB - 500 MB', risk: 'safe', icon: '⚡' },
-    { id: 'recycle_bin', name: 'Dọn sạch Thùng Rác (Empty Recycle Bin)', desc: 'Xóa vĩnh viễn tất cả tệp trong sọt rác của tất cả ổ đĩa C, D, E', sizeEstimate: '2 GB - 30 GB', risk: 'safe', icon: '🗑️' },
-    { id: 'dns_cache', name: 'Làm mới DNS Cache (ipconfig /flushdns)', desc: 'Xóa bộ nhớ đệm phân giải tên miền, sửa lỗi mạng và lag duyệt web', sizeEstimate: 'Tức thì (0 MB)', risk: 'safe', icon: '🌐' },
-    { id: 'thumb_cache', name: 'Thumbnail Cache (Icon & Ảnh thu nhỏ)', desc: 'Bộ nhớ đệm hình thu nhỏ của Windows Explorer bị phân mảnh', sizeEstimate: '200 MB - 1 GB', risk: 'safe', icon: '🖼️' },
-    { id: 'software_dist', name: 'Windows Update Cache (SoftwareDistribution)', desc: 'Các gói cài đặt cập nhật Windows cũ tích tụ qua nhiều năm', sizeEstimate: '3 GB - 20 GB', risk: 'medium', icon: '🔄' },
-    { id: 'chrome_cache', name: 'Chrome / Edge Cache (Trình duyệt)', desc: 'Lịch sử bộ nhớ đệm web, ảnh video đệm xem online hàng ngày', sizeEstimate: '1 GB - 8 GB', risk: 'safe', icon: '🧭' }
+    { id: 'user_temp', name: 'User Temp Files (%TEMP%)', desc: 'Tệp tạm của ứng dụng người dùng, bộ cài đặt cũ và file render rác', sizeEstimate: '1.5 GB - 15 GB', risk: 'safe', icon: '📁', pathHint: '%TEMP%' },
+    { id: 'win_temp', name: 'Windows Temp Files (C:\\Windows\\Temp)', desc: 'Tệp tạm cấp hệ thống do dịch vụ Windows Service sinh ra', sizeEstimate: '500 MB - 5 GB', risk: 'safe', icon: '⚙️', pathHint: 'C:\\Windows\\Temp' },
+    { id: 'prefetch', name: 'Prefetch Cache (C:\\Windows\\Prefetch)', desc: 'Cache nạp trước các ứng dụng đã gỡ cài đặt từ lâu', sizeEstimate: '100 MB - 500 MB', risk: 'safe', icon: '⚡', pathHint: 'C:\\Windows\\Prefetch' },
+    { id: 'recycle_bin', name: 'Dọn sạch Thùng Rác (Empty Recycle Bin)', desc: 'Xóa vĩnh viễn tất cả tệp trong sọt rác của tất cả ổ đĩa C, D, E', sizeEstimate: '2 GB - 30 GB', risk: 'safe', icon: '🗑️', pathHint: 'Recycle Bin' },
+    { id: 'dns_cache', name: 'Làm mới DNS Cache (ipconfig /flushdns)', desc: 'Xóa bộ nhớ đệm phân giải tên miền, sửa lỗi mạng và lag duyệt web', sizeEstimate: 'Tức thì (0 MB)', risk: 'safe', icon: '🌐', pathHint: 'DNS Cache' },
+    { id: 'thumb_cache', name: 'Thumbnail Cache (Icon & Ảnh thu nhỏ)', desc: 'Bộ nhớ đệm hình thu nhỏ của Windows Explorer bị phân mảnh', sizeEstimate: '200 MB - 1 GB', risk: 'safe', icon: '🖼️', pathHint: '%LocalAppData%\\Microsoft\\Windows\\Explorer' },
+    { id: 'software_dist', name: 'Windows Update Cache (SoftwareDistribution)', desc: 'Các gói cài đặt cập nhật Windows cũ tích tụ qua nhiều năm', sizeEstimate: '3 GB - 20 GB', risk: 'medium', icon: '🔄', pathHint: 'C:\\Windows\\SoftwareDistribution\\Download' },
+    { id: 'chrome_cache', name: 'Chrome / Edge Cache (Trình duyệt)', desc: 'Lịch sử bộ nhớ đệm web, ảnh video đệm xem online hàng ngày', sizeEstimate: '1 GB - 8 GB', risk: 'safe', icon: '🧭', pathHint: 'Browser Cache' }
   ];
 
   // DANH MỤC DỌN DẸP CHO MACOS
   const macCategories: CleanCategory[] = [
-    { id: 'user_cache', name: 'User Caches (~/Library/Caches)', desc: 'Bộ nhớ tạm tích tụ của tất cả ứng dụng macOS đang chạy', sizeEstimate: '2 GB - 25 GB', risk: 'safe', icon: '📁' },
-    { id: 'user_logs', name: 'User Logs (~/Library/Logs)', desc: 'Nhật ký sự kiện và báo cáo crash ứng dụng cũ', sizeEstimate: '300 MB - 3 GB', risk: 'safe', icon: '📄' },
-    { id: 'dns_flush', name: 'Làm mới mDNSResponder (Flush DNS)', desc: 'Khôi phục độ trễ mạng thấp nhất cho macOS', sizeEstimate: 'Tức thì (0 MB)', risk: 'safe', icon: '🌐' },
-    { id: 'trash_bin', name: 'Dọn sạch Thùng rác macOS (~/.Trash)', desc: 'Xóa vĩnh viễn tệp trong Thùng rác để lấy lại dung lượng ngay', sizeEstimate: '1 GB - 40 GB', risk: 'safe', icon: '🗑️' },
-    { id: 'quicklook_cache', name: 'QuickLook Thumbnail Cache', desc: 'Cache xem trước tệp phím Spacebar của Finder', sizeEstimate: '200 MB - 2 GB', risk: 'safe', icon: '👁️' },
-    { id: 'ram_purge', name: 'Thanh lọc RAM Không Hoạt Động (purge)', desc: 'Lệnh ép macOS dọn sạch Inactive Memory và Disk Cache', sizeEstimate: '1 GB - 6 GB RAM', risk: 'safe', icon: '🚀' },
-    { id: 'xcode_cache', name: 'Xcode DerivedData & iOS DeviceSupport', desc: 'Dữ liệu build Xcode cũ chiếm cực nhiều dung lượng cho dân lập trình', sizeEstimate: '5 GB - 50 GB', risk: 'medium', icon: '💻' }
+    { id: 'user_cache', name: 'User Caches (~/Library/Caches)', desc: 'Bộ nhớ tạm tích tụ của tất cả ứng dụng macOS đang chạy', sizeEstimate: '2 GB - 25 GB', risk: 'safe', icon: '📁', pathHint: '~/Library/Caches' },
+    { id: 'user_logs', name: 'User Logs (~/Library/Logs)', desc: 'Nhật ký sự kiện và báo cáo crash ứng dụng cũ', sizeEstimate: '300 MB - 3 GB', risk: 'safe', icon: '📄', pathHint: '~/Library/Logs' },
+    { id: 'dns_flush', name: 'Làm mới mDNSResponder (Flush DNS)', desc: 'Khôi phục độ trễ mạng thấp nhất cho macOS', sizeEstimate: 'Tức thì (0 MB)', risk: 'safe', icon: '🌐', pathHint: 'mDNSResponder' },
+    { id: 'trash_bin', name: 'Dọn sạch Thùng rác macOS (~/.Trash)', desc: 'Xóa vĩnh viễn tệp trong Thùng rác để lấy lại dung lượng ngay', sizeEstimate: '1 GB - 40 GB', risk: 'safe', icon: '🗑️', pathHint: '~/.Trash' },
+    { id: 'quicklook_cache', name: 'QuickLook Thumbnail Cache', desc: 'Cache xem trước tệp phím Spacebar của Finder', sizeEstimate: '200 MB - 2 GB', risk: 'safe', icon: '👁️', pathHint: 'QuickLook Cache' },
+    { id: 'ram_purge', name: 'Thanh lọc RAM Không Hoạt Động (purge)', desc: 'Lệnh ép macOS dọn sạch Inactive Memory và Disk Cache', sizeEstimate: '1 GB - 6 GB RAM', risk: 'safe', icon: '🚀', pathHint: 'RAM Purge' },
+    { id: 'xcode_cache', name: 'Xcode DerivedData & iOS DeviceSupport', desc: 'Dữ liệu build Xcode cũ chiếm cực nhiều dung lượng cho dân lập trình', sizeEstimate: '5 GB - 50 GB', risk: 'medium', icon: '💻', pathHint: '~/Library/Developer/Xcode/DerivedData' }
   ];
 
-  // TOGGLE CATEGORY
   const toggleWinCategory = (id: string) => {
     setSelectedWinCategories(prev => 
       prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
@@ -341,7 +442,6 @@ export default function SystemOptimizer() {
     return script;
   };
 
-  // TẢI FILE BAT
   const handleDownloadWinBatch = () => {
     const script = generateWinBatchScript();
     const blob = new Blob([script], { type: 'application/x-bat;charset=utf-8' });
@@ -354,7 +454,6 @@ export default function SystemOptimizer() {
     showToast('Đã tải xuống file kịch bản dọn dẹp cho Windows (.bat)!', 'success');
   };
 
-  // TẢI FILE SH
   const handleDownloadMacShell = () => {
     const script = generateMacShellScript();
     const blob = new Blob([script], { type: 'text/x-sh;charset=utf-8' });
@@ -367,7 +466,6 @@ export default function SystemOptimizer() {
     showToast('Đã tải xuống file kịch bản dọn dẹp cho macOS (.sh)!', 'success');
   };
 
-  // COPY LỆNH NHANH (POWERSHELL / TERMINAL)
   const handleCopyOneLiner = (cmd: string, key: string) => {
     navigator.clipboard.writeText(cmd);
     setCopiedCmd(key);
@@ -389,7 +487,7 @@ export default function SystemOptimizer() {
           <div>
             <h1 className="so-title">Tối Ưu Hiệu Suất & Dọn Dẹp Bộ Nhớ Tạm Máy Tính (System Optimizer)</h1>
             <p className="so-subtitle">
-              Giải phóng bộ nhớ RAM, xóa sạch cache web, sinh kịch bản dọn dẹp file rác hệ thống Windows (%TEMP%, Prefetch, Thùng rác) và macOS (~/Library/Caches, purge) an toàn, nhanh chóng.
+              Xóa sạch các tệp tạm trên ổ cứng, giải phóng RAM, làm sạch cache web, xóa file rác Windows (%TEMP%, Prefetch, Thùng rác) và macOS (~/Library/Caches) an toàn, nhanh chóng.
             </p>
           </div>
         </div>
@@ -499,14 +597,133 @@ export default function SystemOptimizer() {
         </div>
       </section>
 
-      {/* KHỐI 2: DỌN DẸP SÂU HỆ THỐNG (CHỌN DANH MỤC & XUẤT SCRIPT 1-CLICK) */}
+      {/* KHỐI 2: XÓA TRỰC TIẾP TRÊN Ổ CỨNG QUA TRÌNH DUYỆT (FILE SYSTEM ACCESS API) */}
+      <section className="so-card fsa-direct-card">
+        <div className="card-header-row">
+          <div className="card-title-group">
+            <FolderSync size={24} className="text-primary" />
+            <div>
+              <h3>Xóa File Tạm Trực Tiếp Trên Ổ Cứng (Direct Disk Cleaner)</h3>
+              <p>Chọn thư mục tạm (ví dụ thư mục <code>Temp</code>, <code>Download</code>, <code>Cache</code>) để trình duyệt quét và xóa vĩnh viễn ngay lập tức.</p>
+            </div>
+          </div>
+          <span className="badge-direct">⚡ Xóa Trực Tiếp 1-Click</span>
+        </div>
+
+        <div className="fsa-workspace">
+          {!fsaDirHandle ? (
+            <div className="fsa-picker-banner" onClick={handlePickAndScanTempFolder}>
+              <div className="fsa-picker-icon">
+                <FolderOpen size={44} />
+              </div>
+              <h4>Bấm Để Chọn Thư Mục Chứa Tệp Tạm Cần Xóa Bỏ</h4>
+              <p>
+                Trình duyệt sẽ yêu cầu cấp quyền đọc/ghi một lần để duyệt và xóa trực tiếp các tệp rác khỏi ổ cứng của bạn.
+              </p>
+              <button className="so-btn so-btn-primary" onClick={(e) => { e.stopPropagation(); handlePickAndScanTempFolder(); }}>
+                <FolderOpen size={16} />
+                <span>Chọn Thư Mục & Quét File Tạm</span>
+              </button>
+
+              <div className="path-hints-row">
+                <span className="hint-label"><HelpCircle size={14} /> Đường dẫn gợi ý chọn nhanh:</span>
+                {activeOs === 'windows' ? (
+                  <>
+                    <code title="Mở Run gõ %TEMP% rồi copy đường dẫn">C:\Users\...\AppData\Local\Temp</code>
+                    <code>C:\Windows\Temp</code>
+                  </>
+                ) : (
+                  <>
+                    <code title="Trong Finder bấm Cmd+Shift+G gõ ~/Library/Caches">~/Library/Caches</code>
+                    <code>~/Downloads</code>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="fsa-active-console animate-fade-in">
+              <div className="fsa-status-bar">
+                <div className="status-left">
+                  <CheckCircle2 size={18} className="text-success" />
+                  <span>Đang kết nối thư mục: <strong>"{fsaFolderName}"</strong></span>
+                </div>
+                <div className="status-right">
+                  <button className="so-btn-sm so-btn-outline" onClick={handlePickAndScanTempFolder} disabled={isDeletingFsa}>
+                    <FolderOpen size={14} />
+                    <span>Chọn Thư Mục Khác</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Thống kê quét được */}
+              <div className="fsa-scan-stats">
+                <div className="fsa-stat-box">
+                  <span className="stat-label">Số tệp tạm tìm thấy:</span>
+                  <span className="stat-val">{scannedTempFiles.length} tệp</span>
+                </div>
+                <div className="fsa-stat-box">
+                  <span className="stat-label">Dung lượng sẽ giải phóng:</span>
+                  <span className="stat-val text-danger">
+                    {formatBytes(scannedTempFiles.reduce((acc, f) => acc + f.size, 0))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Thanh tiến trình xóa nếu đang chạy */}
+              {isDeletingFsa && fsaDeleteProgress && (
+                <div className="fsa-progress-wrap animate-fade-in">
+                  <div className="fsa-progress-bar">
+                    <div 
+                      className="fsa-progress-fill" 
+                      style={{ width: `${(fsaDeleteProgress.current / fsaDeleteProgress.total) * 100}%` }}
+                    />
+                  </div>
+                  <div className="fsa-progress-labels">
+                    <span>Đang xóa: {fsaDeleteProgress.current} / {fsaDeleteProgress.total}</span>
+                    <span className="cur-file">{fsaDeleteProgress.name}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Thông báo kết quả đã xóa */}
+              {fsaDeleteStats && (
+                <div className="fsa-success-notice animate-fade-in">
+                  <CheckCircle2 size={20} className="text-success" />
+                  <span>
+                    Hoàn tất! Đã xóa vĩnh viễn <strong>{fsaDeleteStats.count} tệp</strong> và giải phóng <strong>{formatBytes(fsaDeleteStats.bytes)}</strong> dung lượng ổ cứng!
+                  </span>
+                </div>
+              )}
+
+              {/* Nút thực thi xóa */}
+              <div className="fsa-action-row">
+                <button 
+                  className="so-btn so-btn-danger" 
+                  onClick={handleExecuteDirectDelete}
+                  disabled={isDeletingFsa || scannedTempFiles.length === 0}
+                >
+                  <Trash2 size={16} />
+                  <span>
+                    {isDeletingFsa ? 'Đang Thực Hiện Xóa...' : `Xóa Sạch ${scannedTempFiles.length} Tệp Tạm Ngay Lập Tức`}
+                  </span>
+                </button>
+                <span className="fsa-warn-text">
+                  <ShieldAlert size={14} /> Thao tác xóa vĩnh viễn trên ổ đĩa, các tệp đang được ứng dụng khác mở sẽ tự động được bỏ qua an toàn.
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* KHỐI 3: DỌN DẸP TOÀN BỘ HỆ THỐNG QUA KỊCH BẢN TỰ ĐỘNG (BAT / SH) */}
       <section className="so-card system-cleaner-card">
         <div className="card-header-row">
           <div className="card-title-group">
             <Layers size={22} className="text-secondary" />
             <div>
-              <h3>Dọn Dẹp Toàn Diện Hệ Điều Hành {activeOs === 'windows' ? 'Windows (10/11)' : 'macOS'}</h3>
-              <p>Chọn các vùng bộ nhớ tạm muốn xóa và tải file kịch bản tự động 1-Click an toàn.</p>
+              <h3>Dọn Dẹp Toàn Diện Toàn Bộ Hệ Thống {activeOs === 'windows' ? 'Windows (10/11)' : 'macOS'}</h3>
+              <p>Xóa sạch cùng lúc tất cả thư mục Temp hệ thống, Prefetch, DNS, Thùng rác bằng 1-Click an toàn tuyệt đối.</p>
             </div>
           </div>
 
@@ -514,12 +731,12 @@ export default function SystemOptimizer() {
             {activeOs === 'windows' ? (
               <button className="so-btn so-btn-danger" onClick={handleDownloadWinBatch}>
                 <Download size={16} />
-                <span>Tải File Dọn Dẹp (.bat)</span>
+                <span>Tải File Tự Động Xóa (.bat)</span>
               </button>
             ) : (
               <button className="so-btn so-btn-danger" onClick={handleDownloadMacShell}>
                 <Download size={16} />
-                <span>Tải File Dọn Dẹp (.sh)</span>
+                <span>Tải File Tự Động Xóa (.sh)</span>
               </button>
             )}
           </div>
@@ -588,26 +805,26 @@ export default function SystemOptimizer() {
 
         {/* Hướng dẫn sử dụng */}
         <div className="instruction-guide">
-          <h4>💡 Hướng dẫn sử dụng file kịch bản an toàn:</h4>
+          <h4>💡 Hướng dẫn chạy xóa tự động:</h4>
           <ol>
             {activeOs === 'windows' ? (
               <>
-                <li>Tích chọn các mục bạn muốn dọn dẹp ở trên và bấm <strong>"Tải File Dọn Dẹp (.bat)"</strong>.</li>
+                <li>Tích chọn các mục bạn muốn dọn dẹp ở trên và bấm <strong>"Tải File Tự Động Xóa (.bat)"</strong>.</li>
                 <li>Nhấp chuột phải vào file <code>Don-Dep-Tang-Toc-Windows.bat</code> vừa tải về $\rightarrow$ Chọn <strong>"Run as administrator"</strong> (Chạy với quyền Quản trị viên).</li>
-                <li>Cửa sổ dòng lệnh sẽ hiển thị chi tiết tiến trình xóa từng mục và hoàn tất trong 5 - 10 giây.</li>
+                <li>Hệ thống sẽ tự động quét và xóa sạch tất cả các file tạm trong %TEMP%, Windows Temp, Prefetch, làm mới DNS và dọn sạch Thùng rác trong 5 giây!</li>
               </>
             ) : (
               <>
-                <li>Tích chọn các mục cần dọn dẹp và bấm <strong>"Tải File Dọn Dẹp (.sh)"</strong>.</li>
+                <li>Tích chọn các mục cần dọn dẹp và bấm <strong>"Tải File Tự Động Xóa (.sh)"</strong>.</li>
                 <li>Mở ứng dụng <strong>Terminal</strong> trên máy Mac của bạn, gõ <code>bash </code> (có dấu cách) rồi kéo thả file <code>don-dep-tang-toc-macos.sh</code> vào và nhấn Enter.</li>
-                <li>Hệ thống sẽ dọn dẹp sạch sẽ các tệp cache và giải phóng bộ nhớ RAM nhàn rỗi.</li>
+                <li>Hệ thống sẽ tự động dọn sạch Cache ứng dụng, Logs cũ và giải phóng RAM nhàn rỗi.</li>
               </>
             )}
           </ol>
         </div>
       </section>
 
-      {/* KHỐI 3: MẸO & KINH NGHIỆM TỐI ƯU HỆ THỐNG */}
+      {/* KHỐI 4: MẸO & KINH NGHIỆM TỐI ƯU HỆ THỐNG */}
       <section className="so-card tips-card">
         <div className="card-title-group">
           <CheckCircle2 size={22} className="text-success" />
