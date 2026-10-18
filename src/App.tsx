@@ -66,6 +66,7 @@ const AiPodcastStudio = React.lazy(() => import('./pages/AiPodcastStudio'));
 const PdfSign = React.lazy(() => import('./pages/PdfSign'));
 const PhotoCollage = React.lazy(() => import('./pages/PhotoCollage'));
 const PhotoFilterStudio = React.lazy(() => import('./pages/PhotoFilterStudio'));
+const MediaDownloader = React.lazy(() => import('./pages/MediaDownloader'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -155,6 +156,15 @@ function App() {
             } />
             <Route path="photo-filter" element={
               <Suspense fallback={<FallbackLoader />}><PhotoFilterStudio /></Suspense>
+            } />
+            <Route path="tai-video-am-thanh" element={
+              <Suspense fallback={<FallbackLoader />}><MediaDownloader /></Suspense>
+            } />
+            <Route path="media-downloader" element={
+              <Suspense fallback={<FallbackLoader />}><MediaDownloader /></Suspense>
+            } />
+            <Route path="tai-video" element={
+              <Suspense fallback={<FallbackLoader />}><MediaDownloader /></Suspense>
             } />
             <Route path="login" element={
               <Suspense fallback={<FallbackLoader />}><Login /></Suspense>

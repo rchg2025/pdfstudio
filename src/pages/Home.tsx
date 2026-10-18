@@ -217,6 +217,12 @@ const otherTools = [
     icon: <Mic size={24} />,
     title: 'Đọc Văn Bản (Trình Duyệt)',
     desc: 'Chuyển đổi văn bản thành giọng nói bằng bộ máy của trình duyệt, không cần tải server.'
+  },
+  {
+    path: '/tai-video-am-thanh',
+    icon: <Film size={24} />,
+    title: 'Tải Video & Âm Thanh Đa Nền Tảng (Media Downloader)',
+    desc: 'Tải video Full HD không logo watermark, tách âm thanh MP3 320kbps từ YouTube, TikTok, Facebook Reels, Instagram, CapCut, SoundCloud.'
   }
 ];
 

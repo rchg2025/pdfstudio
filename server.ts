@@ -21,6 +21,7 @@ import edgeTtsHandler from './api/edge-tts.js';
 import attendanceHandler from './api/attendance.js';
 import liveBattleHandler from './api/live-battle.js';
 import pdfChatHandler from './api/pdf-chat.js';
+import mediaDownloadHandler from './api/media-download.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -104,6 +105,9 @@ app.all('/api/live-battle', adaptVercelHandler(liveBattleHandler));
 
 // Chat with PDF API (Hỏi đáp tài liệu PDF bằng AI)
 app.all('/api/pdf-chat', adaptVercelHandler(pdfChatHandler));
+
+// Media Downloader API (Tải Video & Âm thanh Youtube, TikTok, Facebook, Instagram...)
+app.all('/api/media-download', adaptVercelHandler(mediaDownloadHandler));
 
 // Sitemaps XML Route (Tự động phục vụ file sitemap.xml cập nhật mới nhất cho Googlebot)
 app.get('/sitemap.xml', (_req, res) => {

@@ -167,6 +167,7 @@ const Navbar = () => {
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
             <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
+            <NavLink to="/tai-video-am-thanh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>Tải Video / MP3</NavLink>
           </nav>
 
           <button 
@@ -350,6 +351,7 @@ const Navbar = () => {
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
             <NavLink to="/cat-ghep-am-thanh" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Cắt Ghép Audio</NavLink>
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
+            <NavLink to="/tai-video-am-thanh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>Tải Video / MP3</NavLink>
           </div>
 
           {user && (
