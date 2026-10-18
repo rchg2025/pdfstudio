@@ -125,6 +125,13 @@ const pdfTools = [
 
 const imageTools = [
   {
+    path: '/photo-enhancer',
+    icon: <Sparkles size={24} color="#f59e0b" />,
+    title: 'Nâng Cấp & Cứu Sáng Ảnh',
+    desc: 'Cứu sáng ảnh thiếu sáng/chụp đêm, cân bằng tương phản HDR, làm nét vi mô và tinh chỉnh màu sắc chuyên nghiệp.',
+    isHot: true
+  },
+  {
     path: '/tao-anh-ai',
     icon: <Sparkles size={24} />,
     title: 'Công Cụ Tạo Ảnh AI',

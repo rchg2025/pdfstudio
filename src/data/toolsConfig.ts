@@ -341,6 +341,16 @@ export const ALL_TOOLS: ToolItem[] = [
 
   // ================= XỬ LÝ ẢNH & AI =================
   {
+    path: '/photo-enhancer',
+    title: '✨ Nâng Cấp & Hiệu Chỉnh Màu Sắc Ảnh (Photo Enhancer Studio)',
+    desc: 'Cứu sáng ảnh chụp đêm/ngược sáng, cân bằng sáng tối HDR, làm sắc nét vi mô và tinh chỉnh nhiệt độ màu chuyên nghiệp 100% trên trình duyệt.',
+    category: 'image',
+    isHot: true,
+    keywords: ['nâng cấp ảnh', 'cứu sáng ảnh', 'photo enhancer', 'làm rõ ảnh mờ', 'chỉnh màu ảnh', 'cân bằng sáng tối ảnh', 'unsharp mask'],
+    priority: 0.9,
+    changefreq: 'weekly'
+  },
+  {
     path: '/tao-anh-ai',
     title: 'Công Cụ Tạo Ảnh AI Tiên Tiến (AI Image Generator)',
     desc: 'Biến ý tưởng của bạn thành hình ảnh tuyệt đẹp bằng công nghệ AI tiên tiến, hoàn toàn miễn phí.',

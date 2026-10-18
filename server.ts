@@ -221,6 +221,8 @@ if (fs.existsSync(distPath)) {
     '/classroom-games',
     '/danh-so-trang-pdf',
     '/pdf-page-number',
+    '/photo-enhancer',
+    '/nang-cap-anh',
     '/embed-player'
   ];
 

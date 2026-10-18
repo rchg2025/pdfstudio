@@ -72,6 +72,7 @@ const CustomQrGenerator = React.lazy(() => import('./pages/CustomQrGenerator'));
 const VideoCutter = React.lazy(() => import('./pages/VideoCutter'));
 const TeachingGamesStudio = React.lazy(() => import('./pages/TeachingGamesStudio'));
 const PdfPageNumber = React.lazy(() => import('./pages/PdfPageNumber'));
+const PhotoEnhanceStudio = React.lazy(() => import('./pages/PhotoEnhanceStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -335,6 +336,12 @@ function App() {
             } />
             <Route path="pdf-page-number" element={
               <Suspense fallback={<FallbackLoader />}><PdfPageNumber /></Suspense>
+            } />
+            <Route path="photo-enhancer" element={
+              <Suspense fallback={<FallbackLoader />}><PhotoEnhanceStudio /></Suspense>
+            } />
+            <Route path="nang-cap-anh" element={
+              <Suspense fallback={<FallbackLoader />}><PhotoEnhanceStudio /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
