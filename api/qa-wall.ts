@@ -2110,27 +2110,54 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
           resultJson.summary.plagiarismRisk = 'CAO';
         }
 
-        // Tự động sinh highlightedHtml nếu AI trả về thiếu hoặc rỗng
-        if (!resultJson.highlightedHtml || resultJson.highlightedHtml.length < 20) {
-          let html = trimmedText
-            .split('\n\n')
-            .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
-            .join('');
+        // BẮT BUỘC RÀ SOÁT VÀ TẠO BẢN HIGHLIGHT CHUẨN XÁC DỰA TRÊN CHÍNH VĂN BẢN TẢI LÊN
+        // Nếu AI trả về highlightedHtml không đầy đủ các thẻ mark hoặc bị thiếu thẻ, tiến hành đối khớp trực tiếp lên văn bản gốc
+        let htmlBase = trimmedText
+          .split('\n\n')
+          .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+          .join('');
 
-          // Highlight theo suspiciousPassages
-          if (Array.isArray(resultJson.plagiarismAnalysis.suspiciousPassages)) {
-            resultJson.plagiarismAnalysis.suspiciousPassages.forEach((item: any) => {
-              if (item.text && item.text.trim().length > 10) {
-                const escaped = item.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                const srcId = item.sourceIndex || 1;
-                html = html.replace(
-                  new RegExp(escaped, 'gi'),
-                  `<mark class="turnitin-match match-${srcId}" data-source="${srcId}">${item.text.trim()}</mark>`
+        if (Array.isArray(resultJson.plagiarismAnalysis?.suspiciousPassages) && resultJson.plagiarismAnalysis.suspiciousPassages.length > 0) {
+          // Sắp xếp các đoạn nghi vấn theo độ dài từ dài tới ngắn để tránh trùng đè chuỗi con
+          const sortedPassages = [...resultJson.plagiarismAnalysis.suspiciousPassages].sort(
+            (a, b) => (b.text || '').length - (a.text || '').length
+          );
+
+          sortedPassages.forEach((item: any) => {
+            if (item.text && typeof item.text === 'string' && item.text.trim().length > 6) {
+              const srcId = item.sourceIndex || 1;
+              const rawSearch = item.text.trim();
+              
+              // 1. Thử thay thế chính xác nguyên văn
+              const escaped = rawSearch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              const exactRegex = new RegExp(escaped, 'gi');
+              
+              if (exactRegex.test(htmlBase)) {
+                htmlBase = htmlBase.replace(
+                  exactRegex,
+                  `<mark class="turnitin-match match-${srcId}" data-source="${srcId}">${rawSearch}</mark>`
                 );
+              } else {
+                // 2. Thử tìm theo cụm từ linh hoạt (cho phép khoảng trắng / xuống dòng khác nhau)
+                const words = rawSearch.split(/\s+/).filter(Boolean);
+                if (words.length >= 4) {
+                  const flexPattern = words.map((w: string) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+                  try {
+                    const flexRegex = new RegExp(flexPattern, 'gi');
+                    htmlBase = htmlBase.replace(
+                      flexRegex,
+                      (matched: string) => `<mark class="turnitin-match match-${srcId}" data-source="${srcId}">${matched}</mark>`
+                    );
+                  } catch (rxErr) {}
+                }
               }
-            });
-          }
-          resultJson.highlightedHtml = html;
+            }
+          });
+
+          // Ưu tiên sử dụng htmlBase đã được đối soát chuẩn xác trên toàn bộ văn bản tải lên
+          resultJson.highlightedHtml = htmlBase;
+        } else if (!resultJson.highlightedHtml || resultJson.highlightedHtml.length < 20) {
+          resultJson.highlightedHtml = htmlBase;
         }
 
         // Đếm lại tổng số issues

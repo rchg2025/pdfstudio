@@ -610,6 +610,19 @@ export default function DocComplianceChecker() {
                   </div>
                   <div 
                     className={`turnitin-highlight-view ${selectedSourceId ? 'filter-active' : ''}`}
+                    onClick={(e) => {
+                      const target = (e.target as HTMLElement).closest('mark.turnitin-match') as HTMLElement;
+                      if (target) {
+                        const srcAttr = target.getAttribute('data-source');
+                        if (srcAttr) {
+                          const id = parseInt(srcAttr, 10);
+                          if (!isNaN(id)) {
+                            setSelectedSourceId(prev => prev === id ? null : id);
+                            setActiveTab('turnitin');
+                          }
+                        }
+                      }
+                    }}
                     dangerouslySetInnerHTML={{ 
                       __html: selectedSourceId 
                         ? (result.highlightedHtml || '').replace(new RegExp(`class="([^"]*match-${selectedSourceId}[^"]*)"`, 'gi'), 'class="$1 active-filter"')

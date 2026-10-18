@@ -1114,7 +1114,13 @@
   padding: 2px 4px;
   border-radius: 3px;
   font-weight: 600;
-  transition: opacity 0.2s, filter 0.2s;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.turnitin-highlight-view mark.turnitin-match:hover {
+  filter: brightness(0.95);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.4);
 }
 
 .turnitin-highlight-view mark.match-1 { background-color: #fee2e2; color: #b91c1c; border-bottom: 2px solid #ef4444; }
@@ -1137,6 +1143,7 @@
 .turnitin-highlight-view.filter-active mark.turnitin-match.active-filter {
   box-shadow: 0 0 0 2px #2563eb;
   font-weight: 700;
+  opacity: 1;
 }
 
 /* MATCHED SOURCES LIST */
