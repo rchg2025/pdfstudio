@@ -13,7 +13,11 @@ import {
   CheckCircle2,
   Clock,
   Scissors,
-  RefreshCw
+  RefreshCw,
+  GripVertical,
+  ArrowDownAZ,
+  ArrowUpZA,
+  Shuffle
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './VideoMerger.css';
@@ -34,24 +38,32 @@ export default function VideoMerger() {
   const { showToast } = useNotification();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Chế độ ghép: 'dual' (ghép thành 2 video) hoặc 'single' (ghép toàn bộ thành 1 video dài)
+  const [mergeMode, setMergeMode] = useState<'dual' | 'single'>('dual');
+
   // Danh sách các clip video tải lên
   const [clips, setClips] = useState<VideoClipItem[]>([]);
+
+  // Kéo thả sắp xếp (Drag & Drop)
+  const [draggedClipId, setDraggedClipId] = useState<string | null>(null);
+  const [dragOverClipId, setDragOverClipId] = useState<string | null>(null);
 
   // Preview video
   const [previewClip, setPreviewClip] = useState<VideoClipItem | null>(null);
   const previewVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Tiến trình ghép Video 1 & Video 2
+  // Tiến trình ghép video
   const [isMerging, setIsMerging] = useState<boolean>(false);
-  const [currentMergingTarget, setCurrentMergingTarget] = useState<'video1' | 'video2' | null>(null);
+  const [currentMergingTarget, setCurrentMergingTarget] = useState<'video1' | 'video2' | 'single' | null>(null);
   const [mergeProgress, setMergeProgress] = useState<number>(0);
   const [statusMessage, setStatusMessage] = useState<string>('');
 
   // Kết quả sau khi ghép xong
   const [outputVideo1, setOutputVideo1] = useState<{ url: string; size: number; name: string } | null>(null);
   const [outputVideo2, setOutputVideo2] = useState<{ url: string; size: number; name: string } | null>(null);
+  const [outputSingleVideo, setOutputSingleVideo] = useState<{ url: string; size: number; name: string } | null>(null);
 
-  // Resolution output target: '1080p' | '720p' | 'original'
+  // Resolution output target: '1080p' | '720p'
   const [resolutionPreset, setResolutionPreset] = useState<'1080p' | '720p'>('1080p');
 
   // Format giây thành mm:ss
@@ -80,7 +92,7 @@ export default function VideoMerger() {
       if (!file.type.startsWith('video/')) continue;
 
       const url = URL.createObjectURL(file);
-      // Tự động phân bổ xen kẽ hoặc nửa trước vào Video 1, nửa sau vào Video 2
+      // Tự động phân bổ xen kẽ
       const targetGroup: 'video1' | 'video2' = (currentCount + i) % 2 === 0 ? 'video1' : 'video2';
 
       // Đọc metadata video
@@ -134,18 +146,105 @@ export default function VideoMerger() {
     setClips(prev => prev.map(c => c.id === id ? { ...c, targetGroup: group } : c));
   };
 
-  // Di chuyển thứ tự clip
-  const handleMoveClip = (index: number, direction: 'up' | 'down') => {
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= clips.length) return;
+  // Di chuyển thứ tự clip trong toàn bộ danh sách hoặc trong nhóm
+  const handleMoveInGroup = (groupId: 'video1' | 'video2' | 'all', indexInGroup: number, direction: 'up' | 'down') => {
+    let groupClips = groupId === 'all' 
+      ? [...clips] 
+      : clips.filter(c => c.targetGroup === groupId);
+
+    const targetIndex = direction === 'up' ? indexInGroup - 1 : indexInGroup + 1;
+    if (targetIndex < 0 || targetIndex >= groupClips.length) return;
+
+    // Swap 2 items trong nhóm
+    const itemA = groupClips[indexInGroup];
+    const itemB = groupClips[targetIndex];
+
+    const idxA = clips.findIndex(c => c.id === itemA.id);
+    const idxB = clips.findIndex(c => c.id === itemB.id);
 
     setClips(prev => {
       const copy = [...prev];
-      const temp = copy[index];
-      copy[index] = copy[targetIndex];
-      copy[targetIndex] = temp;
+      copy[idxA] = itemB;
+      copy[idxB] = itemA;
       return copy;
     });
+  };
+
+  // Kéo thả sắp xếp HTML5 Drag & Drop
+  const handleDragStart = (e: React.DragEvent, id: string) => {
+    setDraggedClipId(id);
+    e.dataTransfer.setData('text/plain', id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, id: string) => {
+    e.preventDefault();
+    if (id !== dragOverClipId) {
+      setDragOverClipId(id);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, targetId: string, targetGroup?: 'video1' | 'video2') => {
+    e.preventDefault();
+    setDragOverClipId(null);
+    if (!draggedClipId || draggedClipId === targetId) return;
+
+    setClips(prev => {
+      const copy = [...prev];
+      const sourceIdx = copy.findIndex(c => c.id === draggedClipId);
+      const targetIdx = copy.findIndex(c => c.id === targetId);
+      if (sourceIdx < 0 || targetIdx < 0) return prev;
+
+      const [movedItem] = copy.splice(sourceIdx, 1);
+      if (targetGroup) {
+        movedItem.targetGroup = targetGroup;
+      }
+      copy.splice(targetIdx, 0, movedItem);
+      return copy;
+    });
+
+    setDraggedClipId(null);
+  };
+
+  // Drop vào vùng trống của nhóm
+  const handleDropInEmptyZone = (e: React.DragEvent, targetGroup: 'video1' | 'video2') => {
+    e.preventDefault();
+    setDragOverClipId(null);
+    if (!draggedClipId) return;
+
+    setClips(prev => prev.map(c => c.id === draggedClipId ? { ...c, targetGroup } : c));
+    setDraggedClipId(null);
+  };
+
+  // Sắp xếp tự động A-Z theo tên file
+  const handleSortByName = (ascending = true, groupId?: 'video1' | 'video2') => {
+    setClips(prev => {
+      if (groupId) {
+        const others = prev.filter(c => c.targetGroup !== groupId);
+        const targeted = prev.filter(c => c.targetGroup === groupId);
+        targeted.sort((a, b) => ascending ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+        return [...others, ...targeted];
+      } else {
+        const copy = [...prev];
+        copy.sort((a, b) => ascending ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name));
+        return copy;
+      }
+    });
+    showToast(`Đã sắp xếp danh sách theo tên ${ascending ? 'A-Z' : 'Z-A'}`, 'info');
+  };
+
+  // Xáo trộn ngẫu nhiên thứ tự các clip
+  const handleShuffle = (groupId?: 'video1' | 'video2') => {
+    setClips(prev => {
+      if (groupId) {
+        const others = prev.filter(c => c.targetGroup !== groupId);
+        const targeted = [...prev.filter(c => c.targetGroup === groupId)].sort(() => Math.random() - 0.5);
+        return [...others, ...targeted];
+      } else {
+        return [...prev].sort(() => Math.random() - 0.5);
+      }
+    });
+    showToast('Đã xáo trộn ngẫu nhiên thứ tự các video!', 'info');
   };
 
   // Xóa clip
@@ -161,12 +260,26 @@ export default function VideoMerger() {
     });
   };
 
+  // Xóa toàn bộ clip
+  const handleClearAll = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ danh sách video đã thêm?')) {
+      clips.forEach(c => URL.revokeObjectURL(c.url));
+      setClips([]);
+      setPreviewClip(null);
+      setOutputVideo1(null);
+      setOutputVideo2(null);
+      setOutputSingleVideo(null);
+      showToast('Đã xóa toàn bộ video trong danh sách!', 'info');
+    }
+  };
+
   // Danh sách clip theo từng nhóm
   const video1Clips = clips.filter(c => c.targetGroup === 'video1');
   const video2Clips = clips.filter(c => c.targetGroup === 'video2');
 
   const totalDuration1 = video1Clips.reduce((acc, c) => acc + c.duration, 0);
   const totalDuration2 = video2Clips.reduce((acc, c) => acc + c.duration, 0);
+  const totalDurationAll = clips.reduce((acc, c) => acc + c.duration, 0);
 
   // GHÉP CÁC CLIP THÀNH 1 VIDEO DÀI BẰNG CANVAS VÀ MEDIARECORDER
   const mergeClipsToSingleVideo = async (targetClips: VideoClipItem[], targetName: string): Promise<Blob> => {
@@ -234,8 +347,6 @@ export default function VideoMerger() {
         sourceNode.connect(audioDest);
 
         let renderLoopActive = false;
-
-        // Render từng frame lên canvas
         const renderLoop = () => {
           if (!renderLoopActive) return;
           if (hiddenVideo.readyState >= 2) {
@@ -294,7 +405,7 @@ export default function VideoMerger() {
   };
 
   // Thực hiện nối CẢ 2 VIDEO DÀI TỔNG THỂ
-  const handleMergeAllVideos = async () => {
+  const handleMergeDualVideos = async () => {
     if (clips.length < 2) {
       showToast('Cần ít nhất 2 đoạn video ngắn để tiến hành nối video.', 'warning');
       return;
@@ -338,6 +449,35 @@ export default function VideoMerger() {
     }
   };
 
+  // Thực hiện nối TOÀN BỘ CLIPS THÀNH 1 VIDEO DÀI DUY NHẤT
+  const handleMergeSingleMasterVideo = async () => {
+    if (clips.length < 2) {
+      showToast('Cần ít nhất 2 đoạn video ngắn để tiến hành nối video.', 'warning');
+      return;
+    }
+
+    setIsMerging(true);
+    setMergeProgress(0);
+    setCurrentMergingTarget('single');
+
+    try {
+      const blob = await mergeClipsToSingleVideo(clips, 'Video Dài Toàn Bộ');
+      const url = URL.createObjectURL(blob);
+      setOutputSingleVideo({
+        url,
+        size: blob.size,
+        name: `Video_Noi_Tong_The_${Date.now()}.webm`
+      });
+
+      showToast('Đã hoàn tất nối toàn bộ clip thành 1 video dài!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi trong quá trình nối video', 'error');
+    } finally {
+      setIsMerging(false);
+      setCurrentMergingTarget(null);
+    }
+  };
+
   // Tự động chia đều các clip thành 2 nửa
   const handleAutoSplitHalf = () => {
     const half = Math.ceil(clips.length / 2);
@@ -363,6 +503,7 @@ export default function VideoMerger() {
       clips.forEach(c => URL.revokeObjectURL(c.url));
       if (outputVideo1) URL.revokeObjectURL(outputVideo1.url);
       if (outputVideo2) URL.revokeObjectURL(outputVideo2.url);
+      if (outputSingleVideo) URL.revokeObjectURL(outputSingleVideo.url);
     };
   }, []);
 
@@ -373,15 +514,16 @@ export default function VideoMerger() {
         <div className="vm-header-inner">
           <div className="vm-badge">
             <Sparkles size={16} />
-            <span>Nối & Biên Tập Video Đa Luồng (Video Stitcher)</span>
+            <span>Nối & Sắp Xếp Video Trực Tuyến (Video Stitcher & Merger)</span>
           </div>
-          <h1>Nối Các Đoạn Video Ngắn Thành 2 Video Dài Tổng Thể</h1>
+          <h1>Nối Nhiều Video Cùng Lúc & Tự Sắp Xếp Thứ Tự Video</h1>
           <p className="vm-desc">
-            Tải lên nhiều video ngắn, dễ dàng sắp xếp thứ tự và phân bổ thành <strong>2 Video dài tổng thể (Phần 1 & Phần 2)</strong>. Xử lý trực tiếp trên trình duyệt bằng công nghệ tăng tốc phần cứng, bảo mật 100% không tải lên server.
+            Tải lên hàng loạt video clip ngắn cùng lúc, linh hoạt <strong>kéo thả hoặc nhấn nút để tự do sắp xếp thứ tự</strong> trước khi nối. Hỗ trợ xuất thành <strong>2 Video dài tổng thể</strong> (Phần 1 & Phần 2) hoặc gộp toàn bộ thành <strong>1 Video dài duy nhất</strong>. Xử lý trực tiếp 100% trên trình duyệt bằng công nghệ tăng tốc phần cứng, bảo mật tuyệt đối không tải dữ liệu lên máy chủ.
           </p>
 
           <div className="vm-meta-bar">
-            <div className="meta-tag"><Layers size={15} /> Ghép 2 luồng video song song</div>
+            <div className="meta-tag"><GripVertical size={15} /> Kéo thả sắp xếp thứ tự tự do</div>
+            <div className="meta-tag"><Layers size={15} /> Ghép 1 hoặc 2 luồng video linh hoạt</div>
             <div className="meta-tag"><Scissors size={15} /> Ghép nối liền mạch (Seamless Stitching)</div>
             <div className="meta-tag"><Clock size={15} /> Chuẩn Full HD 1080p / 720p</div>
           </div>
@@ -389,6 +531,31 @@ export default function VideoMerger() {
       </div>
 
       <div className="vm-container">
+        {/* CHỌN CHẾ ĐỘ NỐI (DUAL VS SINGLE) */}
+        <div className="vm-mode-selector">
+          <button
+            className={`mode-tab-btn ${mergeMode === 'dual' ? 'active' : ''}`}
+            onClick={() => setMergeMode('dual')}
+          >
+            <Layers size={18} />
+            <div className="mode-tab-text">
+              <strong>Ghép Thành 2 Video Dài Tổng Thể</strong>
+              <span>Chia các clip thành 2 nhóm Video 1 và Video 2 (Phần 1 & Phần 2)</span>
+            </div>
+          </button>
+
+          <button
+            className={`mode-tab-btn ${mergeMode === 'single' ? 'active' : ''}`}
+            onClick={() => setMergeMode('single')}
+          >
+            <Film size={18} />
+            <div className="mode-tab-text">
+              <strong>Ghép Toàn Bộ Thành 1 Video Dài Duy Nhất</strong>
+              <span>Nối liên tiếp tất cả các clip theo đúng thứ tự bạn đã sắp xếp</span>
+            </div>
+          </button>
+        </div>
+
         {/* TOOLBAR ACTIONS */}
         <div className="vm-toolbar">
           <div className="toolbar-left">
@@ -409,25 +576,63 @@ export default function VideoMerger() {
               <span>Thêm Video Ngắn (.mp4, .mov, .webm)</span>
             </button>
 
-            <button
-              className="btn-secondary"
-              onClick={handleAutoSplitHalf}
-              disabled={clips.length === 0 || isMerging}
-              title="Chia nửa đầu vào Video 1, nửa sau vào Video 2"
-            >
-              <Split size={16} />
-              <span>Chia Đều 2 Nửa</span>
-            </button>
+            {mergeMode === 'dual' && (
+              <>
+                <button
+                  className="btn-secondary"
+                  onClick={handleAutoSplitHalf}
+                  disabled={clips.length === 0 || isMerging}
+                  title="Chia nửa đầu vào Video 1, nửa sau vào Video 2"
+                >
+                  <Split size={16} />
+                  <span>Chia Đều 2 Nửa</span>
+                </button>
 
-            <button
-              className="btn-secondary"
-              onClick={handleAutoSplitAlternate}
-              disabled={clips.length === 0 || isMerging}
-              title="Phân bổ xen kẽ clip 1, 3, 5 vào Video 1; clip 2, 4, 6 vào Video 2"
-            >
-              <Layers size={16} />
-              <span>Chia Xen Kẽ</span>
-            </button>
+                <button
+                  className="btn-secondary"
+                  onClick={handleAutoSplitAlternate}
+                  disabled={clips.length === 0 || isMerging}
+                  title="Phân bổ xen kẽ clip 1, 3, 5 vào Video 1; clip 2, 4, 6 vào Video 2"
+                >
+                  <Layers size={16} />
+                  <span>Chia Xen Kẽ</span>
+                </button>
+              </>
+            )}
+
+            {/* CÔNG CỤ SẮP XẾP NHANH */}
+            <div className="quick-sort-dropdown">
+              <button
+                className="btn-secondary"
+                disabled={clips.length === 0 || isMerging}
+                onClick={() => handleSortByName(true)}
+                title="Sắp xếp toàn bộ theo tên A - Z"
+              >
+                <ArrowDownAZ size={16} />
+                <span>Tên A-Z</span>
+              </button>
+              <button
+                className="btn-secondary"
+                disabled={clips.length === 0 || isMerging}
+                onClick={() => handleShuffle()}
+                title="Xáo trộn thứ tự ngẫu nhiên"
+              >
+                <Shuffle size={16} />
+                <span>Xáo Trộn</span>
+              </button>
+            </div>
+
+            {clips.length > 0 && (
+              <button
+                className="btn-danger-outline"
+                onClick={handleClearAll}
+                disabled={isMerging}
+                title="Xóa tất cả clip"
+              >
+                <Trash2 size={15} />
+                <span>Xóa Hết</span>
+              </button>
+            )}
           </div>
 
           <div className="toolbar-right">
@@ -443,23 +648,43 @@ export default function VideoMerger() {
               </select>
             </div>
 
-            <button
-              className="btn-success merge-all-btn"
-              onClick={handleMergeAllVideos}
-              disabled={isMerging || clips.length < 2}
-            >
-              {isMerging ? (
-                <>
-                  <RefreshCw size={16} className="spin" />
-                  <span>Đang Nối ({mergeProgress}%)...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles size={16} />
-                  <span>Bắt Đầu Ghép Nối 2 Video</span>
-                </>
-              )}
-            </button>
+            {mergeMode === 'dual' ? (
+              <button
+                className="btn-success merge-all-btn"
+                onClick={handleMergeDualVideos}
+                disabled={isMerging || clips.length < 2}
+              >
+                {isMerging ? (
+                  <>
+                    <RefreshCw size={16} className="spin" />
+                    <span>Đang Nối ({mergeProgress}%)...</span>
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={16} />
+                    <span>Bắt Đầu Nối 2 Video Dài</span>
+                  </>
+                )}
+              </button>
+            ) : (
+              <button
+                className="btn-success merge-all-btn single-merge"
+                onClick={handleMergeSingleMasterVideo}
+                disabled={isMerging || clips.length < 2}
+              >
+                {isMerging ? (
+                  <>
+                    <RefreshCw size={16} className="spin" />
+                    <span>Đang Nối 1 Video ({mergeProgress}%)...</span>
+                  </>
+                ) : (
+                  <>
+                    <Film size={16} />
+                    <span>Bắt Đầu Nối 1 Video Toàn Bộ</span>
+                  </>
+                )}
+              </button>
+            )}
           </div>
         </div>
 
@@ -468,7 +693,7 @@ export default function VideoMerger() {
           <div className="merging-progress-banner">
             <div className="progress-info-row">
               <span className="current-target-pill">
-                Đang xử lý: {currentMergingTarget === 'video1' ? 'VIDEO DÀI 1' : 'VIDEO DÀI 2'}
+                Đang xử lý: {currentMergingTarget === 'video1' ? 'VIDEO DÀI 1' : currentMergingTarget === 'video2' ? 'VIDEO DÀI 2' : 'VIDEO TOÀN BỘ'}
               </span>
               <span className="progress-percent-text">{mergeProgress}%</span>
             </div>
@@ -479,158 +704,323 @@ export default function VideoMerger() {
           </div>
         )}
 
-        {/* WORKSPACE LAYOUT */}
-        <div className="vm-grid">
-          {/* CỘT 1: NHÓM VIDEO DÀI 1 */}
-          <div className="target-video-column group-1">
-            <div className="column-header">
-              <div className="header-title">
-                <span className="group-badge badge-1">1</span>
-                <h3>VIDEO DÀI TỔNG THỂ 1</h3>
-              </div>
-              <div className="header-meta">
-                <span>{video1Clips.length} clips</span>
-                <span>•</span>
-                <strong>{formatSeconds(totalDuration1)}</strong>
-              </div>
-            </div>
-
-            <div className="clips-drop-zone">
-              {video1Clips.length === 0 ? (
-                <div className="empty-group-msg">
-                  <Film size={32} />
-                  <p>Chưa có đoạn video nào được gán vào Video 1.</p>
-                  <span>Bấm "Chuyển sang Video 1" ở clip để đưa vào đây.</span>
+        {/* WORKSPACE LAYOUT: CHẾ ĐỘ 2 CỘT HOẶC 1 CỘT TOÀN DIỆN */}
+        {mergeMode === 'dual' ? (
+          <div className="vm-grid">
+            {/* CỘT 1: NHÓM VIDEO DÀI 1 */}
+            <div
+              className="target-video-column group-1"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDropInEmptyZone(e, 'video1')}
+            >
+              <div className="column-header">
+                <div className="header-title">
+                  <span className="group-badge badge-1">1</span>
+                  <h3>VIDEO DÀI TỔNG THỂ 1</h3>
                 </div>
-              ) : (
-                video1Clips.map((clip, index) => {
-                  const globalIndex = clips.findIndex(c => c.id === clip.id);
-                  return (
-                    <div key={clip.id} className="clip-card">
-                      <div className="clip-card-left" onClick={() => setPreviewClip(clip)}>
-                        <span className="clip-index">{index + 1}</span>
-                        <div className="clip-info">
-                          <span className="clip-name">{clip.name}</span>
-                          <span className="clip-specs">
-                            {formatSeconds(clip.duration)} | {formatFileSize(clip.size)} | {clip.width}×{clip.height}
-                          </span>
+                <div className="header-meta">
+                  <button
+                    className="meta-sort-btn"
+                    title="Sắp xếp A-Z nhóm 1"
+                    onClick={() => handleSortByName(true, 'video1')}
+                  >
+                    <ArrowDownAZ size={13} />
+                  </button>
+                  <button
+                    className="meta-sort-btn"
+                    title="Xáo trộn nhóm 1"
+                    onClick={() => handleShuffle('video1')}
+                  >
+                    <Shuffle size={13} />
+                  </button>
+                  <span>{video1Clips.length} clips</span>
+                  <span>•</span>
+                  <strong>{formatSeconds(totalDuration1)}</strong>
+                </div>
+              </div>
+
+              <div className="clips-drop-zone">
+                {video1Clips.length === 0 ? (
+                  <div className="empty-group-msg">
+                    <Film size={32} />
+                    <p>Chưa có đoạn video nào được gán vào Video 1.</p>
+                    <span>Kéo thả video vào đây hoặc bấm "Chuyển sang Video 1".</span>
+                  </div>
+                ) : (
+                  video1Clips.map((clip, index) => {
+                    const isDragged = draggedClipId === clip.id;
+                    const isDragOver = dragOverClipId === clip.id;
+                    return (
+                      <div
+                        key={clip.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, clip.id)}
+                        onDragOver={(e) => handleDragOver(e, clip.id)}
+                        onDrop={(e) => handleDrop(e, clip.id, 'video1')}
+                        className={`clip-card ${isDragged ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
+                      >
+                        <div className="clip-drag-handle" title="Kéo để đổi thứ tự">
+                          <GripVertical size={16} />
+                        </div>
+
+                        <div className="clip-card-left" onClick={() => setPreviewClip(clip)}>
+                          <span className="clip-index">{index + 1}</span>
+                          <div className="clip-info">
+                            <span className="clip-name" title={clip.name}>{clip.name}</span>
+                            <span className="clip-specs">
+                              {formatSeconds(clip.duration)} | {formatFileSize(clip.size)} | {clip.width}×{clip.height}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="clip-card-actions">
+                          <button
+                            className="action-btn switch-btn"
+                            title="Chuyển sang Video 2"
+                            onClick={() => handleToggleGroup(clip.id, 'video2')}
+                          >
+                            Sang V2 ➜
+                          </button>
+                          <button
+                            className="icon-btn"
+                            title="Di chuyển lên"
+                            disabled={index === 0}
+                            onClick={() => handleMoveInGroup('video1', index, 'up')}
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            className="icon-btn"
+                            title="Di chuyển xuống"
+                            disabled={index === video1Clips.length - 1}
+                            onClick={() => handleMoveInGroup('video1', index, 'down')}
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                          <button
+                            className="icon-btn delete-btn"
+                            title="Xóa clip này"
+                            onClick={() => handleDeleteClip(clip.id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="clip-card-actions">
-                        <button
-                          className="action-btn switch-btn"
-                          title="Chuyển sang Video 2"
-                          onClick={() => handleToggleGroup(clip.id, 'video2')}
-                        >
-                          Sang Video 2 ➜
-                        </button>
-                        <button
-                          className="icon-btn"
-                          title="Di chuyển lên"
-                          disabled={globalIndex === 0}
-                          onClick={() => handleMoveClip(globalIndex, 'up')}
-                        >
-                          <ArrowUp size={14} />
-                        </button>
-                        <button
-                          className="icon-btn"
-                          title="Di chuyển xuống"
-                          disabled={globalIndex === clips.length - 1}
-                          onClick={() => handleMoveClip(globalIndex, 'down')}
-                        >
-                          <ArrowDown size={14} />
-                        </button>
-                        <button
-                          className="icon-btn delete-btn"
-                          title="Xóa clip này"
-                          onClick={() => handleDeleteClip(clip.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* CỘT 2: NHÓM VIDEO DÀI 2 */}
-          <div className="target-video-column group-2">
-            <div className="column-header">
-              <div className="header-title">
-                <span className="group-badge badge-2">2</span>
-                <h3>VIDEO DÀI TỔNG THỂ 2</h3>
-              </div>
-              <div className="header-meta">
-                <span>{video2Clips.length} clips</span>
-                <span>•</span>
-                <strong>{formatSeconds(totalDuration2)}</strong>
+                    );
+                  })
+                )}
               </div>
             </div>
 
-            <div className="clips-drop-zone">
-              {video2Clips.length === 0 ? (
-                <div className="empty-group-msg">
-                  <Film size={32} />
-                  <p>Chưa có đoạn video nào được gán vào Video 2.</p>
-                  <span>Bấm "Chuyển sang Video 2" ở clip để đưa vào đây.</span>
+            {/* CỘT 2: NHÓM VIDEO DÀI 2 */}
+            <div
+              className="target-video-column group-2"
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => handleDropInEmptyZone(e, 'video2')}
+            >
+              <div className="column-header">
+                <div className="header-title">
+                  <span className="group-badge badge-2">2</span>
+                  <h3>VIDEO DÀI TỔNG THỂ 2</h3>
                 </div>
-              ) : (
-                video2Clips.map((clip, index) => {
-                  const globalIndex = clips.findIndex(c => c.id === clip.id);
-                  return (
-                    <div key={clip.id} className="clip-card">
-                      <div className="clip-card-left" onClick={() => setPreviewClip(clip)}>
-                        <span className="clip-index">{index + 1}</span>
-                        <div className="clip-info">
-                          <span className="clip-name">{clip.name}</span>
-                          <span className="clip-specs">
-                            {formatSeconds(clip.duration)} | {formatFileSize(clip.size)} | {clip.width}×{clip.height}
-                          </span>
+                <div className="header-meta">
+                  <button
+                    className="meta-sort-btn"
+                    title="Sắp xếp A-Z nhóm 2"
+                    onClick={() => handleSortByName(true, 'video2')}
+                  >
+                    <ArrowDownAZ size={13} />
+                  </button>
+                  <button
+                    className="meta-sort-btn"
+                    title="Xáo trộn nhóm 2"
+                    onClick={() => handleShuffle('video2')}
+                  >
+                    <Shuffle size={13} />
+                  </button>
+                  <span>{video2Clips.length} clips</span>
+                  <span>•</span>
+                  <strong>{formatSeconds(totalDuration2)}</strong>
+                </div>
+              </div>
+
+              <div className="clips-drop-zone">
+                {video2Clips.length === 0 ? (
+                  <div className="empty-group-msg">
+                    <Film size={32} />
+                    <p>Chưa có đoạn video nào được gán vào Video 2.</p>
+                    <span>Kéo thả video vào đây hoặc bấm "Chuyển sang Video 2".</span>
+                  </div>
+                ) : (
+                  video2Clips.map((clip, index) => {
+                    const isDragged = draggedClipId === clip.id;
+                    const isDragOver = dragOverClipId === clip.id;
+                    return (
+                      <div
+                        key={clip.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, clip.id)}
+                        onDragOver={(e) => handleDragOver(e, clip.id)}
+                        onDrop={(e) => handleDrop(e, clip.id, 'video2')}
+                        className={`clip-card ${isDragged ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
+                      >
+                        <div className="clip-drag-handle" title="Kéo để đổi thứ tự">
+                          <GripVertical size={16} />
+                        </div>
+
+                        <div className="clip-card-left" onClick={() => setPreviewClip(clip)}>
+                          <span className="clip-index">{index + 1}</span>
+                          <div className="clip-info">
+                            <span className="clip-name" title={clip.name}>{clip.name}</span>
+                            <span className="clip-specs">
+                              {formatSeconds(clip.duration)} | {formatFileSize(clip.size)} | {clip.width}×{clip.height}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="clip-card-actions">
+                          <button
+                            className="action-btn switch-btn"
+                            title="Chuyển sang Video 1"
+                            onClick={() => handleToggleGroup(clip.id, 'video1')}
+                          >
+                            ➜ Sang V1
+                          </button>
+                          <button
+                            className="icon-btn"
+                            title="Di chuyển lên"
+                            disabled={index === 0}
+                            onClick={() => handleMoveInGroup('video2', index, 'up')}
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            className="icon-btn"
+                            title="Di chuyển xuống"
+                            disabled={index === video2Clips.length - 1}
+                            onClick={() => handleMoveInGroup('video2', index, 'down')}
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                          <button
+                            className="icon-btn delete-btn"
+                            title="Xóa clip này"
+                            onClick={() => handleDeleteClip(clip.id)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
                       </div>
-
-                      <div className="clip-card-actions">
-                        <button
-                          className="action-btn switch-btn"
-                          title="Chuyển sang Video 1"
-                          onClick={() => handleToggleGroup(clip.id, 'video1')}
-                        >
-                          ➜ Sang Video 1
-                        </button>
-                        <button
-                          className="icon-btn"
-                          title="Di chuyển lên"
-                          disabled={globalIndex === 0}
-                          onClick={() => handleMoveClip(globalIndex, 'up')}
-                        >
-                          <ArrowUp size={14} />
-                        </button>
-                        <button
-                          className="icon-btn"
-                          title="Di chuyển xuống"
-                          disabled={globalIndex === clips.length - 1}
-                          onClick={() => handleMoveClip(globalIndex, 'down')}
-                        >
-                          <ArrowDown size={14} />
-                        </button>
-                        <button
-                          className="icon-btn delete-btn"
-                          title="Xóa clip này"
-                          onClick={() => handleDeleteClip(clip.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+                    );
+                  })
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        ) : (
+          /* CHẾ ĐỘ 1 CỘT TOÀN DIỆN (NỐI TOÀN BỘ VIDEO THÀNH 1 VIDEO DUY NHẤT) */
+          <div className="single-column-zone">
+            <div className="target-video-column single-group">
+              <div className="column-header">
+                <div className="header-title">
+                  <span className="group-badge badge-single"><Film size={14} /></span>
+                  <h3>DANH SÁCH TOÀN BỘ CÁC ĐOẠN VIDEO (SẮP XẾP THEO THỨ TỰ SẼ NỐI)</h3>
+                </div>
+                <div className="header-meta">
+                  <button
+                    className="meta-sort-btn"
+                    title="Sắp xếp A-Z"
+                    onClick={() => handleSortByName(true)}
+                  >
+                    <ArrowDownAZ size={14} /> A-Z
+                  </button>
+                  <button
+                    className="meta-sort-btn"
+                    title="Sắp xếp Z-A"
+                    onClick={() => handleSortByName(false)}
+                  >
+                    <ArrowUpZA size={14} /> Z-A
+                  </button>
+                  <button
+                    className="meta-sort-btn"
+                    title="Xáo trộn ngẫu nhiên"
+                    onClick={() => handleShuffle()}
+                  >
+                    <Shuffle size={14} /> Xáo Trộn
+                  </button>
+                  <span>{clips.length} clips</span>
+                  <span>•</span>
+                  <strong>Tổng thời lượng: {formatSeconds(totalDurationAll)}</strong>
+                </div>
+              </div>
+
+              <div className="clips-drop-zone single-list">
+                {clips.length === 0 ? (
+                  <div className="empty-group-msg">
+                    <Film size={36} />
+                    <p>Chưa có video clip nào trong danh sách.</p>
+                    <span>Hãy nhấn nút "Thêm Video Ngắn" ở thanh công cụ phía trên để bắt đầu.</span>
+                  </div>
+                ) : (
+                  clips.map((clip, index) => {
+                    const isDragged = draggedClipId === clip.id;
+                    const isDragOver = dragOverClipId === clip.id;
+                    return (
+                      <div
+                        key={clip.id}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, clip.id)}
+                        onDragOver={(e) => handleDragOver(e, clip.id)}
+                        onDrop={(e) => handleDrop(e, clip.id)}
+                        className={`clip-card ${isDragged ? 'dragging' : ''} ${isDragOver ? 'drag-over' : ''}`}
+                      >
+                        <div className="clip-drag-handle" title="Kéo để đổi vị trí thứ tự nối">
+                          <GripVertical size={16} />
+                        </div>
+
+                        <div className="clip-card-left" onClick={() => setPreviewClip(clip)}>
+                          <span className="clip-index">{index + 1}</span>
+                          <div className="clip-info">
+                            <span className="clip-name" title={clip.name}>{clip.name}</span>
+                            <span className="clip-specs">
+                              Thời lượng: {formatSeconds(clip.duration)} | Dung lượng: {formatFileSize(clip.size)} | Độ phân giải: {clip.width}×{clip.height}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="clip-card-actions">
+                          <button
+                            className="icon-btn"
+                            title="Di chuyển lên trên"
+                            disabled={index === 0}
+                            onClick={() => handleMoveInGroup('all', index, 'up')}
+                          >
+                            <ArrowUp size={16} />
+                          </button>
+                          <button
+                            className="icon-btn"
+                            title="Di chuyển xuống dưới"
+                            disabled={index === clips.length - 1}
+                            onClick={() => handleMoveInGroup('all', index, 'down')}
+                          >
+                            <ArrowDown size={16} />
+                          </button>
+                          <button
+                            className="icon-btn delete-btn"
+                            title="Xóa clip này khỏi danh sách"
+                            onClick={() => handleDeleteClip(clip.id)}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* KHỐI XEM TRƯỚC VÀ KẾT QUẢ ĐÃ NỐI */}
         <div className="vm-bottom-grid">
@@ -657,64 +1047,93 @@ export default function VideoMerger() {
             </div>
           </div>
 
-          {/* KẾT QUẢ XUẤT 2 VIDEO DÀI */}
+          {/* KẾT QUẢ XUẤT VIDEO DÀI */}
           <div className="result-card">
             <div className="card-header">
               <CheckCircle2 size={18} className="text-success" />
-              <h4>Tải 2 Video Đã Nối Tổng Thể</h4>
+              <h4>Tải Video Đã Nối Tổng Thể</h4>
             </div>
             <div className="result-body">
-              <div className="result-outputs-container">
-                {/* KẾT QUẢ VIDEO 1 */}
-                <div className={`output-item ${outputVideo1 ? 'ready' : ''}`}>
-                  <div className="output-top">
-                    <span className="group-badge badge-1">1</span>
-                    <div className="output-info">
-                      <strong>Video Dài Tổng Thể 1</strong>
-                      <span>{outputVideo1 ? `${formatFileSize(outputVideo1.size)}` : 'Chưa render'}</span>
+              {mergeMode === 'dual' ? (
+                <div className="result-outputs-container">
+                  {/* KẾT QUẢ VIDEO 1 */}
+                  <div className={`output-item ${outputVideo1 ? 'ready' : ''}`}>
+                    <div className="output-top">
+                      <span className="group-badge badge-1">1</span>
+                      <div className="output-info">
+                        <strong>Video Dài Tổng Thể 1</strong>
+                        <span>{outputVideo1 ? `${formatFileSize(outputVideo1.size)}` : 'Chưa render'}</span>
+                      </div>
                     </div>
+                    {outputVideo1 ? (
+                      <div className="output-actions">
+                        <a
+                          href={outputVideo1.url}
+                          download={outputVideo1.name}
+                          className="btn-download"
+                        >
+                          <Download size={15} />
+                          <span>Tải Video 1 (.webm)</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="status-waiting">Sẵn sàng nối</span>
+                    )}
                   </div>
-                  {outputVideo1 ? (
-                    <div className="output-actions">
-                      <a
-                        href={outputVideo1.url}
-                        download={outputVideo1.name}
-                        className="btn-download"
-                      >
-                        <Download size={15} />
-                        <span>Tải Video 1 (.webm)</span>
-                      </a>
-                    </div>
-                  ) : (
-                    <span className="status-waiting">Sẵn sàng nối</span>
-                  )}
-                </div>
 
-                {/* KẾT QUẢ VIDEO 2 */}
-                <div className={`output-item ${outputVideo2 ? 'ready' : ''}`}>
-                  <div className="output-top">
-                    <span className="group-badge badge-2">2</span>
-                    <div className="output-info">
-                      <strong>Video Dài Tổng Thể 2</strong>
-                      <span>{outputVideo2 ? `${formatFileSize(outputVideo2.size)}` : 'Chưa render'}</span>
+                  {/* KẾT QUẢ VIDEO 2 */}
+                  <div className={`output-item ${outputVideo2 ? 'ready' : ''}`}>
+                    <div className="output-top">
+                      <span className="group-badge badge-2">2</span>
+                      <div className="output-info">
+                        <strong>Video Dài Tổng Thể 2</strong>
+                        <span>{outputVideo2 ? `${formatFileSize(outputVideo2.size)}` : 'Chưa render'}</span>
+                      </div>
                     </div>
+                    {outputVideo2 ? (
+                      <div className="output-actions">
+                        <a
+                          href={outputVideo2.url}
+                          download={outputVideo2.name}
+                          className="btn-download"
+                        >
+                          <Download size={15} />
+                          <span>Tải Video 2 (.webm)</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="status-waiting">Sẵn sàng nối</span>
+                    )}
                   </div>
-                  {outputVideo2 ? (
-                    <div className="output-actions">
-                      <a
-                        href={outputVideo2.url}
-                        download={outputVideo2.name}
-                        className="btn-download"
-                      >
-                        <Download size={15} />
-                        <span>Tải Video 2 (.webm)</span>
-                      </a>
-                    </div>
-                  ) : (
-                    <span className="status-waiting">Sẵn sàng nối</span>
-                  )}
                 </div>
-              </div>
+              ) : (
+                /* KẾT QUẢ CHO CHẾ ĐỘ 1 VIDEO TOÀN BỘ */
+                <div className="result-outputs-container">
+                  <div className={`output-item single-master ${outputSingleVideo ? 'ready' : ''}`}>
+                    <div className="output-top">
+                      <span className="group-badge badge-single"><Film size={16} /></span>
+                      <div className="output-info">
+                        <strong>Video Dài Toàn Bộ (Tổng hợp tất cả {clips.length} clip)</strong>
+                        <span>{outputSingleVideo ? `${formatFileSize(outputSingleVideo.size)}` : 'Chưa render'}</span>
+                      </div>
+                    </div>
+                    {outputSingleVideo ? (
+                      <div className="output-actions">
+                        <a
+                          href={outputSingleVideo.url}
+                          download={outputSingleVideo.name}
+                          className="btn-download single-dl"
+                        >
+                          <Download size={16} />
+                          <span>Tải Video Hoàn Chỉnh (.webm)</span>
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="status-waiting">Sẵn sàng nối</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
