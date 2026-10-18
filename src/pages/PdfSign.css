@@ -1,15 +1,21 @@
 /* PDF Sign Stylesheet - Modern, Responsive & Synchronized UI */
 .pdf-sign-container {
   width: 100%;
-  max-width: 1680px;
-  margin: 0 auto;
-  padding: 1.5rem 1.25rem 3.5rem 1.25rem;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.25rem 2rem 3.5rem 2rem;
   box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  .pdf-sign-container {
+    padding: 1rem 1.25rem 2.5rem 1.25rem;
+  }
 }
 
 @media (max-width: 768px) {
   .pdf-sign-container {
-    padding: 1rem 0.75rem 2.5rem 0.75rem;
+    padding: 0.75rem 0.5rem 2rem 0.5rem;
   }
 }
 
@@ -32,7 +38,7 @@
 }
 
 .pdf-sign-header h1 {
-  font-size: clamp(1.5rem, 2.5vw, 2.1rem);
+  font-size: clamp(1.4rem, 2.2vw, 2rem);
   font-weight: 800;
   margin: 0 0 0.5rem 0;
   color: var(--text, #0f172a);
@@ -40,10 +46,10 @@
 }
 
 .pdf-sign-header p {
-  font-size: 0.95rem;
+  font-size: 0.92rem;
   color: var(--text-secondary, #64748b);
   margin: 0;
-  max-width: 860px;
+  max-width: 900px;
   line-height: 1.6;
 }
 
@@ -55,14 +61,16 @@
 /* Workspace Grid 2 Cột: Sidebar cố định & PDF Viewer chiếm trọn không gian */
 .pdf-sign-workspace {
   display: grid;
-  grid-template-columns: 370px minmax(0, 1fr);
+  grid-template-columns: 380px minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
+  width: 100%;
 }
 
 @media (max-width: 1080px) {
   .pdf-sign-workspace {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 }
 
@@ -217,7 +225,34 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  gap: 0.75rem;
+}
+
+.sign-btn-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 3px 10px rgba(79, 70, 229, 0.25);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.sign-btn-upload:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #4f46e5 100%);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  transform: translateY(-1px);
+}
+
+.sign-btn-upload:active {
+  transform: translateY(0);
 }
 
 /* Kiểu Form Gõ Tên */
@@ -360,19 +395,56 @@
   object-fit: contain;
 }
 
-/* Nút Chèn Chữ Ký */
-.btn-insert-sig {
-  font-size: 0.9rem !important;
-  font-weight: 700 !important;
-  padding: 0.75rem 1rem !important;
-  border-radius: 10px !important;
-  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
-  box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.4) !important;
+/* Nút Tạo Mẫu Chữ Ký (Tab Gõ Tên) */
+.sign-btn-generate {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1rem;
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.btn-insert-sig:hover {
-  box-shadow: 0 6px 18px -2px rgba(79, 70, 229, 0.5) !important;
+.sign-btn-generate:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  color: #0f172a;
+}
+
+/* Nút Chèn Chữ Ký Vào Trang */
+.sign-btn-insert {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px -2px rgba(79, 70, 229, 0.4);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sign-btn-insert:hover {
+  box-shadow: 0 6px 18px -2px rgba(79, 70, 229, 0.5);
   transform: translateY(-1px);
+}
+
+.sign-btn-insert:active {
+  transform: translateY(0);
 }
 
 /* Danh Sách Vị Trí Đã Đặt */
@@ -424,30 +496,61 @@
 .export-action-box {
   display: flex;
   flex-direction: column;
+  gap: 0.6rem;
+}
+
+.sign-btn-export {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.4);
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.export-action-box .btn-lg {
-  padding: 0.85rem 1.25rem !important;
-  font-size: 0.95rem !important;
-  font-weight: 700 !important;
-  border-radius: 10px !important;
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
-  box-shadow: 0 4px 14px -2px rgba(16, 185, 129, 0.4) !important;
-  color: white !important;
-  border: none !important;
-}
-
-.export-action-box .btn-lg:hover:not(:disabled) {
-  box-shadow: 0 6px 18px -2px rgba(16, 185, 129, 0.5) !important;
+.sign-btn-export:hover:not(:disabled) {
+  box-shadow: 0 6px 20px -2px rgba(16, 185, 129, 0.55);
   transform: translateY(-1px);
 }
 
-.export-action-box .btn-lg:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.sign-btn-export:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sign-btn-export:disabled,
+.sign-btn-export.disabled {
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border: 1px dashed #cbd5e1 !important;
   box-shadow: none !important;
+  cursor: not-allowed !important;
   transform: none !important;
+  opacity: 1 !important;
+}
+
+.export-hint-text {
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: #64748b;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  margin: 0;
+  text-align: center;
+}
+
+.export-hint-text strong {
+  color: #4f46e5;
 }
 
 .download-ready-box {
@@ -458,12 +561,26 @@
   text-align: center;
 }
 
-.download-ready-box .btn-success {
-  background: #059669 !important;
-  color: white !important;
-  font-weight: 700 !important;
-  padding: 0.65rem 1rem !important;
-  border-radius: 8px !important;
+.sign-btn-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #059669;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25);
+  transition: all 0.2s ease;
+}
+
+.sign-btn-download:hover {
+  background: #047857;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+  transform: translateY(-1px);
 }
 
 /* ========================================================
@@ -666,4 +783,69 @@
 
 .viewer-bottom-tip strong {
   color: #e2e8f0;
+}
+
+/* ========================================================
+   RESPONSIVE OPTIMIZATIONS FOR MOBILE & TABLETS
+   ======================================================== */
+@media (max-width: 768px) {
+  .toolbox-card {
+    padding: 1rem 0.85rem;
+    border-radius: 12px;
+  }
+
+  .sign-tabs {
+    gap: 0.2rem;
+    padding: 0.25rem;
+  }
+
+  .sign-tab-btn {
+    font-size: 0.75rem;
+    padding: 0.45rem 0.25rem;
+    gap: 0.25rem;
+  }
+
+  .viewer-nav-bar {
+    padding: 0.65rem 0.75rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .viewer-nav-info {
+    justify-content: center;
+    font-size: 0.8rem;
+  }
+
+  .viewer-nav-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .viewer-nav-controls .btn-secondary {
+    padding: 0.35rem 0.6rem !important;
+    font-size: 0.75rem !important;
+  }
+
+  .pdf-canvas-stage {
+    padding: 1rem 0.5rem;
+    min-height: 480px;
+  }
+
+  .signature-overlay-box {
+    touch-action: none;
+  }
+
+  .overlay-quick-remove {
+    width: 26px;
+    height: 26px;
+    font-size: 0.8rem;
+    top: -12px;
+    right: -12px;
+  }
+
+  .viewer-bottom-tip {
+    font-size: 0.76rem;
+    padding: 0.6rem 0.75rem;
+  }
 }

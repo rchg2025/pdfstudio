@@ -128,8 +128,10 @@ export default function PdfSign() {
 
         // Viewport scale vừa với container
         const unscaledViewport = page.getViewport({ scale: 1 });
-        const containerWidth = viewerContainerRef.current?.clientWidth || 700;
-        const targetWidth = Math.min(containerWidth - 32, 850);
+        const containerWidth = viewerContainerRef.current?.clientWidth || window.innerWidth;
+        // Padding biên 2 bên: 32px trên desktop, 16px trên mobile
+        const paddingOffset = window.innerWidth <= 768 ? 16 : 32;
+        const targetWidth = Math.max(260, Math.min(containerWidth - paddingOffset, 1200));
         const scale = targetWidth / unscaledViewport.width;
         const viewport = page.getViewport({ scale });
 
@@ -159,8 +161,22 @@ export default function PdfSign() {
 
     renderPage();
 
+    let resizeTimer: any = null;
+    const handleResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (!isCancelled) {
+          renderPage();
+        }
+      }, 250);
+    };
+
+    window.addEventListener('resize', handleResize);
+
     return () => {
       isCancelled = true;
+      clearTimeout(resizeTimer);
+      window.removeEventListener('resize', handleResize);
     };
   }, [pdfDocProxy, currentPage]);
 
@@ -347,9 +363,8 @@ export default function PdfSign() {
     }
   };
 
-  // Kéo thả vị trí chữ ký trên Canvas
-  const handleMouseDownPlacement = (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
+  // Kéo thả vị trí chữ ký trên Canvas (Hỗ trợ cả Mouse và Touch trên Mobile)
+  const startDragPlacement = (id: string, clientX: number, clientY: number) => {
     setSelectedPlacementId(id);
     setDraggingId(id);
 
@@ -357,19 +372,31 @@ export default function PdfSign() {
     if (!placement) return;
 
     dragStartRef.current = {
-      startX: e.clientX,
-      startY: e.clientY,
+      startX: clientX,
+      startY: clientY,
       initialXPercent: placement.xPercent,
       initialYPercent: placement.yPercent
     };
   };
 
-  const handleMouseMoveViewer = (e: React.MouseEvent) => {
+  const handleMouseDownPlacement = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    startDragPlacement(id, e.clientX, e.clientY);
+  };
+
+  const handleTouchStartPlacement = (id: string, e: React.TouchEvent) => {
+    e.stopPropagation();
+    if (e.touches.length > 0) {
+      startDragPlacement(id, e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const updateDragPosition = (clientX: number, clientY: number) => {
     if (!draggingId || !dragStartRef.current || !pdfCanvasRef.current) return;
 
     const canvasRect = pdfCanvasRef.current.getBoundingClientRect();
-    const deltaX = e.clientX - dragStartRef.current.startX;
-    const deltaY = e.clientY - dragStartRef.current.startY;
+    const deltaX = clientX - dragStartRef.current.startX;
+    const deltaY = clientY - dragStartRef.current.startY;
 
     const deltaXPercent = (deltaX / canvasRect.width) * 100;
     const deltaYPercent = (deltaY / canvasRect.height) * 100;
@@ -388,9 +415,29 @@ export default function PdfSign() {
     }));
   };
 
-  const handleMouseUpViewer = () => {
+  const handleMouseMoveViewer = (e: React.MouseEvent) => {
+    updateDragPosition(e.clientX, e.clientY);
+  };
+
+  const handleTouchMoveViewer = (e: React.TouchEvent) => {
+    if (draggingId && e.touches.length > 0) {
+      // Ngăn scroll trang khi đang kéo chữ ký
+      e.preventDefault();
+      updateDragPosition(e.touches[0].clientX, e.touches[0].clientY);
+    }
+  };
+
+  const endDragPlacement = () => {
     setDraggingId(null);
     dragStartRef.current = null;
+  };
+
+  const handleMouseUpViewer = () => {
+    endDragPlacement();
+  };
+
+  const handleTouchEndViewer = () => {
+    endDragPlacement();
   };
 
   // Xuất file PDF đã ký hoàn chỉnh bằng pdf-lib
@@ -592,7 +639,8 @@ export default function PdfSign() {
                     <p className="text-sm text-secondary">
                       Tải lên ảnh chụp chữ ký trên giấy (JPG, PNG). Hệ thống sẽ <strong>tự động lọc nền trắng thành trong suốt</strong>.
                     </p>
-                    <label className="btn btn-secondary btn-sm mt-2">
+                    <label className="sign-btn-upload">
+                      <Upload size={16} />
                       <span>Chọn file ảnh chữ ký</span>
                       <input 
                         type="file" 
@@ -634,10 +682,10 @@ export default function PdfSign() {
 
                   <button 
                     type="button"
-                    className="btn btn-secondary w-100"
+                    className="sign-btn-generate"
                     onClick={handleGenerateTypedSignature}
                   >
-                    <Sparkles size={14} /> Tạo Mẫu Chữ Ký
+                    <Sparkles size={16} /> Tạo Mẫu Chữ Ký
                   </button>
                 </div>
               )}
@@ -688,7 +736,7 @@ export default function PdfSign() {
 
                   <button 
                     type="button" 
-                    className="btn btn-primary btn-insert-sig w-100 mt-3"
+                    className="sign-btn-insert"
                     onClick={handleAddSignatureToPage}
                   >
                     <CheckCircle2 size={16} /> Chèn Vào Trang {currentPage}
@@ -729,7 +777,7 @@ export default function PdfSign() {
               <div className="export-action-box mt-4">
                 <button 
                   type="button" 
-                  className="btn btn-primary w-100 btn-lg"
+                  className={`sign-btn-export ${placements.length === 0 ? 'disabled' : ''}`}
                   onClick={handleExportSignedPdf}
                   disabled={isProcessing || placements.length === 0}
                 >
@@ -744,6 +792,12 @@ export default function PdfSign() {
                   )}
                 </button>
 
+                {placements.length === 0 && (
+                  <p className="export-hint-text">
+                    💡 Hãy vẽ hoặc chọn chữ ký rồi bấm <strong>Chèn Vào Trang</strong> trước khi kết xuất.
+                  </p>
+                )}
+
                 {signedPdfUrl && (
                   <div className="download-ready-box mt-3">
                     <div className="text-xs text-success font-semibold flex items-center gap-1 mb-2">
@@ -752,7 +806,7 @@ export default function PdfSign() {
                     <a 
                       href={signedPdfUrl} 
                       download={file.name.replace(/\.pdf$/i, '_signed.pdf')}
-                      className="btn btn-success w-100"
+                      className="sign-btn-download"
                     >
                       <Download size={16} /> Tải PDF Về Máy ({(signedPdfSize / 1024).toFixed(0)} KB)
                     </a>
@@ -768,6 +822,8 @@ export default function PdfSign() {
             ref={viewerContainerRef}
             onMouseMove={handleMouseMoveViewer}
             onMouseUp={handleMouseUpViewer}
+            onTouchMove={handleTouchMoveViewer}
+            onTouchEnd={handleTouchEndViewer}
           >
             {/* THANH ĐIỀU HƯỚNG TRANG */}
             <div className="viewer-nav-bar">
@@ -823,6 +879,7 @@ export default function PdfSign() {
                         height: `${p.heightPercent}%`
                       }}
                       onMouseDown={(e) => handleMouseDownPlacement(p.id, e)}
+                      onTouchStart={(e) => handleTouchStartPlacement(p.id, e)}
                     >
                       {p.dataUrl ? (
                         <img src={p.dataUrl} alt="Signature" className="overlay-sig-img" />
