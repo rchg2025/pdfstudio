@@ -230,6 +230,12 @@ const otherTools = [
     icon: <Video size={24} />,
     title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',
     desc: 'Quay video màn hình, webcam hoặc lồng tiếng trực tiếp trên trình duyệt, không cần cài phần mềm, chất lượng Full HD, bảo mật 100%.'
+  },
+  {
+    path: '/tao-ma-qr-nang-cao',
+    icon: <QrCode size={24} />,
+    title: 'Tạo Mã QR Nâng Cao Đa Năng (Custom QR Code)',
+    desc: 'Tạo mã QR Wi-Fi, danh bạ vCard, đường dẫn, văn bản với tùy chọn màu gradient, bo góc mắt mã QR và chèn logo thương hiệu ở giữa.'
   }
 ];
 

@@ -478,6 +478,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['quay màn hình máy tính', 'screen recorder online', 'quay video webcam', 'quay bài giảng trực tuyến', 'ghi hình màn hình không cài app'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/tao-ma-qr-nang-cao',
+    title: 'Tạo Mã QR Nâng Cao Đa Năng (Custom QR Code Generator)',
+    desc: 'Tạo mã QR Wi-Fi, danh bạ vCard, liên kết website, văn bản với tùy chọn đổi màu gradient, chèn logo thương hiệu ở giữa và bo góc mắt mã QR chất lượng cao.',
+    category: 'other',
+    isHot: true,
+    keywords: ['tạo mã qr nâng cao', 'qr code generator', 'tạo qr wifi', 'tạo qr danh bạ vcard', 'chèn logo vào qr', 'đổi màu mã qr gradient'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

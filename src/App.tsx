@@ -68,6 +68,7 @@ const PhotoCollage = React.lazy(() => import('./pages/PhotoCollage'));
 const PhotoFilterStudio = React.lazy(() => import('./pages/PhotoFilterStudio'));
 const MediaDownloader = React.lazy(() => import('./pages/MediaDownloader'));
 const ScreenRecorder = React.lazy(() => import('./pages/ScreenRecorder'));
+const CustomQrGenerator = React.lazy(() => import('./pages/CustomQrGenerator'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -172,6 +173,12 @@ function App() {
             } />
             <Route path="screen-recorder" element={
               <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
+            } />
+            <Route path="tao-ma-qr-nang-cao" element={
+              <Suspense fallback={<FallbackLoader />}><CustomQrGenerator /></Suspense>
+            } />
+            <Route path="custom-qr" element={
+              <Suspense fallback={<FallbackLoader />}><CustomQrGenerator /></Suspense>
             } />
             <Route path="login" element={
               <Suspense fallback={<FallbackLoader />}><Login /></Suspense>
