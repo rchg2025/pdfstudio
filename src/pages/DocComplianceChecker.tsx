@@ -330,6 +330,11 @@ export default function DocComplianceChecker() {
           mark.match-3 { background-color: #e0e7ff; color: #3730a3; border-bottom: 2px solid #6366f1; }
           mark.match-4 { background-color: #fce7f3; color: #9d174d; border-bottom: 2px solid #ec4899; }
           mark.match-5 { background-color: #dcfce7; color: #166534; border-bottom: 2px solid #22c55e; }
+          mark.match-6 { background-color: #e0f2fe; color: #075985; border-bottom: 2px solid #0284c7; }
+          mark.match-7 { background-color: #f3e8ff; color: #6b21a8; border-bottom: 2px solid #9333ea; }
+          mark.match-8 { background-color: #ffedd5; color: #9a3412; border-bottom: 2px solid #ea580c; }
+          mark.match-9 { background-color: #ccfbf1; color: #115e59; border-bottom: 2px solid #0d9488; }
+          mark.match-10 { background-color: #f1f5f9; color: #334155; border-bottom: 2px solid #64748b; }
           .source-sup { font-size: 9pt; font-weight: bold; vertical-align: super; margin-left: 2px; }
           
           .doc-body { text-align: justify; white-space: pre-wrap; margin-top: 20px; line-height: 1.8; }
@@ -340,14 +345,20 @@ export default function DocComplianceChecker() {
         <div class="report-header">
           <p><strong>Tệp gốc:</strong> ${fileName}</p>
           <p><strong>Chỉ số tương đồng (Similarity Index):</strong> <span class="sim-badge">${simScore}%</span> (${result.plagiarismAnalysis.riskLevel})</p>
+          <p><strong>Phân rã nguồn:</strong> Internet: ${result.plagiarismAnalysis.breakdown.internetSourcesPercent}% | Ấn phẩm/Sách: ${result.plagiarismAnalysis.breakdown.publicationsPercent}% | Luận văn SV: ${result.plagiarismAnalysis.breakdown.studentPapersPercent}%</p>
           <p><strong>Ngày kiểm tra:</strong> ${new Date().toLocaleString('vi-VN')} | <strong>Đơn vị kiểm định:</strong> ITE Academic Integrity System</p>
           <div class="sources-legend">
             <strong>Danh mục nguồn trùng khớp:</strong><br/>
-            ${(result.plagiarismAnalysis.matchedSources || []).map(s => `
-              <span class="source-item" style="background-color: ${s.sourceId === 1 ? '#fee2e2; color:#991b1b' : s.sourceId === 2 ? '#fef3c7; color:#92400e' : s.sourceId === 3 ? '#e0e7ff; color:#3730a3' : '#dcfce7; color:#166534'}">
-                [Nguồn #${s.sourceId}] ${s.similarityPercent}%: ${s.sourceTitle} (${s.authorOrDomain || s.sourceType})
-              </span>
-            `).join('')}
+            ${(result.plagiarismAnalysis.matchedSources || []).map(s => {
+              const bgColors = ['#fee2e2', '#fef3c7', '#e0e7ff', '#fce7f3', '#dcfce7', '#e0f2fe', '#f3e8ff', '#ffedd5', '#ccfbf1', '#f1f5f9'];
+              const textColors = ['#991b1b', '#92400e', '#3730a3', '#9d174d', '#166534', '#075985', '#6b21a8', '#9a3412', '#115e59', '#334155'];
+              const idx = Math.max(0, (s.sourceId - 1) % 10);
+              return `
+                <span class="source-item" style="background-color: ${bgColors[idx]}; color: ${textColors[idx]}; border-radius: 4px; padding: 2px 6px;">
+                  [#${s.sourceId}] ${s.similarityPercent}%: ${s.sourceTitle} (${s.authorOrDomain || s.sourceType})
+                </span>
+              `;
+            }).join('')}
           </div>
         </div>
 
@@ -518,8 +529,12 @@ export default function DocComplianceChecker() {
                     )}
                   </div>
                   <div 
-                    className="turnitin-highlight-view"
-                    dangerouslySetInnerHTML={{ __html: result.highlightedHtml }}
+                    className={`turnitin-highlight-view ${selectedSourceId ? 'filter-active' : ''}`}
+                    dangerouslySetInnerHTML={{ 
+                      __html: selectedSourceId 
+                        ? (result.highlightedHtml || '').replace(new RegExp(`class="([^"]*match-${selectedSourceId}[^"]*)"`, 'gi'), 'class="$1 active-filter"')
+                        : (result.highlightedHtml || '')
+                    }}
                   />
                 </div>
               ) : (

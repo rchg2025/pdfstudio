@@ -1890,99 +1890,110 @@ Trả về ĐÚNG VÀ DUY NHẤT định dạng JSON (không có markdown khác 
       const preferredModel = modelRes.rows[0]?.value?.trim();
       const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
 
-      const prompt = `Bạn là Động cơ Thẩm định Đạo văn & Liêm chính Học thuật Độc lập (hoạt động theo tiêu chuẩn tương tự Turnitin Similarity Report kết hợp Luật Sở hữu Trí tuệ Việt Nam 2022).
-Nhiệm vụ của bạn là rà soát văn bản thể loại "${documentType}", đối chiếu với kho tài liệu học thuật số, ấn phẩm khoa học, internet và cơ sở dữ liệu luận văn để phát hiện trùng lặp, bóc tách tỷ lệ tương đồng (Similarity Index) và phân tích lỗi chính tả/ngữ pháp.
+      const prompt = `Bạn là HỆ THỐNG THẨM ĐỊNH ĐẠO VĂN & LIÊM CHÍNH HỌC THUẬT QUỐC TẾ CHUYÊN SÂU (hoạt động theo nguyên lý thuật toán Turnitin / iThenticate kết hợp Luật Sở hữu Trí tuệ Việt Nam 2022).
+Nhiệm vụ của bạn là rà soát văn bản thể loại "${documentType}" (ngôn ngữ: ${language}), đối chiếu đối sánh với:
+1. Cơ sở dữ liệu Web & Internet toàn cầu (báo chí điện tử, thư viện mở, Wikipedia, cổng thông tin bộ ban ngành, website giáo dục).
+2. Ấn phẩm học thuật & Tạp chí khoa học (VJOL, ResearchGate, SciELO, Nhà xuất bản Giáo dục, Giáo trình ĐHQG HN/TP.HCM, Bách Khoa, Kinh tế...).
+3. Kho lưu trữ Luận văn, Khóa luận tốt nghiệp của sinh viên, học viên cao học & nghiên cứu sinh.
 
 NỘI DUNG VĂN BẢN CẦN RÀ SOÁT:
 """
 ${trimmedText}
 """
 
-YÊU CẦU PHÂN TÍCH ĐẠO VĂN CHUYÊN DỤNG (THEO CHUẨN TURNITIN):
-1. TỔNG HỢP CHỈ SỐ TRÙNG LẶP (SIMILARITY INDEX):
-   - similarityScore (0% đến 100%): Tỷ lệ phần trăm tổng số từ trong bài có sự tương đồng hoặc trùng khớp với các nguồn khác.
+HÃY PHÂN TÍCH THEO NGUYÊN TẮC THUẬT TOÁN TURNITIN:
+1. TỔNG HỢP CHỈ SỐ TƯƠNG ĐỒNG (SIMILARITY INDEX):
+   - Đếm chính xác số từ của bài.
+   - similarityScore (0% đến 100%): Tỷ lệ tổng số từ thuộc các chuỗi từ ngữ trùng lặp (n-gram từ 6 đến 30 từ liên tiếp trùng khớp hoặc xáo xào từ ngữ - patchwriting) so với tổng số từ toàn bài. 
+   - Không được ước lượng cảm tính tùy tiện; nếu văn bản chứa các định nghĩa sách giáo khoa, câu nói phổ biến, quy định pháp luật hoặc đoạn văn sao chép từ mạng, hãy tính toán phần trăm chính xác dựa trên độ dài cụ thể của các câu trùng.
    - breakdown: 
-     + internetSourcesPercent: % trùng từ website, báo điện tử, bách khoa toàn thư mở.
-     + publicationsPercent: % trùng từ sách, giáo trình, bài báo khoa học, kỷ yếu hội thảo.
-     + studentPapersPercent: % trùng từ kho tài liệu/luận văn/khóa luận của người học khác.
+     + internetSourcesPercent: % trùng từ website, báo điện tử, trang tra cứu (thường chiếm phần lớn).
+     + publicationsPercent: % trùng từ sách, giáo trình chuẩn, bài báo khoa học đã xuất bản.
+     + studentPapersPercent: % trùng từ kho tài liệu/luận văn/khóa luận của sinh viên khác.
+     (Lưu ý chuẩn Turnitin: Tổng 3 thành phần này có thể lớn hơn hoặc bằng similarityScore do các nguồn chồng lấn - overlapping sources).
    - riskLevel: "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)".
 
-2. DANH SÁCH CÁC NGUỒN TRÙNG KHỚP CỤ THỂ (MATCHED SOURCES - ĐÁNH SỐ 1, 2, 3...):
-   - Nhận diện từ 2 đến 8 nguồn tương đồng tiềm năng nhất:
-     + sourceId: số nguyên từ 1 đến N.
-     + sourceTitle: tên giáo trình, bài báo, website hoặc đề tài tương đồng (VD: "Giáo trình Nguyên lý Triết học Mác - Lênin", "Luận văn ĐH Sư phạm Kỹ thuật 2023", "Wikipedia Tiếng Việt", v.v.).
+2. DANH SÁCH CÁC NGUỒN TƯƠNG ĐỒNG CHI TIẾT (MATCHED SOURCES - ĐÁNH SỐ 1, 2, 3...):
+   - Nhận diện từ 2 đến 8 nguồn tương đồng tiềm năng và sát thực tế nhất trên không gian mạng và kho học thuật:
+     + sourceId: số nguyên từ 1 đến N (1 là nguồn có tỷ lệ trùng % cao nhất).
+     + sourceTitle: Tên thật của tài liệu, giáo trình, bài báo khoa học hoặc website (VD: "Giáo trình Nguyên lý Triết học Mác - Lênin (Bộ GD&ĐT)", "Báo điện tử VnExpress", "Tạp chí Khoa học ĐHQGHN", "Luận văn Thạc sĩ ĐH Sư phạm Kỹ thuật 2022", "Wikipedia Bách khoa toàn thư").
      + sourceType: "internet" | "publication" | "student_paper" | "journal".
-     + similarityPercent: tỷ lệ % đóng góp của nguồn này (VD: 6%, 4%, 2%...).
-     + url: đường link đại diện (nếu có, hoặc để trống).
-     + authorOrDomain: Tên tác giả hoặc cơ quan xuất bản / domain.
-     + matchedText: Đoạn văn bản đại diện tiêu biểu bị trùng.
+     + similarityPercent: tỷ lệ % đóng góp của riêng nguồn này (VD: 9%, 5%, 3%...).
+     + url: URL hoặc domain đại diện cụ thể (nếu có).
+     + authorOrDomain: Cơ quan ban hành, tác giả hoặc tên miền (VD: moet.gov.vn, tailieu.vn, vjol.info, vnexpress.net).
+     + matchedText: Trích dẫn 1 câu tiêu biểu từ nguồn này trùng với bài nộp.
 
-3. DANH SÁCH CÁC ĐOẠN VĂN BẢN NGHI VẤN ĐẠO VĂN (SUSPICIOUS PASSAGES):
-   - text: đoạn văn bản chính xác xuất hiện trong bài nộp của người dùng (từ 10 đến 40 từ).
-   - sourceIndex: số ID của nguồn tương ứng (1, 2, 3...) để người dùng đối chiếu.
-   - sourceTitle: tên nguồn tương ứng.
-   - similarityPercent: % tương đồng của đoạn này.
-   - reason: lý do nghi vấn (sao chép nguyên văn không trích dẫn, sao chép có thay đổi vài từ - patchwriting, thiếu chú thích tác giả theo Điều 25 Luật SHTT).
-   - recommendation: hướng dẫn cụ thể cách khắc phục.
-   - paraphraseSuggestion: gợi ý viết lại (paraphrase) đoạn này bằng giọng văn riêng của tác giả nhưng giữ nguyên bản chất kiến thức.
+3. DANH SÁCH CÁC PHÂN ĐOẠN TRÙNG KHỚP CỤ THỂ (SUSPICIOUS PASSAGES):
+   - text: Chuỗi câu/từ ngữ chính xác xuất hiện trong bài nộp của người dùng (từ 8 đến 45 từ).
+   - sourceIndex: ID của nguồn tương ứng (1, 2, 3...) mà đoạn này trùng khớp.
+   - sourceTitle: Tên nguồn tương ứng.
+   - similarityPercent: % tương đồng của đoạn này (từ 70% đến 100%).
+   - reason: Phân tích kỹ thuật (sao chép nguyên văn không mở ngoặc kép, diễn đạt lại câu nhưng giữ nguyên cấu trúc ý - patchwriting, trích dẫn không ghi nguồn theo Điều 25 Luật SHTT).
+   - recommendation: Chỉ dẫn cụ thể cách sửa (bổ sung trích dẫn [Tác giả, Năm], thêm trích dẫn ngoặc kép, hoặc viết lại câu).
+   - paraphraseSuggestion: Đoạn văn mẫu viết lại hoàn chỉnh bằng từ ngữ học thuật của riêng tác giả để vượt qua kiểm tra trùng lặp nhưng giữ trọn vẹn giá trị kiến thức.
 
 4. BẢN TEXT ĐÁNH DẤU HIGHLIGHT CHUẨN TURNITIN (highlightedHtml):
-   - Tạo một chuỗi HTML ngắn gọn từ văn bản gốc, trong đó các đoạn bị trùng khớp được bọc trong thẻ <mark class="turnitin-match match-1" data-source="1">đoạn trùng khớp</mark> với class match-1, match-2, match-3... tương ứng với sourceId. Các đoạn không bị trùng để text thông thường.
+   - DỰA TRÊN TOÀN BỘ VĂN BẢN GỐC, bao bọc CHÍNH XÁC các câu/cụm từ bị trùng khớp bằng thẻ:
+     <mark class="turnitin-match match-1" data-source="1">đoạn câu trùng nguồn 1</mark>
+     <mark class="turnitin-match match-2" data-source="2">đoạn câu trùng nguồn 2</mark>
+   - Các đoạn văn bình thường không trùng giữ nguyên text và định dạng đoạn văn <p>...</p>.
+   - Khi render ra HTML này phải phản ánh đúng bài gốc và trực quan y hệt Turnitin Document Viewer.
 
-5. RÀ SOÁT LỖI CHÍNH TẢ & NGỮ PHÁP (SPELLING, GRAMMAR, STYLE, CITATION):
-   - Bắt mọi lỗi chính tả tiếng Việt (dấu, telex, phụ âm s/x, tr/ch, d/gi, l/n) và tiếng Anh.
-   - Phát hiện câu què, ngữ pháp lủng củng, văn phong chưa chuẩn học thuật.
+5. RÀ SOÁT LỖI CHÍNH TẢ, NGỮ PHÁP, VĂN PHONG SƯ PHẠM (SPELLING & GRAMMAR):
+   - Soát lỗi chính tả tiếng Việt (dấu hỏi/ngã, d/gi/r, s/x, tr/ch, l/n, lỗi bộ gõ telex/vni) và tiếng Anh.
+   - Phát hiện ngữ pháp sai, câu cụt, câu què, văn phong lủng củng.
+   - Gợi ý từ sửa chính xác và giải thích ngắn gọn ngữ cảnh.
 
-6. VĂN BẢN ĐÃ CHỈNH SỬA HOÀN THIỆN (improvedText):
-   - Văn bản hoàn chỉnh đã được sửa chính tả, trau chuốt câu từ mượt mà để lưu lại dùng ngay.
+6. VĂN BẢN ĐÃ HOÀN THIỆN ĐẦY ĐỦ (improvedText):
+   - Toàn bộ văn bản đã được biên tập, sửa sạch mọi lỗi chính tả ngữ pháp, mượt mà chuẩn mực để người dùng tải về dùng ngay.
 
 BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text ngoài, chỉ JSON thuần túy):
 {
   "summary": {
     "totalWords": 0,
     "totalCharacters": 0,
-    "qualityScore": 85,
+    "qualityScore": 82,
     "plagiarismRisk": "THẤP" | "TRUNG BÌNH" | "CAO",
-    "plagiarismScore": 14,
+    "plagiarismScore": 18,
     "totalIssues": 0,
     "spellingIssuesCount": 0,
     "grammarIssuesCount": 0,
     "citationIssuesCount": 0
   },
   "plagiarismAnalysis": {
-    "similarityScore": 14,
+    "similarityScore": 18,
     "riskLevel": "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)",
-    "assessment": "Nhận xét tổng quan của thẩm định viên chuyên ngành...",
+    "assessment": "Nhận xét chuyên sâu của hội đồng thẩm định học thuật...",
     "breakdown": {
-      "internetSourcesPercent": 8,
-      "publicationsPercent": 4,
-      "studentPapersPercent": 2
+      "internetSourcesPercent": 12,
+      "publicationsPercent": 7,
+      "studentPapersPercent": 3
     },
     "matchedSources": [
       {
         "sourceId": 1,
-        "sourceTitle": "Tên nguồn tài liệu / giáo trình / website",
-        "sourceType": "internet" | "publication" | "student_paper" | "journal",
-        "similarityPercent": 7,
-        "url": "https://...",
-        "authorOrDomain": "Bộ GD&ĐT / Đại học Quốc gia",
-        "matchedText": "Đoạn trích từ nguồn..."
+        "sourceTitle": "Giáo trình Nguyên lý Triết học Mác - Lênin (Bộ GD&ĐT)",
+        "sourceType": "publication",
+        "similarityPercent": 9,
+        "url": "https://moet.gov.vn",
+        "authorOrDomain": "Bộ Giáo dục và Đào tạo",
+        "matchedText": "Trích đoạn câu tiêu biểu..."
       }
     ],
     "suspiciousPassages": [
       {
-        "text": "Đoạn văn trong bài nộp",
+        "text": "Đoạn văn chính xác trong bài nộp",
         "sourceIndex": 1,
         "sourceTitle": "Tên nguồn 1",
-        "similarityPercent": 92,
-        "reason": "Sao chép nguyên khối định nghĩa mà không ghi nguồn",
-        "recommendation": "Cần thêm citation [Tác giả, năm] hoặc diễn đạt lại",
-        "paraphraseSuggestion": "Đoạn văn viết lại theo cách diễn đạt học thuật mới..."
+        "similarityPercent": 94,
+        "reason": "Sao chép nguyên văn định nghĩa lý thuyết nhưng chưa gắn trích dẫn tác giả",
+        "recommendation": "Bổ sung trích dẫn [Tên tác giả, Năm] hoặc diễn đạt lại bằng ngôn ngữ riêng",
+        "paraphraseSuggestion": "Câu viết lại trau chuốt..."
       }
     ],
-    "citationAdvice": "Hướng dẫn trích dẫn chuẩn theo Điều 25 Luật SHTT 2022"
+    "citationAdvice": "Hướng dẫn trích dẫn hợp lệ theo Điều 25 Luật Sở hữu Trí tuệ 2022"
   },
-  "highlightedHtml": "<p>Đoạn mở đầu... <mark class=\\"turnitin-match match-1\\" data-source=\\"1\\">cụm từ trùng lặp</mark> tiếp theo...</p>",
+  "highlightedHtml": "<p>Văn bản gốc với các <mark class=\\"turnitin-match match-1\\" data-source=\\"1\\">câu trùng lặp</mark> được highlight chuẩn xác...</p>",
   "issues": [
     {
       "id": "iss-1",
@@ -1994,7 +2005,7 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
     }
   ],
   "improvedText": "Toàn văn bản đã được biên tập và sửa hoàn thiện",
-  "pedagogicalAdvice": "Lời khuyên cải thiện chất lượng sư phạm và liêm chính học thuật"
+  "pedagogicalAdvice": "Lời khuyên nâng cao tính liêm chính học thuật và chất lượng tài liệu"
 }`;
 
       let resultJson: any = null;
@@ -2010,11 +2021,11 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
             body: JSON.stringify({
               contents: [{ parts: [{ text: prompt }] }],
               generationConfig: {
-                temperature: 0.2,
+                temperature: 0.15,
                 responseMimeType: 'application/json'
               }
             }),
-            signal: AbortSignal.timeout(45000)
+            signal: AbortSignal.timeout(50000)
           });
 
           if (!gRes.ok) {
@@ -2050,6 +2061,76 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
         return res.status(500).json({
           error: `Không thể kiểm tra văn bản: ${attemptErrors[0] || 'Lỗi kết nối AI'}. Vui lòng thử lại hoặc kiểm tra API Key.`
         });
+      }
+
+      // HẬU XỬ LÝ (POST-PROCESSING) CHUẨN XÁC CHỈ SỐ THEO THUẬT TOÁN TURNITIN
+      try {
+        const actualWords = trimmedText.trim().split(/\s+/).filter(Boolean).length;
+        const actualChars = trimmedText.length;
+
+        // Cập nhật số từ thực tế nếu AI đếm lệch
+        resultJson.summary.totalWords = actualWords;
+        resultJson.summary.totalCharacters = actualChars;
+
+        // Đảm bảo các chỉ số khớp logic
+        if (!resultJson.plagiarismAnalysis) {
+          resultJson.plagiarismAnalysis = {
+            similarityScore: 0,
+            riskLevel: 'An toàn (0-15%)',
+            assessment: 'Không phát hiện trùng lặp đáng kể.',
+            breakdown: { internetSourcesPercent: 0, publicationsPercent: 0, studentPapersPercent: 0 },
+            matchedSources: [],
+            suspiciousPassages: []
+          };
+        }
+
+        const simScore = Math.max(0, Math.min(100, Math.round(Number(resultJson.plagiarismAnalysis.similarityScore) || 0)));
+        resultJson.plagiarismAnalysis.similarityScore = simScore;
+        resultJson.summary.plagiarismScore = simScore;
+
+        if (simScore <= 15) {
+          resultJson.plagiarismAnalysis.riskLevel = 'An toàn (0-15%)';
+          resultJson.summary.plagiarismRisk = 'THẤP';
+        } else if (simScore <= 35) {
+          resultJson.plagiarismAnalysis.riskLevel = 'Cảnh báo (16-35%)';
+          resultJson.summary.plagiarismRisk = 'TRUNG BÌNH';
+        } else {
+          resultJson.plagiarismAnalysis.riskLevel = 'Nguy cơ cao (>35%)';
+          resultJson.summary.plagiarismRisk = 'CAO';
+        }
+
+        // Tự động sinh highlightedHtml nếu AI trả về thiếu hoặc rỗng
+        if (!resultJson.highlightedHtml || resultJson.highlightedHtml.length < 20) {
+          let html = trimmedText
+            .split('\n\n')
+            .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
+            .join('');
+
+          // Highlight theo suspiciousPassages
+          if (Array.isArray(resultJson.plagiarismAnalysis.suspiciousPassages)) {
+            resultJson.plagiarismAnalysis.suspiciousPassages.forEach((item: any) => {
+              if (item.text && item.text.trim().length > 10) {
+                const escaped = item.text.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                const srcId = item.sourceIndex || 1;
+                html = html.replace(
+                  new RegExp(escaped, 'gi'),
+                  `<mark class="turnitin-match match-${srcId}" data-source="${srcId}">${item.text.trim()}</mark>`
+                );
+              }
+            });
+          }
+          resultJson.highlightedHtml = html;
+        }
+
+        // Đếm lại tổng số issues
+        if (Array.isArray(resultJson.issues)) {
+          resultJson.summary.totalIssues = resultJson.issues.length;
+          resultJson.summary.spellingIssuesCount = resultJson.issues.filter((i: any) => i.type === 'spelling').length;
+          resultJson.summary.grammarIssuesCount = resultJson.issues.filter((i: any) => i.type === 'grammar').length;
+          resultJson.summary.citationIssuesCount = resultJson.issues.filter((i: any) => i.type === 'citation').length;
+        }
+      } catch (postErr) {
+        console.warn('[PostProcess Turnitin Result Warning]:', postErr);
       }
 
       return res.status(200).json({
