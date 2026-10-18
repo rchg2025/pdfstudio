@@ -548,6 +548,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['dọn dẹp bộ nhớ tạm', 'xóa file rác máy tính', 'tăng tốc máy tính', 'giải phóng ram', 'system optimizer', 'xóa temp windows', 'flush dns'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/kiem-tra-ban-quyen-video',
+    title: '⚖️ Thẩm Định Bản Quyền, Kỹ Thuật & Pháp Lý Video (Video Compliance Checker)',
+    desc: 'Kiểm tra nội dung, kỹ thuật, bản quyền đối với video không tự xây dựng lấy từ không gian mạng hoặc chia sẻ theo Luật Bản Quyền SHTT 2022 và Luật Báo Chí Việt Nam mới nhất.',
+    category: 'edtech',
+    isHot: true,
+    keywords: ['kiểm tra bản quyền video', 'thẩm định video không tự xây dựng', 'luật bản quyền video', 'luật sở hữu trí tuệ video', 'luật báo chí video', 'video compliance checker'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

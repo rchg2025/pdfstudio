@@ -113,6 +113,8 @@
     { "source": "/duplicate-finder", "destination": "/index.html" },
     { "source": "/toi-uu-may-tinh", "destination": "/index.html" },
     { "source": "/system-cleaner", "destination": "/index.html" },
+    { "source": "/kiem-tra-ban-quyen-video", "destination": "/index.html" },
+    { "source": "/video-compliance", "destination": "/index.html" },
     { "source": "/forgot-password", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/thong-tin-ca-nhan", "destination": "/index.html" },

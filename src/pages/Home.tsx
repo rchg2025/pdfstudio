@@ -50,6 +50,7 @@ import {
   FileText,
   FolderSearch,
   Zap,
+  Scale,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -279,6 +280,13 @@ const otherTools = [
 ];
 
 const edTechTools = [
+  {
+    path: '/kiem-tra-ban-quyen-video',
+    icon: <Scale size={24} color="#4f46e5" />,
+    title: '⚖️ Thẩm Định Bản Quyền & Kỹ Thuật Video Không Tự Xây Dựng',
+    desc: 'Kiểm tra nội dung, kỹ thuật, bản quyền đối với video tải từ mạng xã hội, chia sẻ theo Luật Bản Quyền SHTT 2022 và Luật Báo Chí Việt Nam mới nhất.',
+    isHot: true
+  },
   {
     path: '/tro-choi-giang-day',
     icon: <Gamepad2 size={24} color="#ec4899" />,

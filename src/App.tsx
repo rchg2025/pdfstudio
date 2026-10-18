@@ -75,6 +75,7 @@ const PdfPageNumber = React.lazy(() => import('./pages/PdfPageNumber'));
 const PhotoEnhanceStudio = React.lazy(() => import('./pages/PhotoEnhanceStudio'));
 const DuplicateFileFinder = React.lazy(() => import('./pages/DuplicateFileFinder'));
 const SystemOptimizer = React.lazy(() => import('./pages/SystemOptimizer'));
+const VideoComplianceChecker = React.lazy(() => import('./pages/VideoComplianceChecker'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -356,6 +357,12 @@ function App() {
             } />
             <Route path="system-cleaner" element={
               <Suspense fallback={<FallbackLoader />}><SystemOptimizer /></Suspense>
+            } />
+            <Route path="kiem-tra-ban-quyen-video" element={
+              <Suspense fallback={<FallbackLoader />}><VideoComplianceChecker /></Suspense>
+            } />
+            <Route path="video-compliance" element={
+              <Suspense fallback={<FallbackLoader />}><VideoComplianceChecker /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

@@ -227,6 +227,8 @@ if (fs.existsSync(distPath)) {
     '/duplicate-finder',
     '/toi-uu-may-tinh',
     '/system-cleaner',
+    '/kiem-tra-ban-quyen-video',
+    '/video-compliance',
     '/embed-player'
   ];
 
