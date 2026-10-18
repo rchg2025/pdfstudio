@@ -131,8 +131,32 @@ export default function DocComplianceChecker() {
         for (let i = 1; i <= totalPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          const pageStr = textContent.items.map((item: any) => item.str).join(' ');
-          pdfText += pageStr + '\n\n';
+          
+          // Nhóm các text items theo dòng thực tế (dựa trên tọa độ Y)
+          const items = textContent.items as any[];
+          let pageLines: string[] = [];
+          let currentY: number | null = null;
+          let currentLine = '';
+
+          for (const item of items) {
+            const str = item.str || '';
+            const y = item.transform ? Math.round(item.transform[5]) : null;
+
+            if (currentY === null || (y !== null && Math.abs(y - currentY) > 6)) {
+              if (currentLine.trim()) {
+                pageLines.push(currentLine.trim());
+              }
+              currentLine = str;
+              currentY = y;
+            } else {
+              currentLine += (currentLine.endsWith(' ') || str.startsWith(' ') ? '' : ' ') + str;
+            }
+          }
+          if (currentLine.trim()) {
+            pageLines.push(currentLine.trim());
+          }
+
+          pdfText += pageLines.join('\n') + '\n\n';
         }
         extracted = pdfText;
       } else {

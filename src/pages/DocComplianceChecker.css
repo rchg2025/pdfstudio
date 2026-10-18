@@ -1140,8 +1140,8 @@
 .turnitin-highlight-view {
   flex: 1;
   font-family: 'Times New Roman', 'Liberation Serif', serif;
-  font-size: 1.15rem;
-  line-height: 1.85;
+  font-size: 1.12rem;
+  line-height: 1.8;
   color: #1e293b;
   padding: 32px 36px;
   background: #ffffff;
@@ -1149,12 +1149,14 @@
   border-radius: 12px;
   overflow-y: auto;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .turnitin-highlight-view p {
-  margin: 0 0 16px;
-  text-align: justify;
-  text-indent: 1.25cm;
+  margin: 0 0 12px;
+  text-align: left;
+  line-height: 1.8;
 }
 
 /* Gạch chân lượn sóng đánh dấu lỗi chính tả / ngữ pháp trực tiếp như Microsoft Word */
