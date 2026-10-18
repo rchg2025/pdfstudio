@@ -37,64 +37,64 @@ interface FilterPreset {
 const PRESETS: FilterPreset[] = [
   {
     id: 'normal',
-    name: 'Ảnh Gốc (Original)',
+    name: 'Ảnh Gốc',
     category: 'Mặc định',
     previewColor: 'linear-gradient(135deg, #94a3b8, #cbd5e1)',
     settings: { brightness: 100, contrast: 100, saturation: 100, sepia: 0, grayscale: 0, invert: 0, hueRotate: 0, blur: 0, warmth: 0, vignette: 0 }
   },
   {
     id: 'cinematic-teal-orange',
-    name: 'Điện Ảnh (Teal & Orange)',
-    category: 'Cinematic',
+    name: 'Teal & Orange',
+    category: 'Điện ảnh',
     previewColor: 'linear-gradient(135deg, #0ea5e9, #f97316)',
     settings: { brightness: 105, contrast: 125, saturation: 130, sepia: 15, grayscale: 0, invert: 0, hueRotate: 345, blur: 0, warmth: 20, vignette: 25 }
   },
   {
     id: 'vintage-film',
-    name: 'Vintage Cổ Điển (Kodak 90s)',
-    category: 'Vintage',
+    name: 'Vintage Kodak',
+    category: 'Cổ điển',
     previewColor: 'linear-gradient(135deg, #d97706, #78350f)',
     settings: { brightness: 110, contrast: 90, saturation: 85, sepia: 35, grayscale: 0, invert: 0, hueRotate: 10, blur: 0, warmth: 30, vignette: 40 }
   },
   {
     id: 'bw-noir',
-    name: 'Đen Trắng Nghệ Thuật (B&W Noir)',
-    category: 'Monochrome',
+    name: 'Đen Trắng Noir',
+    category: 'Nghệ thuật',
     previewColor: 'linear-gradient(135deg, #1e293b, #000000)',
     settings: { brightness: 105, contrast: 140, saturation: 0, sepia: 0, grayscale: 100, invert: 0, hueRotate: 0, blur: 0, warmth: 0, vignette: 35 }
   },
   {
     id: 'cyberpunk-neon',
-    name: 'Cyberpunk Neon Đêm',
-    category: 'Sci-Fi',
+    name: 'Cyberpunk Neon',
+    category: 'Viễn tưởng',
     previewColor: 'linear-gradient(135deg, #ec4899, #8b5cf6)',
     settings: { brightness: 115, contrast: 135, saturation: 160, sepia: 10, grayscale: 0, invert: 0, hueRotate: 280, blur: 0, warmth: -15, vignette: 30 }
   },
   {
     id: 'warm-sunset',
-    name: 'Hoàng Hôn Ấm Áp (Golden Hour)',
-    category: 'Tone Màu',
+    name: 'Hoàng Hôn Ấm',
+    category: 'Golden Hour',
     previewColor: 'linear-gradient(135deg, #f59e0b, #ef4444)',
     settings: { brightness: 105, contrast: 110, saturation: 125, sepia: 25, grayscale: 0, invert: 0, hueRotate: 15, blur: 0, warmth: 45, vignette: 15 }
   },
   {
     id: 'cool-breeze',
-    name: 'Băng Lạnh Hiện Đại (Nordic Cool)',
-    category: 'Tone Màu',
+    name: 'Băng Lạnh',
+    category: 'Nordic Cool',
     previewColor: 'linear-gradient(135deg, #06b6d4, #3b82f6)',
     settings: { brightness: 105, contrast: 115, saturation: 95, sepia: 0, grayscale: 0, invert: 0, hueRotate: 180, blur: 0, warmth: -40, vignette: 10 }
   },
   {
     id: 'pastel-dream',
-    name: 'Mộng Mơ Pastel (Fairy Tale)',
-    category: 'Creative',
+    name: 'Pastel Mộng Mơ',
+    category: 'Fairy Tale',
     previewColor: 'linear-gradient(135deg, #f472b6, #c084fc)',
     settings: { brightness: 120, contrast: 85, saturation: 115, sepia: 10, grayscale: 0, invert: 0, hueRotate: 320, blur: 0, warmth: 15, vignette: 0 }
   },
   {
     id: 'dramatic-hdr',
-    name: 'Tương Phản Cao HDR',
-    category: 'Cinematic',
+    name: 'Tương Phản HDR',
+    category: 'Sắc nét',
     previewColor: 'linear-gradient(135deg, #475569, #0f172a)',
     settings: { brightness: 100, contrast: 150, saturation: 140, sepia: 0, grayscale: 0, invert: 0, hueRotate: 0, blur: 0, warmth: 5, vignette: 30 }
   }
