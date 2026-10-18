@@ -346,6 +346,9 @@ export default function CustomQrGenerator() {
     <div className="custom-qr-container">
       {/* Header */}
       <div className="custom-qr-header">
+        <div className="custom-qr-badge">
+          <Sparkles size={14} /> Tiện Ích Đồ Họa Miễn Phí
+        </div>
         <h1 className="text-gradient">Tạo Mã QR Nâng Cao & Thiết Kế Đa Năng</h1>
         <p>
           Tạo mã QR Wi-Fi, Danh bạ (vCard), Đường dẫn website, Văn bản với tùy chọn đổi màu gradient,
