@@ -49,6 +49,7 @@ import {
   Gamepad2,
   FileText,
   FolderSearch,
+  Zap,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -266,6 +267,13 @@ const otherTools = [
     icon: <FolderSearch size={24} color="#0284c7" />,
     title: '🔍 Rà Soát Tệp Trùng Tên Trong Thư Mục (Duplicate Finder)',
     desc: 'Quét toàn bộ thư mục và cây thư mục con trên máy tính của bạn để tìm các tệp trùng tên hoặc trùng dung lượng, hiển thị đường dẫn chi tiết và xuất báo cáo CSV.',
+    isHot: true
+  },
+  {
+    path: '/toi-uu-may-tinh',
+    icon: <Zap size={24} color="#10b981" />,
+    title: '⚡ Tối Ưu Hiệu Suất & Dọn Dẹp Bộ Nhớ Tạm (System Optimizer)',
+    desc: 'Giải phóng bộ nhớ RAM, xóa sạch cache web, sinh kịch bản dọn dẹp file rác hệ thống Windows (%TEMP%, Prefetch, Thùng rác) và macOS an toàn.',
     isHot: true
   }
 ];

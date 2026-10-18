@@ -538,6 +538,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['tìm file trùng tên', 'rà soát file trùng lặp', 'duplicate file finder', 'quét tệp trùng lặp thư mục máy tính', 'lọc file trùng nhau'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/toi-uu-may-tinh',
+    title: '⚡ Tối Ưu Hiệu Suất & Dọn Dẹp Bộ Nhớ Tạm Máy Tính (System Optimizer)',
+    desc: 'Giải phóng bộ nhớ RAM, xóa sạch cache web, sinh kịch bản dọn dẹp file rác hệ thống Windows (%TEMP%, Prefetch, Thùng rác) và macOS an toàn, siêu nhanh.',
+    category: 'other',
+    isHot: true,
+    keywords: ['dọn dẹp bộ nhớ tạm', 'xóa file rác máy tính', 'tăng tốc máy tính', 'giải phóng ram', 'system optimizer', 'xóa temp windows', 'flush dns'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

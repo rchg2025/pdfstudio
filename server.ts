@@ -225,6 +225,8 @@ if (fs.existsSync(distPath)) {
     '/nang-cap-anh',
     '/tim-file-trung',
     '/duplicate-finder',
+    '/toi-uu-may-tinh',
+    '/system-cleaner',
     '/embed-player'
   ];
 
