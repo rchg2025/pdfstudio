@@ -99,6 +99,10 @@ const Navbar = () => {
               <span className="nav-badge-new">HOT</span>
               ⚡ Đấu Trường Live
             </NavLink>
+            <NavLink to="/ky-ten-pdf" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"} style={{ background: 'rgba(99, 102, 241, 0.1)', color: '#4f46e5', borderColor: 'rgba(99, 102, 241, 0.3)' }}>
+              <span className="nav-badge-new" style={{ background: '#4f46e5' }}>MỚI</span>
+              ✍️ Ký Tên PDF
+            </NavLink>
             <NavLink to="/hoi-dap-pdf-ai" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>
               🤖 Hỏi Đáp PDF AI
             </NavLink>
@@ -134,7 +138,6 @@ const Navbar = () => {
             <NavLink to="/pdf-to-image" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>PDF sang Ảnh</NavLink>
             <NavLink to="/jpg-sang-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>JPG sang PDF</NavLink>
             <NavLink to="/dong-dau-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đóng Dấu PDF</NavLink>
-            <NavLink to="/ky-ten-pdf" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>✍️ Ký Tên PDF</NavLink>
             <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
             
             <div className="nav-link-separator"></div>
@@ -237,6 +240,14 @@ const Navbar = () => {
               </div>
             </NavLink>
 
+            <NavLink to="/ky-ten-pdf" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(99, 102, 241, 0.15)', color: '#6366f1' }}>✍️</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Ký Tên PDF <span className="mfc-badge" style={{ background: '#6366f1' }}>MỚI</span></div>
+                <div className="mfc-desc">Vẽ tay, tải ảnh lọc nền, chèn ngày</div>
+              </div>
+            </NavLink>
+
             <NavLink to="/hoi-dap-pdf-ai" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
               <div className="mfc-icon" style={{ background: 'rgba(59, 130, 246, 0.15)', color: '#2563eb' }}>🤖</div>
               <div className="mfc-info">
@@ -315,7 +326,6 @@ const Navbar = () => {
             <NavLink to="/pdf-to-image" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>PDF sang Ảnh</NavLink>
             <NavLink to="/jpg-sang-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>JPG sang PDF</NavLink>
             <NavLink to="/dong-dau-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đóng Dấu PDF</NavLink>
-            <NavLink to="/ky-ten-pdf" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>✍️ Ký Tên PDF</NavLink>
             <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
             <NavLink to="/image-converter" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đổi Đuôi Ảnh</NavLink>
             <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>

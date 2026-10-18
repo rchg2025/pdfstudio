@@ -57,6 +57,7 @@ export default function PdfSign() {
   // Text / Date Signature state
   const [typedName, setTypedName] = useState<string>('');
   const [fontStyle, setFontStyle] = useState<'cursive' | 'serif' | 'sans-serif'>('cursive');
+  const [sigScale, setSigScale] = useState<number>(22); // % độ rộng mặc định của chữ ký
   const [includeDate, setIncludeDate] = useState<boolean>(true);
   const [customDate, setCustomDate] = useState<string>(() => {
     const d = new Date();
@@ -303,6 +304,9 @@ export default function PdfSign() {
       return;
     }
 
+    const selectedWidth = sigScale;
+    const selectedHeight = Math.round((sigScale * 0.5) * 10) / 10;
+
     const newPlacement: SignaturePlacement = {
       id: `sig-${Date.now()}`,
       type: signTab === 'draw' ? 'drawing' : signTab === 'upload' ? 'image' : 'text',
@@ -310,8 +314,8 @@ export default function PdfSign() {
       pageNumber: currentPage,
       xPercent: 40, // Mặc định ở giữa
       yPercent: 75, // Mặc định ở phần dưới trang (nơi ký tên)
-      widthPercent: 22,
-      heightPercent: 12
+      widthPercent: selectedWidth,
+      heightPercent: selectedHeight
     };
 
     setPlacements(prev => [...prev, newPlacement]);
@@ -646,14 +650,30 @@ export default function PdfSign() {
                     <img src={createdSignatureUrl} alt="Signature Preview" />
                   </div>
 
-                  <div className="date-toggle-row mt-2">
-                    <label className="flex items-center gap-2 cursor-pointer text-xs">
+                  <div className="sig-size-selector-row mt-2">
+                    <span className="text-xs text-secondary font-medium">Kích thước mẫu:</span>
+                    <div className="sig-size-pills">
+                      {[16, 22, 28, 36].map((size) => (
+                        <button
+                          key={size}
+                          type="button"
+                          className={`sig-size-pill ${sigScale === size ? 'active' : ''}`}
+                          onClick={() => setSigScale(size)}
+                        >
+                          {size === 16 ? 'Nhỏ' : size === 22 ? 'Vừa' : size === 28 ? 'Lớn' : 'Rất lớn'}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="date-toggle-row mt-3">
+                    <label className="date-checkbox-label">
                       <input 
                         type="checkbox" 
                         checked={includeDate} 
                         onChange={(e) => setIncludeDate(e.target.checked)} 
                       />
-                      <span>Đính kèm ngày ký:</span>
+                      <span>Kèm ngày ký:</span>
                     </label>
                     {includeDate && (
                       <input 
@@ -661,13 +681,14 @@ export default function PdfSign() {
                         value={customDate} 
                         onChange={(e) => setCustomDate(e.target.value)}
                         className="date-input-field"
+                        placeholder="DD/MM/YYYY"
                       />
                     )}
                   </div>
 
                   <button 
                     type="button" 
-                    className="btn btn-primary w-100 mt-2"
+                    className="btn btn-primary btn-insert-sig w-100 mt-3"
                     onClick={handleAddSignatureToPage}
                   >
                     <CheckCircle2 size={16} /> Chèn Vào Trang {currentPage}
