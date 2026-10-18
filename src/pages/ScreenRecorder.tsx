@@ -443,51 +443,37 @@ export default function ScreenRecorder() {
 
             {recordMode !== 'audio' && (
               <>
-                <div className="setting-row">
-                  <div className="setting-info">
+                <div className="setting-field-col">
+                  <div className="setting-header-line">
                     <span className="setting-name">Độ Phân Giải</span>
-                    <span className="setting-desc">Độ nét hình ảnh xuất ra</span>
+                    <span className="setting-desc">Độ nét hình ảnh</span>
                   </div>
                   <select 
                     value={videoQuality}
                     onChange={(e) => setVideoQuality(e.target.value as any)}
                     disabled={recordingStatus !== 'idle'}
-                    style={{
-                      padding: '0.35rem 0.6rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      background: '#ffffff'
-                    }}
+                    className="setting-select-control"
                   >
-                    <option value="4k">4K (2160p Ultra HD - Siêu Nét)</option>
-                    <option value="2k">2K (1440p QHD - Sắc Nét)</option>
-                    <option value="1080p">1080p (Full HD - Tiêu Chuẩn)</option>
-                    <option value="720p">720p (HD - Tiết Kiệm Dung Lượng)</option>
+                    <option value="4k">4K (2160p Ultra HD)</option>
+                    <option value="2k">2K (1440p QHD)</option>
+                    <option value="1080p">1080p (Full HD Chuẩn)</option>
+                    <option value="720p">720p (HD Tiết Kiệm)</option>
                   </select>
                 </div>
 
-                <div className="setting-row">
-                  <div className="setting-info">
+                <div className="setting-field-col">
+                  <div className="setting-header-line">
                     <span className="setting-name">Tốc Độ Khung Hình</span>
-                    <span className="setting-desc">Độ mượt mà của chuyển động</span>
+                    <span className="setting-desc">Độ mượt chuyển động</span>
                   </div>
                   <select 
                     value={frameRate}
                     onChange={(e) => setFrameRate(Number(e.target.value))}
                     disabled={recordingStatus !== 'idle'}
-                    style={{
-                      padding: '0.35rem 0.6rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      background: '#ffffff'
-                    }}
+                    className="setting-select-control"
                   >
-                    <option value={60}>60 FPS (Cực Mượt - Chơi game, thao tác nhanh)</option>
-                    <option value={30}>30 FPS (Chuẩn bài giảng, thuyết trình)</option>
+                    <option value={60}>60 FPS (Siêu Mượt)</option>
+                    <option value={30}>30 FPS (Tiêu Chuẩn)</option>
                   </select>
                 </div>
               </>
