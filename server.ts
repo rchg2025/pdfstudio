@@ -22,6 +22,7 @@ import attendanceHandler from './api/attendance.js';
 import liveBattleHandler from './api/live-battle.js';
 import pdfChatHandler from './api/pdf-chat.js';
 import mediaDownloadHandler from './api/media-download.js';
+import { prisma } from './api/_lib/prisma.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -143,15 +144,30 @@ if (fs.existsSync(distPath)) {
     '/dashboard',
     '/admin',
     '/thong-tin-ca-nhan',
+    '/profile',
     '/login',
     '/register',
+    '/forgot-password',
     '/tao-khung',
     '/pdf-editor',
     '/pdf-merge-split',
     '/pdf-compressor',
     '/pdf-to-image',
     '/image-compressor',
+    '/image-converter',
+    '/crop-anh',
+    '/resize-anh',
+    '/tang-do-net-anh',
     '/qr-link',
+    '/tao-ma-qr-nang-cao',
+    '/custom-qr',
+    '/cat-video',
+    '/video-cutter',
+    '/tai-video-am-thanh',
+    '/tai-video',
+    '/media-downloader',
+    '/quay-man-hinh',
+    '/screen-recorder',
     '/sao-chep-drive',
     '/cat-ghep-am-thanh',
     '/doc-van-ban',
@@ -170,7 +186,7 @@ if (fs.existsSync(distPath)) {
     '/quan-ly-thi-trac-nghiem',
     '/soan-de-thi-ai',
     '/phong-thi',
-    '/phong-thi/:id',
+    '/phong-thi/:quizId',
     '/diem-danh',
     '/diem-danh/:code',
     '/quan-ly-diem-danh',
@@ -181,14 +197,12 @@ if (fs.existsSync(distPath)) {
     '/dau-truong/:pinCode',
     '/kich-ban-video-ai',
     '/ai-video-script',
-    '/crop-anh',
-    '/resize-anh',
-    '/tang-do-net-anh',
     '/tao-anh-ai',
     '/tao-anh-the',
     '/anh-the-ai',
     '/xoa-dau-tieng-viet',
     '/xoa-trang-pdf',
+    '/watermark-studio',
     '/dong-dau-pdf',
     '/ky-ten-pdf',
     '/sign-pdf',
@@ -199,10 +213,6 @@ if (fs.existsSync(distPath)) {
     '/photo-collage',
     '/bo-loc-anh',
     '/photo-filter',
-    '/tai-video-am-thanh',
-    '/video-downloader',
-    '/quay-man-hinh',
-    '/screen-recorder',
     '/pdf-compare',
     '/hoi-dap-pdf-ai',
     '/ai-podcast-studio',
@@ -216,20 +226,39 @@ if (fs.existsSync(distPath)) {
     });
   });
 
-  // Short link alias wildcard or 404 fallback
+  // Short link alias wildcard or SPA fallback
   app.get('/:alias', async (req, res, next) => {
-    const alias = req.params.alias;
+    const alias = req.params.alias?.trim();
     // If it's a file request that wasn't found in static files, return 404
-    if (alias.includes('.')) {
+    if (!alias || alias.includes('.')) {
       return next();
     }
-    // Otherwise try redirect handler
-    Object.assign(req.query, { alias });
+
     try {
-      await redirectHandler(req as any, res as any);
-    } catch {
-      res.sendFile(path.join(distPath, 'index.html'));
+      const record = await prisma.urls.findFirst({
+        where: {
+          alias: {
+            equals: alias,
+            mode: 'insensitive'
+          }
+        }
+      });
+
+      if (record && record.original_url) {
+        // Tăng clicks trong background
+        prisma.urls.update({
+          where: { id: record.id },
+          data: { clicks: { increment: 1 } }
+        }).catch(err => console.error('Error updating clicks:', err));
+
+        return res.redirect(301, record.original_url);
+      }
+    } catch (err) {
+      console.error('Error checking short link alias:', err);
     }
+
+    // Nếu không phải là short link có trong DB, trả về SPA index.html để React Router xử lý
+    res.sendFile(path.join(distPath, 'index.html'));
   });
 
   // Catch-all fallback for SPA client-side routing

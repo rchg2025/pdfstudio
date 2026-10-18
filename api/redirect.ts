@@ -31,10 +31,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // 301 Permanent Redirect to original url
       return res.redirect(301, record.original_url);
     } else {
-      return res.redirect(302, '/?error=notfound');
+      // Không tự ý redirect về trang chủ nếu không tìm thấy alias, trả về 404 để caller hoặc Vercel/Express fallback
+      return res.status(404).send('Not Found');
     }
   } catch (error) {
     console.error('Database error during redirect:', error);
-    return res.redirect(302, '/');
+    return res.status(500).send('Server Error');
   }
 }
+
