@@ -11,11 +11,14 @@ import {
   Key, 
   Layers, 
   FileText, 
-  Compass,
-  Loader2,
-  FileAudio,
-  Anchor,
-  ShieldCheck
+  Compass, 
+  Loader2, 
+  FileAudio, 
+  Anchor, 
+  ShieldCheck,
+  Subtitles,
+  Video,
+  Eye
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,6 +37,9 @@ export interface VideoScene {
   audioSfx: string;
   audioUrl?: string;
   audioVoice?: string;
+  videoUrl?: string;
+  videoFileName?: string;
+  videoBlob?: Blob;
 }
 
 export const EDGE_VOICES_PREVIEW = [
@@ -312,6 +318,8 @@ export default function AiVideoScriptStudio() {
   const [loadingAudioIndex, setLoadingAudioIndex] = useState<number | null>(null);
   const [isExportingAudio, setIsExportingAudio] = useState(false);
   const [audioExportProgress, setAudioExportProgress] = useState('');
+  const [previewVideoScene, setPreviewVideoScene] = useState<VideoScene | null>(null);
+  const [isUploadingVideoIndex, setIsUploadingVideoIndex] = useState<number | null>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
 
   // Dọn dẹp âm thanh khi unmount
@@ -850,8 +858,26 @@ export default function AiVideoScriptStudio() {
     return blob;
   };
 
+  // Helper định dạng giây sang chuẩn thời gian SRT (HH:MM:SS,mmm)
+  const formatSrtTime = (seconds: number): string => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const millis = Math.floor((seconds % 1) * 1000);
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')},${String(millis).padStart(3, '0')}`;
+  };
+
+  // Helper định dạng giây sang chuẩn WebVTT (HH:MM:SS.mmm)
+  const formatVttTime = (seconds: number): string => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = Math.floor(seconds % 60);
+    const millis = Math.floor((seconds % 1) * 1000);
+    return `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(millis).padStart(3, '0')}`;
+  };
+
   // Export functions
-  const handleExport = (format: 'markdown' | 'json' | 'prompts_txt' | 'voiceover_txt') => {
+  const handleExport = (format: 'markdown' | 'json' | 'prompts_txt' | 'voiceover_txt' | 'srt' | 'vtt') => {
     const title = project.projectTitle || 'kich-ban-ai-video';
     const slug = title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
     let content = '';
@@ -898,6 +924,26 @@ export default function AiVideoScriptStudio() {
       content = project.scenes.map((s, i) => 
         `[${s.durationSec}s] Cảnh ${i + 1}: ${s.vietnameseVoiceover}`
       ).join('\n\n');
+    } else if (format === 'srt') {
+      filename = `${slug}-subtitles.srt`;
+      mimeType = 'application/x-subrip';
+      let currentTime = 0;
+      content = project.scenes.map((s, i) => {
+        const start = formatSrtTime(currentTime);
+        currentTime += s.durationSec;
+        const end = formatSrtTime(currentTime);
+        return `${i + 1}\n${start} --> ${end}\n${s.vietnameseVoiceover || s.title}\n`;
+      }).join('\n');
+    } else if (format === 'vtt') {
+      filename = `${slug}-subtitles.vtt`;
+      mimeType = 'text/vtt';
+      let currentTime = 0;
+      content = 'WEBVTT\n\n' + project.scenes.map((s, i) => {
+        const start = formatVttTime(currentTime);
+        currentTime += s.durationSec;
+        const end = formatVttTime(currentTime);
+        return `${i + 1}\n${start} --> ${end}\n${s.vietnameseVoiceover || s.title}\n`;
+      }).join('\n');
     }
 
     const blob = new Blob([content], { type: `${mimeType};charset=utf-8;` });
@@ -912,6 +958,59 @@ export default function AiVideoScriptStudio() {
 
     setShowExportModal(false);
     showToast(`Đã xuất và tải file "${filename}" thành công!`, 'success');
+  };
+
+  // Upload video tạo từ Runway/Kling/Luma cho từng phân cảnh
+  const handleUploadSceneVideo = (index: number, e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('video/')) {
+      showToast('Vui lòng chọn tệp định dạng video (MP4, WebM, MOV...)', 'warning');
+      return;
+    }
+
+    setIsUploadingVideoIndex(index);
+    try {
+      const videoUrl = URL.createObjectURL(file);
+      setProject(prev => {
+        const next = [...prev.scenes];
+        if (next[index]) {
+          next[index] = {
+            ...next[index],
+            videoUrl,
+            videoFileName: file.name,
+            videoBlob: file
+          };
+        }
+        return { ...prev, scenes: next };
+      });
+      showToast(`Đã đính kèm video "${file.name}" vào cảnh #${index + 1}!`, 'success');
+    } catch (err: any) {
+      showToast(`Lỗi đính kèm video: ${err.message}`, 'error');
+    } finally {
+      setIsUploadingVideoIndex(null);
+      e.target.value = '';
+    }
+  };
+
+  const handleRemoveSceneVideo = (index: number) => {
+    setProject(prev => {
+      const next = [...prev.scenes];
+      if (next[index]) {
+        if (next[index].videoUrl) {
+          URL.revokeObjectURL(next[index].videoUrl!);
+        }
+        next[index] = {
+          ...next[index],
+          videoUrl: undefined,
+          videoFileName: undefined,
+          videoBlob: undefined
+        };
+      }
+      return { ...prev, scenes: next };
+    });
+    showToast(`Đã gỡ video phân cảnh #${index + 1}`, 'info');
   };
 
   return (
@@ -1651,6 +1750,98 @@ export default function AiVideoScriptStudio() {
                         </div>
                       </div>
                     </div>
+
+                    {/* DÒNG TIỆN ÍCH MỚI: TẢI VIDEO GENERATE & XEM TRƯỚC PHỤ ĐỀ TỰ ĐỘNG */}
+                    <div style={{ marginTop: '0.85rem', background: '#020617', border: '1px solid #1e293b', borderRadius: '0.75rem', padding: '0.65rem 0.95rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.65rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#f43f5e', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                          <Video size={14} /> Video Phân Cảnh:
+                        </span>
+                        {scene.videoUrl ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)', padding: '0.2rem 0.6rem', borderRadius: '0.4rem', fontSize: '0.75rem', color: '#4ade80' }}>
+                            <Film size={12} />
+                            <span style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {scene.videoFileName || 'video-canh.mp4'}
+                            </span>
+                          </div>
+                        ) : (
+                          <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                            Chưa đính kèm video đã render từ Runway/Kling/Luma
+                          </span>
+                        )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        {/* Nút Xem Trước Video Kèm Phụ Đề */}
+                        {scene.videoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => setPreviewVideoScene(scene)}
+                            style={{ 
+                              background: 'rgba(99, 102, 241, 0.2)', 
+                              border: '1px solid rgba(99, 102, 241, 0.4)', 
+                              color: '#a5b4fc', 
+                              fontSize: '0.72rem', 
+                              padding: '0.25rem 0.65rem', 
+                              borderRadius: '0.4rem', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: '0.3rem',
+                              fontWeight: 600
+                            }}
+                            title="Mở trình xem video và hiển thị phụ đề thuyết minh tự động"
+                          >
+                            <Eye size={12} /> Xem Video + Phụ Đề
+                          </button>
+                        )}
+
+                        {/* Nút Upload / Đổi Video */}
+                        <label
+                          style={{
+                            background: scene.videoUrl ? '#1e293b' : 'rgba(244, 63, 94, 0.15)',
+                            border: scene.videoUrl ? '1px solid #334155' : '1px solid rgba(244, 63, 94, 0.4)',
+                            color: scene.videoUrl ? '#cbd5e1' : '#fb7185',
+                            fontSize: '0.72rem',
+                            padding: '0.25rem 0.65rem',
+                            borderRadius: '0.4rem',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.3rem',
+                            fontWeight: 600
+                          }}
+                        >
+                          {isUploadingVideoIndex === index ? (
+                            <>
+                              <Loader2 size={12} className="animate-spin" /> Đang tải...
+                            </>
+                          ) : (
+                            <>
+                              <Video size={12} /> {scene.videoUrl ? 'Thay Video' : 'Đính Kèm Video AI'}
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => handleUploadSceneVideo(index, e)}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+
+                        {/* Nút Gỡ Video */}
+                        {scene.videoUrl && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSceneVideo(index)}
+                            style={{ background: '#1e293b', border: '1px solid #334155', color: '#ef4444', fontSize: '0.72rem', padding: '0.25rem 0.5rem', borderRadius: '0.4rem', cursor: 'pointer' }}
+                            title="Gỡ video này"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   {/* Transition Connector Indicator */}
@@ -1937,6 +2128,28 @@ export default function AiVideoScriptStudio() {
 
                 <button
                   type="button"
+                  onClick={() => handleExport('srt')}
+                  style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '0.75rem', padding: '0.85rem', textAlign: 'left', color: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}
+                >
+                  <strong style={{ color: '#a78bfa', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Subtitles size={14} /> Phụ Đề Chuẩn SRT (.srt)
+                  </strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Khớp timestamp từng cảnh, nhập 1-click vào CapCut/Premiere</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleExport('vtt')}
+                  style={{ background: '#020617', border: '1px solid #1e293b', borderRadius: '0.75rem', padding: '0.85rem', textAlign: 'left', color: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}
+                >
+                  <strong style={{ color: '#ec4899', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Subtitles size={14} /> Phụ Đề WebVTT (.vtt)
+                  </strong>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>Chuẩn phụ đề web HTML5 video và LMS elearning</span>
+                </button>
+
+                <button
+                  type="button"
                   onClick={handleExportAllVoiceoverAudio}
                   disabled={isExportingAudio}
                   style={{ 
@@ -1969,6 +2182,126 @@ export default function AiVideoScriptStudio() {
                   ) : (
                     <Download size={18} color="#34d399" />
                   )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Xem Trước Video AI Kèm Phụ Đề Tự Động */}
+        {previewVideoScene && (
+          <div
+            onClick={() => setPreviewVideoScene(null)}
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: 'rgba(2, 6, 23, 0.88)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 99999,
+              padding: '1rem'
+            }}
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                maxWidth: '720px',
+                width: '100%',
+                background: '#0f172a',
+                border: '1px solid #334155',
+                borderRadius: '1.25rem',
+                color: '#fff',
+                padding: '1.5rem',
+                boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.85)',
+                animation: 'popupFadeIn 0.2s ease-out'
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #1e293b', paddingBottom: '0.85rem', marginBottom: '1rem' }}>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 800, color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Video size={18} color="#f43f5e" /> Xem Trước Cảnh #{previewVideoScene.sceneNumber}: {previewVideoScene.title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setPreviewVideoScene(null)}
+                  style={{ background: '#1e293b', border: '1px solid #334155', borderRadius: '0.5rem', color: '#94a3b8', cursor: 'pointer', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.1rem' }}
+                >
+                  ✕
+                </button>
+              </div>
+
+              {/* Khung video và phụ đề nổi đè lên video */}
+              <div style={{ position: 'relative', width: '100%', borderRadius: '0.75rem', overflow: 'hidden', background: '#000', maxHeight: '420px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <video
+                  src={previewVideoScene.videoUrl}
+                  controls
+                  autoPlay
+                  loop
+                  style={{ width: '100%', maxHeight: '420px', objectFit: 'contain' }}
+                />
+
+                {/* Subtitle Overlay Overlay Bar */}
+                <div style={{
+                  position: 'absolute',
+                  bottom: '50px',
+                  left: '1rem',
+                  right: '1rem',
+                  pointerEvents: 'none',
+                  display: 'flex',
+                  justifyContent: 'center'
+                }}>
+                  <div style={{
+                    background: 'rgba(0, 0, 0, 0.75)',
+                    backdropFilter: 'blur(4px)',
+                    color: '#facc15',
+                    padding: '0.45rem 1rem',
+                    borderRadius: '0.5rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 700,
+                    textAlign: 'center',
+                    maxWidth: '90%',
+                    lineHeight: 1.4,
+                    textShadow: '0 2px 4px rgba(0, 0, 0, 0.8)',
+                    border: '1px solid rgba(250, 204, 21, 0.3)'
+                  }}>
+                    {previewVideoScene.vietnameseVoiceover}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: '1rem', background: '#020617', padding: '0.85rem', borderRadius: '0.75rem', border: '1px solid #1e293b', fontSize: '0.82rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
+                  <span style={{ color: '#818cf8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Subtitles size={14} /> Phụ đề thuyết minh khớp thời lượng:
+                  </span>
+                  <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>⏱️ {previewVideoScene.durationSec} giây</span>
+                </div>
+                <p style={{ margin: 0, color: '#e2e8f0', lineHeight: 1.5 }}>
+                  "{previewVideoScene.vietnameseVoiceover}"
+                </p>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem', marginTop: '1rem' }}>
+                <a
+                  href={previewVideoScene.videoUrl}
+                  download={previewVideoScene.videoFileName || `canh_${previewVideoScene.sceneNumber}.mp4`}
+                  className="btn btn-sm"
+                  style={{ background: '#1e293b', border: '1px solid #334155', color: '#fff', textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', padding: '0.4rem 0.85rem', borderRadius: '0.5rem' }}
+                >
+                  <Download size={14} /> Tải Video Này
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewVideoScene(null)}
+                  className="btn btn-primary btn-sm"
+                  style={{ background: '#6366f1', borderColor: '#6366f1' }}
+                >
+                  Đóng
                 </button>
               </div>
             </div>
