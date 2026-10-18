@@ -488,6 +488,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['tạo mã qr nâng cao', 'qr code generator', 'tạo qr wifi', 'tạo qr danh bạ vcard', 'chèn logo vào qr', 'đổi màu mã qr gradient'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/cat-video',
+    title: 'Cắt Video Nhanh Trực Tuyến (Fast Video Cutter & Trimmer)',
+    desc: 'Cắt tỉa phân đoạn video MP4, WebM, MOV theo mốc thời gian chính xác, xem trước trực quan, xử lý 100% bảo mật ngay trên trình duyệt mà không cần tải lên máy chủ.',
+    category: 'other',
+    isHot: true,
+    keywords: ['cắt video online', 'video cutter', 'trim video online', 'cắt mp4 không mất tiếng', 'cắt video trực tuyến'],
+    priority: 0.9,
+    changefreq: 'weekly'
   }
 ];
 

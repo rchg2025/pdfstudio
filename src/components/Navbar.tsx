@@ -167,6 +167,7 @@ const Navbar = () => {
             <NavLink to="/sao-chep-drive" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Sao chép Drive</NavLink>
             <NavLink to="/tai-video-am-thanh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>Tải Video / MP3</NavLink>
             <NavLink to="/quay-man-hinh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>🎥 Quay Màn Hình</NavLink>
+            <NavLink to="/cat-video" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>✂️ Cắt Video</NavLink>
             <NavLink to="/tao-ma-qr-nang-cao" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>🔲 QR Nâng Cao</NavLink>
           </nav>
 
@@ -353,6 +354,7 @@ const Navbar = () => {
             <NavLink to="/doc-van-ban" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đọc Văn Bản</NavLink>
             <NavLink to="/tai-video-am-thanh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>Tải Video / MP3</NavLink>
             <NavLink to="/quay-man-hinh" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>🎥 Quay Màn Hình</NavLink>
+            <NavLink to="/cat-video" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-600" : "nav-link font-medium text-rose-600"}>✂️ Cắt Video</NavLink>
             <NavLink to="/tao-ma-qr-nang-cao" className={({isActive}) => isActive ? "nav-link active font-medium text-blue-600" : "nav-link font-medium text-blue-600"}>🔲 QR Nâng Cao</NavLink>
           </div>
 

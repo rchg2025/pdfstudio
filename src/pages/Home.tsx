@@ -45,6 +45,7 @@ import {
   Bot,
   Film,
   Video,
+  Scissors,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
@@ -236,6 +237,12 @@ const otherTools = [
     icon: <QrCode size={24} />,
     title: 'Tạo Mã QR Nâng Cao Đa Năng (Custom QR Code)',
     desc: 'Tạo mã QR Wi-Fi, danh bạ vCard, đường dẫn, văn bản với tùy chọn màu gradient, bo góc mắt mã QR và chèn logo thương hiệu ở giữa.'
+  },
+  {
+    path: '/cat-video',
+    icon: <Scissors size={24} />,
+    title: 'Cắt Video Nhanh Trực Tuyến (Fast Video Cutter)',
+    desc: 'Cắt tỉa phân đoạn video MP4, WebM, MOV theo mốc thời gian chính xác, xem trước trực quan, xử lý 100% bảo mật ngay trên trình duyệt.'
   }
 ];
 
