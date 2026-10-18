@@ -282,6 +282,16 @@ export const ALL_TOOLS: ToolItem[] = [
     changefreq: 'weekly'
   },
   {
+    path: '/ky-ten-pdf',
+    title: '✍️ Ký Tên Điện Tử & Chèn Chữ Ký Vào PDF',
+    desc: 'Ký tên trực tuyến trên tài liệu PDF: Vẽ tay chữ ký tươi, tải ảnh chữ ký trong suốt, chèn họ tên và ngày tháng, kéo thả chính xác vị trí cần ký.',
+    category: 'pdf',
+    isHot: true,
+    keywords: ['ký tên pdf', 'chèn chữ ký vào pdf', 'chữ ký điện tử online', 'sign pdf online', 'vẽ chữ ký pdf', 'ký hợp đồng online'],
+    priority: 0.9,
+    changefreq: 'weekly'
+  },
+  {
     path: '/jpg-sang-pdf',
     title: 'Chuyển Đổi JPG Sang PDF Hàng Loạt',
     desc: 'Gộp nhiều ảnh (JPG, PNG, WEBP...) thành một file PDF duy nhất chất lượng cao.',

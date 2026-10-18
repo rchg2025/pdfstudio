@@ -186,6 +186,8 @@ if (fs.existsSync(distPath)) {
     '/xoa-dau-tieng-viet',
     '/xoa-trang-pdf',
     '/dong-dau-pdf',
+    '/ky-ten-pdf',
+    '/sign-pdf',
     '/bao-mat-pdf',
     '/jpg-sang-pdf',
     '/xoa-nen-mau',

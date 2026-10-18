@@ -63,6 +63,7 @@ const LiveBattlePlayer = React.lazy(() => import('./pages/LiveBattlePlayer'));
 const AiVideoScriptStudio = React.lazy(() => import('./pages/AiVideoScriptStudio'));
 const ChatWithPdf = React.lazy(() => import('./pages/ChatWithPdf'));
 const AiPodcastStudio = React.lazy(() => import('./pages/AiPodcastStudio'));
+const PdfSign = React.lazy(() => import('./pages/PdfSign'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -127,6 +128,12 @@ function App() {
             } />
             <Route path="dong-dau-pdf" element={
               <Suspense fallback={<FallbackLoader />}><PdfWatermark /></Suspense>
+            } />
+            <Route path="ky-ten-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><PdfSign /></Suspense>
+            } />
+            <Route path="sign-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><PdfSign /></Suspense>
             } />
 
             <Route path="jpg-sang-pdf" element={

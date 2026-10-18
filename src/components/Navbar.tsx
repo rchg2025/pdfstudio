@@ -134,6 +134,7 @@ const Navbar = () => {
             <NavLink to="/pdf-to-image" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>PDF sang Ảnh</NavLink>
             <NavLink to="/jpg-sang-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>JPG sang PDF</NavLink>
             <NavLink to="/dong-dau-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đóng Dấu PDF</NavLink>
+            <NavLink to="/ky-ten-pdf" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>✍️ Ký Tên PDF</NavLink>
             <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
             
             <div className="nav-link-separator"></div>
@@ -314,6 +315,7 @@ const Navbar = () => {
             <NavLink to="/pdf-to-image" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>PDF sang Ảnh</NavLink>
             <NavLink to="/jpg-sang-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>JPG sang PDF</NavLink>
             <NavLink to="/dong-dau-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đóng Dấu PDF</NavLink>
+            <NavLink to="/ky-ten-pdf" className={({isActive}) => isActive ? "nav-link active font-medium text-indigo-600" : "nav-link font-medium text-indigo-600"}>✍️ Ký Tên PDF</NavLink>
             <NavLink to="/bao-mat-pdf" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Bảo mật PDF</NavLink>
             <NavLink to="/image-converter" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Đổi Đuôi Ảnh</NavLink>
             <NavLink to="/image-compressor" className={({isActive}) => isActive ? "nav-link active" : "nav-link"}>Nén Ảnh</NavLink>

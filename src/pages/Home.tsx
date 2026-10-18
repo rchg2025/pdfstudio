@@ -86,6 +86,12 @@ const pdfTools = [
     desc: 'Chèn chữ, logo watermark vào tài liệu PDF của bạn một cách nhanh chóng và an toàn.'
   },
   {
+    path: '/ky-ten-pdf',
+    icon: <PenTool size={24} color="#6366f1" />,
+    title: '✍️ Ký Tên Điện Tử PDF',
+    desc: 'Ký tên trực tiếp trên tài liệu PDF: Vẽ tay chữ ký tươi, tải ảnh chữ ký trong suốt, chèn họ tên & ngày tháng, kéo thả chính xác vị trí cần ký.'
+  },
+  {
     path: '/jpg-sang-pdf',
     icon: <Images size={24} />,
     title: 'JPG sang PDF',
