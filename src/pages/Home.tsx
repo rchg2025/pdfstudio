@@ -281,6 +281,13 @@ const otherTools = [
 
 const edTechTools = [
   {
+    path: '/kiem-tra-dao-van-chinh-ta',
+    icon: <FileCheck2 size={24} color="#059669" />,
+    title: '📝 Rà Soát Bản Quyền, Đạo Văn, Chính Tả & Ngữ Pháp (Doc Compliance)',
+    desc: 'Thẩm định bản quyền, nguy cơ đạo văn & trích dẫn theo Luật SHTT 2022. Rà soát lỗi chính tả, ngữ pháp tiếng Việt & tiếng Anh cho giáo trình, giáo án và xuất bản hoàn thiện (.doc).',
+    isHot: true
+  },
+  {
     path: '/kiem-tra-ban-quyen-video',
     icon: <Scale size={24} color="#4f46e5" />,
     title: '⚖️ Thẩm Định Bản Quyền & Kỹ Thuật Video Không Tự Xây Dựng',

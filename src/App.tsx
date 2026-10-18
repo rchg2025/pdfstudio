@@ -76,6 +76,7 @@ const PhotoEnhanceStudio = React.lazy(() => import('./pages/PhotoEnhanceStudio')
 const DuplicateFileFinder = React.lazy(() => import('./pages/DuplicateFileFinder'));
 const SystemOptimizer = React.lazy(() => import('./pages/SystemOptimizer'));
 const VideoComplianceChecker = React.lazy(() => import('./pages/VideoComplianceChecker'));
+const DocComplianceChecker = React.lazy(() => import('./pages/DocComplianceChecker'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -363,6 +364,15 @@ function App() {
             } />
             <Route path="video-compliance" element={
               <Suspense fallback={<FallbackLoader />}><VideoComplianceChecker /></Suspense>
+            } />
+            <Route path="kiem-tra-dao-van-chinh-ta" element={
+              <Suspense fallback={<FallbackLoader />}><DocComplianceChecker /></Suspense>
+            } />
+            <Route path="kiem-tra-chinh-ta" element={
+              <Suspense fallback={<FallbackLoader />}><DocComplianceChecker /></Suspense>
+            } />
+            <Route path="doc-compliance" element={
+              <Suspense fallback={<FallbackLoader />}><DocComplianceChecker /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

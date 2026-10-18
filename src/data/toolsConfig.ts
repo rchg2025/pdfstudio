@@ -12,6 +12,16 @@ export interface ToolItem {
 export const ALL_TOOLS: ToolItem[] = [
   // ================= CÔNG CỤ GIẢNG DẠY & LMS (EDTECH) =================
   {
+    path: '/kiem-tra-dao-van-chinh-ta',
+    title: '📝 Rà Soát Bản Quyền, Đạo Văn, Chính Tả & Ngữ Pháp Văn Bản (Doc Compliance)',
+    desc: 'Thẩm định bản quyền, nguy cơ đạo văn & chuẩn trích dẫn theo Luật SHTT 2022. Rà soát lỗi chính tả, ngữ pháp tiếng Việt & tiếng Anh cho giáo trình, giáo án và xuất bản hoàn thiện (.doc).',
+    category: 'edtech',
+    isHot: true,
+    keywords: ['kiểm tra đạo văn', 'kiểm tra bản quyền giáo trình', 'luật sở hữu trí tuệ', 'kiểm tra chính tả tiếng việt', 'kiểm tra ngữ pháp tiếng anh', 'chỉnh sửa giáo án', 'doc compliance'],
+    priority: 0.95,
+    changefreq: 'weekly'
+  },
+  {
     path: '/tro-choi-giang-day',
     title: '🎮 Trò Chơi Giảng Dạy & Hoạt Náo Lớp Học (Classroom Games)',
     desc: 'Tổ chức minigame khởi động bài học và củng cố kiến thức: Hộp quà bí mật (Lucky Boxes), Lật hình ghép đôi (Memory Match) và Giải mã đảo chữ (Word Scramble) tích hợp tính điểm theo đội và xuất nhúng LMS.',

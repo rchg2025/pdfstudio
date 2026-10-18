@@ -229,6 +229,9 @@ if (fs.existsSync(distPath)) {
     '/system-cleaner',
     '/kiem-tra-ban-quyen-video',
     '/video-compliance',
+    '/kiem-tra-dao-van-chinh-ta',
+    '/kiem-tra-chinh-ta',
+    '/doc-compliance',
     '/embed-player'
   ];
 

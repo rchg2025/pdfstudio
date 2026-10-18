@@ -1851,6 +1851,176 @@ Trả về ĐÚNG VÀ DUY NHẤT định dạng JSON (không có markdown khác 
       });
     }
 
+    // 21. KIỂM TRA BẢN QUYỀN, ĐẠO VĂN, CHÍNH TẢ & NGỮ PHÁP CHO VĂN BẢN / GIÁO TRÌNH / GIÁO ÁN
+    if (req.method === 'POST' && action === 'check-document-compliance') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+
+      const {
+        text,
+        documentType = 'giao_trinh', // 'giao_trinh' | 'giao_an' | 'luan_van' | 'tai_lieu'
+        language = 'vi', // 'vi' | 'en' | 'auto'
+        checkPlagiarism = true,
+        checkGrammar = true,
+        customApiKey
+      } = body || {};
+
+      if (!text || typeof text !== 'string' || !text.trim()) {
+        return res.status(400).json({ error: 'Vui lòng cung cấp nội dung văn bản cần kiểm tra.' });
+      }
+
+      // Giới hạn độ dài kiểm tra 1 lần khoảng 25,000 ký tự (khoảng 10-15 trang) để đảm bảo token và tốc độ AI
+      const trimmedText = text.trim().slice(0, 25000);
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({
+          error: 'Chưa cấu hình Google Gemini API Key trong hệ thống! Vui lòng vào Cài đặt để nhập key cá nhân hoặc liên hệ Quản trị viên.'
+        });
+      }
+
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
+
+      const prompt = `Bạn là Chuyên gia Cao cấp về Thẩm định Học thuật, Bản quyền Sở hữu Trí tuệ (Luật SHTT Việt Nam 2022) và Biên tập viên Ngôn ngữ (Tiếng Việt & Tiếng Anh).
+Hãy thẩm định và rà soát kỹ lưỡng văn bản dưới đây dành cho thể loại "${documentType}".
+
+NỘI DUNG VĂN BẢN CẦN RÀ SOÁT:
+"""
+${trimmedText}
+"""
+
+YÊU CẦU PHÂN TÍCH TOÀN DIỆN:
+1. ĐÁNH GIÁ BẢN QUYỀN & NGUY CƠ ĐẠO VĂN (PLAGIARISM & CITATION COMPLIANCE):
+   - Ước tính chỉ số trùng lặp / nguy cơ đạo văn (plagiarismScore từ 0 đến 100%).
+   - Kiểm tra chuẩn trích dẫn nguồn học thuật (theo Điều 25 Luật SHTT 2022 về trích dẫn hợp lý để giảng dạy, trích dẫn tác phẩm khoa học).
+   - Phát hiện các đoạn văn bản có dấu hiệu sao chép nguyên văn mà không đặt trong ngoặc kép hoặc không có chú thích nguồn.
+   - Nhận diện nguy cơ trùng lặp với các định nghĩa, giáo trình, công trình phổ biến.
+
+2. RÀ SOÁT LỖI CHÍNH TẢ & NGỮ PHÁP (SPELLING, GRAMMAR, PUNCTUATION, STYLE):
+   - Phát hiện mọi lỗi chính tả (dấu câu, sai phụ âm/nguyên âm, telex, nhầm lẫn d/gi, s/x, ch/tr, l/n trong tiếng Việt; spelling/typo trong tiếng Anh).
+   - Phát hiện lỗi ngữ pháp: câu què, câu thiếu chủ ngữ - vị ngữ, lặp từ, dùng từ sai ngữ cảnh học thuật, ngữ pháp tiếng Anh sai thì/chia động từ/mạo từ.
+   - Với mỗi lỗi, chỉ rõ:
+     + original: Đoạn/từ ngữ bị lỗi nguyên bản trong bài.
+     + suggestion: Từ ngữ hoặc câu sửa đề xuất chuẩn mực.
+     + reason: Giải thích ngắn gọn tại sao lỗi (theo quy tắc chính tả/ngữ pháp).
+     + type: 'spelling' (chính tả) | 'grammar' (ngữ pháp) | 'style' (văn phong/diễn đạt) | 'citation' (trích dẫn/bản quyền).
+
+3. VĂN BẢN ĐÃ CHỈNH SỬA HOÀN THIỆN (REFINED TEXT):
+   - Tạo ra một bản văn bản hoàn chỉnh đã được sửa toàn bộ lỗi chính tả, chuẩn hóa dấu câu tiếng Việt/tiếng Anh, làm mượt ngữ pháp nhưng GIỮ NGUYÊN cấu trúc và ý nghĩa gốc của tài liệu để người dùng có thể lưu lại và dùng ngay.
+
+4. BẢNG TỔNG HỢP & LỜI KHUYÊN NÂNG CẤP HỌC THUẬT:
+   - Tóm tắt tổng quan: Số từ, điểm số chất lượng (0-100), mức độ rủi ro bản quyền (Thấp/Trung bình/Cao).
+   - Lời khuyên cụ thể để hoàn thiện giáo án/giáo trình theo chuẩn sư phạm và quy định pháp luật.
+
+BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text ngoài, chỉ JSON thuần túy):
+{
+  "summary": {
+    "totalWords": 0,
+    "qualityScore": 85,
+    "plagiarismRisk": "THẤP" | "TRUNG BÌNH" | "CAO",
+    "plagiarismScore": 12,
+    "totalIssues": 0,
+    "spellingIssuesCount": 0,
+    "grammarIssuesCount": 0,
+    "citationIssuesCount": 0
+  },
+  "plagiarismAnalysis": {
+    "riskLevel": "An toàn" | "Cần bổ sung nguồn" | "Rủi ro vi phạm",
+    "assessment": "Nhận xét chi tiết về bản quyền, tính nguyên bản và trích dẫn theo Luật SHTT",
+    "suspiciousPassages": [
+      {
+        "text": "Đoạn văn có dấu hiệu sao chép hoặc thiếu nguồn",
+        "reason": "Lý do nghi vấn (thiếu tác giả, trích dẫn dài nguyên khối...)",
+        "recommendation": "Khuyến nghị xử lý (viết lại diễn đạt lại - paraphrase, hoặc thêm citation [Tác giả, Năm])"
+      }
+    ],
+    "citationAdvice": "Hướng dẫn trích dẫn chuẩn cho tài liệu này"
+  },
+  "issues": [
+    {
+      "id": "iss-1",
+      "type": "spelling" | "grammar" | "style" | "citation",
+      "original": "từ hoặc cụm từ bị lỗi",
+      "suggestion": "từ hoặc cụm từ sửa lại đúng",
+      "reason": "Giải thích ngắn gọn lỗi",
+      "context": "Một đoạn câu ngắn chứa từ bị lỗi để dễ định vị"
+    }
+  ],
+  "improvedText": "Toàn bộ văn bản đã được biên tập, sửa lỗi chính tả ngữ pháp chuẩn chỉnh, sẵn sàng sao chép hoặc lưu về máy",
+  "pedagogicalAdvice": "Lời khuyên nâng cao chất lượng giáo án/giáo trình và tính chuẩn mực học thuật"
+}`;
+
+      let resultJson: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue.slice(0, 5)) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: 'application/json'
+              }
+            }),
+            signal: AbortSignal.timeout(45000)
+          });
+
+          if (!gRes.ok) {
+            const errData = await gRes.json().catch(() => null);
+            attemptErrors.push(`[${m}]: HTTP ${gRes.status} ${errData?.error?.message || ''}`);
+            continue;
+          }
+
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\{[\s\S]*\}/);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
+          }
+
+          if (parsed && parsed.improvedText && parsed.summary) {
+            resultJson = parsed;
+            usedModel = m;
+            break;
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message || 'Lỗi kết nối'}`);
+        }
+      }
+
+      if (!resultJson) {
+        return res.status(500).json({
+          error: `Không thể kiểm tra văn bản: ${attemptErrors[0] || 'Lỗi kết nối AI'}. Vui lòng thử lại hoặc kiểm tra API Key.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        usedModel,
+        result: resultJson
+      });
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);
