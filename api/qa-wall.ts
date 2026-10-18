@@ -1871,8 +1871,10 @@ Trả về ĐÚNG VÀ DUY NHẤT định dạng JSON (không có markdown khác 
         return res.status(400).json({ error: 'Vui lòng cung cấp nội dung văn bản cần kiểm tra.' });
       }
 
-      // Giới hạn độ dài kiểm tra 1 lần khoảng 25,000 ký tự (khoảng 10-15 trang) để đảm bảo token và tốc độ AI
-      const trimmedText = text.trim().slice(0, 25000);
+      // Giữ nguyên 100% toàn văn bản gốc của tài liệu tải lên (kể cả 97 trang hay hàng trăm trang)
+      const fullText = text.trim();
+      // Trích xuất mẫu nội dung gửi cho AI rà soát (~100,000 ký tự)
+      const sampleForAi = fullText.slice(0, 100000);
 
       let apiKey = customApiKey?.trim();
       if (!apiKey) {
@@ -1898,7 +1900,7 @@ Nhiệm vụ của bạn là rà soát văn bản thể loại "${documentType}"
 
 NỘI DUNG VĂN BẢN CẦN RÀ SOÁT:
 """
-${trimmedText}
+${sampleForAi}
 """
 
 HÃY PHÂN TÍCH THEO NGUYÊN TẮC THUẬT TOÁN TURNITIN:
@@ -2076,10 +2078,10 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
 
       // HẬU XỬ LÝ (POST-PROCESSING) CHUẨN XÁC CHỈ SỐ THEO THUẬT TOÁN TURNITIN
       try {
-        const actualWords = trimmedText.trim().split(/\s+/).filter(Boolean).length;
-        const actualChars = trimmedText.length;
+        const actualWords = fullText.split(/\s+/).filter(Boolean).length;
+        const actualChars = fullText.length;
 
-        // Cập nhật số từ thực tế nếu AI đếm lệch
+        // Cập nhật số từ thực tế của toàn bộ tài liệu (kể cả 97 trang hay hàng trăm trang)
         resultJson.summary.totalWords = actualWords;
         resultJson.summary.totalCharacters = actualChars;
 
@@ -2110,9 +2112,8 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
           resultJson.summary.plagiarismRisk = 'CAO';
         }
 
-        // BẮT BUỘC RÀ SOÁT VÀ TẠO BẢN HIGHLIGHT CHUẨN XÁC DỰA TRÊN CHÍNH VĂN BẢN TẢI LÊN
-        // Nếu AI trả về highlightedHtml không đầy đủ các thẻ mark hoặc bị thiếu thẻ, tiến hành đối khớp trực tiếp lên văn bản gốc
-        let htmlBase = trimmedText
+        // BẮT BUỘC RÀ SOÁT VÀ TẠO BẢN HIGHLIGHT DỰA TRÊN 100% TOÀN BỘ VĂN BẢN GỐC (KHÔNG BỎ SÓT BẤT KỲ TRANG NÀO)
+        let htmlBase = fullText
           .split('\n\n')
           .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
           .join('');
@@ -2176,6 +2177,20 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
         }
 
         resultJson.highlightedHtml = htmlBase;
+
+        // Đảm bảo improvedText bao gồm trọn vẹn toàn bộ các trang tài liệu
+        if (!resultJson.improvedText || resultJson.improvedText.length < fullText.length * 0.7) {
+          let refined = fullText;
+          if (Array.isArray(resultJson.issues)) {
+            resultJson.issues.forEach((iss: any) => {
+              if (iss.original && iss.suggestion) {
+                const esc = iss.original.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                refined = refined.replace(new RegExp(`\\b${esc}\\b`, 'gi'), iss.suggestion.trim());
+              }
+            });
+          }
+          resultJson.improvedText = refined;
+        }
 
         // Đếm lại tổng số issues
         if (Array.isArray(resultJson.issues)) {

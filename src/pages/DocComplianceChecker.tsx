@@ -126,7 +126,9 @@ export default function DocComplianceChecker() {
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let pdfText = '';
-        for (let i = 1; i <= Math.min(pdf.numPages, 50); i++) {
+        const totalPages = pdf.numPages;
+        
+        for (let i = 1; i <= totalPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
           const pageStr = textContent.items.map((item: any) => item.str).join(' ');
