@@ -1914,35 +1914,46 @@ HÃY PHÂN TÍCH THEO NGUYÊN TẮC THUẬT TOÁN TURNITIN:
    - riskLevel: "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)".
 
 2. DANH SÁCH CÁC NGUỒN TƯƠNG ĐỒNG CHI TIẾT (MATCHED SOURCES - ĐÁNH SỐ 1, 2, 3...):
-   - Nhận diện từ 2 đến 8 nguồn tương đồng tiềm năng và sát thực tế nhất trên không gian mạng và kho học thuật:
+   - Nhận diện từ 3 đến 10 nguồn tương đồng tiềm năng và sát thực tế nhất trên không gian mạng và kho học thuật:
      + sourceId: số nguyên từ 1 đến N (1 là nguồn có tỷ lệ trùng % cao nhất).
-     + sourceTitle: Tên thật của tài liệu, giáo trình, bài báo khoa học hoặc website (VD: "Giáo trình Nguyên lý Triết học Mác - Lênin (Bộ GD&ĐT)", "Báo điện tử VnExpress", "Tạp chí Khoa học ĐHQGHN", "Luận văn Thạc sĩ ĐH Sư phạm Kỹ thuật 2022", "Wikipedia Bách khoa toàn thư").
+     + sourceTitle: Tên thật của tài liệu, giáo trình, bài báo khoa học hoặc website/domain (VD: "www.elib.vn", "www.ctu.edu.vn", "philpapers.org", "www.vhu.edu.vn", "namsaigon.edu.vn", "doanthanhnien.vn", "linhfishcr7.wordpress.com", "ceqard.vnu.edu.vn", "aws.amazon.com", "Tạp chí Khoa học ĐHQGHN", v.v.).
      + sourceType: "internet" | "publication" | "student_paper" | "journal".
-     + similarityPercent: tỷ lệ % đóng góp của riêng nguồn này (VD: 9%, 5%, 3%...).
-     + url: URL hoặc domain đại diện cụ thể (nếu có).
-     + authorOrDomain: Cơ quan ban hành, tác giả hoặc tên miền (VD: moet.gov.vn, tailieu.vn, vjol.info, vnexpress.net).
+     + similarityPercent: tỷ lệ % đóng góp của riêng nguồn này (VD: 7%, 4%, 2%, 1%...).
+     + url: URL hoặc domain đại diện cụ thể.
+     + authorOrDomain: Cơ quan ban hành, tác giả hoặc tên miền.
      + matchedText: Trích dẫn 1 câu tiêu biểu từ nguồn này trùng với bài nộp.
 
 3. DANH SÁCH CÁC PHÂN ĐOẠN TRÙNG KHỚP CỤ THỂ (SUSPICIOUS PASSAGES):
-   - text: Chuỗi câu/từ ngữ chính xác xuất hiện trong bài nộp của người dùng (từ 8 đến 45 từ).
-   - sourceIndex: ID của nguồn tương ứng (1, 2, 3...) mà đoạn này trùng khớp.
-   - sourceTitle: Tên nguồn tương ứng.
-   - similarityPercent: % tương đồng của đoạn này (từ 70% đến 100%).
-   - reason: Phân tích kỹ thuật (sao chép nguyên văn không mở ngoặc kép, diễn đạt lại câu nhưng giữ nguyên cấu trúc ý - patchwriting, trích dẫn không ghi nguồn theo Điều 25 Luật SHTT).
-   - recommendation: Chỉ dẫn cụ thể cách sửa (bổ sung trích dẫn [Tác giả, Năm], thêm trích dẫn ngoặc kép, hoặc viết lại câu).
-   - paraphraseSuggestion: Đoạn văn mẫu viết lại hoàn chỉnh bằng từ ngữ học thuật của riêng tác giả để vượt qua kiểm tra trùng lặp nhưng giữ trọn vẹn giá trị kiến thức.
+   - RÀ SOÁT KỸ LƯỠNG TOÀN BỘ VĂN BẢN, tìm TẤT CẢ các câu hoặc phân đoạn (từ 8 đến 45 từ) có sự trùng lặp với các nguồn trên:
+     + text: Chuỗi câu/từ ngữ chính xác xuất hiện trong bài nộp của người dùng.
+     + sourceIndex: ID của nguồn tương ứng (1, 2, 3... đến 10) mà đoạn này trùng khớp.
+     + sourceTitle: Tên nguồn tương ứng.
+     + similarityPercent: % tương đồng của đoạn này (từ 70% đến 100%).
+     + reason: Phân tích kỹ thuật (sao chép nguyên văn không mở ngoặc kép, diễn đạt lại câu nhưng giữ nguyên cấu trúc ý - patchwriting, trích dẫn không ghi nguồn theo Điều 25 Luật SHTT).
+     + recommendation: Chỉ dẫn cụ thể cách sửa (bổ sung trích dẫn [Tác giả, Năm], thêm trích dẫn ngoặc kép, hoặc viết lại câu).
+     + paraphraseSuggestion: Đoạn văn mẫu viết lại hoàn chỉnh bằng từ ngữ học thuật của riêng tác giả để vượt qua kiểm tra trùng lặp nhưng giữ trọn vẹn giá trị kiến thức.
 
 4. BẢN TEXT ĐÁNH DẤU HIGHLIGHT CHUẨN TURNITIN (highlightedHtml):
-   - DỰA TRÊN TOÀN BỘ VĂN BẢN GỐC, bao bọc CHÍNH XÁC các câu/cụm từ bị trùng khớp bằng thẻ:
+   - DỰA TRÊN TOÀN BỘ VĂN BẢN GỐC, bao bọc CHÍNH XÁC TẤT CẢ các câu/cụm từ bị trùng khớp bằng thẻ:
      <mark class="turnitin-match match-1" data-source="1">đoạn câu trùng nguồn 1</mark>
      <mark class="turnitin-match match-2" data-source="2">đoạn câu trùng nguồn 2</mark>
    - Các đoạn văn bình thường không trùng giữ nguyên text và định dạng đoạn văn <p>...</p>.
    - Khi render ra HTML này phải phản ánh đúng bài gốc và trực quan y hệt Turnitin Document Viewer.
 
-5. RÀ SOÁT LỖI CHÍNH TẢ, NGỮ PHÁP, VĂN PHONG SƯ PHẠM (SPELLING & GRAMMAR):
-   - Soát lỗi chính tả tiếng Việt (dấu hỏi/ngã, d/gi/r, s/x, tr/ch, l/n, lỗi bộ gõ telex/vni) và tiếng Anh.
-   - Phát hiện ngữ pháp sai, câu cụt, câu què, văn phong lủng củng.
-   - Gợi ý từ sửa chính xác và giải thích ngắn gọn ngữ cảnh.
+5. RÀ SOÁT CHI TIẾT & TOÀN DIỆN MỌI LỖI CHÍNH TẢ, NGỮ PHÁP, VĂN PHONG (SPELLING & GRAMMAR AUDIT):
+   - BẮT BUỘC LIỆT KÊ ĐẦY ĐỦ VÀ CHI TIẾT TỪNG LỖI (không được tóm tắt chung chung, hãy quét qua từng câu trong bài):
+     + Lỗi chính tả tiếng Việt: sai dấu hỏi/ngã (VD: "sâu xắc" -> "sâu sắc", "lẩn" -> "lẫn", "rỏ" -> "rõ", "kĩ lưỡng" -> "kỹ lưỡng"), sai âm đầu s/x, tr/ch, d/gi/r, l/n, lỗi gõ phím telex thừa/thiếu ký tự.
+     + Lỗi chính tả tiếng Anh: sai từ vựng, viết hoa, mạo từ a/an/the.
+     + Lỗi ngữ pháp: câu què, câu cụt thiếu chủ ngữ hoặc vị ngữ, lỗi logic nối câu, lỗi lặp từ (redundancy).
+     + Lỗi văn phong & thuật ngữ: câu văn lủng củng, diễn đạt văn nói thay vì văn phong khoa học/sư phạm.
+     + Lỗi quy cách trích dẫn: thiếu dấu ngoặc kép, thiếu năm công bố, thiếu tên tác giả.
+   - Mỗi lỗi trong mảng "issues" phải chứa:
+     + "id": mã định danh duy nhất (iss-1, iss-2, ...)
+     + "type": "spelling" | "grammar" | "style" | "citation"
+     + "original": cụm từ hoặc câu chứa lỗi cụ thể trong văn bản
+     + "suggestion": cách sửa đúng và chuẩn xác
+     + "reason": giải thích ngắn gọn nguyên nhân sai và quy tắc ngữ pháp/từ điển
+     + "context": câu hoặc ngữ cảnh xuất hiện lỗi trong bài
 
 6. VĂN BẢN ĐÃ HOÀN THIỆN ĐẦY ĐỦ (improvedText):
    - Toàn bộ văn bản đã được biên tập, sửa sạch mọi lỗi chính tả ngữ pháp, mượt mà chuẩn mực để người dùng tải về dùng ngay.
@@ -1954,29 +1965,29 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
     "totalCharacters": 0,
     "qualityScore": 82,
     "plagiarismRisk": "THẤP" | "TRUNG BÌNH" | "CAO",
-    "plagiarismScore": 18,
+    "plagiarismScore": 19,
     "totalIssues": 0,
     "spellingIssuesCount": 0,
     "grammarIssuesCount": 0,
     "citationIssuesCount": 0
   },
   "plagiarismAnalysis": {
-    "similarityScore": 18,
+    "similarityScore": 19,
     "riskLevel": "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)",
     "assessment": "Nhận xét chuyên sâu của hội đồng thẩm định học thuật...",
     "breakdown": {
-      "internetSourcesPercent": 12,
-      "publicationsPercent": 7,
-      "studentPapersPercent": 3
+      "internetSourcesPercent": 21,
+      "publicationsPercent": 17,
+      "studentPapersPercent": 5
     },
     "matchedSources": [
       {
         "sourceId": 1,
-        "sourceTitle": "Giáo trình Nguyên lý Triết học Mác - Lênin (Bộ GD&ĐT)",
-        "sourceType": "publication",
-        "similarityPercent": 9,
-        "url": "https://moet.gov.vn",
-        "authorOrDomain": "Bộ Giáo dục và Đào tạo",
+        "sourceTitle": "www.elib.vn",
+        "sourceType": "internet",
+        "similarityPercent": 7,
+        "url": "https://www.elib.vn",
+        "authorOrDomain": "elib.vn",
         "matchedText": "Trích đoạn câu tiêu biểu..."
       }
     ],
@@ -1984,7 +1995,7 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
       {
         "text": "Đoạn văn chính xác trong bài nộp",
         "sourceIndex": 1,
-        "sourceTitle": "Tên nguồn 1",
+        "sourceTitle": "www.elib.vn",
         "similarityPercent": 94,
         "reason": "Sao chép nguyên văn định nghĩa lý thuyết nhưng chưa gắn trích dẫn tác giả",
         "recommendation": "Bổ sung trích dẫn [Tên tác giả, Năm] hoặc diễn đạt lại bằng ngôn ngữ riêng",
@@ -1997,11 +2008,11 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
   "issues": [
     {
       "id": "iss-1",
-      "type": "spelling" | "grammar" | "style" | "citation",
-      "original": "từ lỗi",
-      "suggestion": "từ sửa đúng",
-      "reason": "Giải thích",
-      "context": "Ngữ cảnh câu"
+      "type": "spelling",
+      "original": "sâu xắc",
+      "suggestion": "sâu sắc",
+      "reason": "Sai phụ âm đầu x/s theo chuẩn từ điển tiếng Việt",
+      "context": "...đang chứng kiến sự thay đổi sâu xắc về cả..."
     }
   ],
   "improvedText": "Toàn văn bản đã được biên tập và sửa hoàn thiện",

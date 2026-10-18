@@ -300,13 +300,33 @@ export default function DocComplianceChecker() {
     showToast('Đã tải xuống Báo cáo Đạo văn Turnitin (.txt)!', 'success');
   };
 
-  // Tải xuống file văn bản có đánh dấu màu các đoạn trùng lặp & số thứ tự nguồn (.doc)
+  // Tải xuống file Báo cáo Đạo văn Turnitin (Originality Report) chuẩn như hình mẫu (.doc / In ấn)
   const handleDownloadMarkedDoc = () => {
     if (!result) return;
-    const title = fileName.replace(/\.[^/.]+$/, '') + '_Danh_Dau_Dao_Van_Turnitin';
+    const rawTitle = fileName.replace(/\.[^/.]+$/, '');
+    const title = rawTitle + '_Turnitin_Originality_Report';
     const simScore = result.plagiarismAnalysis.similarityScore;
+    const breakdown = result.plagiarismAnalysis.breakdown || {
+      internetSourcesPercent: 0,
+      publicationsPercent: 0,
+      studentPapersPercent: 0
+    };
+    const matchedSources = result.plagiarismAnalysis.matchedSources || [];
 
-    // Chuyển đổi mã HTML highlight sang định dạng Word hỗ trợ màu nền và chú thích nguồn
+    // Danh sách màu sắc chuẩn của từng nguồn theo Turnitin
+    const turnitinColors: { [key: number]: { bg: string; text: string; lightBg: string; border: string } } = {
+      1: { bg: '#e11d48', text: '#ffffff', lightBg: '#fee2e2', border: '#e11d48' },
+      2: { bg: '#db2777', text: '#ffffff', lightBg: '#fdf2f8', border: '#db2777' },
+      3: { bg: '#7c3aed', text: '#ffffff', lightBg: '#f5f3ff', border: '#7c3aed' },
+      4: { bg: '#0891b2', text: '#ffffff', lightBg: '#ecfeff', border: '#0891b2' },
+      5: { bg: '#16a34a', text: '#ffffff', lightBg: '#f0fdf4', border: '#16a34a' },
+      6: { bg: '#d97706', text: '#ffffff', lightBg: '#fefce8', border: '#d97706' },
+      7: { bg: '#c2410c', text: '#ffffff', lightBg: '#fff7ed', border: '#c2410c' },
+      8: { bg: '#0284c7', text: '#ffffff', lightBg: '#f0f9ff', border: '#0284c7' },
+      9: { bg: '#9333ea', text: '#ffffff', lightBg: '#faf5ff', border: '#9333ea' },
+      10: { bg: '#0d9488', text: '#ffffff', lightBg: '#f0fdfa', border: '#0d9488' },
+    };
+
     const highlightedContent = result.highlightedHtml || inputText;
 
     const markedWordHtml = `
@@ -315,55 +335,115 @@ export default function DocComplianceChecker() {
         <meta charset='utf-8'>
         <title>${title}</title>
         <style>
-          body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.6; color: #111; padding: 2cm; }
-          h1 { font-size: 16pt; text-align: center; margin-bottom: 8px; color: #b91c1c; text-transform: uppercase; }
-          .report-header { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 24px; border-radius: 6px; }
-          .report-header p { margin: 4px 0; font-size: 11pt; }
-          .sim-badge { font-size: 14pt; font-weight: bold; color: ${simScore > 35 ? '#b91c1c' : simScore > 15 ? '#b45309' : '#15803d'}; }
-          .sources-legend { margin-top: 10px; padding-top: 8px; border-top: 1px dashed #cbd5e1; font-size: 10pt; }
-          .source-item { display: inline-block; margin-right: 14px; margin-bottom: 4px; padding: 2px 6px; font-weight: bold; }
+          @page { size: A4; margin: 2.2cm 2cm 2cm 2.2cm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #222; margin: 0; padding: 20px; }
           
-          /* Match highlights */
-          mark.turnitin-match { padding: 2px 4px; }
-          mark.match-1 { background-color: #fee2e2; color: #991b1b; border-bottom: 2px solid #ef4444; }
-          mark.match-2 { background-color: #fef3c7; color: #92400e; border-bottom: 2px solid #f59e0b; }
-          mark.match-3 { background-color: #e0e7ff; color: #3730a3; border-bottom: 2px solid #6366f1; }
-          mark.match-4 { background-color: #fce7f3; color: #9d174d; border-bottom: 2px solid #ec4899; }
-          mark.match-5 { background-color: #dcfce7; color: #166534; border-bottom: 2px solid #22c55e; }
-          mark.match-6 { background-color: #e0f2fe; color: #075985; border-bottom: 2px solid #0284c7; }
-          mark.match-7 { background-color: #f3e8ff; color: #6b21a8; border-bottom: 2px solid #9333ea; }
-          mark.match-8 { background-color: #ffedd5; color: #9a3412; border-bottom: 2px solid #ea580c; }
-          mark.match-9 { background-color: #ccfbf1; color: #115e59; border-bottom: 2px solid #0d9488; }
-          mark.match-10 { background-color: #f1f5f9; color: #334155; border-bottom: 2px solid #64748b; }
-          .source-sup { font-size: 9pt; font-weight: bold; vertical-align: super; margin-left: 2px; }
+          /* HEADER PHONG CÁCH TURNITIN ORIGINALITY REPORT */
+          .doc-header-title { font-size: 18pt; font-weight: 600; color: #2d3748; margin-bottom: 6px; }
+          .report-tagline { font-size: 8.5pt; font-weight: 700; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #b91c1c; padding-bottom: 4px; margin-bottom: 18px; }
           
-          .doc-body { text-align: justify; white-space: pre-wrap; margin-top: 20px; line-height: 1.8; }
+          /* 4 CỘT CHỈ SỐ LỚN ĐẬM CHUẨN TURNITIN */
+          .metrics-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; }
+          .metrics-table td { vertical-align: bottom; padding: 6px 12px; }
+          .metric-num { font-size: 38pt; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+          .metric-num.sim-main { color: #b91c1c; }
+          .metric-num.secondary { color: #1e293b; }
+          .metric-sup { font-size: 16pt; font-weight: 700; vertical-align: top; margin-left: 1px; }
+          .metric-label { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; color: #475569; letter-spacing: 0.8px; margin-top: 6px; }
+          
+          /* PRIMARY SOURCES SECTION */
+          .primary-sources-title { font-size: 8.5pt; font-weight: 700; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; margin-top: 24px; margin-bottom: 12px; }
+          .sources-table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          .sources-table tr { border-bottom: 1px solid #e2e8f0; }
+          .sources-table td { padding: 10px 4px; vertical-align: middle; }
+          .source-badge-col { width: 34px; text-align: left; }
+          .source-badge { display: inline-block; width: 24px; height: 24px; line-height: 24px; text-align: center; font-weight: 800; font-size: 11pt; color: #fff; border-radius: 3px; }
+          .source-main-text { font-size: 12pt; font-weight: 700; color: #4338ca; text-decoration: none; }
+          .source-sub-text { font-size: 8.5pt; color: #64748b; font-style: italic; margin-top: 2px; }
+          .source-pct-col { width: 60px; text-align: right; }
+          .source-pct-num { font-size: 20pt; font-weight: 700; color: #1e293b; }
+          .source-pct-sym { font-size: 11pt; vertical-align: top; }
+          
+          /* TRANG NỘI DUNG VĂN BẢN VÀ HIGHLIGHT */
+          .page-break { page-break-before: always; margin-top: 36px; border-top: 2px dashed #cbd5e1; padding-top: 24px; }
+          .section-subheading { font-size: 13pt; font-weight: 700; color: #0f172a; margin-bottom: 12px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+          .doc-text-body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.8; color: #000; text-align: justify; white-space: pre-wrap; }
+          
+          /* TURNITIN HIGHLIGHT MARKS */
+          mark.turnitin-match { padding: 1px 3px; border-radius: 2px; font-weight: 500; }
+          mark.match-1 { background-color: #fee2e2; color: #991b1b; border-bottom: 2px solid #e11d48; }
+          mark.match-2 { background-color: #fdf2f8; color: #be185d; border-bottom: 2px solid #db2777; }
+          mark.match-3 { background-color: #f5f3ff; color: #6d28d9; border-bottom: 2px solid #7c3aed; }
+          mark.match-4 { background-color: #ecfeff; color: #0e7490; border-bottom: 2px solid #0891b2; }
+          mark.match-5 { background-color: #f0fdf4; color: #15803d; border-bottom: 2px solid #16a34a; }
+          mark.match-6 { background-color: #fefce8; color: #a16207; border-bottom: 2px solid #d97706; }
+          mark.match-7 { background-color: #fff7ed; color: #9a3412; border-bottom: 2px solid #c2410c; }
+          mark.match-8 { background-color: #f0f9ff; color: #0369a1; border-bottom: 2px solid #0284c7; }
+          mark.match-9 { background-color: #faf5ff; color: #7e22ce; border-bottom: 2px solid #9333ea; }
+          mark.match-10 { background-color: #f0fdfa; color: #0f766e; border-bottom: 2px solid #0d9488; }
         </style>
       </head>
       <body>
-        <h1>Bản Thẩm Định Đánh Dấu Trùng Lặp & Đạo Văn</h1>
-        <div class="report-header">
-          <p><strong>Tệp gốc:</strong> ${fileName}</p>
-          <p><strong>Chỉ số tương đồng (Similarity Index):</strong> <span class="sim-badge">${simScore}%</span> (${result.plagiarismAnalysis.riskLevel})</p>
-          <p><strong>Phân rã nguồn:</strong> Internet: ${result.plagiarismAnalysis.breakdown.internetSourcesPercent}% | Ấn phẩm/Sách: ${result.plagiarismAnalysis.breakdown.publicationsPercent}% | Luận văn SV: ${result.plagiarismAnalysis.breakdown.studentPapersPercent}%</p>
-          <p><strong>Ngày kiểm tra:</strong> ${new Date().toLocaleString('vi-VN')} | <strong>Đơn vị kiểm định:</strong> ITE Academic Integrity System</p>
-          <div class="sources-legend">
-            <strong>Danh mục nguồn trùng khớp:</strong><br/>
-            ${(result.plagiarismAnalysis.matchedSources || []).map(s => {
-              const bgColors = ['#fee2e2', '#fef3c7', '#e0e7ff', '#fce7f3', '#dcfce7', '#e0f2fe', '#f3e8ff', '#ffedd5', '#ccfbf1', '#f1f5f9'];
-              const textColors = ['#991b1b', '#92400e', '#3730a3', '#9d174d', '#166534', '#075985', '#6b21a8', '#9a3412', '#115e59', '#334155'];
-              const idx = Math.max(0, (s.sourceId - 1) % 10);
-              return `
-                <span class="source-item" style="background-color: ${bgColors[idx]}; color: ${textColors[idx]}; border-radius: 4px; padding: 2px 6px;">
-                  [#${s.sourceId}] ${s.similarityPercent}%: ${s.sourceTitle} (${s.authorOrDomain || s.sourceType})
-                </span>
-              `;
-            }).join('')}
-          </div>
-        </div>
+        <!-- PHẦN 1: BẢNG TỔNG HỢP ORIGINALITY REPORT CHUẨN TURNITIN -->
+        <div class="doc-header-title">${rawTitle}</div>
+        <div class="report-tagline">ORIGINALITY REPORT</div>
+        
+        <table class="metrics-table">
+          <tr>
+            <td style="width: 25%;">
+              <div class="metric-num sim-main">${simScore}<span class="metric-sup">%</span></div>
+              <div class="metric-label">SIMILARITY INDEX</div>
+            </td>
+            <td style="width: 25%;">
+              <div class="metric-num secondary">${breakdown.internetSourcesPercent || 0}<span class="metric-sup">%</span></div>
+              <div class="metric-label">INTERNET SOURCES</div>
+            </td>
+            <td style="width: 25%;">
+              <div class="metric-num secondary">${breakdown.publicationsPercent || 0}<span class="metric-sup">%</span></div>
+              <div class="metric-label">PUBLICATIONS</div>
+            </td>
+            <td style="width: 25%;">
+              <div class="metric-num secondary">${breakdown.studentPapersPercent || 0}<span class="metric-sup">%</span></div>
+              <div class="metric-label">STUDENT PAPERS</div>
+            </td>
+          </tr>
+        </table>
 
-        <div class="doc-body">
-          ${highlightedContent}
+        <!-- DANH MỤC PRIMARY SOURCES -->
+        <div class="primary-sources-title">PRIMARY SOURCES</div>
+        <table class="sources-table">
+          ${matchedSources.map((src) => {
+            const sid = src.sourceId || 1;
+            const styleColor = turnitinColors[sid] || turnitinColors[1];
+            const typeLabel = src.sourceType === 'internet' 
+              ? 'Internet Source' 
+              : src.sourceType === 'publication' 
+                ? 'Publication' 
+                : 'Student Paper';
+            const displayTitle = src.sourceTitle;
+            return `
+              <tr>
+                <td class="source-badge-col">
+                  <span class="source-badge" style="background-color: ${styleColor.bg};">${sid}</span>
+                </td>
+                <td>
+                  <div><a href="${src.url || '#'}" class="source-main-text" style="color: ${styleColor.bg}; text-decoration: none;">${displayTitle}</a></div>
+                  <div class="source-sub-text">${typeLabel}${src.authorOrDomain ? ' • ' + src.authorOrDomain : ''}</div>
+                </td>
+                <td class="source-pct-col">
+                  <span class="source-pct-num">${src.similarityPercent}</span><span class="source-pct-sym">%</span>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </table>
+
+        <!-- PHẦN 2: NỘI DUNG BÀI NỘP ĐÁNH DẤU CHUỖI TRÙNG LẶP -->
+        <div class="page-break">
+          <div class="section-subheading">VĂN BẢN ĐÃ ĐỐI SOÁT & ĐÁNH DẤU TRÙNG LẶP THEO NGUỒN</div>
+          <div class="doc-text-body">
+            ${highlightedContent}
+          </div>
         </div>
       </body>
       </html>
@@ -378,7 +458,7 @@ export default function DocComplianceChecker() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Đã tải xuống file Word có đánh dấu highlight trùng lặp (.doc)!', 'success');
+    showToast('Đã tải xuống Bản Báo Cáo Đạo Văn Turnitin (Originality Report) (.doc)!', 'success');
   };
 
   // Lọc danh sách lỗi chính tả

@@ -1117,16 +1117,16 @@
   transition: opacity 0.2s, filter 0.2s;
 }
 
-.turnitin-highlight-view mark.match-1 { background-color: #fee2e2; color: #991b1b; border-bottom: 2px solid #ef4444; }
-.turnitin-highlight-view mark.match-2 { background-color: #fef3c7; color: #92400e; border-bottom: 2px solid #f59e0b; }
-.turnitin-highlight-view mark.match-3 { background-color: #e0e7ff; color: #3730a3; border-bottom: 2px solid #6366f1; }
-.turnitin-highlight-view mark.match-4 { background-color: #fce7f3; color: #9d174d; border-bottom: 2px solid #ec4899; }
-.turnitin-highlight-view mark.match-5 { background-color: #dcfce7; color: #166534; border-bottom: 2px solid #22c55e; }
-.turnitin-highlight-view mark.match-6 { background-color: #e0f2fe; color: #075985; border-bottom: 2px solid #0284c7; }
-.turnitin-highlight-view mark.match-7 { background-color: #f3e8ff; color: #6b21a8; border-bottom: 2px solid #9333ea; }
-.turnitin-highlight-view mark.match-8 { background-color: #ffedd5; color: #9a3412; border-bottom: 2px solid #ea580c; }
-.turnitin-highlight-view mark.match-9 { background-color: #ccfbf1; color: #115e59; border-bottom: 2px solid #0d9488; }
-.turnitin-highlight-view mark.match-10 { background-color: #f1f5f9; color: #334155; border-bottom: 2px solid #64748b; }
+.turnitin-highlight-view mark.match-1 { background-color: #fee2e2; color: #b91c1c; border-bottom: 2px solid #ef4444; }
+.turnitin-highlight-view mark.match-2 { background-color: #fdf2f8; color: #be185d; border-bottom: 2px solid #ec4899; }
+.turnitin-highlight-view mark.match-3 { background-color: #f5f3ff; color: #6d28d9; border-bottom: 2px solid #8b5cf6; }
+.turnitin-highlight-view mark.match-4 { background-color: #ecfeff; color: #0e7490; border-bottom: 2px solid #06b6d4; }
+.turnitin-highlight-view mark.match-5 { background-color: #f0fdf4; color: #15803d; border-bottom: 2px solid #22c55e; }
+.turnitin-highlight-view mark.match-6 { background-color: #fefce8; color: #a16207; border-bottom: 2px solid #eab308; }
+.turnitin-highlight-view mark.match-7 { background-color: #fff7ed; color: #9a3412; border-bottom: 2px solid #c2410c; }
+.turnitin-highlight-view mark.match-8 { background-color: #f0f9ff; color: #0369a1; border-bottom: 2px solid #0284c7; }
+.turnitin-highlight-view mark.match-9 { background-color: #faf5ff; color: #7e22ce; border-bottom: 2px solid #a855f7; }
+.turnitin-highlight-view mark.match-10 { background-color: #f0fdfa; color: #0f766e; border-bottom: 2px solid #14b8a6; }
 
 /* Filtered source highlighting */
 .turnitin-highlight-view.filter-active mark.turnitin-match:not(.active-filter) {
@@ -1245,16 +1245,16 @@
   flex-shrink: 0;
 }
 
-.source-card.match-1 .source-num-badge { background: #ef4444; }
-.source-card.match-2 .source-num-badge { background: #f59e0b; }
-.source-card.match-3 .source-num-badge { background: #6366f1; }
-.source-card.match-4 .source-num-badge { background: #ec4899; }
-.source-card.match-5 .source-num-badge { background: #10b981; }
-.source-card.match-6 .source-num-badge { background: #0284c7; }
-.source-card.match-7 .source-num-badge { background: #9333ea; }
-.source-card.match-8 .source-num-badge { background: #ea580c; }
-.source-card.match-9 .source-num-badge { background: #0d9488; }
-.source-card.match-10 .source-num-badge { background: #64748b; }
+.source-card.match-1 .source-num-badge { background: #e11d48; }
+.source-card.match-2 .source-num-badge { background: #db2777; }
+.source-card.match-3 .source-num-badge { background: #7c3aed; }
+.source-card.match-4 .source-num-badge { background: #0891b2; }
+.source-card.match-5 .source-num-badge { background: #16a34a; }
+.source-card.match-6 .source-num-badge { background: #d97706; }
+.source-card.match-7 .source-num-badge { background: #c2410c; }
+.source-card.match-8 .source-num-badge { background: #0284c7; }
+.source-card.match-9 .source-num-badge { background: #9333ea; }
+.source-card.match-10 .source-num-badge { background: #0d9488; }
 
 .passage-card.match-5 { border-left-color: #10b981; border-color: #bbf7d0; }
 .passage-card.match-6 { border-left-color: #0284c7; border-color: #bae6fd; }
