@@ -105,6 +105,8 @@
     { "source": "/podcast-ai", "destination": "/index.html" },
     { "source": "/tro-choi-giang-day", "destination": "/index.html" },
     { "source": "/classroom-games", "destination": "/index.html" },
+    { "source": "/danh-so-trang-pdf", "destination": "/index.html" },
+    { "source": "/pdf-page-number", "destination": "/index.html" },
     { "source": "/forgot-password", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/thong-tin-ca-nhan", "destination": "/index.html" },

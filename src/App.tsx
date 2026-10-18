@@ -71,6 +71,7 @@ const ScreenRecorder = React.lazy(() => import('./pages/ScreenRecorder'));
 const CustomQrGenerator = React.lazy(() => import('./pages/CustomQrGenerator'));
 const VideoCutter = React.lazy(() => import('./pages/VideoCutter'));
 const TeachingGamesStudio = React.lazy(() => import('./pages/TeachingGamesStudio'));
+const PdfPageNumber = React.lazy(() => import('./pages/PdfPageNumber'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -328,6 +329,12 @@ function App() {
             } />
             <Route path="classroom-games" element={
               <Suspense fallback={<FallbackLoader />}><TeachingGamesStudio /></Suspense>
+            } />
+            <Route path="danh-so-trang-pdf" element={
+              <Suspense fallback={<FallbackLoader />}><PdfPageNumber /></Suspense>
+            } />
+            <Route path="pdf-page-number" element={
+              <Suspense fallback={<FallbackLoader />}><PdfPageNumber /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

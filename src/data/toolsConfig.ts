@@ -238,6 +238,16 @@ export const ALL_TOOLS: ToolItem[] = [
 
   // ================= CÔNG CỤ PDF =================
   {
+    path: '/danh-so-trang-pdf',
+    title: '🔢 Đánh Số Trang PDF Tự Động (Add Page Numbers)',
+    desc: 'Đánh số thứ tự các trang PDF theo chuẩn in ấn & tài liệu khoa học: Tùy chỉnh vị trí góc trang, định dạng "Trang X/Y", font chữ tiếng Việt và bỏ qua trang bìa.',
+    category: 'pdf',
+    isHot: true,
+    keywords: ['đánh số trang pdf', 'add page numbers to pdf', 'chèn số trang pdf online', 'đánh số trang báo cáo', 'bỏ qua trang bìa pdf'],
+    priority: 0.9,
+    changefreq: 'weekly'
+  },
+  {
     path: '/pdf-editor',
     title: 'Công cụ chỉnh sửa PDF Trực Tuyến Miễn Phí',
     desc: 'Xem, xoay và xóa các trang trong file PDF của bạn dễ dàng trực tiếp trên trình duyệt, không cần cài đặt phần mềm.',

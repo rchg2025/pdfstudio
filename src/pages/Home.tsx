@@ -47,11 +47,19 @@ import {
   Video,
   Scissors,
   Gamepad2,
+  FileText,
   ArrowRight
 } from 'lucide-react';
 import './Home.css';
 
 const pdfTools = [
+  {
+    path: '/danh-so-trang-pdf',
+    icon: <FileText size={24} color="#0284c7" />,
+    title: 'Đánh Số Trang PDF Tự Động',
+    desc: 'Đánh số trang PDF chuẩn in ấn: Tùy chỉnh vị trí góc trang, định dạng "Trang X/Y", font chữ tiếng Việt và bỏ qua trang bìa.',
+    isHot: true
+  },
   {
     path: '/pdf-editor',
     icon: <FileEdit size={24} />,
