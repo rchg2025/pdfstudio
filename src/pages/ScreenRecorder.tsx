@@ -12,7 +12,8 @@ import {
   Clock, 
   FileVideo, 
   CheckCircle2, 
-  Layers
+  Layers,
+  Sparkles
 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
 import './ScreenRecorder.css';
@@ -23,10 +24,11 @@ export default function ScreenRecorder() {
   // Chế độ ghi: 'screen' (màn hình) | 'camera' (webcam) | 'both' (màn hình + webcam PIP) | 'audio' (chỉ âm thanh)
   const [recordMode, setRecordMode] = useState<'screen' | 'camera' | 'both' | 'audio'>('screen');
   
-  // Tùy chọn âm thanh
+  // Tùy chọn âm thanh & độ phân giải
   const [enableMic, setEnableMic] = useState<boolean>(true);
   const [enableSystemAudio, setEnableSystemAudio] = useState<boolean>(true);
-  const [videoQuality, setVideoQuality] = useState<'1080p' | '720p'>('1080p');
+  const [videoQuality, setVideoQuality] = useState<'4k' | '2k' | '1080p' | '720p'>('1080p');
+  const [frameRate, setFrameRate] = useState<number>(60);
 
   // Trạng thái thu
   const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'paused' | 'stopped'>('idle');
@@ -136,10 +138,29 @@ export default function ScreenRecorder() {
 
       let finalStream: MediaStream;
 
+      // Tính toán kích thước theo độ phân giải được chọn
+      let targetWidth = 1920;
+      let targetHeight = 1080;
+      let targetBitrate = 8000000; // 8 Mbps mặc định cho 1080p
+
+      if (videoQuality === '4k') {
+        targetWidth = 3840;
+        targetHeight = 2160;
+        targetBitrate = 25000000; // 25 Mbps cho 4K Ultra HD
+      } else if (videoQuality === '2k') {
+        targetWidth = 2560;
+        targetHeight = 1440;
+        targetBitrate = 14000000; // 14 Mbps cho 2K QHD
+      } else if (videoQuality === '720p') {
+        targetWidth = 1280;
+        targetHeight = 720;
+        targetBitrate = 4000000; // 4 Mbps cho 720p HD
+      }
+
       const videoConstraints: MediaTrackConstraints = {
-        width: videoQuality === '1080p' ? 1920 : 1280,
-        height: videoQuality === '1080p' ? 1080 : 720,
-        frameRate: 30
+        width: { ideal: targetWidth, max: targetWidth },
+        height: { ideal: targetHeight, max: targetHeight },
+        frameRate: { ideal: frameRate, max: 60 }
       };
 
       if (recordMode === 'camera') {
@@ -165,7 +186,9 @@ export default function ScreenRecorder() {
           video: {
             cursor: 'always',
             displaySurface: 'monitor',
-            frameRate: 30
+            width: { ideal: targetWidth, max: targetWidth },
+            height: { ideal: targetHeight, max: targetHeight },
+            frameRate: { ideal: frameRate, max: 60 }
           },
           audio: enableSystemAudio
         };
@@ -217,7 +240,7 @@ export default function ScreenRecorder() {
 
       combinedStreamRef.current = finalStream;
 
-      // Khởi tạo MediaRecorder
+      // Khởi tạo MediaRecorder với videoBitsPerSecond tối ưu chất lượng cao
       let mimeType = 'video/webm;codecs=vp9,opus';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = 'video/webm;codecs=vp8,opus';
@@ -226,9 +249,13 @@ export default function ScreenRecorder() {
         }
       }
 
-      const recorder = new MediaRecorder(finalStream, {
-        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined
-      });
+      const recorderOptions: MediaRecorderOptions = {
+        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
+        videoBitsPerSecond: recordMode !== 'audio' ? targetBitrate : undefined,
+        audioBitsPerSecond: 192000 // 192 kbps audio cao cấp
+      };
+
+      const recorder = new MediaRecorder(finalStream, recorderOptions);
 
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data && event.data.size > 0) {
@@ -415,28 +442,55 @@ export default function ScreenRecorder() {
             )}
 
             {recordMode !== 'audio' && (
-              <div className="setting-row">
-                <div className="setting-info">
-                  <span className="setting-name">Độ Phân Giải</span>
-                  <span className="setting-desc">Độ nét hình ảnh xuất ra</span>
+              <>
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <span className="setting-name">Độ Phân Giải</span>
+                    <span className="setting-desc">Độ nét hình ảnh xuất ra</span>
+                  </div>
+                  <select 
+                    value={videoQuality}
+                    onChange={(e) => setVideoQuality(e.target.value as any)}
+                    disabled={recordingStatus !== 'idle'}
+                    style={{
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      background: '#ffffff'
+                    }}
+                  >
+                    <option value="4k">4K (2160p Ultra HD - Siêu Nét)</option>
+                    <option value="2k">2K (1440p QHD - Sắc Nét)</option>
+                    <option value="1080p">1080p (Full HD - Tiêu Chuẩn)</option>
+                    <option value="720p">720p (HD - Tiết Kiệm Dung Lượng)</option>
+                  </select>
                 </div>
-                <select 
-                  value={videoQuality}
-                  onChange={(e) => setVideoQuality(e.target.value as any)}
-                  disabled={recordingStatus !== 'idle'}
-                  style={{
-                    padding: '0.35rem 0.6rem',
-                    borderRadius: '8px',
-                    border: '1px solid #cbd5e1',
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    background: '#ffffff'
-                  }}
-                >
-                  <option value="1080p">1080p (Full HD)</option>
-                  <option value="720p">720p (HD)</option>
-                </select>
-              </div>
+
+                <div className="setting-row">
+                  <div className="setting-info">
+                    <span className="setting-name">Tốc Độ Khung Hình</span>
+                    <span className="setting-desc">Độ mượt mà của chuyển động</span>
+                  </div>
+                  <select 
+                    value={frameRate}
+                    onChange={(e) => setFrameRate(Number(e.target.value))}
+                    disabled={recordingStatus !== 'idle'}
+                    style={{
+                      padding: '0.35rem 0.6rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      background: '#ffffff'
+                    }}
+                  >
+                    <option value={60}>60 FPS (Cực Mượt - Chơi game, thao tác nhanh)</option>
+                    <option value={30}>30 FPS (Chuẩn bài giảng, thuyết trình)</option>
+                  </select>
+                </div>
+              </>
             )}
           </div>
 
@@ -597,6 +651,12 @@ export default function ScreenRecorder() {
                   <FileVideo size={16} className="text-primary" />
                   <span>Dung lượng: <strong>{formatFileSize(recordedBlobSize)}</strong></span>
                 </div>
+                {recordMode !== 'audio' && (
+                  <div className="stat-chip">
+                    <Sparkles size={16} className="text-amber-500" />
+                    <span>Chất lượng: <strong>{videoQuality.toUpperCase()} • {frameRate}fps</strong></span>
+                  </div>
+                )}
               </div>
 
               <div className="download-btn-group">
