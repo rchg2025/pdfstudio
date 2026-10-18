@@ -21,6 +21,9 @@
 
 .media-dl-header {
   margin-bottom: 2rem;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .media-dl-badge {
@@ -49,7 +52,7 @@
   font-size: 0.95rem;
   color: var(--text-secondary, #64748b);
   margin: 0;
-  max-width: 900px;
+  max-width: 950px;
   line-height: 1.6;
 }
 
@@ -60,8 +63,10 @@
   border-radius: 18px;
   padding: 1.75rem;
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.06);
-  max-width: 980px;
+  max-width: 1200px;
+  width: 100%;
   margin: 0 auto;
+  box-sizing: border-box;
 }
 
 .search-form {
@@ -191,25 +196,28 @@
 
 /* RESULT CARD */
 .media-result-card {
-  max-width: 980px;
+  max-width: 1200px;
+  width: 100%;
   margin: 2rem auto 0 auto;
   background: var(--card-bg, #ffffff);
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 18px;
-  padding: 1.5rem;
+  padding: 1.75rem;
   box-shadow: 0 10px 30px -5px rgba(15, 23, 42, 0.08);
+  box-sizing: border-box;
 }
 
 .media-card-grid {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: 1.75rem;
   align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 860px) {
   .media-card-grid {
     grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 }
 
@@ -402,8 +410,10 @@
 
 /* FEATURE HIGHLIGHTS */
 .media-features-section {
-  max-width: 980px;
+  max-width: 1200px;
+  width: 100%;
   margin: 3.5rem auto 0 auto;
+  box-sizing: border-box;
 }
 
 .feature-cards-grid {
