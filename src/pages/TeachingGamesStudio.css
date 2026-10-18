@@ -322,6 +322,116 @@
   font-weight: 600;
 }
 
+/* LESSON FLOW TIMELINE */
+.tg-lesson-flow-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.25rem;
+}
+
+.tg-flow-step {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.step-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.step-circle {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+}
+.step-circle.step-1 { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+.step-circle.step-2 { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+.step-circle.step-3 { background: linear-gradient(135deg, #8b5cf6, #ec4899); }
+.step-circle.step-4 { background: linear-gradient(135deg, #10b981, #059669); }
+
+.step-line {
+  flex: 1;
+  width: 3px;
+  background: var(--border);
+  margin-top: 8px;
+  border-radius: 3px;
+}
+
+.step-content-card {
+  flex: 1;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  transition: all 0.2s;
+  box-shadow: var(--shadow-sm);
+}
+.step-content-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+}
+
+.step-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.step-phase-badge {
+  font-size: 0.78rem;
+  font-weight: 800;
+  padding: 0.3rem 0.75rem;
+  border-radius: var(--radius-sm);
+  text-transform: uppercase;
+}
+.badge-p1 { background: #fee2e2; color: #b91c1c; }
+.badge-p2 { background: #e0f2fe; color: #0369a1; }
+.badge-p3 { background: #f3e8ff; color: #6b21a8; }
+.badge-p4 { background: #dcfce7; color: #15803d; }
+
+.step-tool-badge {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.step-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.step-desc {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0 0 1.25rem;
+}
+
+.step-actions-bar {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.step-actions-bar a.tg-btn-sm {
+  text-decoration: none;
+}
+
 /* GAME 1: MYSTERY BOXES GRID */
 .tg-boxes-grid {
   display: grid;

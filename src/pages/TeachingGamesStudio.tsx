@@ -20,7 +20,9 @@ import {
   BookOpen,
   HelpCircle,
   Zap,
-  Star
+  Star,
+  Calendar,
+  FileText
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './TeachingGamesStudio.css';
@@ -105,7 +107,7 @@ const DEFAULT_TEAMS: TeamScore[] = [
 
 export default function TeachingGamesStudio() {
   const { showToast } = useNotification();
-  const [activeTab, setActiveTab] = useState<'boxes' | 'memory' | 'scramble'>('boxes');
+  const [activeTab, setActiveTab] = useState<'boxes' | 'memory' | 'scramble' | 'lesson_plan'>('lesson_plan');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const gameContainerRef = useRef<HTMLDivElement | null>(null);
@@ -666,8 +668,16 @@ export default function TeachingGamesStudio() {
         </div>
       </section>
 
-      {/* Tabs chuyển đổi giữa 3 trò chơi */}
+      {/* Tabs chuyển đổi giữa Kế hoạch bài dạy và các trò chơi */}
       <div className="tg-tabs-nav">
+        <button 
+          className={`tg-tab-btn ${activeTab === 'lesson_plan' ? 'active' : ''}`}
+          onClick={() => setActiveTab('lesson_plan')}
+        >
+          <Calendar size={18} />
+          <span>📋 Kế Hoạch Tổ Chức Tiết Học (Lesson Flow)</span>
+        </button>
+
         <button 
           className={`tg-tab-btn ${activeTab === 'boxes' ? 'active' : ''}`}
           onClick={() => setActiveTab('boxes')}
@@ -693,8 +703,135 @@ export default function TeachingGamesStudio() {
         </button>
       </div>
 
-      {/* NỘI DUNG TRÒ CHƠI */}
+      {/* NỘI DUNG TRÒ CHƠI & KẾ HOẠCH BÀI DẠY */}
       <main className="tg-game-content">
+        {/* TAB 0: KẾ HOẠCH TỔ CHỨC TIẾT HỌC TỔNG THỂ */}
+        {activeTab === 'lesson_plan' && (
+          <div className="tg-tab-pane animate-fade-in">
+            <div className="tg-pane-header">
+              <div>
+                <h2>Kế Hoạch Tổ Chức Hoạt Động Giảng Dạy & Trò Chơi Tương Tác</h2>
+                <p>Kịch bản sư phạm 4 pha chuẩn hóa: Khởi động, Khám phá kiến thức, Luyện tập tương tác và Củng cố vinh danh.</p>
+              </div>
+              <div className="tg-plan-quick-stats">
+                <span className="stat-pill"><Clock size={16} /> Thời lượng chuẩn: 45 - 90 Phút</span>
+                <span className="stat-pill"><Trophy size={16} /> Phương pháp: Gamification</span>
+              </div>
+            </div>
+
+            <div className="tg-lesson-flow-timeline">
+              {/* Pha 1 */}
+              <div className="tg-flow-step">
+                <div className="step-indicator">
+                  <div className="step-circle step-1">1</div>
+                  <div className="step-line"></div>
+                </div>
+                <div className="step-content-card">
+                  <div className="step-card-header">
+                    <span className="step-phase-badge badge-p1">Pha 1: KHỞI ĐỘNG & BỐC THĂM (5 - 10 PHÚT)</span>
+                    <span className="step-tool-badge">Tích hợp: Hộp Quà Bí Mật / Vòng Quay May Mắn</span>
+                  </div>
+                  <h3 className="step-title">Khơi Gợi Hứng Thú & Kiểm Tra Bài Cũ</h3>
+                  <p className="step-desc">
+                    Giáo viên chia lớp thành 4 đội (sử dụng bảng điểm gamification phía trên). Mời đại diện từng đội chọn ngẫu nhiên một hộp quà bí mật để trả lời câu hỏi khởi động hoặc bốc thăm người thuyết trình.
+                  </p>
+                  <div className="step-actions-bar">
+                    <button className="tg-btn-sm" onClick={() => setActiveTab('boxes')}>
+                      <Sparkles size={14} /> Mở trò chơi Hộp Quà Bí Mật
+                    </button>
+                    <a href="/vong-quay-lop-hoc" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <Play size={14} /> Mở Vòng Quay May Mắn
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pha 2 */}
+              <div className="tg-flow-step">
+                <div className="step-indicator">
+                  <div className="step-circle step-2">2</div>
+                  <div className="step-line"></div>
+                </div>
+                <div className="step-content-card">
+                  <div className="step-card-header">
+                    <span className="step-phase-badge badge-p2">Pha 2: KHÁM PHÁ KIẾN THỨC MỚI (15 - 20 PHÚT)</span>
+                    <span className="step-tool-badge">Tích hợp: Trợ lý Hỏi Đáp PDF AI / Flashcards 3D</span>
+                  </div>
+                  <h3 className="step-title">Giảng Dạy & Trực Quan Hóa Khái Niệm Chuyên Ngành</h3>
+                  <p className="step-desc">
+                    Trình chiếu sơ đồ chú thích tương tác hoặc tóm tắt tài liệu giáo trình bằng AI. Học sinh theo dõi trên máy chiếu và đặt câu hỏi qua Bức tường câu hỏi ẩn danh nếu chưa hiểu bài.
+                  </p>
+                  <div className="step-actions-bar">
+                    <a href="/hoi-dap-pdf-ai" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <FileText size={14} /> Mở Trợ Lý Hỏi Đáp PDF AI
+                    </a>
+                    <a href="/the-ghi-nho-flashcard" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <BookOpen size={14} /> Xem Thẻ Flashcards 3D
+                    </a>
+                    <a href="/buc-tuong-cau-hoi" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <HelpCircle size={14} /> Bức Tường Câu Hỏi Ẩn Danh
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pha 3 */}
+              <div className="tg-flow-step">
+                <div className="step-indicator">
+                  <div className="step-circle step-3">3</div>
+                  <div className="step-line"></div>
+                </div>
+                <div className="step-content-card">
+                  <div className="step-card-header">
+                    <span className="step-phase-badge badge-p3">Pha 3: LUYỆN TẬP TƯƠNG TÁC THEO NHÓM (15 - 20 PHÚT)</span>
+                    <span className="step-tool-badge">Tích hợp: Lật Hình Ghép Đôi / Đảo Chữ / Đấu Trí Tia Chớp</span>
+                  </div>
+                  <h3 className="step-title">Thực Hành Nối Cặp Khái Niệm & Giải Mã Từ Khóa</h3>
+                  <p className="step-desc">
+                    Các đội thảo luận nhanh và cử đại diện lên bảng thực hiện thử thách Lật thẻ ghép đôi thuật ngữ hoặc gõ giải mã từ khóa xáo trộn. Tích hợp chuông bấm (Buzzer) để bấm chuông giành quyền trả lời thời gian thực.
+                  </p>
+                  <div className="step-actions-bar">
+                    <button className="tg-btn-sm" onClick={() => setActiveTab('memory')}>
+                      <BookOpen size={14} /> Mở Lật Hình Ghép Đôi
+                    </button>
+                    <button className="tg-btn-sm" onClick={() => setActiveTab('scramble')}>
+                      <Zap size={14} /> Mở Giải Mã Đảo Chữ
+                    </button>
+                    <a href="/dong-ho-hoat-dong" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <Clock size={14} /> Đồng Hồ Hoạt Động & Chuông Bấm
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pha 4 */}
+              <div className="tg-flow-step">
+                <div className="step-indicator">
+                  <div className="step-circle step-4">4</div>
+                </div>
+                <div className="step-content-card">
+                  <div className="step-card-header">
+                    <span className="step-phase-badge badge-p4">Pha 4: CỦNG CỐ & BẢNG VINH DANH (10 PHÚT)</span>
+                    <span className="step-tool-badge">Tích hợp: Đấu Trường Live Quiz Battle / Bảng Vinh Danh</span>
+                  </div>
+                  <h3 className="step-title">Tổng Kết Điểm Số, Trao Huy Hiệu & Giao Bài Về Nhà</h3>
+                  <p className="step-desc">
+                    Tổ chức minigame trắc nghiệm Live Battle kiểu Kahoot để học sinh dùng điện thoại quét mã thi đua trực tiếp, sau đó công bố Top 1-2-3 lên Bục Vinh Danh và xuất mã nhúng bài tập về nhà lên LMS.
+                  </p>
+                  <div className="step-actions-bar">
+                    <a href="/dau-truong-live" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <Flame size={14} /> Mở Đấu Trường Live Battle
+                    </a>
+                    <a href="/bang-vinh-danh" target="_blank" rel="noreferrer" className="tg-btn-sm">
+                      <Trophy size={14} /> Chiếu Bảng Vinh Danh Top 1-2-3
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* TAB 1: HỘP QUÀ BÍ MẬT */}
         {activeTab === 'boxes' && (
           <div className="tg-tab-pane animate-fade-in">
