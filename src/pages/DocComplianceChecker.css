@@ -1041,7 +1041,7 @@
   background: #ecfdf5;
   color: #065f46;
   border: 1px solid #a7f3d0;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 6px;
   font-size: 0.78rem;
   font-weight: 700;
@@ -1052,6 +1052,27 @@
 .action-pill-download:hover {
   background: #d1fae5;
   border-color: #34d399;
+}
+
+.action-pill-download.pdf-pill {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.action-pill-download.pdf-pill:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.export-report-btn.pdf-btn {
+  background: linear-gradient(135deg, #e11d48 0%, #be123c 100%);
+  border-color: #be123c;
+  box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
+}
+
+.export-report-btn.pdf-btn:hover {
+  background: linear-gradient(135deg, #be123c 0%, #9f1239 100%);
 }
 
 /* TURNITIN READER HIGHLIGHTED VIEW */
@@ -1065,12 +1086,21 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
   padding: 8px 12px;
   background: #f1f5f9;
   border-radius: 8px;
   font-size: 0.8rem;
   color: #475569;
   margin-bottom: 12px;
+}
+
+.legend-tags-group {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .color-dot {
@@ -1085,6 +1115,16 @@
   background: #ef4444;
 }
 
+.color-dot.dot-spelling {
+  background: #dc2626;
+  text-decoration: underline wavy #dc2626;
+}
+
+.color-dot.dot-grammar {
+  background: #2563eb;
+  text-decoration: underline wavy #2563eb;
+}
+
 .clear-filter-source-btn {
   background: #fee2e2;
   color: #dc2626;
@@ -1096,22 +1136,59 @@
   cursor: pointer;
 }
 
+/* Word/PDF Document Simulation Viewer */
 .turnitin-highlight-view {
   flex: 1;
-  font-family: 'Times New Roman', serif;
-  font-size: 1.05rem;
-  line-height: 1.8;
-  color: #0f172a;
-  padding: 14px 18px;
+  font-family: 'Times New Roman', 'Liberation Serif', serif;
+  font-size: 1.15rem;
+  line-height: 1.85;
+  color: #1e293b;
+  padding: 32px 36px;
   background: #ffffff;
   border: 1px solid #cbd5e1;
-  border-radius: 10px;
+  border-radius: 12px;
   overflow-y: auto;
-  white-space: pre-wrap;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
 }
 
+.turnitin-highlight-view p {
+  margin: 0 0 16px;
+  text-align: justify;
+  text-indent: 1.25cm;
+}
+
+/* Gạch chân lượn sóng đánh dấu lỗi chính tả / ngữ pháp trực tiếp như Microsoft Word */
+.grammar-issue-mark {
+  position: relative;
+  cursor: help;
+  padding: 0 1px;
+}
+
+.grammar-issue-mark.issue-spelling {
+  text-decoration: underline wavy #ef4444 1.5px;
+  text-underline-offset: 4px;
+  background-color: rgba(254, 226, 226, 0.45);
+}
+
+.grammar-issue-mark.issue-grammar {
+  text-decoration: underline wavy #3b82f6 1.5px;
+  text-underline-offset: 4px;
+  background-color: rgba(219, 234, 254, 0.45);
+}
+
+.grammar-issue-mark.issue-style {
+  text-decoration: underline wavy #8b5cf6 1.5px;
+  text-underline-offset: 4px;
+  background-color: rgba(243, 232, 255, 0.45);
+}
+
+.grammar-issue-mark:hover {
+  filter: brightness(0.92);
+}
+
+/* Đánh dấu Turnitin */
 .turnitin-highlight-view mark.turnitin-match {
-  padding: 2px 4px;
+  padding: 2px 5px;
   border-radius: 3px;
   font-weight: 600;
   cursor: pointer;
@@ -1458,4 +1535,64 @@
     min-height: 320px;
   }
 }
+
+/* ================= PRINT / PDF EXPORT STYLES ================= */
+@media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .compliance-header,
+  .compliance-toolbar,
+  .output-tabs,
+  .panel-header,
+  .turnitin-reader-legend,
+  .key-modal-overlay,
+  .turnitin-actions-box,
+  .editor-toolbar {
+    display: none !important;
+  }
+
+  .compliance-container,
+  .compliance-grid,
+  .panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  .turnitin-highlight-view {
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    font-size: 12pt !important;
+    line-height: 1.8 !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  .turnitin-summary-banner {
+    border: 1px solid #cbd5e1 !important;
+    background: #ffffff !important;
+    margin-bottom: 20px !important;
+    page-break-after: avoid;
+  }
+
+  mark.turnitin-match {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  .grammar-issue-mark {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 

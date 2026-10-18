@@ -2117,8 +2117,8 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
           .map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`)
           .join('');
 
+        // 1. Highlight các đoạn văn trùng lặp đạo văn (Turnitin Matching)
         if (Array.isArray(resultJson.plagiarismAnalysis?.suspiciousPassages) && resultJson.plagiarismAnalysis.suspiciousPassages.length > 0) {
-          // Sắp xếp các đoạn nghi vấn theo độ dài từ dài tới ngắn để tránh trùng đè chuỗi con
           const sortedPassages = [...resultJson.plagiarismAnalysis.suspiciousPassages].sort(
             (a, b) => (b.text || '').length - (a.text || '').length
           );
@@ -2135,7 +2135,7 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
               if (exactRegex.test(htmlBase)) {
                 htmlBase = htmlBase.replace(
                   exactRegex,
-                  `<mark class="turnitin-match match-${srcId}" data-source="${srcId}">${rawSearch}</mark>`
+                  `<mark class="turnitin-match match-${srcId}" data-source="${srcId}" title="Trùng nguồn #${srcId} (${item.sourceTitle || ''})">${rawSearch}</mark>`
                 );
               } else {
                 // 2. Thử tìm theo cụm từ linh hoạt (cho phép khoảng trắng / xuống dòng khác nhau)
@@ -2146,19 +2146,36 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
                     const flexRegex = new RegExp(flexPattern, 'gi');
                     htmlBase = htmlBase.replace(
                       flexRegex,
-                      (matched: string) => `<mark class="turnitin-match match-${srcId}" data-source="${srcId}">${matched}</mark>`
+                      (matched: string) => `<mark class="turnitin-match match-${srcId}" data-source="${srcId}" title="Trùng nguồn #${srcId} (${item.sourceTitle || ''})">${matched}</mark>`
                     );
                   } catch (rxErr) {}
                 }
               }
             }
           });
-
-          // Ưu tiên sử dụng htmlBase đã được đối soát chuẩn xác trên toàn bộ văn bản tải lên
-          resultJson.highlightedHtml = htmlBase;
-        } else if (!resultJson.highlightedHtml || resultJson.highlightedHtml.length < 20) {
-          resultJson.highlightedHtml = htmlBase;
         }
+
+        // 2. Đánh dấu các lỗi chính tả, ngữ pháp trực tiếp trên bài viết bằng gạch chân lượn sóng và gợi ý
+        if (Array.isArray(resultJson.issues) && resultJson.issues.length > 0) {
+          resultJson.issues.forEach((iss: any) => {
+            if (iss.original && typeof iss.original === 'string' && iss.original.trim().length > 0) {
+              const orig = iss.original.trim();
+              const escaped = orig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+              // Chỉ match ngoài các thẻ HTML hoặc bên trong thẻ text
+              const issueRegex = new RegExp(`(?<!<[^>]*)(${escaped})(?![^<]*>)`, 'gi');
+              const issueTypeClass = iss.type === 'spelling' ? 'issue-spelling' : iss.type === 'grammar' ? 'issue-grammar' : 'issue-style';
+              const typeName = iss.type === 'spelling' ? 'Lỗi chính tả' : iss.type === 'grammar' ? 'Lỗi ngữ pháp' : 'Lỗi diễn đạt';
+              const tooltip = `${typeName}: "${orig}" ➔ Gợi ý sửa: "${iss.suggestion || ''}". ${iss.reason || ''}`;
+
+              htmlBase = htmlBase.replace(
+                issueRegex,
+                `<span class="grammar-issue-mark ${issueTypeClass}" title="${tooltip.replace(/"/g, '&quot;')}">$1</span>`
+              );
+            }
+          });
+        }
+
+        resultJson.highlightedHtml = htmlBase;
 
         // Đếm lại tổng số issues
         if (Array.isArray(resultJson.issues)) {

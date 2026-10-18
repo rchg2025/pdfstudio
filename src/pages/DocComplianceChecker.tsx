@@ -461,6 +461,187 @@ export default function DocComplianceChecker() {
     showToast('Đã tải xuống Bản Báo Cáo Đạo Văn Turnitin (Originality Report) (.doc)!', 'success');
   };
 
+  // Xuất file PDF Đạo văn Turnitin kèm các chỗ đã đánh dấu sai phạm & bảng chỉ số
+  const handleExportMarkedPdf = () => {
+    if (!result) return;
+    const rawTitle = fileName.replace(/\.[^/.]+$/, '');
+    const title = rawTitle + '_Turnitin_Originality_Report';
+    const simScore = result.plagiarismAnalysis.similarityScore;
+    const breakdown = result.plagiarismAnalysis.breakdown || {
+      internetSourcesPercent: 0,
+      publicationsPercent: 0,
+      studentPapersPercent: 0
+    };
+    const matchedSources = result.plagiarismAnalysis.matchedSources || [];
+
+    const turnitinColors: { [key: number]: { bg: string; text: string; lightBg: string; border: string } } = {
+      1: { bg: '#e11d48', text: '#ffffff', lightBg: '#fee2e2', border: '#e11d48' },
+      2: { bg: '#db2777', text: '#ffffff', lightBg: '#fdf2f8', border: '#db2777' },
+      3: { bg: '#7c3aed', text: '#ffffff', lightBg: '#f5f3ff', border: '#7c3aed' },
+      4: { bg: '#0891b2', text: '#ffffff', lightBg: '#ecfeff', border: '#0891b2' },
+      5: { bg: '#16a34a', text: '#ffffff', lightBg: '#f0fdf4', border: '#16a34a' },
+      6: { bg: '#d97706', text: '#ffffff', lightBg: '#fefce8', border: '#d97706' },
+      7: { bg: '#c2410c', text: '#ffffff', lightBg: '#fff7ed', border: '#c2410c' },
+      8: { bg: '#0284c7', text: '#ffffff', lightBg: '#f0f9ff', border: '#0284c7' },
+      9: { bg: '#9333ea', text: '#ffffff', lightBg: '#faf5ff', border: '#9333ea' },
+      10: { bg: '#0d9488', text: '#ffffff', lightBg: '#f0fdfa', border: '#0d9488' },
+    };
+
+    const highlightedContent = result.highlightedHtml || inputText;
+
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) {
+      showToast('Vui lòng cho phép popup trình duyệt để mở cửa sổ xuất PDF.', 'warning');
+      return;
+    }
+
+    const printHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <title>${title}</title>
+        <style>
+          @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+          body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; 
+            color: #1e293b; 
+            margin: 0; 
+            padding: 20px; 
+            background: #fff;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+          }
+          .doc-header-title { font-size: 22px; font-weight: 700; color: #0f172a; margin-bottom: 4px; }
+          .report-tagline { 
+            font-size: 11px; 
+            font-weight: 800; 
+            color: #b91c1c; 
+            text-transform: uppercase; 
+            letter-spacing: 0.8px; 
+            border-bottom: 2px solid #b91c1c; 
+            padding-bottom: 4px; 
+            margin-bottom: 18px; 
+          }
+          .metrics-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; border-bottom: 1px solid #e2e8f0; padding-bottom: 14px; }
+          .metrics-table td { vertical-align: bottom; padding: 6px 12px; }
+          .metric-num { font-size: 46px; font-weight: 800; line-height: 1; letter-spacing: -1px; }
+          .metric-num.sim-main { color: #b91c1c; }
+          .metric-num.secondary { color: #1e293b; }
+          .metric-sup { font-size: 20px; font-weight: 700; vertical-align: top; margin-left: 1px; }
+          .metric-label { font-size: 10px; font-weight: 800; text-transform: uppercase; color: #475569; letter-spacing: 0.8px; margin-top: 6px; }
+          
+          .primary-sources-title { font-size: 11px; font-weight: 800; color: #b91c1c; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px; margin-top: 20px; margin-bottom: 12px; }
+          .sources-table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+          .sources-table tr { border-bottom: 1px solid #e2e8f0; }
+          .sources-table td { padding: 8px 4px; vertical-align: middle; }
+          .source-badge-col { width: 34px; text-align: left; }
+          .source-badge { display: inline-block; width: 22px; height: 22px; line-height: 22px; text-align: center; font-weight: 800; font-size: 12px; color: #fff; border-radius: 4px; }
+          .source-main-text { font-size: 13px; font-weight: 700; color: #3b82f6; text-decoration: none; }
+          .source-sub-text { font-size: 11px; color: #64748b; font-style: italic; margin-top: 2px; }
+          .source-pct-col { width: 60px; text-align: right; }
+          .source-pct-num { font-size: 22px; font-weight: 800; color: #1e293b; }
+          .source-pct-sym { font-size: 12px; vertical-align: top; }
+          
+          .page-break { page-break-before: always; margin-top: 30px; border-top: 2px dashed #cbd5e1; padding-top: 24px; }
+          .section-subheading { font-size: 14px; font-weight: 800; color: #0f172a; margin-bottom: 14px; text-transform: uppercase; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
+          .doc-text-body { font-family: 'Times New Roman', serif; font-size: 13.5pt; line-height: 1.85; color: #000; text-align: justify; }
+          .doc-text-body p { margin-bottom: 14px; text-indent: 1.25cm; }
+          
+          mark.turnitin-match { padding: 2px 4px; border-radius: 3px; font-weight: 600; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+          mark.match-1 { background-color: #fee2e2 !important; color: #991b1b !important; border-bottom: 2px solid #e11d48 !important; }
+          mark.match-2 { background-color: #fdf2f8 !important; color: #be185d !important; border-bottom: 2px solid #db2777 !important; }
+          mark.match-3 { background-color: #f5f3ff !important; color: #6d28d9 !important; border-bottom: 2px solid #7c3aed !important; }
+          mark.match-4 { background-color: #ecfeff !important; color: #0e7490 !important; border-bottom: 2px solid #0891b2 !important; }
+          mark.match-5 { background-color: #f0fdf4 !important; color: #15803d !important; border-bottom: 2px solid #16a34a !important; }
+          mark.match-6 { background-color: #fefce8 !important; color: #a16207 !important; border-bottom: 2px solid #d97706 !important; }
+          mark.match-7 { background-color: #fff7ed !important; color: #9a3412 !important; border-bottom: 2px solid #c2410c !important; }
+          mark.match-8 { background-color: #f0f9ff !important; color: #0369a1 !important; border-bottom: 2px solid #0284c7 !important; }
+          mark.match-9 { background-color: #faf5ff !important; color: #7e22ce !important; border-bottom: 2px solid #9333ea !important; }
+          mark.match-10 { background-color: #f0fdfa !important; color: #0f766e !important; border-bottom: 2px solid #0d9488 !important; }
+
+          .grammar-issue-mark { position: relative; padding: 0 2px; }
+          .grammar-issue-mark.issue-spelling { text-decoration: underline wavy #ef4444 1.5px; background: rgba(254, 226, 226, 0.45); }
+          .grammar-issue-mark.issue-grammar { text-decoration: underline wavy #3b82f6 1.5px; background: rgba(219, 234, 254, 0.45); }
+          .grammar-issue-mark.issue-style { text-decoration: underline wavy #8b5cf6 1.5px; background: rgba(243, 232, 255, 0.45); }
+        </style>
+      </head>
+      <body>
+        <div class="doc-header-title">${rawTitle}</div>
+        <div class="report-tagline">ORIGINALITY REPORT (TURNITIN ENGINE)</div>
+        
+        <table class="metrics-table">
+          <tr>
+            <td style="width: 25%;">
+              <div class="metric-num sim-main">${simScore}<span class="metric-sup">%</span></div>
+              <div class="metric-label">SIMILARITY INDEX</div>
+            </td>
+            <td style="width: 25%;">
+              <div class="metric-num secondary">${breakdown.internetSourcesPercent || 0}<span class="metric-sup">%</span></div>
+              <div class="metric-label">INTERNET SOURCES</div>
+            </td>
+            <td style="width: 25%;">
+              <div class="metric-num secondary">${breakdown.publicationsPercent || 0}<span class="metric-sup">%</span></div>
+              <div class="metric-label">PUBLICATIONS</div>
+            </td>
+            <td style="width: 25%;">
+              <div class="metric-num secondary">${breakdown.studentPapersPercent || 0}<span class="metric-sup">%</span></div>
+              <div class="metric-label">STUDENT PAPERS</div>
+            </td>
+          </tr>
+        </table>
+
+        <div class="primary-sources-title">PRIMARY SOURCES</div>
+        <table class="sources-table">
+          ${matchedSources.map((src) => {
+            const sid = src.sourceId || 1;
+            const styleColor = turnitinColors[sid] || turnitinColors[1];
+            const typeLabel = src.sourceType === 'internet' 
+              ? 'Internet Source' 
+              : src.sourceType === 'publication' 
+                ? 'Publication' 
+                : 'Student Paper';
+            return `
+              <tr>
+                <td class="source-badge-col">
+                  <span class="source-badge" style="background-color: ${styleColor.bg};">${sid}</span>
+                </td>
+                <td>
+                  <div><span class="source-main-text" style="color: ${styleColor.bg};">${src.sourceTitle}</span></div>
+                  <div class="source-sub-text">${typeLabel}${src.authorOrDomain ? ' • ' + src.authorOrDomain : ''}</div>
+                </td>
+                <td class="source-pct-col">
+                  <span class="source-pct-num">${src.similarityPercent}</span><span class="source-pct-sym">%</span>
+                </td>
+              </tr>
+            `;
+          }).join('')}
+        </table>
+
+        <div class="page-break">
+          <div class="section-subheading">NỘI DUNG TÀI LIỆU ĐÃ ĐỐI SOÁT & ĐÁNH DẤU CÁC CHỖ TRÙNG LẶP / SAI PHẠM</div>
+          <div class="doc-text-body">
+            ${highlightedContent}
+          </div>
+        </div>
+
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 300);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    printWindow.document.open();
+    printWindow.document.write(printHtml);
+    printWindow.document.close();
+    showToast('Đang mở hộp thoại xuất file PDF có đánh dấu sai phạm...', 'info');
+  };
+
   // Lọc danh sách lỗi chính tả
   const filteredIssues = result?.issues.filter(iss => {
     if (filterType === 'all') return true;
@@ -576,14 +757,24 @@ export default function DocComplianceChecker() {
                   {inputText.trim() ? inputText.trim().split(/\s+/).length : 0} từ | {inputText.length} ký tự
                 </span>
                 {result && (
-                  <button
-                    className="action-pill-download"
-                    title="Tải tệp Word có highlight các đoạn văn trùng lặp (.doc)"
-                    onClick={handleDownloadMarkedDoc}
-                  >
-                    <FileDown size={14} />
-                    <span>Tải bản đánh dấu</span>
-                  </button>
+                  <>
+                    <button
+                      className="action-pill-download pdf-pill"
+                      title="Xuất tệp PDF đối soát có đầy đủ chỉ số và các câu đánh dấu vi phạm (.pdf)"
+                      onClick={handleExportMarkedPdf}
+                    >
+                      <Download size={14} />
+                      <span>Xuất PDF Đánh Dấu</span>
+                    </button>
+                    <button
+                      className="action-pill-download"
+                      title="Tải tệp Word có highlight các đoạn văn trùng lặp (.doc)"
+                      onClick={handleDownloadMarkedDoc}
+                    >
+                      <FileDown size={14} />
+                      <span>Tải file Word</span>
+                    </button>
+                  </>
                 )}
                 <button
                   className="icon-btn-ghost"
@@ -599,7 +790,11 @@ export default function DocComplianceChecker() {
               {result && result.highlightedHtml ? (
                 <div className="turnitin-reader-container">
                   <div className="turnitin-reader-legend">
-                    <span className="legend-tag"><span className="color-dot dot-match"></span> Đoạn trùng khớp có màu</span>
+                    <div className="legend-tags-group">
+                      <span className="legend-tag"><span className="color-dot dot-match"></span> Trùng lặp (Turnitin Match)</span>
+                      <span className="legend-tag"><span className="color-dot dot-spelling"></span> Lỗi chính tả</span>
+                      <span className="legend-tag"><span className="color-dot dot-grammar"></span> Lỗi ngữ pháp</span>
+                    </div>
                     {selectedSourceId ? (
                       <button className="clear-filter-source-btn" onClick={() => setSelectedSourceId(null)}>
                         Đang xem nguồn #{selectedSourceId} (Bấm xem tất cả)
@@ -681,19 +876,27 @@ export default function DocComplianceChecker() {
 
                 <div className="turnitin-actions-box">
                   <button 
+                    className="export-report-btn primary-export pdf-btn" 
+                    onClick={handleExportMarkedPdf}
+                    title="Xuất và in file PDF báo cáo Turnitin kèm toàn bộ đoạn văn bản đánh dấu vi phạm"
+                  >
+                    <Download size={15} />
+                    <span>Xuất PDF Đánh Dấu</span>
+                  </button>
+                  <button 
                     className="export-report-btn primary-export" 
                     onClick={handleDownloadMarkedDoc}
                     title="Tải văn bản Word có highlight màu các câu trùng lặp & chú thích nguồn"
                   >
                     <FileDown size={15} />
-                    <span>Tải Bản Đánh Dấu (.doc)</span>
+                    <span>Tải File Word (.doc)</span>
                   </button>
                   <button 
                     className="export-report-btn" 
                     onClick={handleExportTurnitinReport}
                     title="Xuất bảng điểm chi tiết và các đoạn vi phạm (.txt)"
                   >
-                    <Download size={15} />
+                    <FileText size={15} />
                     <span>Báo Cáo (.txt)</span>
                   </button>
                 </div>
