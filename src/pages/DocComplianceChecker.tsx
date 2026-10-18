@@ -38,26 +38,26 @@ try {
   }
 } catch {}
 
-const SAMPLE_TEXT = `KỶ NGUYÊN SỐ VÀ PHƯƠNG PHÁP GIẢNG DẠY ĐẠI HỌC HIỆN ĐẠI
+const SAMPLE_TEXT = `NGHIÊN CỨU VỀ PHÁT TRIỂN KINH TẾ SỐ VÀ CÁC THÁCH THỨC ĐẶT RA
 
-1. Đặt vấn đề và bối cảnh chuyển đổi số
-Trong bối cảnh công nghệ thông tin phát triển mạnh mẽ, giáo dục đại học đang chứng kiến sự thay đổi sâu xắc về cả phương pháp lẩn công cụ truyền tải tri thức. Chuyển đổi số không chỉ đơn thuần là việc số hoá các tài liệu giấy mà là sự tái cấu trúc toàn diện quy trình dạy và học nhằm nâng cao hiệu quả đào tạo.
+1. Đặt vấn đề và bối cảnh nghiên cứu
+Trong bối cảnh toàn cầu hóa và cách mạng công nghiệp lần thứ tư, nền kinh tế số đang chứng kiến sự thay đổi sâu xắc về cả phương thức sản xuất lẩn mô hình quản trị. Kinh tế số không chỉ đơn thuần là việc số hoá các hoạt động kinh doanh truyền thống mà là sự tái cấu trúc toàn diện chuỗi giá trị nhằm tối ưu hóa nguồn lực xã hội.
 
-2. Trích dẫn nguyên lý học tập tích cực
-Theo các nghiên cứu về giáo dục học: "Người học chỉ thực sự làm chủ kiến thức khi họ được chủ động tham gia vào quá trình khám phá, thảo luận và giải quyết các bài toán thực tiễn thay vì tiếp nhận thụ động từ một phía." Do đó, việc ứng dụng hệ thống quản lý học tập (LMS) kết hợp với các công cụ tương tác trực quan là một xu hướng tất yếu.
+2. Tổng quan tài liệu và cơ sở lý thuyết
+Theo các công trình nghiên cứu kinh tế học hiện đại: "Kinh tế số dựa trên nền tảng dữ liệu lớn, trí tuệ nhân tạo và điện toán đám mây để tạo ra các giá trị thặng dư mới thông qua mạng lưới kết nối tức thời giữa người sản xuất và người tiêu dùng." Do đó, việc xây dựng hạ tầng dữ liệu và thể chế bảo vệ dữ liệu cá nhân là yếu tố quyết định.
 
-Tuy nhiên, nhiều giảng viên vẫn còn lúng túng trong khâu thiết kế bài giảng điện tử. Các lỗi phổ biến thường gặp bao gồm: việc sao chép nguyên văn các đoạn tài liệu trên mạng internet mà không ghi rỏ trích dẫn nguồn gốc tác giả, sử dụng hình ảnh minh hoạ chưa được phép, hoặc văn phong diễn đạt còn lủng củng, câu văn què cụt thiếu chủ ngữ vị ngữ.
+Tuy nhiên, trong quá trình phát triển nhanh chóng, nhiều doanh nghiệp và nhà nghiên cứu vẫn còn lúng túng trong khâu trích dẫn số liệu khoa học. Các lỗi phổ biến thường gặp bao gồm: việc sao chép nguyên văn các số liệu khảo sát từ các báo cáo trên internet mà không ghi rỏ trích dẫn tác giả hoặc nguồn phát hành, sử dụng dữ liệu chưa kiểm chứng, hoặc văn phong diễn đạt còn lủng củng, câu văn què cụt thiếu chủ ngữ vị ngữ.
 
-3. Kết luận và định hướng
-Để nâng cao chất lượng đào tạo, mỗi nhà giáo cần chủ động rà soát kĩ lưỡng nội dung giáo trình, giáo án trước khi xuất bản hoặc đưa lên môi trường trực tuyến, đảm bảo tính liêm chính học thuật và tuân thủ nghiêm ngặt Luật Sở hữu Trí tuệ.`;
+3. Kết luận và khuyến nghị
+Để nâng cao chất lượng nghiên cứu khoa học và văn bản học thuật, tác giả cần chủ động rà soát kĩ lưỡng nội dung công trình trước khi xuất bản, đảm bảo tính liêm chính học thuật, tính chính xác của dữ liệu và tuân thủ các quy chuẩn trích dẫn khoa học quốc tế.`;
 
 export default function DocComplianceChecker() {
   const { showToast } = useNotification();
 
   // Input states
   const [inputText, setInputText] = useState<string>(SAMPLE_TEXT);
-  const [fileName, setFileName] = useState<string>('Van_ban_mau_kiem_tra.docx');
-  const [documentType, setDocumentType] = useState<string>('giao_trinh');
+  const [fileName, setFileName] = useState<string>('Van_ban_nghien_cuu_mau.docx');
+  const [documentType, setDocumentType] = useState<string>('luan_van');
   const [language, setLanguage] = useState<string>('vi');
   const [customApiKey, setCustomApiKey] = useState<string>(() => localStorage.getItem('user_gemini_api_key') || '');
   const [showKeyModal, setShowKeyModal] = useState<boolean>(false);
@@ -184,7 +184,7 @@ export default function DocComplianceChecker() {
 
       setResult(data.result);
       setActiveTab('turnitin');
-      showToast('Đã thẩm định đạo văn và phân tích nguồn trùng lặp thành công!', 'success');
+      showToast('Đã kiểm tra đạo văn và phân tích lỗi thành công!', 'success');
     } catch (err: any) {
       showToast(err.message || 'Lỗi khi kiểm tra tài liệu', 'error');
     } finally {
@@ -221,7 +221,7 @@ export default function DocComplianceChecker() {
       <body>
         <h1>${title.replace(/_/g, ' ')}</h1>
         <div class="meta">
-          Biên tập & Kiểm tra chuẩn mực học thuật bởi ITE PDFStudio (Luật SHTT 2022 & Quy chuẩn Ngôn ngữ)<br/>
+          Biên tập & Chuẩn hóa chính tả, ngữ pháp bởi ITE PDFStudio<br/>
           Thời gian xuất bản: ${new Date().toLocaleString('vi-VN')}
         </div>
         ${content.split('\n\n').map(p => `<p>${p.replace(/\n/g, '<br/>')}</p>`).join('')}
@@ -248,7 +248,7 @@ export default function DocComplianceChecker() {
     const timeStr = new Date().toLocaleTimeString('vi-VN');
 
     let report = `BÁO CÁO THẨM ĐỊNH ĐẠO VĂN & LIÊM CHÍNH HỌC THUẬT (TURNITIN SIMILARITY REPORT)\n`;
-    report += `Hệ thống: ITE PDFStudio Academic Integrity Engine (Luật SHTT 2022)\n`;
+    report += `Hệ thống: ITE PDFStudio Turnitin Similarity Engine\n`;
     report += `Thời gian xuất: ${dateStr} ${timeStr}\n`;
     report += `Tên tệp: ${fileName}\n`;
     report += `---------------------------------------------------------\n\n`;
@@ -256,11 +256,11 @@ export default function DocComplianceChecker() {
     report += `1. CHỈ SỐ TƯƠNG ĐỒNG TỔNG QUAN (SIMILARITY INDEX):\n`;
     report += `- Tỷ lệ tương đồng tổng thể: ${result.plagiarismAnalysis.similarityScore}%\n`;
     report += `- Đánh giá rủi ro: ${result.plagiarismAnalysis.riskLevel}\n`;
-    report += `- Điểm chuẩn mực học thuật: ${result.summary.qualityScore}/100\n`;
+    report += `- Điểm chất lượng học thuật: ${result.summary.qualityScore}/100\n`;
     report += `- Tổng số từ: ${result.summary.totalWords}\n`;
     report += `- Nguồn Internet: ${result.plagiarismAnalysis.breakdown?.internetSourcesPercent || 0}%\n`;
-    report += `- Ấn phẩm & Giáo trình: ${result.plagiarismAnalysis.breakdown?.publicationsPercent || 0}%\n`;
-    report += `- Kho luận văn người học: ${result.plagiarismAnalysis.breakdown?.studentPapersPercent || 0}%\n\n`;
+    report += `- Ấn phẩm & Tạp chí: ${result.plagiarismAnalysis.breakdown?.publicationsPercent || 0}%\n`;
+    report += `- Kho luận văn & bài nộp: ${result.plagiarismAnalysis.breakdown?.studentPapersPercent || 0}%\n\n`;
 
     report += `2. ĐÁNH GIÁ CHUYÊN MÔN:\n`;
     report += `${result.plagiarismAnalysis.assessment}\n\n`;
@@ -273,7 +273,7 @@ export default function DocComplianceChecker() {
       report += `\n`;
     });
 
-    report += `4. CHI TIẾT CÁC ĐOẠN NGHI VẤN ĐẠO VĂN & GỢI Ý PARAPHRASE:\n`;
+    report += `4. CHI TIẾT CÁC ĐOẠN TRÙNG LẶP & GỢI Ý VIẾT LẠI (PARAPHRASE):\n`;
     (result.plagiarismAnalysis.suspiciousPassages || []).forEach((p, idx) => {
       report += `(${idx + 1}) [Trùng với Nguồn ${p.sourceIndex} - ${p.similarityPercent}%]\n`;
       report += `   Đoạn văn gốc: "${p.text}"\n`;
@@ -286,7 +286,7 @@ export default function DocComplianceChecker() {
     });
 
     report += `---------------------------------------------------------\n`;
-    report += `Biên bản kiểm tra hợp chuẩn phục vụ đào tạo và giảng dạy LMS.\n`;
+    report += `Báo cáo kiểm tra đạo văn và soát lỗi tài liệu.\n`;
 
     const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
@@ -480,11 +480,11 @@ export default function DocComplianceChecker() {
         <div className="compliance-header-inner">
           <div className="compliance-badge">
             <ShieldCheck size={16} />
-            <span>Turnitin Similarity Engine & Thẩm Định Bản Quyền Số</span>
+            <span>Turnitin Similarity Engine & Grammar Checker</span>
           </div>
-          <h1>Hệ Thống Kiểm Tra Đạo Văn Chuyên Dụng (Chuẩn Turnitin) & Biên Tập Ngôn Ngữ</h1>
+          <h1>Kiểm Tra Đạo Văn (Chuẩn Turnitin), Lỗi Chính Tả & Ngữ Pháp</h1>
           <p className="compliance-desc">
-            Bóc tách chỉ số trùng lặp (Similarity Index), đối chiếu kho dữ liệu ấn phẩm, internet và luận văn. Đánh dấu highlight trực quan từng nguồn tương đồng, hỗ trợ viết lại (paraphrase) và rà soát lỗi chính tả theo Luật SHTT 2022.
+            Rà soát tính nguyên bản và độ tương đồng văn bản (Similarity Index), đối chiếu đa nguồn Internet, ấn phẩm, tạp chí và luận văn. Phát hiện chi tiết mọi lỗi chính tả, ngữ pháp, câu từ và hỗ trợ tải xuống bản đánh dấu hoàn thiện.
           </p>
 
           <div className="compliance-meta-bar">
@@ -506,11 +506,11 @@ export default function DocComplianceChecker() {
             <div className="form-group-inline">
               <label>Loại tài liệu:</label>
               <select value={documentType} onChange={e => setDocumentType(e.target.value)}>
-                <option value="giao_trinh">📚 Giáo trình Đại học / Cao đẳng</option>
-                <option value="giao_an">📝 Kế hoạch bài dạy / Giáo án (KHBD)</option>
-                <option value="luan_van">🎓 Luận văn Thạc sĩ / Khóa luận tốt nghiệp</option>
+                <option value="luan_van">🎓 Luận văn Thạc sĩ / Tiến sĩ / Khóa luận</option>
                 <option value="bai_bao">📄 Bài báo Khoa học / Đề tài Nghiên cứu</option>
-                <option value="tai_lieu">📑 Tài liệu đào tạo / Báo cáo chuyên đề</option>
+                <option value="giao_trinh">📚 Sách / Giáo trình / Tài liệu học thuật</option>
+                <option value="tieu_luan">📝 Tiểu luận / Báo cáo / Đồ án môn học</option>
+                <option value="van_ban">📑 Văn bản hành chính / Tài liệu chung</option>
               </select>
             </div>
 
