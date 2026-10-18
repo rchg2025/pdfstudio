@@ -474,7 +474,8 @@ export default function SystemOptimizer() {
   };
 
   const winOneLiner = `powershell -Command "Clear-RecycleBin -Force -ErrorAction SilentlyContinue; ipconfig /flushdns; Remove-Item -Path $env:TEMP\\* -Recurse -Force -ErrorAction SilentlyContinue; Write-Host 'Da don dep xong!' -ForegroundColor Green"`;
-  const macOneLiner = `rm -rf ~/Library/Caches/* ~/.Trash/*; sudo purge; sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder; echo "Đã dọn dẹp xong macOS!"`;
+  const macOneLiner = `rm -rf ~/Library/Caches/* ~/.Trash/*`;
+  const macPurgeCmd = `sudo purge`;
 
   return (
     <div className="sys-optimizer-page animate-fade-in">
@@ -742,23 +743,90 @@ export default function SystemOptimizer() {
           </div>
         </div>
 
-        {/* Lệnh chạy nhanh 1 dòng (One-liner command) */}
-        <div className="one-liner-banner">
-          <div className="one-liner-info">
-            <Terminal size={18} className="text-primary" />
-            <div className="one-liner-text">
-              <span className="one-liner-title">Hoặc dán chạy ngay câu lệnh 1 dòng (Không cần tải file):</span>
-              <code className="one-liner-code">{activeOs === 'windows' ? winOneLiner : macOneLiner}</code>
+        {/* Lệnh chạy nhanh từng bước không bị lỗi (Step-by-Step Command) */}
+        {activeOs === 'macos' ? (
+          <div className="terminal-steps-card">
+            <div className="steps-header">
+              <Terminal size={20} className="text-primary" />
+              <div>
+                <h4>Làm Theo 2 Bước Đơn Giản Sau Để Xóa File Tạm Trên Mac (100% Thành Công)</h4>
+                <p>Mở ứng dụng <strong>Terminal</strong> trên máy Mac của bạn và chạy 2 lệnh sau:</p>
+              </div>
+            </div>
+
+            <div className="steps-list">
+              {/* Bước 1 */}
+              <div className="step-item">
+                <div className="step-badge">Bước 1</div>
+                <div className="step-body">
+                  <div className="step-title-row">
+                    <strong>Xóa sạch Cache ứng dụng & Thùng rác (Không cần mật khẩu):</strong>
+                  </div>
+                  <div className="command-copy-box">
+                    <code>{macOneLiner}</code>
+                    <button 
+                      className="so-btn-sm so-btn-primary" 
+                      onClick={() => handleCopyOneLiner(macOneLiner, 'mac_step1')}
+                    >
+                      {copiedCmd === 'mac_step1' ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedCmd === 'mac_step1' ? 'Đã Chép' : 'Sao Chép'}</span>
+                    </button>
+                  </div>
+                  <span className="step-note">👉 Dán vào Terminal và nhấn <strong>Enter</strong>. Lệnh sẽ dọn dẹp sạch sẽ trong 2 giây.</span>
+                </div>
+              </div>
+
+              {/* Bước 2 */}
+              <div className="step-item">
+                <div className="step-badge">Bước 2</div>
+                <div className="step-body">
+                  <div className="step-title-row">
+                    <strong>Giải phóng bộ nhớ RAM nhàn rỗi (Tùy chọn):</strong>
+                  </div>
+                  <div className="command-copy-box">
+                    <code>{macPurgeCmd}</code>
+                    <button 
+                      className="so-btn-sm so-btn-outline" 
+                      onClick={() => handleCopyOneLiner(macPurgeCmd, 'mac_step2')}
+                    >
+                      {copiedCmd === 'mac_step2' ? <Check size={14} /> : <Copy size={14} />}
+                      <span>{copiedCmd === 'mac_step2' ? 'Đã Chép' : 'Sao Chép'}</span>
+                    </button>
+                  </div>
+                  <span className="step-note">
+                    👉 Dán vào Terminal rồi bấm Enter. Nếu máy hỏi <code>Password:</code>, bạn gõ mật khẩu mở máy Mac của bạn rồi nhấn <strong>Enter</strong> <em>(Lưu ý: macOS sẽ ẩn ký tự khi gõ mật khẩu, bạn cứ gõ bình thường rồi bấm Enter)</em>.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="troubleshoot-tip">
+              <strong>⚠️ Nếu Terminal đang bị treo ở chữ <code>dquote&gt;</code>:</strong> Hãy nhấn tổ hợp phím <strong>Ctrl + C</strong> trên bàn phím để hủy và quay lại bình thường, sau đó sao chép lại lệnh ở Bước 1 ở trên.
             </div>
           </div>
-          <button 
-            className="so-btn-sm so-btn-outline" 
-            onClick={() => handleCopyOneLiner(activeOs === 'windows' ? winOneLiner : macOneLiner, activeOs)}
-          >
-            {copiedCmd === activeOs ? <Check size={14} className="text-success" /> : <Copy size={14} />}
-            <span>{copiedCmd === activeOs ? 'Đã Sao Chép' : 'Sao Chép'}</span>
-          </button>
-        </div>
+        ) : (
+          <div className="terminal-steps-card">
+            <div className="steps-header">
+              <Terminal size={20} className="text-primary" />
+              <div>
+                <h4>Lệnh Chạy Nhanh Xóa Sạch File Tạm Trên Windows (PowerShell)</h4>
+                <p>Mở <strong>PowerShell</strong> (hoặc Command Prompt) và dán câu lệnh 1 dòng sau:</p>
+              </div>
+            </div>
+
+            <div className="command-copy-box" style={{ margin: '1rem 0' }}>
+              <code>{winOneLiner}</code>
+              <button 
+                className="so-btn-sm so-btn-primary" 
+                onClick={() => handleCopyOneLiner(winOneLiner, 'win_cmd')}
+              >
+                {copiedCmd === 'win_cmd' ? <Check size={14} /> : <Copy size={14} />}
+                <span>{copiedCmd === 'win_cmd' ? 'Đã Chép' : 'Sao Chép'}</span>
+              </button>
+            </div>
+            <span className="step-note">👉 Dán vào PowerShell rồi nhấn <strong>Enter</strong> để tự động dọn sạch Temp, DNS và Thùng rác.</span>
+          </div>
+        )}
 
         {/* Danh sách các tùy chọn dọn dẹp */}
         <div className="category-checklist-grid">

@@ -347,49 +347,128 @@
   line-height: 1.35;
 }
 
-/* ONE-LINER BANNER */
-.one-liner-banner {
+/* TERMINAL STEPS CARD */
+.terminal-steps-card {
+  background: #0f172a;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  color: #f8fafc;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.steps-header {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #334155;
+  padding-bottom: 1rem;
+}
+
+.steps-header h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #38bdf8;
+  font-weight: 700;
+}
+
+.steps-header p {
+  margin: 0.2rem 0 0;
+  font-size: 0.84rem;
+  color: #94a3b8;
+}
+
+.steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-lg);
+}
+
+.step-badge {
+  background: #0284c7;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.step-title-row {
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.command-copy-box {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  background: #0f172a;
-  color: #f8fafc;
-  padding: 1rem 1.25rem;
-  border-radius: var(--radius-lg);
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  background: #020617;
+  border: 1px solid #1e293b;
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
 }
 
-.one-liner-info {
-  display: flex;
-  align-items: center;
-  gap: 0.85rem;
-  flex: 1;
-  min-width: 280px;
+.command-copy-box code {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #38bdf8;
+  word-break: break-all;
 }
 
-.one-liner-text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  width: 100%;
-}
-
-.one-liner-title {
+.step-note {
   font-size: 0.82rem;
   color: #94a3b8;
-  font-weight: 600;
+  line-height: 1.4;
 }
 
-.one-liner-code {
-  font-family: monospace;
-  font-size: 0.84rem;
+.step-note code {
   color: #38bdf8;
   background: rgba(255, 255, 255, 0.08);
-  padding: 4px 8px;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.troubleshoot-tip {
+  margin-top: 1.25rem;
+  padding: 0.75rem 1rem;
+  background: rgba(245, 158, 11, 0.1);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  color: #fbbf24;
+  line-height: 1.4;
+}
+
+.troubleshoot-tip code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 5px;
   border-radius: 4px;
-  word-break: break-all;
+  font-family: monospace;
+  color: #fff;
 }
 
 /* CHECKLIST GRID */
