@@ -2021,6 +2021,240 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
       });
     }
 
+    // 22. TỰ ĐỘNG RÀ SOÁT BẢN QUYỀN VIDEO TRÊN KHÔNG GIAN MẠNG (ONLINE VIDEO COMPLIANCE AUDITOR)
+    if (req.method === 'POST' && action === 'auto-audit-video-compliance') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+
+      const {
+        videoUrl,
+        videoTitle = '',
+        authorOrChannel = '',
+        description = '',
+        purpose = 'teaching',
+        customApiKey
+      } = body || {};
+
+      if (!videoUrl && !videoTitle) {
+        return res.status(400).json({ error: 'Vui lòng cung cấp đường dẫn video hoặc tiêu đề/chủ đề video cần thẩm định.' });
+      }
+
+      let metadata: any = {
+        title: videoTitle,
+        uploader: authorOrChannel,
+        description: description,
+        duration: 0,
+        viewCount: null,
+        webpage_url: videoUrl,
+        extractor: 'direct'
+      };
+
+      // Nếu có videoUrl, thử gọi yt-dlp để bóc tách thông tin gốc trên không gian mạng
+      if (videoUrl && (videoUrl.startsWith('http://') || videoUrl.startsWith('https://'))) {
+        try {
+          const { exec } = await import('child_process');
+          const { promisify } = await import('util');
+          const execPromise = promisify(exec);
+          const safeUrl = videoUrl.replace(/(["\s'$`\\])/g, '\\$1');
+          const cmd = `yt-dlp --extractor-args "youtube:player_client=android,web" --dump-single-json --no-warnings --no-playlist "${safeUrl}"`;
+          const { stdout } = await execPromise(cmd, { timeout: 25000 });
+          const ytData = JSON.parse(stdout);
+          metadata = {
+            title: ytData.title || videoTitle || 'Video trích xuất từ Internet',
+            uploader: ytData.uploader || ytData.channel || authorOrChannel || 'Chưa rõ tác giả',
+            channel_url: ytData.channel_url || ytData.uploader_url || null,
+            duration: ytData.duration || 0,
+            viewCount: ytData.view_count || null,
+            thumbnail: ytData.thumbnail || null,
+            description: (ytData.description || '').slice(0, 3000),
+            license: ytData.license || null,
+            webpage_url: ytData.webpage_url || videoUrl,
+            extractor: ytData.extractor_key || ytData.extractor || 'web',
+            categories: ytData.categories || [],
+            tags: (ytData.tags || []).slice(0, 15)
+          };
+        } catch (e: any) {
+          console.warn('[AutoAudit] yt-dlp warning or direct url:', e.message);
+        }
+      }
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({
+          error: 'Chưa cấu hình Google Gemini API Key! Vui lòng cấu hình trong Cài đặt hệ thống để thực hiện rà soát AI.'
+        });
+      }
+
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
+
+      const prompt = `Bạn là Chuyên gia Cao cấp Thẩm định Pháp lý Bản quyền Số và Giám sát Thông tin Truyền thông theo Pháp luật Việt Nam (Luật Sở hữu Trí tuệ 2022 sửa đổi bổ sung, Luật Báo chí 2016, Luật An ninh mạng 2018 và Bộ luật Dân sự 2015).
+
+Dưới đây là thông tin về một video được khai thác từ không gian mạng cần rà soát để sử dụng với mục đích "${purpose === 'teaching' ? 'Giảng dạy / Khóa học LMS / Giáo dục' : purpose}":
+- Tiêu đề video: "${metadata.title}"
+- Tác giả / Kênh đăng tải gốc: "${metadata.uploader}"
+- Đường dẫn video: "${metadata.webpage_url || videoUrl}"
+- Nền tảng: ${metadata.extractor}
+- Thời lượng: ${metadata.duration} giây
+- Giấy phép hiển thị: ${metadata.license || 'Không có giấy phép Creative Commons công khai (Standard License)'}
+- Thẻ từ khóa (Tags): ${metadata.tags?.join(', ') || 'N/A'}
+- Mô tả tóm tắt tác phẩm:
+"""
+${metadata.description || 'Không có mô tả chi tiết'}
+"""
+
+HÃY THỰC HIỆN RÀ SOÁT TỰ ĐỘNG THEO CÁC NGUYÊN TẮC PHÁP LUẬT VIỆT NAM VÀ ĐƯA RA KẾT LUẬN THẨM ĐỊNH:
+1. ĐÁNH GIÁ QUYỀN TÁC GIẢ & NGUỒN GỐC (Điều 14, 25 Luật SHTT):
+   - Ai là chủ sở hữu quyền tác giả tiềm năng? Có phải cơ quan báo chí, hãng sản xuất hay nhà sáng tạo độc lập?
+   - Mức độ rủi ro khi sử dụng video này nếu không có thỏa thuận bản quyền bằng văn bản.
+2. PHÂN TÍCH NGOẠI LỆ TRÍCH DẪN GIẢNG DẠY (Fair Use - Khoản 1 Điều 25 Luật SHTT):
+   - Người dùng có được phép sử dụng video này theo ngoại lệ trích dẫn giảng dạy không? Điều kiện bắt buộc là gì? (Tối đa bao nhiêu % thời lượng, bắt buộc ghi credit tác giả thế nào?)
+3. RÀ SOÁT BẢN QUYỀN ÂM NHẠC & BẢN GHI ÂM (Điều 29, 30 Luật SHTT):
+   - Video có nguy cơ chứa bài hát hoặc bản ghi âm thương mại dễ bị quét bản quyền Content ID tự động trên mạng xã hội hoặc LMS không?
+4. RÀ SOÁT THÔNG TIN CẤM & QUYỀN NHÂN THÂN (Điều 9 Luật Báo chí, Điều 32 Bộ luật Dân sự, Luật An ninh mạng):
+   - Đánh giá khả năng chứa hình ảnh nhạy cảm cá nhân, trẻ em, tin chưa kiểm chứng hoặc xuyên tạc.
+5. CHECKLIST ĐÁNH GIÁ TỰ ĐỘNG TỪNG TIÊU CHÍ (passed/failed/warning) cho 6 tiêu chuẩn:
+   - cr_1: Ghi rõ họ tên tác giả & nguồn gốc tác phẩm (Điều 14, 25 Luật SHTT)
+   - cr_2: Giới hạn trích dẫn hợp lý - Fair Use (Điều 25 khoản 1 Luật SHTT)
+   - cr_3: Bản quyền âm thanh, nhạc nền BGM (Điều 29, 30 Luật SHTT)
+   - press_1: Thông tin cấm & bảo vệ trẻ em (Điều 9 Luật Báo chí & Điều 32 BLDS)
+   - cyber_1: Xác thực nguồn tin & chống deepfake / tin giả (Luật An ninh mạng)
+   - lms_tech: Tương thích lưu trữ và phân phối trên nền tảng đào tạo LMS
+6. BIÊN BẢN KHUYẾN NGHỊ PHÁP LÝ HÀNH ĐỘNG CỤ THỂ:
+   - Cách ghi dòng credit tác giả chuẩn mực.
+   - Hành động cần thực hiện trước khi đưa vào bài giảng.
+
+BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text ngoài, chỉ JSON thuần túy):
+{
+  "auditSummary": {
+    "riskStatus": "safe" | "warning" | "danger",
+    "riskTitle": "Tiêu đề kết luận tổng quan (VD: CẢNH BÁO: Cần ghi nguồn rõ ràng và trích đoạn ngắn...)",
+    "overallAssessment": "Đánh giá chi tiết 2-3 câu về tình trạng pháp lý của video này",
+    "copyrightOwnerIdentified": "Tên tác giả hoặc cơ quan chủ quản được nhận diện",
+    "fairUseEligibility": "Đủ điều kiện trích dẫn hợp lý" | "Cần xin phép bằng văn bản" | "Rủi ro cao",
+    "recommendedCreditText": "Nguồn video: [Tên tác giả/kênh] - URL: [link] - Sử dụng phục vụ mục đích giảng dạy theo Điều 25 Luật SHTT 2022"
+  },
+  "checklistEvaluation": [
+    {
+      "id": "cr_1",
+      "checked": true | false,
+      "autoVerdict": "ĐẠT" | "CẦN LƯU Ý" | "CHƯA ĐẠT",
+      "finding": "Nhận định tự động từ dữ liệu mạng",
+      "recommendation": "Khuyến nghị xử lý"
+    },
+    {
+      "id": "cr_2",
+      "checked": true | false,
+      "autoVerdict": "ĐẠT" | "CẦN LƯU Ý" | "CHƯA ĐẠT",
+      "finding": "Nhận định tự động",
+      "recommendation": "Khuyến nghị xử lý"
+    },
+    {
+      "id": "cr_3",
+      "checked": true | false,
+      "autoVerdict": "ĐẠT" | "CẦN LƯU Ý" | "CHƯA ĐẠT",
+      "finding": "Nhận định tự động",
+      "recommendation": "Khuyến nghị xử lý"
+    },
+    {
+      "id": "press_1",
+      "checked": true | false,
+      "autoVerdict": "ĐẠT" | "CẦN LƯU Ý" | "CHƯA ĐẠT",
+      "finding": "Nhận định tự động",
+      "recommendation": "Khuyến nghị xử lý"
+    },
+    {
+      "id": "cyber_1",
+      "checked": true | false,
+      "autoVerdict": "ĐẠT" | "CẦN LƯU Ý" | "CHƯA ĐẠT",
+      "finding": "Nhận định tự động",
+      "recommendation": "Khuyến nghị xử lý"
+    },
+    {
+      "id": "lms_tech",
+      "checked": true | false,
+      "autoVerdict": "ĐẠT" | "CẦN LƯU Ý" | "CHƯA ĐẠT",
+      "finding": "Nhận định tự động",
+      "recommendation": "Khuyến nghị xử lý"
+    }
+  ],
+  "actionableSteps": [
+    "Bước 1: ...",
+    "Bước 2: ..."
+  ]
+}`;
+
+      let resultJson: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue.slice(0, 5)) {
+        try {
+          const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const gRes = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: {
+                temperature: 0.2,
+                responseMimeType: 'application/json'
+              }
+            }),
+            signal: AbortSignal.timeout(45000)
+          });
+
+          if (!gRes.ok) {
+            const errData = await gRes.json().catch(() => null);
+            attemptErrors.push(`[${m}]: HTTP ${gRes.status} ${errData?.error?.message || ''}`);
+            continue;
+          }
+
+          const data = await gRes.json();
+          const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const cleaned = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(cleaned);
+          } catch {
+            const match = cleaned.match(/\{[\s\S]*\}/);
+            if (match) {
+              try { parsed = JSON.parse(match[0]); } catch {}
+            }
+          }
+
+          if (parsed && parsed.auditSummary && Array.isArray(parsed.checklistEvaluation)) {
+            resultJson = parsed;
+            usedModel = m;
+            break;
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message || 'Lỗi kết nối'}`);
+        }
+      }
+
+      if (!resultJson) {
+        return res.status(500).json({
+          error: `Không thể rà soát bản quyền video: ${attemptErrors[0] || 'Lỗi phân tích AI'}. Vui lòng thử lại.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        usedModel,
+        metadata,
+        audit: resultJson
+      });
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);

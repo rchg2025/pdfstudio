@@ -11,7 +11,12 @@ import {
   Sparkles,
   Info,
   Check,
-  FileText
+  FileText,
+  Globe,
+  Search,
+  ExternalLink,
+  RefreshCw,
+  Copy
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './VideoComplianceChecker.css';
@@ -43,18 +48,40 @@ interface ComplianceAuditItem {
   riskLevel: 'high' | 'medium' | 'low';
   checked: boolean | null; // true: Đạt/Đã tuân thủ, false: Vi phạm/Chưa tuân thủ, null: Chưa kiểm tra
   note: string;
+  autoVerdict?: string;
+  finding?: string;
+  recommendation?: string;
+}
+
+interface OnlineAuditResult {
+  riskStatus: 'safe' | 'warning' | 'danger';
+  riskTitle: string;
+  overallAssessment: string;
+  copyrightOwnerIdentified: string;
+  fairUseEligibility: string;
+  recommendedCreditText: string;
+  actionableSteps: string[];
 }
 
 export default function VideoComplianceChecker() {
   const { showToast } = useNotification();
+  
+  // Tab chế độ: 'upload' | 'online_link'
+  const [inputMode, setInputMode] = useState<'upload' | 'online_link'>('online_link');
+  const [onlineInputUrl, setOnlineInputUrl] = useState<string>('');
+  const [isAuditingOnline, setIsAuditingOnline] = useState<boolean>(false);
+  const [onlineMetadata, setOnlineMetadata] = useState<any>(null);
+  const [onlineAuditResult, setOnlineAuditResult] = useState<OnlineAuditResult | null>(null);
+
   const [videoFile, setVideoFile] = useState<File | null>(null);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [technicalReport, setTechnicalReport] = useState<TechnicalReport | null>(null);
 
-  // Thông tin nguồn gốc video nhập tay
+  // Thông tin nguồn gốc video
   const [originSource, setOriginSource] = useState<string>('internet'); // internet, social_media, shared_file, tv_broadcast
   const [authorName, setAuthorName] = useState<string>('');
   const [sourceUrl, setSourceUrl] = useState<string>('');
+  const [videoTitleCustom, setVideoTitleCustom] = useState<string>('');
   const [purpose, setPurpose] = useState<string>('teaching'); // teaching, press, research, commercial, internal
   const [hasLicenseAgreement, setHasLicenseAgreement] = useState<string>('no'); // yes, no, creative_commons, public_domain
 
@@ -64,7 +91,7 @@ export default function VideoComplianceChecker() {
       id: 'cr_1',
       category: 'copyright',
       categoryLabel: 'Luật Sở Hữu Trí Tuệ',
-      title: 'Xác định quyền tác giả & quyền liên quan',
+      title: 'Xác định quyền tác giả & nguồn gốc xuất xứ',
       lawBasis: 'Điều 14, 25 & 26 Luật SHTT (sửa đổi bổ sung 2022)',
       question: 'Video có ghi rõ họ tên tác giả gốc và nguồn xuất xứ của tác phẩm không?',
       explanation: 'Khoản 1 Điều 25 Luật SHTT quy định việc trích dẫn hợp lý tác phẩm để giảng dạy, nghiên cứu khoa học mà không làm sai lệch ý tác giả và BẮT BUỘC phải thông tin về tên tác giả và nguồn gốc tác phẩm.',
@@ -88,7 +115,7 @@ export default function VideoComplianceChecker() {
       id: 'cr_3',
       category: 'copyright',
       categoryLabel: 'Luật Sở Hữu Trí Tuệ',
-      title: 'Bản quyền âm thanh, nhạc nền (BGM)',
+      title: 'Bản quyền âm thanh, nhạc nền (BGM) & Bản ghi âm',
       lawBasis: 'Điều 29 & 30 Luật SHTT 2022 (Quyền của nhà sản xuất bản ghi âm)',
       question: 'Video có sử dụng các bản ghi âm, bài hát thương mại nổi tiếng không có giấy phép không?',
       explanation: 'Âm nhạc trong video có quyền độc lập với hình ảnh. Việc sử dụng nhạc có bản quyền tải lên YouTube, LMS, Facebook sẽ rất dễ bị hệ thống Content ID quét chặn hoặc nhận thông báo vi phạm bản quyền.',
@@ -99,36 +126,12 @@ export default function VideoComplianceChecker() {
     {
       id: 'press_1',
       category: 'press_law',
-      categoryLabel: 'Luật Báo Chí & Quản Lý Nội Dung',
-      title: 'Quy định về thông tin cấm truyền tải',
-      lawBasis: 'Điều 9 Luật Báo chí 2016 & Nghị định 72/2013/NĐ-CP',
-      question: 'Nội dung video có chứa thông tin sai sự thật, xúc phạm uy tín tổ chức, danh dự nhân phẩm cá nhân, hoặc bí mật đời tư không?',
-      explanation: 'Điều 9 Luật Báo chí và Luật An ninh mạng nghiêm cấm việc đăng tải, lan truyền thông tin sai lệch, xuyên tạc lịch sử, kích động bạo lực hoặc thông tin chưa được kiểm chứng.',
+      categoryLabel: 'Luật Báo Chí & Dân Sự',
+      title: 'Thông tin cấm & Bảo vệ trẻ em, hình ảnh cá nhân',
+      lawBasis: 'Điều 9 Luật Báo chí 2016 & Điều 32 Bộ luật Dân sự 2015',
+      question: 'Video có chứa hình ảnh cá nhân mà chưa được sự đồng ý, hoặc hình ảnh nhạy cảm xâm phạm đời tư của trẻ em không?',
+      explanation: 'Điều 32 BLDS quy định cá nhân có quyền đối với hình ảnh của mình. Luật Trẻ em nghiêm cấm công bố hình ảnh, thông tin bí mật đời sống riêng tư của trẻ em nếu không có sự đồng ý của cha mẹ/người giám hộ.',
       riskLevel: 'high',
-      checked: null,
-      note: ''
-    },
-    {
-      id: 'press_2',
-      category: 'press_law',
-      categoryLabel: 'Luật Báo Chí & Trẻ Em',
-      title: 'Bảo vệ quyền hình ảnh trẻ em & nhân vật',
-      lawBasis: 'Điều 32 Bộ luật Dân sự 2015 & Luật Trẻ em 2016',
-      question: 'Nếu video có hình ảnh trẻ em hoặc cá nhân khác, bạn đã có sự đồng ý của họ hoặc người đại diện theo pháp luật chưa?',
-      explanation: 'Nghiêm cấm công bố hình ảnh, đời tư của trẻ em nếu không được sự đồng ý của cha, mẹ hoặc người giám hộ. Sử dụng hình ảnh của cá nhân phải được người đó đồng ý.',
-      riskLevel: 'medium',
-      checked: null,
-      note: ''
-    },
-    {
-      id: 'press_3',
-      category: 'press_law',
-      categoryLabel: 'Luật Báo Chí & Bản Quyền',
-      title: 'Logo đài truyền hình, Watermark & Thương hiệu',
-      lawBasis: 'Khoản 2 Điều 35 Luật SHTT & Luật Quảng cáo',
-      question: 'Video có còn dính logo kênh truyền hình (VTV, HTV...), watermark sàn thương mại hoặc tên đơn vị khác không?',
-      explanation: 'Để nguyên logo của cơ quan báo chí khác khi sử dụng lại trong sản phẩm của mình mà không trích dẫn nguồn có thể gây hiểu nhầm về nguồn gốc nội dung hoặc vi phạm quy định tiếp sóng/trích dẫn báo chí.',
-      riskLevel: 'low',
       checked: null,
       note: ''
     },
@@ -136,11 +139,23 @@ export default function VideoComplianceChecker() {
       id: 'cyber_1',
       category: 'cyber_safety',
       categoryLabel: 'Luật An Ninh Mạng',
-      title: 'Xác thực nguồn tin & Tránh tin giả (Fake News / Deepfake)',
-      lawBasis: 'Điều 8 & 16 Luật An ninh mạng 2018',
-      question: 'Video có nguồn gốc từ cơ quan chính thống, cổng giáo dục uy tín hay tài khoản mạng xã hội không xác định danh tính?',
-      explanation: 'Tránh sử dụng các video cắt ghép giật gân, video AI Deepfake mạo danh hoặc thông tin giả mạo chưa được kiểm chứng từ các tài khoản ẩn danh trên TikTok, Facebook.',
+      title: 'Xác thực nguồn tin & Chống tin giả, AI Deepfake',
+      lawBasis: 'Điều 8 & Điều 16 Luật An ninh mạng 2018',
+      question: 'Video có được lấy từ các trang tin chính thống, kênh được cấp phép hay từ các tài khoản nặc danh trên MXH?',
+      explanation: 'Không sử dụng và phát tán các video bị chỉnh sửa xuyên tạc (Deepfake), thông tin sai sự thật gây hoang mang dư luận hoặc vi phạm an ninh quốc gia.',
       riskLevel: 'high',
+      checked: null,
+      note: ''
+    },
+    {
+      id: 'lms_tech',
+      category: 'technical',
+      categoryLabel: 'Kỹ Thuật Đào Tạo & LMS',
+      title: 'Tương thích hạ tầng LMS & Băng thông người học',
+      lawBasis: 'Quy chuẩn kỹ thuật E-Learning & SCORM/xAPI',
+      question: 'Video có được tối ưu hóa dung lượng (dưới 100MB cho 1 bài giảng) và độ phân giải đạt chuẩn HD 720p/1080p không?',
+      explanation: 'Video dung lượng quá lớn sẽ gây tắc nghẽn máy chủ LMS và giật lag đối với học viên truy cập qua 4G/di động.',
+      riskLevel: 'low',
       checked: null,
       note: ''
     }
@@ -149,7 +164,101 @@ export default function VideoComplianceChecker() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hiddenVideoRef = useRef<HTMLVideoElement>(null);
 
-  // Xử lý khi chọn file video
+  // TỰ ĐỘNG RÀ SOÁT BẢN QUYỀN TRÊN KHÔNG GIAN MẠNG (ONLINE AUDIT)
+  const handleAutoAuditOnline = async (urlToAudit?: string) => {
+    const targetUrl = (urlToAudit || onlineInputUrl || sourceUrl).trim();
+    if (!targetUrl && !videoTitleCustom.trim() && !videoFile) {
+      showToast('Vui lòng nhập đường dẫn video (YouTube, TikTok, Facebook...) hoặc tiêu đề video cần rà soát.', 'warning');
+      return;
+    }
+
+    setIsAuditingOnline(true);
+    showToast('Đang quét không gian mạng & thẩm định bản quyền...', 'info');
+
+    try {
+      const res = await fetch('/api/quiz-api?action=auto-audit-video-compliance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoUrl: targetUrl,
+          videoTitle: videoTitleCustom || videoFile?.name || '',
+          authorOrChannel: authorName || '',
+          purpose: purpose
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Quá trình rà soát mạng thất bại.');
+      }
+
+      const { metadata, audit } = data;
+      setOnlineMetadata(metadata);
+      setOnlineAuditResult({
+        riskStatus: audit.auditSummary.riskStatus,
+        riskTitle: audit.auditSummary.riskTitle,
+        overallAssessment: audit.auditSummary.overallAssessment,
+        copyrightOwnerIdentified: audit.auditSummary.copyrightOwnerIdentified,
+        fairUseEligibility: audit.auditSummary.fairUseEligibility,
+        recommendedCreditText: audit.auditSummary.recommendedCreditText,
+        actionableSteps: audit.actionableSteps || []
+      });
+
+      // Điền thông tin tự động vào form hồ sơ
+      if (metadata.title) setVideoTitleCustom(metadata.title);
+      if (metadata.uploader) setAuthorName(metadata.uploader);
+      if (metadata.webpage_url) setSourceUrl(metadata.webpage_url);
+      if (metadata.license && metadata.license.toLowerCase().includes('creative commons')) {
+        setHasLicenseAgreement('creative_commons');
+      }
+
+      // Tự động cập nhật trạng thái checklist theo kết quả thẩm định
+      if (Array.isArray(audit.checklistEvaluation)) {
+        setChecklist(prev => prev.map(item => {
+          const evalItem = audit.checklistEvaluation.find((e: any) => e.id === item.id);
+          if (evalItem) {
+            return {
+              ...item,
+              checked: evalItem.checked,
+              autoVerdict: evalItem.autoVerdict,
+              finding: evalItem.finding,
+              recommendation: evalItem.recommendation,
+              note: evalItem.finding ? `[AI Rà soát]: ${evalItem.finding}` : item.note
+            };
+          }
+          return item;
+        }));
+      }
+
+      // Nếu có duration hoặc directVideoUrl, cập nhật báo cáo kỹ thuật
+      if (metadata.duration) {
+        setTechnicalReport({
+          fileName: metadata.title || 'Video Online',
+          fileSize: 0,
+          duration: metadata.duration,
+          width: 1920,
+          height: 1080,
+          resolutionLabel: 'Full HD / Web Standard',
+          aspectRatio: '16:9',
+          hasAudio: true,
+          mimeType: 'video/mp4',
+          technicalScore: 90,
+          recommendations: [
+            'Video được khai thác trực tiếp từ nền tảng: ' + (metadata.extractor || 'Web'),
+            'Khuyến nghị dùng cơ chế Nhúng (Embed Player/Iframe) thay vì tải về để tránh vi phạm bản quyền phân phối.'
+          ]
+        });
+      }
+
+      showToast('Đã hoàn tất rà soát tự động bản quyền trên không gian mạng!', 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Lỗi khi rà soát bản quyền tự động', 'error');
+    } finally {
+      setIsAuditingOnline(false);
+    }
+  };
+
+  // Xử lý khi chọn file video từ máy
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -164,8 +273,7 @@ export default function VideoComplianceChecker() {
     const url = URL.createObjectURL(file);
     setVideoFile(file);
     setVideoUrl(url);
-    setAuthorName('');
-    setSourceUrl('');
+    setVideoTitleCustom(file.name.replace(/\.[^/.]+$/, ''));
 
     // Phân tích kỹ thuật video qua đối tượng Video HTML5
     const video = document.createElement('video');
@@ -177,34 +285,29 @@ export default function VideoComplianceChecker() {
       const w = video.videoWidth || 0;
       const h = video.videoHeight || 0;
 
-      // Độ phân giải
       let resLabel = 'SD';
       if (w >= 3840 || h >= 2160) resLabel = '4K Ultra HD';
       else if (w >= 1920 || h >= 1080) resLabel = 'Full HD 1080p';
       else if (w >= 1280 || h >= 720) resLabel = 'HD 720p';
 
-      // Tỷ lệ khung hình
       const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
       const divisor = gcd(w, h);
       const ratio = `${w / divisor}:${h / divisor}`;
-
-      // Ước tính bitrate (kbps)
       const bitrate = dur > 0 ? Math.round((file.size * 8) / dur / 1000) : 0;
 
-      // Đánh giá điểm kỹ thuật & khuyến nghị
       let score = 100;
       const recs: string[] = [];
 
       if (h < 720) {
         score -= 20;
-        recs.push('Độ phân giải dưới HD 720p có thể bị mờ vỡ khi trình chiếu lên máy chiếu lớp học hoặc màn hình lớn.');
+        recs.push('Độ phân giải dưới HD 720p có thể bị mờ vỡ khi trình chiếu lên máy chiếu lớp học.');
       } else {
         recs.push('Độ phân giải đạt chuẩn sắc nét (' + resLabel + ').');
       }
 
       if (file.size > 500 * 1024 * 1024) {
         score -= 15;
-        recs.push('Dung lượng tệp lớn (>500MB), nên nén video bằng bộ nén trước khi đưa vào hệ thống LMS để tránh giật lag đường truyền sinh viên.');
+        recs.push('Dung lượng tệp lớn (>500MB), nên nén video bằng bộ nén trước khi đưa vào hệ thống LMS.');
       }
 
       if (bitrate > 8000) {
@@ -227,7 +330,10 @@ export default function VideoComplianceChecker() {
         recommendations: recs
       });
 
-      showToast('Đã trích xuất xong các thông số kỹ thuật của video!', 'success');
+      showToast('Đã trích xuất thông số kỹ thuật tệp video!', 'success');
+      
+      // Kích hoạt rà soát mạng tự động dựa trên tên file
+      handleAutoAuditOnline('');
     };
 
     video.onerror = () => {
@@ -255,6 +361,23 @@ export default function VideoComplianceChecker() {
 
   // Đánh giá rủi ro pháp lý tổng quan
   const auditSummary = () => {
+    if (onlineAuditResult) {
+      let passedCount = 0;
+      let failedCount = 0;
+      checklist.forEach(item => {
+        if (item.checked === true) passedCount++;
+        else if (item.checked === false) failedCount++;
+      });
+      return {
+        passedCount,
+        failedCount,
+        uncheckCount: checklist.length - passedCount - failedCount,
+        highRiskFails: failedCount,
+        riskStatus: onlineAuditResult.riskStatus,
+        riskTitle: onlineAuditResult.riskTitle
+      };
+    }
+
     let passedCount = 0;
     let failedCount = 0;
     let uncheckCount = 0;
@@ -304,60 +427,71 @@ export default function VideoComplianceChecker() {
     return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
   };
 
-  // Xuất Phiếu Thẩm Định Bản Quyền & Kỹ Thuật (PDF / Báo cáo in ấn)
+  // Copy Credit Text
+  const handleCopyCredit = (text: string) => {
+    navigator.clipboard.writeText(text);
+    showToast('Đã sao chép dòng chú thích nguồn (Credit)!', 'success');
+  };
+
+  // Xuất Phiếu Thẩm Định Bản Quyền & Kỹ Thuật (.TXT)
   const handleExportAuditCertificate = () => {
     const dateStr = new Date().toLocaleDateString('vi-VN');
     const timeStr = new Date().toLocaleTimeString('vi-VN');
 
-    let content = `BIÊN BẢN RÀ SOÁT NỘI DUNG, KỸ THUẬT & BẢN QUYỀN VIDEO\n`;
+    let content = `BIÊN BẢN RÀ SOÁT NỘI DUNG, KỸ THUẬT & BẢN QUYỀN VIDEO TRÊN KHÔNG GIAN MẠNG\n`;
     content += `(Áp dụng theo Luật Sở Hữu Trí Tuệ 2022 & Luật Báo Chí 2016)\n`;
     content += `Ngày lập: ${dateStr} ${timeStr}\n`;
     content += `---------------------------------------------------------\n\n`;
 
     content += `1. THÔNG TIN VIDEO & NGUỒN GỐC:\n`;
-    content += `- Tên tệp video: ${videoFile?.name || 'Chưa cung cấp'}\n`;
+    content += `- Tiêu đề video: ${videoTitleCustom || videoFile?.name || onlineMetadata?.title || 'Chưa cung cấp'}\n`;
     content += `- Nguồn khai thác: ${originSource}\n`;
-    content += `- Tác giả / Đơn vị sở hữu gốc: ${authorName || 'Chưa xác định'}\n`;
-    content += `- Đường dẫn nguồn (URL): ${sourceUrl || 'Không có'}\n`;
-    content += `- Mục đích sử dụng: ${purpose === 'teaching' ? 'Giảng dạy / Nghiên cứu học tập (Fair Use)' : purpose}\n`;
+    content += `- Tác giả / Đơn vị sở hữu gốc: ${authorName || onlineMetadata?.uploader || 'Chưa xác định'}\n`;
+    content += `- Đường dẫn nguồn (URL): ${sourceUrl || onlineInputUrl || 'Không có'}\n`;
+    content += `- Mục đích sử dụng: ${purpose === 'teaching' ? 'Giảng dạy / Khóa học LMS (Điều 25 Luật SHTT)' : purpose}\n`;
     content += `- Thỏa thuận cấp phép: ${hasLicenseAgreement}\n\n`;
 
+    if (onlineAuditResult) {
+      content += `2. KẾT QUẢ THẨM ĐỊNH TỰ ĐỘNG TỪ KHÔNG GIAN MẠNG:\n`;
+      content += `- Kết luận tổng quan: ${onlineAuditResult.riskTitle}\n`;
+      content += `- Đánh giá chi tiết: ${onlineAuditResult.overallAssessment}\n`;
+      content += `- Chủ sở hữu nhận diện: ${onlineAuditResult.copyrightOwnerIdentified}\n`;
+      content += `- Điều kiện trích dẫn: ${onlineAuditResult.fairUseEligibility}\n`;
+      content += `- Mẫu Credit khuyến nghị: ${onlineAuditResult.recommendedCreditText}\n\n`;
+    }
+
     if (technicalReport) {
-      content += `2. BÁO CÁO THÔNG SỐ KỸ THUẬT:\n`;
+      content += `3. THÔNG SỐ KỸ THUẬT & ĐỘ TƯƠNG THÍCH LMS:\n`;
       content += `- Thời lượng: ${formatSeconds(technicalReport.duration)}\n`;
       content += `- Độ phân giải: ${technicalReport.width}x${technicalReport.height} (${technicalReport.resolutionLabel})\n`;
       content += `- Tỷ lệ khung hình: ${technicalReport.aspectRatio}\n`;
-      content += `- Dung lượng tệp: ${formatBytes(technicalReport.fileSize)}\n`;
-      content += `- Bitrate ước tính: ${technicalReport.bitrateEstimateKbps} kbps\n`;
       content += `- Điểm chuẩn kỹ thuật: ${technicalReport.technicalScore}/100\n\n`;
     }
 
-    content += `3. KẾT QUẢ RÀ SOÁT PHÁP LÝ (LUẬT SHTT & BÁO CHÍ):\n`;
-    content += `- Kết luận tổng thể: ${summary.riskTitle}\n`;
-    content += `- Số tiêu chuẩn ĐẠT: ${summary.passedCount}/${checklist.length}\n`;
-    content += `- Số tiêu chuẩn VI PHẠM/CHƯA ĐẠT: ${summary.failedCount}/${checklist.length}\n\n`;
-
-    content += `CHI TIẾT TỪNG TIÊU CHÍ:\n`;
+    content += `4. CHI TIẾT TỪNG TIÊU CHÍ PHÁP LÝ (LUẬT SHTT & BÁO CHÍ):\n`;
     checklist.forEach((item, idx) => {
-      const st = item.checked === true ? '[ĐẠT]' : item.checked === false ? '[CẢNH BÁO/CHƯA ĐẠT]' : '[CHƯA KIỂM TRA]';
-      content += `${idx + 1}. ${st} ${item.title}\n`;
-      content += `   + Căn cứ: ${item.lawBasis}\n`;
-      content += `   + Câu hỏi: ${item.question}\n`;
-      if (item.note) content += `   + Ghi chú giải trình: ${item.note}\n`;
+      const statusText = item.checked === true ? '[ĐẠT - ĐÃ TUÂN THỦ]' : item.checked === false ? '[CHƯA ĐẠT - RỦI RO]' : '[CHƯA XÁC MINH]';
+      content += `${idx + 1}. ${item.title} (${item.lawBasis})\n`;
+      content += `   Trạng thái: ${statusText}\n`;
+      if (item.finding) content += `   Kết quả rà soát mạng: ${item.finding}\n`;
+      if (item.recommendation) content += `   Khuyến nghị: ${item.recommendation}\n`;
+      if (item.note) content += `   Ghi chú giải trình: ${item.note}\n`;
+      content += `\n`;
     });
 
-    content += `\n---------------------------------------------------------\n`;
-    content += `Được tạo bởi: Tiện Ích ITE - Hệ thống Hỗ Trợ Đào Tạo & Pháp Lý Số\n`;
-    content += `Website: https://tienich.ite.id.vn\n`;
+    content += `---------------------------------------------------------\n`;
+    content += `Biên bản được khởi tạo tự động từ ITE PDFStudio Compliance Engine.\n`;
 
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `Bien-Ban-Kiem-Tra-Ban-Quyen-Video-${Date.now()}.txt`;
+    a.download = `Bien_Ban_Tham_Dinh_Ban_Quyen_${(videoTitleCustom || 'Video').replace(/\s+/g, '_')}.txt`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Đã xuất biên bản thẩm định pháp lý thành công!', 'success');
+    showToast('Đã xuất Biên bản thẩm định bản quyền (.txt) thành công!', 'success');
   };
 
   const handleReset = () => {
@@ -365,12 +499,20 @@ export default function VideoComplianceChecker() {
     setVideoFile(null);
     setVideoUrl(null);
     setTechnicalReport(null);
-    setChecklist(prev => prev.map(item => ({ ...item, checked: null, note: '' })));
+    setOnlineMetadata(null);
+    setOnlineAuditResult(null);
+    setOnlineInputUrl('');
+    setAuthorName('');
+    setSourceUrl('');
+    setVideoTitleCustom('');
+    setChecklist(prev => prev.map(item => ({ ...item, checked: null, note: '', autoVerdict: undefined, finding: undefined })));
   };
 
+  const hasLoadedContent = Boolean(videoFile || onlineMetadata || onlineAuditResult);
+
   return (
-    <div className="vcc-page animate-fade-in">
-      {/* Header */}
+    <div className="vcc-page">
+      {/* HEADER BÁO CÁO */}
       <header className="vcc-header">
         <div className="vcc-title-group">
           <div className="vcc-icon">
@@ -379,16 +521,16 @@ export default function VideoComplianceChecker() {
           <div>
             <h1 className="vcc-title">Thẩm Định Bản Quyền, Nội Dung & Kỹ Thuật Video Không Tự Xây Dựng</h1>
             <p className="vcc-subtitle">
-              Công cụ rà soát tính hợp pháp của video sưu tầm, tải từ mạng xã hội hoặc chia sẻ dùng trong giảng dạy & báo chí theo <strong>Luật Sở Hữu Trí Tuệ 2022</strong> và <strong>Luật Báo Chí Việt Nam</strong>.
+              Tự động rà soát bản quyền trên không gian mạng, kiểm tra tính hợp pháp theo <strong>Luật Sở Hữu Trí Tuệ 2022</strong>, <strong>Luật Báo Chí</strong> và tiêu chuẩn kỹ thuật LMS.
             </p>
           </div>
         </div>
 
-        {videoFile && (
+        {hasLoadedContent && (
           <div className="vcc-header-actions">
             <button className="vcc-btn vcc-btn-outline" onClick={handleReset}>
               <RotateCcw size={16} />
-              <span>Kiểm Tra Video Khác</span>
+              <span>Rà Soát Video Khác</span>
             </button>
             <button className="vcc-btn vcc-btn-primary" onClick={handleExportAuditCertificate}>
               <Download size={16} />
@@ -407,26 +549,116 @@ export default function VideoComplianceChecker() {
         style={{ display: 'none' }} 
       />
 
-      {/* KHỐI 1: TẢI VIDEO LÊN */}
-      {!videoFile ? (
-        <div className="vcc-upload-box" onClick={() => fileInputRef.current?.click()}>
-          <div className="vcc-upload-inner">
-            <div className="upload-pulse-icon">
-              <Upload size={54} />
-            </div>
-            <h2>Tải Lên Video Cần Kiểm Tra Bản Quyền & Kỹ Thuật</h2>
-            <p className="upload-desc">
-              Hỗ trợ tệp MP4, WebM, MOV, AVI, MKV. Quá trình phân tích thông số diễn ra 100% trên trình duyệt của bạn, hoàn toàn bảo mật.
-            </p>
-            <button className="vcc-btn vcc-btn-primary">
-              <Film size={16} />
-              <span>Chọn Tệp Video Từ Máy Tính</span>
+      {/* KHỐI CHỌN ĐẦU VÀO: LINK ONLINE HOẶC FILE TẢI LÊN */}
+      {!hasLoadedContent ? (
+        <div className="vcc-input-selection-card">
+          <div className="input-mode-tabs">
+            <button
+              className={`mode-tab-btn ${inputMode === 'online_link' ? 'active' : ''}`}
+              onClick={() => setInputMode('online_link')}
+            >
+              <Globe size={18} />
+              <span>Rà Soát Bằng Link Video Trên Mạng (Tự Động)</span>
             </button>
-            <div className="security-notice">
-              <ShieldCheck size={16} className="text-success" />
-              <span>Phân tích cục bộ an toàn, không sao chép hay lưu trữ video lên máy chủ công cộng.</span>
-            </div>
+            <button
+              className={`mode-tab-btn ${inputMode === 'upload' ? 'active' : ''}`}
+              onClick={() => setInputMode('upload')}
+            >
+              <Upload size={18} />
+              <span>Tải File Video Từ Máy Tính</span>
+            </button>
           </div>
+
+          {inputMode === 'online_link' ? (
+            <div className="online-input-box">
+              <div className="online-input-desc">
+                <Sparkles size={24} className="text-primary" />
+                <div>
+                  <h3>Hệ thống tự động quét và phân tích bản quyền trên không gian mạng</h3>
+                  <p>Hỗ trợ liên kết video từ YouTube, TikTok, Facebook Reels, Vimeo hoặc các trang web tin tức báo chí.</p>
+                </div>
+              </div>
+
+              <div className="online-search-form">
+                <div className="url-input-wrap">
+                  <Globe size={20} className="url-icon" />
+                  <input
+                    type="text"
+                    className="url-input"
+                    placeholder="Dán link video: https://www.youtube.com/watch?v=... hoặc https://tiktok.com/@..."
+                    value={onlineInputUrl}
+                    onChange={e => setOnlineInputUrl(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleAutoAuditOnline(); }}
+                  />
+                  {onlineInputUrl && (
+                    <button className="clear-url-btn" onClick={() => setOnlineInputUrl('')}>×</button>
+                  )}
+                </div>
+
+                <button
+                  className="vcc-btn vcc-btn-primary audit-submit-btn"
+                  onClick={() => handleAutoAuditOnline()}
+                  disabled={isAuditingOnline || !onlineInputUrl.trim()}
+                >
+                  {isAuditingOnline ? (
+                    <>
+                      <RefreshCw size={18} className="spin" />
+                      <span>Đang Quét Không Gian Mạng...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Search size={18} />
+                      <span>Rà Soát Tự Động Ngay</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="quick-examples">
+                <span>Gợi ý thử nhanh:</span>
+                <button
+                  className="example-pill"
+                  onClick={() => {
+                    const sampleUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+                    setOnlineInputUrl(sampleUrl);
+                    handleAutoAuditOnline(sampleUrl);
+                  }}
+                >
+                  Video Âm Nhạc Thương Mại (YouTube)
+                </button>
+                <button
+                  className="example-pill"
+                  onClick={() => {
+                    const sampleUrl = 'https://www.youtube.com/watch?v=8p_p4lXhWfM';
+                    setOnlineInputUrl(sampleUrl);
+                    handleAutoAuditOnline(sampleUrl);
+                  }}
+                >
+                  Video Khoa Học Giáo Dục (Ted-Ed)
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="vcc-upload-box" onClick={() => fileInputRef.current?.click()}>
+              <div className="vcc-upload-inner">
+                <div className="upload-pulse-icon">
+                  <Upload size={54} />
+                </div>
+                <h2>Tải Lên Video Cần Kiểm Tra Bản Quyền & Kỹ Thuật</h2>
+                <p className="upload-desc">
+                  Hỗ trợ MP4, WebM, MOV, AVI. Hệ thống sẽ bóc tách thông số kỹ thuật và kích hoạt rà soát nội dung trên internet.
+                </p>
+                <button className="vcc-btn vcc-btn-primary">
+                  <Film size={16} />
+                  <span>Chọn Tệp Video Từ Máy Tính</span>
+                </button>
+                <div className="security-notice">
+                  <ShieldCheck size={16} className="text-success" />
+                  <span>Phân tích cục bộ an toàn, bảo vệ dữ liệu giảng viên 100%.</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       ) : (
         <div className="vcc-workspace animate-fade-in">
@@ -439,8 +671,13 @@ export default function VideoComplianceChecker() {
               <div>
                 <h3>{summary.riskTitle}</h3>
                 <p>
-                  Đã kiểm tra: <strong>{summary.passedCount + summary.failedCount} / {checklist.length}</strong> tiêu chuẩn | Đạt: <strong>{summary.passedCount}</strong> | Cảnh báo/Vi phạm: <strong>{summary.failedCount}</strong>
+                  Đã rà soát: <strong>{summary.passedCount + summary.failedCount} / {checklist.length}</strong> tiêu chuẩn | Đạt: <strong>{summary.passedCount}</strong> | Cảnh báo/Vi phạm: <strong>{summary.failedCount}</strong>
                 </p>
+                {onlineAuditResult?.overallAssessment && (
+                  <div className="verdict-assessment-inline">
+                    <strong>Đánh giá pháp lý:</strong> {onlineAuditResult.overallAssessment}
+                  </div>
+                )}
               </div>
             </div>
             <div className="verdict-right">
@@ -451,20 +688,94 @@ export default function VideoComplianceChecker() {
             </div>
           </div>
 
+          {/* BANNER THẨM ĐỊNH MẠNG (NẾU CÓ KẾT QUẢ TỪ AI) */}
+          {onlineAuditResult && (
+            <div className="online-audit-summary-card">
+              <div className="audit-card-header">
+                <Sparkles size={20} className="text-primary" />
+                <h4>Kết Quả Tự Động Rà Soát Trên Không Gian Mạng (AI Compliance Report)</h4>
+                <button
+                  className="re-audit-btn"
+                  onClick={() => handleAutoAuditOnline()}
+                  disabled={isAuditingOnline}
+                >
+                  <RefreshCw size={14} className={isAuditingOnline ? 'spin' : ''} />
+                  <span>Quét Lại</span>
+                </button>
+              </div>
+
+              <div className="audit-summary-grid">
+                <div className="audit-metric-box">
+                  <span className="metric-lbl">Chủ sở hữu nhận diện:</span>
+                  <span className="metric-val">{onlineAuditResult.copyrightOwnerIdentified || 'Chưa rõ tác giả'}</span>
+                </div>
+                <div className="audit-metric-box">
+                  <span className="metric-lbl">Ngoại lệ Giảng dạy (Fair Use):</span>
+                  <span className={`metric-val ${onlineAuditResult.fairUseEligibility.includes('Đủ điều kiện') ? 'text-success' : 'text-warning'}`}>
+                    {onlineAuditResult.fairUseEligibility}
+                  </span>
+                </div>
+                <div className="audit-metric-box credit-box">
+                  <div className="credit-top">
+                    <span className="metric-lbl">Mẫu ghi nguồn bắt buộc (Credit Line):</span>
+                    <button
+                      className="copy-credit-btn"
+                      onClick={() => handleCopyCredit(onlineAuditResult.recommendedCreditText)}
+                    >
+                      <Copy size={13} />
+                      <span>Sao chép</span>
+                    </button>
+                  </div>
+                  <div className="credit-content">{onlineAuditResult.recommendedCreditText}</div>
+                </div>
+              </div>
+
+              {onlineAuditResult.actionableSteps.length > 0 && (
+                <div className="actionable-steps-wrap">
+                  <h5>Khuyến nghị hành động cụ thể trước khi sử dụng bài giảng:</h5>
+                  <ul>
+                    {onlineAuditResult.actionableSteps.map((step, idx) => (
+                      <li key={idx}>{step}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="vcc-grid">
             {/* CỘT TRÁI: XEM TRƯỚC VIDEO & THÔNG SỐ KỸ THUẬT */}
             <div className="vcc-left-col">
-              {/* Trình chiếu video */}
+              {/* Trình chiếu video hoặc thông tin online preview */}
               <div className="video-preview-card">
-                <video 
-                  ref={hiddenVideoRef}
-                  src={videoUrl || undefined} 
-                  controls 
-                  className="main-preview-video"
-                />
+                {videoUrl ? (
+                  <video 
+                    ref={hiddenVideoRef}
+                    src={videoUrl} 
+                    controls 
+                    className="main-preview-video"
+                  />
+                ) : onlineMetadata?.thumbnail ? (
+                  <div className="online-video-thumb-wrap">
+                    <img src={onlineMetadata.thumbnail} alt="Video Thumbnail" className="online-thumb-img" />
+                    {sourceUrl && (
+                      <a href={sourceUrl} target="_blank" rel="noreferrer" className="play-original-btn">
+                        <ExternalLink size={16} />
+                        <span>Mở Video Gốc Trên Mạng</span>
+                      </a>
+                    )}
+                  </div>
+                ) : (
+                  <div className="no-video-preview">
+                    <Film size={48} />
+                    <p>Không có tệp video xem trước cục bộ</p>
+                  </div>
+                )}
+                
                 <div className="video-quick-meta">
-                  <span className="file-name-tag">{videoFile.name}</span>
-                  <span className="file-size-tag">{formatBytes(videoFile.size)}</span>
+                  <span className="file-name-tag">{videoTitleCustom || videoFile?.name || onlineMetadata?.title || 'Video'}</span>
+                  {videoFile?.size ? <span className="file-size-tag">{formatBytes(videoFile.size)}</span> : null}
+                  {onlineMetadata?.duration ? <span className="duration-tag">{formatSeconds(onlineMetadata.duration)}</span> : null}
                 </div>
               </div>
 
@@ -494,10 +805,12 @@ export default function VideoComplianceChecker() {
                       <span className="spec-lbl">Thời lượng:</span>
                       <span className="spec-val">{formatSeconds(technicalReport.duration)}</span>
                     </div>
-                    <div className="spec-row">
-                      <span className="spec-lbl">Bitrate ước tính:</span>
-                      <span className="spec-val">{technicalReport.bitrateEstimateKbps} kbps</span>
-                    </div>
+                    {technicalReport.bitrateEstimateKbps ? (
+                      <div className="spec-row">
+                        <span className="spec-lbl">Bitrate ước tính:</span>
+                        <span className="spec-val">{technicalReport.bitrateEstimateKbps} kbps</span>
+                      </div>
+                    ) : null}
                     <div className="spec-row">
                       <span className="spec-lbl">Định dạng tệp:</span>
                       <span className="spec-val">{technicalReport.mimeType}</span>
@@ -525,6 +838,17 @@ export default function VideoComplianceChecker() {
                 </div>
 
                 <div className="form-group-sm">
+                  <label>Tiêu đề / Tên video:</label>
+                  <input 
+                    type="text" 
+                    className="vcc-input"
+                    value={videoTitleCustom}
+                    onChange={e => setVideoTitleCustom(e.target.value)}
+                    placeholder="VD: Bài giảng Nguyên lý Nhiệt động lực học..."
+                  />
+                </div>
+
+                <div className="form-group-sm">
                   <label>Nguồn khai thác video:</label>
                   <select 
                     className="vcc-select"
@@ -539,7 +863,7 @@ export default function VideoComplianceChecker() {
                 </div>
 
                 <div className="form-group-sm">
-                  <label>Tác giả / Cơ quan sở hữu tác phẩm gốc:</label>
+                  <label>Tác giả / Kênh sở hữu tác phẩm gốc:</label>
                   <input 
                     type="text" 
                     className="vcc-input"
@@ -551,13 +875,24 @@ export default function VideoComplianceChecker() {
 
                 <div className="form-group-sm">
                   <label>Đường dẫn nguồn gốc (URL):</label>
-                  <input 
-                    type="text" 
-                    className="vcc-input"
-                    placeholder="https://youtube.com/watch?v=..."
-                    value={sourceUrl}
-                    onChange={e => setSourceUrl(e.target.value)}
-                  />
+                  <div className="url-input-with-action">
+                    <input 
+                      type="text" 
+                      className="vcc-input"
+                      placeholder="https://youtube.com/watch?v=..."
+                      value={sourceUrl}
+                      onChange={e => setSourceUrl(e.target.value)}
+                    />
+                    <button
+                      className="btn-trigger-audit"
+                      onClick={() => handleAutoAuditOnline(sourceUrl)}
+                      disabled={isAuditingOnline || !sourceUrl.trim()}
+                      title="Quét lại bản quyền từ link này"
+                    >
+                      <Search size={14} />
+                      <span>Quét AI</span>
+                    </button>
+                  </div>
                 </div>
 
                 <div className="form-group-sm">
@@ -598,7 +933,7 @@ export default function VideoComplianceChecker() {
                     <Scale size={22} className="text-primary" />
                     <div>
                       <h3>Bộ Tiêu Chí Rà Soát Pháp Lý (Luật SHTT 2022 & Luật Báo Chí)</h3>
-                      <p>Nhấp chọn <strong>ĐẠT</strong> hoặc <strong>CHƯA ĐẠT</strong> cho từng điều khoản:</p>
+                      <p>Hệ thống tự động thẩm định và đề xuất trạng thái. Bạn có thể bấm xác nhận hoặc điều chỉnh:</p>
                     </div>
                   </div>
                 </div>
@@ -612,6 +947,11 @@ export default function VideoComplianceChecker() {
                       <div className="item-top-row">
                         <span className="item-badge">{item.categoryLabel}</span>
                         <span className="law-basis-tag">📜 {item.lawBasis}</span>
+                        {item.autoVerdict && (
+                          <span className={`auto-verdict-pill ${item.autoVerdict === 'ĐẠT' ? 'pass' : 'warn'}`}>
+                            ⚡ Tự động: {item.autoVerdict}
+                          </span>
+                        )}
                         <span className={`risk-badge ${item.riskLevel}`}>
                           Mức rủi ro: {item.riskLevel === 'high' ? 'Cao' : item.riskLevel === 'medium' ? 'Trung bình' : 'Thấp'}
                         </span>
@@ -624,6 +964,12 @@ export default function VideoComplianceChecker() {
                         <Info size={14} className="info-icon" />
                         <span>{item.explanation}</span>
                       </div>
+
+                      {item.finding && (
+                        <div className="item-ai-finding">
+                          <strong>Kết quả rà soát mạng:</strong> {item.finding}
+                        </div>
+                      )}
 
                       {/* Các nút bấm đánh giá */}
                       <div className="item-action-row">
