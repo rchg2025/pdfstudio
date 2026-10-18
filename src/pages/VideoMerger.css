@@ -742,10 +742,11 @@
 .meta-sort-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
-  padding: 3px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
-  font-size: 0.76rem;
+  font-size: 0.82rem;
   font-weight: 600;
   background: #ffffff;
   color: #475569;
@@ -781,3 +782,138 @@
   border-color: #38bdf8;
   background: #f0f9ff;
 }
+
+/* ========================================================
+   RESPONSIVE DESIGN CHO THIẾT BỊ DI ĐỘNG & MÀN HÌNH NHỎ
+   ======================================================== */
+@media (max-width: 768px) {
+  .vm-header {
+    padding: 24px 16px 20px;
+  }
+
+  .vm-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .vm-desc {
+    font-size: 0.92rem;
+  }
+
+  .vm-container {
+    padding: 0 12px;
+    margin-top: 16px;
+  }
+
+  /* Toolbar xếp dọc */
+  .vm-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 12px;
+  }
+
+  .toolbar-left, .toolbar-right {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .toolbar-left .btn-primary,
+  .toolbar-left .btn-secondary,
+  .toolbar-left .btn-danger-outline,
+  .toolbar-right .btn-success {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-group-inline {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .form-group-inline select {
+    flex: 1;
+    max-width: 60%;
+  }
+
+  /* Header cột Video: chia layout 2 hàng rõ rệt */
+  .column-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+  }
+
+  .header-title {
+    width: 100%;
+  }
+
+  .header-title h3 {
+    font-size: 0.92rem;
+    line-height: 1.4;
+  }
+
+  .header-meta {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 8px;
+    padding-top: 6px;
+    border-top: 1px dashed #e2e8f0;
+  }
+
+  .meta-sort-btn {
+    flex: 1;
+    min-width: 75px;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    text-align: center;
+  }
+
+  /* Clip cards trên mobile */
+  .clip-card {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .clip-card-left {
+    min-width: 0;
+    width: calc(100% - 32px);
+  }
+
+  .clip-card-actions {
+    width: 100%;
+    justify-content: flex-end;
+    padding-top: 6px;
+    border-top: 1px dotted #f1f5f9;
+  }
+
+  /* Output items trên mobile */
+  .output-item {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .output-actions,
+  .btn-download {
+    width: 100%;
+    justify-content: center;
+    box-sizing: border-box;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .vm-header h1 {
+    font-size: 1.4rem;
+  }
+
+  .meta-sort-btn {
+    font-size: 0.75rem;
+    padding: 5px 6px;
+  }
+}
+
