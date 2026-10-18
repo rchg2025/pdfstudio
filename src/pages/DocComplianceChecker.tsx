@@ -72,6 +72,8 @@ export default function DocComplianceChecker() {
 
   // Editable Refined Text
   const [editableRefinedText, setEditableRefinedText] = useState<string>('');
+  // Rich HTML giữ nguyên hình ảnh, biểu đồ, bảng biểu gốc của tài liệu tải lên
+  const [originalRichHtml, setOriginalRichHtml] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -102,11 +104,17 @@ export default function DocComplianceChecker() {
       let extracted = '';
       const lower = file.name.toLowerCase();
 
+      let richHtml = '';
+
       if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
         const arrayBuffer = await file.arrayBuffer();
         try {
-          const res = await mammoth.extractRawText({ arrayBuffer });
-          extracted = res.value || '';
+          // Trích xuất cả định dạng giàu HTML giữ nguyên hình ảnh, biểu đồ, bảng biểu
+          const htmlRes = await mammoth.convertToHtml({ arrayBuffer });
+          richHtml = htmlRes.value || '';
+
+          const textRes = await mammoth.extractRawText({ arrayBuffer });
+          extracted = textRes.value || '';
         } catch (docxErr: any) {
           // Trường hợp file là định dạng Word 97-2003 (.doc binary) không phải zip
           console.warn('Mammoth docx failed, falling back to text stream extraction:', docxErr);
@@ -170,6 +178,7 @@ export default function DocComplianceChecker() {
       }
 
       setInputText(extracted.trim());
+      setOriginalRichHtml(richHtml || '');
       setResult(null);
       showToast(`Đã nạp thành công ${extracted.trim().split(/\s+/).length} từ từ tệp!`, 'success');
     } catch (err: any) {
@@ -208,7 +217,46 @@ export default function DocComplianceChecker() {
         throw new Error(data.error || 'Quá trình kiểm tra thất bại.');
       }
 
-      setResult(data.result);
+      const resResult = data.result as DocumentComplianceResult;
+
+      // NẾU CÓ ORIGINAL RICH HTML (FILE WORD CÓ CHỨA HÌNH ẢNH, BIỂU ĐỒ), CHÈN TRỰC TIẾP HIGHLIGHT LÊN TRÊN RICH HTML ĐÓ
+      if (originalRichHtml && originalRichHtml.length > 50 && resResult) {
+        let enhancedHtml = originalRichHtml;
+        const passages = resResult.plagiarismAnalysis?.suspiciousPassages || [];
+
+        // 1. Highlight trùng lặp
+        passages.forEach((p) => {
+          if (p.text && p.text.trim().length > 6) {
+            const raw = p.text.trim();
+            const sid = p.sourceIndex || 1;
+            const esc = raw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const reg = new RegExp(`(?<!<[^>]*)(${esc})(?![^<]*>)`, 'gi');
+            enhancedHtml = enhancedHtml.replace(
+              reg,
+              `<mark class="turnitin-match match-${sid}" data-source="${sid}" title="Trùng nguồn #${sid} (${p.sourceTitle || ''})">$1</mark>`
+            );
+          }
+        });
+
+        // 2. Gạch chân lỗi chính tả
+        (resResult.issues || []).forEach((iss) => {
+          if (iss.original && iss.original.trim().length > 0) {
+            const orig = iss.original.trim();
+            const esc = orig.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const reg = new RegExp(`(?<!<[^>]*)(${esc})(?![^<]*>)`, 'gi');
+            const issueTypeClass = iss.type === 'spelling' ? 'issue-spelling' : iss.type === 'grammar' ? 'issue-grammar' : 'issue-style';
+            const tooltip = `${iss.type === 'spelling' ? 'Lỗi chính tả' : 'Lỗi ngữ pháp'}: "${orig}" ➔ Gợi ý: "${iss.suggestion || ''}". ${iss.reason || ''}`;
+            enhancedHtml = enhancedHtml.replace(
+              reg,
+              `<span class="grammar-issue-mark ${issueTypeClass}" title="${tooltip.replace(/"/g, '&quot;')}">$1</span>`
+            );
+          }
+        });
+
+        resResult.highlightedHtml = enhancedHtml;
+      }
+
+      setResult(resResult);
       setActiveTab('turnitin');
       showToast('Đã kiểm tra đạo văn và phân tích lỗi thành công!', 'success');
     } catch (err: any) {

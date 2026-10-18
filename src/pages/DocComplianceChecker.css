@@ -1159,6 +1159,34 @@
   line-height: 1.8;
 }
 
+.turnitin-highlight-view img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 16px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.turnitin-highlight-view table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  font-size: 0.95rem;
+}
+
+.turnitin-highlight-view table th,
+.turnitin-highlight-view table td {
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.turnitin-highlight-view table th {
+  background: #f1f5f9;
+  font-weight: 700;
+}
+
 /* Gạch chân lượn sóng đánh dấu lỗi chính tả / ngữ pháp trực tiếp như Microsoft Word */
 .grammar-issue-mark {
   position: relative;
