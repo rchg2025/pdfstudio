@@ -49,6 +49,26 @@ export default function ScreenRecorder() {
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [recordedBlobSize, setRecordedBlobSize] = useState<number>(0);
 
+  // Active stream state để render preview video phản ứng tức thì
+  const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
+  const [activeCamStream, setActiveCamStream] = useState<MediaStream | null>(null);
+
+  // Tự động gán stream vào previewVideoRef khi component render
+  useEffect(() => {
+    if (previewVideoRef.current && activeStream) {
+      previewVideoRef.current.srcObject = activeStream;
+      previewVideoRef.current.play().catch((err) => console.log('Preview play error:', err));
+    }
+  }, [activeStream, recordingStatus]);
+
+  // Tự động gán cam stream vào PIP video khi bật chế độ màn hình + camera
+  useEffect(() => {
+    if (pipCameraVideoRef.current && activeCamStream) {
+      pipCameraVideoRef.current.srcObject = activeCamStream;
+      pipCameraVideoRef.current.play().catch((err) => console.log('PIP cam play error:', err));
+    }
+  }, [activeCamStream, recordingStatus]);
+
   // Timer counter
   useEffect(() => {
     if (recordingStatus === 'recording') {
@@ -84,6 +104,8 @@ export default function ScreenRecorder() {
       combinedStreamRef.current.getTracks().forEach(track => track.stop());
       combinedStreamRef.current = null;
     }
+    setActiveStream(null);
+    setActiveCamStream(null);
   };
 
   // Format mm:ss
@@ -127,6 +149,7 @@ export default function ScreenRecorder() {
           audio: enableMic
         });
         cameraStreamRef.current = finalStream;
+        setActiveStream(finalStream);
       } else if (recordMode === 'audio') {
         // Chỉ thu Mic âm thanh
         finalStream = await navigator.mediaDevices.getUserMedia({
@@ -135,6 +158,7 @@ export default function ScreenRecorder() {
             noiseSuppression: true
           }
         });
+        setActiveStream(finalStream);
       } else {
         // Quay màn hình (screen hoặc both)
         const displayMediaOptions: any = {
@@ -177,9 +201,7 @@ export default function ScreenRecorder() {
               audio: false
             });
             cameraStreamRef.current = camStream;
-            if (pipCameraVideoRef.current) {
-              pipCameraVideoRef.current.srcObject = camStream;
-            }
+            setActiveCamStream(camStream);
           } catch {
             console.warn('Không thể truy cập camera cho PIP overlay.');
           }
@@ -189,15 +211,11 @@ export default function ScreenRecorder() {
         screenStream.getVideoTracks()[0].onended = () => {
           stopRecording();
         };
+
+        setActiveStream(finalStream);
       }
 
       combinedStreamRef.current = finalStream;
-
-      // Gắn live stream vào preview video
-      if (previewVideoRef.current) {
-        previewVideoRef.current.srcObject = finalStream;
-        previewVideoRef.current.play().catch(() => {});
-      }
 
       // Khởi tạo MediaRecorder
       let mimeType = 'video/webm;codecs=vp9,opus';
@@ -517,13 +535,28 @@ export default function ScreenRecorder() {
             ) : recordingStatus !== 'idle' ? (
               /* 2. Màn hình live stream trong lúc đang quay */
               <>
-                <video 
-                  ref={previewVideoRef} 
-                  autoPlay 
-                  muted 
-                  playsInline 
-                  className="live-video-player"
-                />
+                {recordMode === 'audio' ? (
+                  <div className="empty-stage-state animate-fade-in">
+                    <Mic size={64} className="text-primary animate-pulse" />
+                    <h3 style={{ color: '#ffffff' }}>Đang thu âm thanh Micro</h3>
+                    <p style={{ color: '#94a3b8' }}>
+                      Hệ thống đang ghi lại giọng nói của bạn với bộ lọc khử ồn thông minh.
+                    </p>
+                  </div>
+                ) : (
+                  <video 
+                    ref={previewVideoRef} 
+                    autoPlay 
+                    muted 
+                    playsInline 
+                    className="live-video-player"
+                    onLoadedMetadata={() => {
+                      if (previewVideoRef.current) {
+                        previewVideoRef.current.play().catch(() => {});
+                      }
+                    }}
+                  />
+                )}
                 {recordMode === 'both' && (
                   <div className="pip-camera-overlay">
                     <video 
@@ -531,6 +564,11 @@ export default function ScreenRecorder() {
                       autoPlay 
                       muted 
                       playsInline 
+                      onLoadedMetadata={() => {
+                        if (pipCameraVideoRef.current) {
+                          pipCameraVideoRef.current.play().catch(() => {});
+                        }
+                      }}
                     />
                   </div>
                 )}
