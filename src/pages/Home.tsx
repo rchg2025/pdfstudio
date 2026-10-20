@@ -51,7 +51,9 @@ import {
   FolderSearch,
   Zap,
   Scale,
-  ArrowRight
+  ArrowRight,
+  Search,
+  X
 } from 'lucide-react';
 import './Home.css';
 
@@ -438,8 +440,42 @@ const edTechTools = [
 ];
 
 
+// Hàm chuyển tiếng Việt có dấu thành không dấu để tìm kiếm thông minh
+const removeVietnameseTones = (str: string): string => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+};
+
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'edtech' | 'pdf' | 'image' | 'other'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Lọc công cụ theo từ khóa tìm kiếm
+  const filterTools = <T extends { title: string; desc: string; path: string }>(tools: T[]): T[] => {
+    if (!searchQuery.trim()) return tools;
+    const query = removeVietnameseTones(searchQuery.trim());
+    return tools.filter(tool => {
+      const title = removeVietnameseTones(tool.title);
+      const desc = removeVietnameseTones(tool.desc);
+      const path = removeVietnameseTones(tool.path);
+      return title.includes(query) || desc.includes(query) || path.includes(query);
+    });
+  };
+
+  const filteredEdTechTools = filterTools(edTechTools);
+  const filteredPdfTools = filterTools(pdfTools);
+  const filteredImageTools = filterTools(imageTools);
+  const filteredOtherTools = filterTools(otherTools);
+
+  const totalFilteredCount = 
+    filteredEdTechTools.length + 
+    filteredPdfTools.length + 
+    filteredImageTools.length + 
+    filteredOtherTools.length;
 
   return (
     <div className="animate-fade-in home-container">
@@ -491,6 +527,42 @@ const Home = () => {
             <ArrowRight size={18} className="qsp-arrow" />
           </Link>
         </div>
+
+        {/* Thanh tìm kiếm nhanh trực tiếp trên trang chủ */}
+        <div className="home-search-container">
+          <div className="home-search-box">
+            <Search size={20} className="home-search-icon" />
+            <input 
+              type="text" 
+              className="home-search-input"
+              placeholder="Tìm kiếm công cụ: PDF, đạo văn, nén ảnh, tạo đề thi, điểm danh, âm thanh..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            {searchQuery && (
+              <button 
+                type="button" 
+                className="home-search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Xóa tìm kiếm"
+              >
+                <X size={18} />
+              </button>
+            )}
+          </div>
+          {searchQuery && (
+            <div className="home-search-status">
+              Tìm thấy <strong>{totalFilteredCount}</strong> công cụ phù hợp với "{searchQuery}"
+              <button 
+                type="button" 
+                onClick={() => setSearchQuery('')} 
+                className="home-search-reset-link"
+              >
+                Xem tất cả
+              </button>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Thanh tab điều hướng danh mục mượt mà trên Desktop và Mobile */}
@@ -539,13 +611,13 @@ const Home = () => {
       </div>
 
       {/* SECTION 1: CÔNG CỤ GIẢNG DẠY & LMS */}
-      {(activeCategory === 'all' || activeCategory === 'edtech') && (
+      {(activeCategory === 'all' || activeCategory === 'edtech') && filteredEdTechTools.length > 0 && (
         <section style={{ marginTop: '2.5rem' }}>
           <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <GraduationCap size={28} /> Công Cụ Giảng Dạy & E-Learning LMS
           </h2>
           <div className="tools-grid">
-            {edTechTools.map((tool, index) => (
+            {filteredEdTechTools.map((tool, index) => (
               <Link 
                 to={tool.path} 
                 key={index} 
@@ -575,13 +647,13 @@ const Home = () => {
       )}
 
       {/* SECTION 2: CÔNG CỤ PDF */}
-      {(activeCategory === 'all' || activeCategory === 'pdf') && (
+      {(activeCategory === 'all' || activeCategory === 'pdf') && filteredPdfTools.length > 0 && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem' }}>
           <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <FileEdit size={28} /> Công Cụ PDF
           </h2>
           <div className="tools-grid">
-            {pdfTools.map((tool, index) => (
+            {filteredPdfTools.map((tool, index) => (
               <Link to={tool.path} key={index} className="tool-card">
                 <div className="tool-card-bg-icon">
                   {tool.icon}
@@ -600,13 +672,13 @@ const Home = () => {
       )}
 
       {/* SECTION 3: CÔNG CỤ ẢNH & AI */}
-      {(activeCategory === 'all' || activeCategory === 'image') && (
+      {(activeCategory === 'all' || activeCategory === 'image') && filteredImageTools.length > 0 && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem' }}>
           <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <ImageIcon size={28} /> Xử Lý Ảnh & AI
           </h2>
           <div className="tools-grid">
-            {imageTools.map((tool, index) => (
+            {filteredImageTools.map((tool, index) => (
               <Link to={tool.path} key={index} className="tool-card">
                 <div className="tool-card-bg-icon">
                   {tool.icon}
@@ -625,13 +697,13 @@ const Home = () => {
       )}
 
       {/* SECTION 4: TIỆN ÍCH KHÁC */}
-      {(activeCategory === 'all' || activeCategory === 'other') && (
+      {(activeCategory === 'all' || activeCategory === 'other') && filteredOtherTools.length > 0 && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem', marginBottom: '4rem' }}>
           <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
             <LinkIcon size={28} /> Tiện Ích Khác
           </h2>
           <div className="tools-grid">
-            {otherTools.map((tool, index) => (
+            {filteredOtherTools.map((tool, index) => (
               <Link to={tool.path} key={index} className="tool-card">
                 <div className="tool-card-bg-icon">
                   {tool.icon}
@@ -647,6 +719,27 @@ const Home = () => {
             ))}
           </div>
         </section>
+      )}
+
+      {/* Khi tìm kiếm không ra kết quả nào */}
+      {searchQuery && totalFilteredCount === 0 && (
+        <div style={{ textAlign: 'center', padding: '4rem 1rem', color: 'var(--text-secondary)' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>🔍</div>
+          <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
+            Không tìm thấy công cụ nào với từ khóa "{searchQuery}"
+          </h3>
+          <p style={{ marginBottom: '1.5rem' }}>
+            Vui lòng thử từ khóa khác hoặc bấm nút bên dưới để xem toàn bộ danh mục.
+          </p>
+          <button 
+            type="button" 
+            onClick={() => setSearchQuery('')}
+            className="btn btn-primary"
+            style={{ borderRadius: '9999px', padding: '0.6rem 1.5rem' }}
+          >
+            Hiển thị tất cả công cụ
+          </button>
+        </div>
       )}
     </div>
   );

@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { Layers, Menu, X, ChevronLeft, ChevronRight, Crown, User } from 'lucide-react';
+import { Layers, Menu, X, ChevronLeft, ChevronRight, Crown, User, Search } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import SubscriptionModal from './SubscriptionModal';
+import GlobalSearchModal from './GlobalSearchModal';
 import './Navbar.css';
 
 const Navbar = () => {
@@ -10,11 +11,24 @@ const Navbar = () => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
   const [isSubscriptionModalOpen, setIsSubscriptionModalOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   
   const location = useLocation();
   const { user, logout, isExpired, remainingDays } = useAuth();
   const navRef = useRef<HTMLElement>(null);
   const mobileNavRef = useRef<HTMLElement>(null);
+
+  // Keyboard shortcut Ctrl+K / Cmd+K to open search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   // Close mobile menu when route changes
   useEffect(() => {
@@ -185,6 +199,19 @@ const Navbar = () => {
           ref={mobileNavRef}
           className={`navbar-links-mobile ${isMobileMenuOpen ? 'mobile-open' : ''}`}
         >
+          {/* Mobile Search Button */}
+          <div className="mobile-search-btn-wrap" style={{ padding: '0 0 0.75rem', width: '100%' }}>
+            <button
+              type="button"
+              className="navbar-search-trigger mobile-search-trigger"
+              onClick={() => { setIsMobileMenuOpen(false); setIsSearchOpen(true); }}
+            >
+              <Search size={16} />
+              <span>Tìm kiếm công cụ...</span>
+              <kbd>Tìm</kbd>
+            </button>
+          </div>
+
           <div className="mobile-user-status-card">
             {user ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', width: '100%', marginBottom: '0.5rem' }}>
@@ -389,6 +416,18 @@ const Navbar = () => {
 
         {/* Auth Links - Desktop Only */}
         <div className="desktop-auth-links" style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          {/* Quick Search Button on Desktop */}
+          <button
+            type="button"
+            className="navbar-search-trigger"
+            onClick={() => setIsSearchOpen(true)}
+            title="Tìm kiếm nhanh công cụ (Ctrl+K hoặc ⌘K)"
+          >
+            <Search size={15} />
+            <span>Tìm kiếm...</span>
+            <kbd>⌘K</kbd>
+          </button>
+
           {user ? (
             <>
               {/* Subscription Pill */}
@@ -435,7 +474,17 @@ const Navbar = () => {
         </div>
 
         {/* Mobile Status + Menu Trigger Area */}
-        <div className="mobile-header-right" style={{ display: 'none', alignItems: 'center', gap: '0.5rem' }}>
+        <div className="mobile-header-right" style={{ display: 'none', alignItems: 'center', gap: '0.4rem' }}>
+          {/* Mobile Search Icon Button */}
+          <button
+            type="button"
+            className="mobile-search-icon-btn"
+            onClick={() => setIsSearchOpen(true)}
+            aria-label="Tìm kiếm công cụ"
+          >
+            <Search size={19} />
+          </button>
+
           {user && (
             <button
               type="button"
@@ -471,6 +520,11 @@ const Navbar = () => {
       <SubscriptionModal 
         isOpen={isSubscriptionModalOpen} 
         onClose={() => setIsSubscriptionModalOpen(false)} 
+      />
+
+      <GlobalSearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
       />
     </header>
   );
