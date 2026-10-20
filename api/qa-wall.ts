@@ -1915,12 +1915,12 @@ HÃY PHÂN TÍCH THEO NGUYÊN TẮC THUẬT TOÁN TURNITIN:
      (Lưu ý chuẩn Turnitin: Tổng 3 thành phần này có thể lớn hơn hoặc bằng similarityScore do các nguồn chồng lấn - overlapping sources).
    - riskLevel: "An toàn (0-15%)" | "Cảnh báo (16-35%)" | "Nguy cơ cao (>35%)".
 
-2. DANH SÁCH CÁC NGUỒN TƯƠNG ĐỒNG CHI TIẾT (MATCHED SOURCES - ĐÁNH SỐ 1, 2, 3...):
-   - Nhận diện từ 3 đến 10 nguồn tương đồng tiềm năng và sát thực tế nhất trên không gian mạng và kho học thuật:
-     + sourceId: số nguyên từ 1 đến N (1 là nguồn có tỷ lệ trùng % cao nhất).
-     + sourceTitle: Tên thật của tài liệu, giáo trình, bài báo khoa học hoặc website/domain (VD: "www.elib.vn", "www.ctu.edu.vn", "philpapers.org", "www.vhu.edu.vn", "namsaigon.edu.vn", "doanthanhnien.vn", "linhfishcr7.wordpress.com", "ceqard.vnu.edu.vn", "aws.amazon.com", "Tạp chí Khoa học ĐHQGHN", v.v.).
+2. DANH SÁCH CÁC NGUỒN TƯƠNG ĐỒNG CHI TIẾT (MATCHED SOURCES - TOÀN BỘ CÁC NGUỒN PHÁT HIỆN):
+   - BẮT BUỘC LIỆT KÊ TẤT CẢ các nguồn có dấu hiệu tương đồng (không giới hạn 3 hay 5 nguồn; nếu phát hiện 5, 8, 12, 15, 20 nguồn... hãy liệt kê ĐẦY ĐỦ TẤT CẢ):
+     + sourceId: số nguyên từ 1 đến N (đánh số liên tục 1, 2, 3, 4, 5... xếp thứ tự theo tỷ lệ trùng % từ cao xuống thấp).
+     + sourceTitle: Tên thật của tài liệu, giáo trình, luận văn, bài báo khoa học hoặc website/domain (VD: "www.elib.vn", "www.ctu.edu.vn", "philpapers.org", "www.vhu.edu.vn", "namsaigon.edu.vn", "doanthanhnien.vn", "linhfishcr7.wordpress.com", "ceqard.vnu.edu.vn", "aws.amazon.com", "Tạp chí Khoa học ĐHQGHN", "tailieu.vn", "123docz.net", "luanvan.net.vn", "tapchicongsan.org.vn", "thuvienphapluat.vn", v.v.).
      + sourceType: "internet" | "publication" | "student_paper" | "journal".
-     + similarityPercent: tỷ lệ % đóng góp của riêng nguồn này (VD: 7%, 4%, 2%, 1%...).
+     + similarityPercent: tỷ lệ % đóng góp của riêng nguồn này (VD: 8%, 5%, 4%, 3%, 2%, 1%...).
      + url: URL hoặc domain đại diện cụ thể.
      + authorOrDomain: Cơ quan ban hành, tác giả hoặc tên miền.
      + matchedText: Trích dẫn 1 câu tiêu biểu từ nguồn này trùng với bài nộp.
@@ -1928,7 +1928,7 @@ HÃY PHÂN TÍCH THEO NGUYÊN TẮC THUẬT TOÁN TURNITIN:
 3. DANH SÁCH CÁC PHÂN ĐOẠN TRÙNG KHỚP CỤ THỂ (SUSPICIOUS PASSAGES):
    - RÀ SOÁT KỸ LƯỠNG TOÀN BỘ VĂN BẢN, tìm TẤT CẢ các câu hoặc phân đoạn (từ 8 đến 45 từ) có sự trùng lặp với các nguồn trên:
      + text: Chuỗi câu/từ ngữ chính xác xuất hiện trong bài nộp của người dùng.
-     + sourceIndex: ID của nguồn tương ứng (1, 2, 3... đến 10) mà đoạn này trùng khớp.
+     + sourceIndex: ID của nguồn tương ứng (1, 2, 3... tương ứng với sourceId trong matchedSources) mà đoạn này trùng khớp.
      + sourceTitle: Tên nguồn tương ứng.
      + similarityPercent: % tương đồng của đoạn này (từ 70% đến 100%).
      + reason: Phân tích kỹ thuật (sao chép nguyên văn không mở ngoặc kép, diễn đạt lại câu nhưng giữ nguyên cấu trúc ý - patchwriting, trích dẫn không ghi nguồn theo Điều 25 Luật SHTT).

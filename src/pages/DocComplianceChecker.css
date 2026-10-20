@@ -1240,6 +1240,11 @@
 .turnitin-highlight-view mark.match-8 { background-color: #f0f9ff; color: #0369a1; border-bottom: 2px solid #0284c7; }
 .turnitin-highlight-view mark.match-9 { background-color: #faf5ff; color: #7e22ce; border-bottom: 2px solid #a855f7; }
 .turnitin-highlight-view mark.match-10 { background-color: #f0fdfa; color: #0f766e; border-bottom: 2px solid #14b8a6; }
+.turnitin-highlight-view mark.match-11 { background-color: #eef2ff; color: #3730a3; border-bottom: 2px solid #4f46e5; }
+.turnitin-highlight-view mark.match-12 { background-color: #fef2f2; color: #991b1b; border-bottom: 2px solid #b91c1c; }
+.turnitin-highlight-view mark.match-13 { background-color: #ecfdf5; color: #065f46; border-bottom: 2px solid #059669; }
+.turnitin-highlight-view mark.match-14 { background-color: #f3e8ff; color: #581c87; border-bottom: 2px solid #6b21a8; }
+.turnitin-highlight-view mark.match-15 { background-color: #ffe4e6; color: #9f1239; border-bottom: 2px solid #be123c; }
 
 /* Filtered source highlighting */
 .turnitin-highlight-view.filter-active mark.turnitin-match:not(.active-filter) {
@@ -1369,13 +1374,27 @@
 .source-card.match-8 .source-num-badge { background: #0284c7; }
 .source-card.match-9 .source-num-badge { background: #9333ea; }
 .source-card.match-10 .source-num-badge { background: #0d9488; }
+.source-card.match-11 .source-num-badge { background: #4f46e5; }
+.source-card.match-12 .source-num-badge { background: #b91c1c; }
+.source-card.match-13 .source-num-badge { background: #059669; }
+.source-card.match-14 .source-num-badge { background: #6b21a8; }
+.source-card.match-15 .source-num-badge { background: #be123c; }
 
-.passage-card.match-5 { border-left-color: #10b981; border-color: #bbf7d0; }
-.passage-card.match-6 { border-left-color: #0284c7; border-color: #bae6fd; }
-.passage-card.match-7 { border-left-color: #9333ea; border-color: #e9d5ff; }
-.passage-card.match-8 { border-left-color: #ea580c; border-color: #fed7aa; }
-.passage-card.match-9 { border-left-color: #0d9488; border-color: #99f6e4; }
-.passage-card.match-10 { border-left-color: #64748b; border-color: #e2e8f0; }
+.passage-card.match-1 { border-left: 4px solid #e11d48; border-color: #fecdd3; }
+.passage-card.match-2 { border-left: 4px solid #db2777; border-color: #fbcfe8; }
+.passage-card.match-3 { border-left: 4px solid #7c3aed; border-color: #ddd6fe; }
+.passage-card.match-4 { border-left: 4px solid #0891b2; border-color: #cffafe; }
+.passage-card.match-5 { border-left: 4px solid #16a34a; border-color: #bbf7d0; }
+.passage-card.match-6 { border-left: 4px solid #d97706; border-color: #fef08a; }
+.passage-card.match-7 { border-left: 4px solid #c2410c; border-color: #ffedd5; }
+.passage-card.match-8 { border-left: 4px solid #0284c7; border-color: #bae6fd; }
+.passage-card.match-9 { border-left: 4px solid #9333ea; border-color: #f3e8ff; }
+.passage-card.match-10 { border-left: 4px solid #0d9488; border-color: #99f6e4; }
+.passage-card.match-11 { border-left: 4px solid #4f46e5; border-color: #e0e7ff; }
+.passage-card.match-12 { border-left: 4px solid #b91c1c; border-color: #fee2e2; }
+.passage-card.match-13 { border-left: 4px solid #059669; border-color: #d1fae5; }
+.passage-card.match-14 { border-left: 4px solid #6b21a8; border-color: #f3e8ff; }
+.passage-card.match-15 { border-left: 4px solid #be123c; border-color: #ffe4e6; }
 
 .source-info-col {
   flex: 1;

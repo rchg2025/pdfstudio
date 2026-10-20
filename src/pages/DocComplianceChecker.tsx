@@ -387,18 +387,27 @@ export default function DocComplianceChecker() {
     };
     const matchedSources = result.plagiarismAnalysis.matchedSources || [];
 
-    // Danh sách màu sắc chuẩn của từng nguồn theo Turnitin
-    const turnitinColors: { [key: number]: { bg: string; text: string; lightBg: string; border: string } } = {
-      1: { bg: '#e11d48', text: '#ffffff', lightBg: '#fee2e2', border: '#e11d48' },
-      2: { bg: '#db2777', text: '#ffffff', lightBg: '#fdf2f8', border: '#db2777' },
-      3: { bg: '#7c3aed', text: '#ffffff', lightBg: '#f5f3ff', border: '#7c3aed' },
-      4: { bg: '#0891b2', text: '#ffffff', lightBg: '#ecfeff', border: '#0891b2' },
-      5: { bg: '#16a34a', text: '#ffffff', lightBg: '#f0fdf4', border: '#16a34a' },
-      6: { bg: '#d97706', text: '#ffffff', lightBg: '#fefce8', border: '#d97706' },
-      7: { bg: '#c2410c', text: '#ffffff', lightBg: '#fff7ed', border: '#c2410c' },
-      8: { bg: '#0284c7', text: '#ffffff', lightBg: '#f0f9ff', border: '#0284c7' },
-      9: { bg: '#9333ea', text: '#ffffff', lightBg: '#faf5ff', border: '#9333ea' },
-      10: { bg: '#0d9488', text: '#ffffff', lightBg: '#f0fdfa', border: '#0d9488' },
+    // Bảng màu Turnitin mở rộng hỗ trợ không giới hạn nguồn (quay vòng linh hoạt)
+    const turnitinPalette = [
+      { bg: '#e11d48', text: '#ffffff', lightBg: '#fee2e2', border: '#e11d48' }, // 1: Đỏ hồng
+      { bg: '#db2777', text: '#ffffff', lightBg: '#fdf2f8', border: '#db2777' }, // 2: Hồng sen
+      { bg: '#7c3aed', text: '#ffffff', lightBg: '#f5f3ff', border: '#7c3aed' }, // 3: Tím đậm
+      { bg: '#0891b2', text: '#ffffff', lightBg: '#ecfeff', border: '#0891b2' }, // 4: Xanh mòng két
+      { bg: '#16a34a', text: '#ffffff', lightBg: '#f0fdf4', border: '#16a34a' }, // 5: Xanh lá
+      { bg: '#d97706', text: '#ffffff', lightBg: '#fefce8', border: '#d97706' }, // 6: Vàng cam
+      { bg: '#c2410c', text: '#ffffff', lightBg: '#fff7ed', border: '#c2410c' }, // 7: Cam đất
+      { bg: '#0284c7', text: '#ffffff', lightBg: '#f0f9ff', border: '#0284c7' }, // 8: Xanh dương
+      { bg: '#9333ea', text: '#ffffff', lightBg: '#faf5ff', border: '#9333ea' }, // 9: Tím phong lan
+      { bg: '#0d9488', text: '#ffffff', lightBg: '#f0fdfa', border: '#0d9488' }, // 10: Xanh ngọc
+      { bg: '#4f46e5', text: '#ffffff', lightBg: '#eef2ff', border: '#4f46e5' }, // 11: Indigo
+      { bg: '#b91c1c', text: '#ffffff', lightBg: '#fef2f2', border: '#b91c1c' }, // 12: Đỏ thẫm
+      { bg: '#059669', text: '#ffffff', lightBg: '#ecfdf5', border: '#059669' }, // 13: Xanh lục
+      { bg: '#6b21a8', text: '#ffffff', lightBg: '#f3e8ff', border: '#6b21a8' }, // 14: Tím nho
+      { bg: '#be123c', text: '#ffffff', lightBg: '#ffe4e6', border: '#be123c' }, // 15: Hồng mận
+    ];
+    const getTurnitinColor = (sid: number) => {
+      const idx = (Math.max(1, sid) - 1) % turnitinPalette.length;
+      return turnitinPalette[idx];
     };
 
     const highlightedContent = result.highlightedHtml || inputText;
@@ -484,11 +493,11 @@ export default function DocComplianceChecker() {
         </table>
 
         <!-- DANH MỤC PRIMARY SOURCES -->
-        <div class="primary-sources-title">PRIMARY SOURCES</div>
+        <div class="primary-sources-title">PRIMARY SOURCES (${matchedSources.length} NGUỒN TƯƠNG ĐỒNG)</div>
         <table class="sources-table">
           ${matchedSources.map((src) => {
             const sid = src.sourceId || 1;
-            const styleColor = turnitinColors[sid] || turnitinColors[1];
+            const styleColor = getTurnitinColor(sid);
             const typeLabel = src.sourceType === 'internet' 
               ? 'Internet Source' 
               : src.sourceType === 'publication' 
@@ -548,17 +557,26 @@ export default function DocComplianceChecker() {
     };
     const matchedSources = result.plagiarismAnalysis.matchedSources || [];
 
-    const turnitinColors: { [key: number]: { bg: string; text: string; lightBg: string; border: string } } = {
-      1: { bg: '#e11d48', text: '#ffffff', lightBg: '#fee2e2', border: '#e11d48' },
-      2: { bg: '#db2777', text: '#ffffff', lightBg: '#fdf2f8', border: '#db2777' },
-      3: { bg: '#7c3aed', text: '#ffffff', lightBg: '#f5f3ff', border: '#7c3aed' },
-      4: { bg: '#0891b2', text: '#ffffff', lightBg: '#ecfeff', border: '#0891b2' },
-      5: { bg: '#16a34a', text: '#ffffff', lightBg: '#f0fdf4', border: '#16a34a' },
-      6: { bg: '#d97706', text: '#ffffff', lightBg: '#fefce8', border: '#d97706' },
-      7: { bg: '#c2410c', text: '#ffffff', lightBg: '#fff7ed', border: '#c2410c' },
-      8: { bg: '#0284c7', text: '#ffffff', lightBg: '#f0f9ff', border: '#0284c7' },
-      9: { bg: '#9333ea', text: '#ffffff', lightBg: '#faf5ff', border: '#9333ea' },
-      10: { bg: '#0d9488', text: '#ffffff', lightBg: '#f0fdfa', border: '#0d9488' },
+    const turnitinPalette = [
+      { bg: '#e11d48', text: '#ffffff', lightBg: '#fee2e2', border: '#e11d48' },
+      { bg: '#db2777', text: '#ffffff', lightBg: '#fdf2f8', border: '#db2777' },
+      { bg: '#7c3aed', text: '#ffffff', lightBg: '#f5f3ff', border: '#7c3aed' },
+      { bg: '#0891b2', text: '#ffffff', lightBg: '#ecfeff', border: '#0891b2' },
+      { bg: '#16a34a', text: '#ffffff', lightBg: '#f0fdf4', border: '#16a34a' },
+      { bg: '#d97706', text: '#ffffff', lightBg: '#fefce8', border: '#d97706' },
+      { bg: '#c2410c', text: '#ffffff', lightBg: '#fff7ed', border: '#c2410c' },
+      { bg: '#0284c7', text: '#ffffff', lightBg: '#f0f9ff', border: '#0284c7' },
+      { bg: '#9333ea', text: '#ffffff', lightBg: '#faf5ff', border: '#9333ea' },
+      { bg: '#0d9488', text: '#ffffff', lightBg: '#f0fdfa', border: '#0d9488' },
+      { bg: '#4f46e5', text: '#ffffff', lightBg: '#eef2ff', border: '#4f46e5' },
+      { bg: '#b91c1c', text: '#ffffff', lightBg: '#fef2f2', border: '#b91c1c' },
+      { bg: '#059669', text: '#ffffff', lightBg: '#ecfdf5', border: '#059669' },
+      { bg: '#6b21a8', text: '#ffffff', lightBg: '#f3e8ff', border: '#6b21a8' },
+      { bg: '#be123c', text: '#ffffff', lightBg: '#ffe4e6', border: '#be123c' },
+    ];
+    const getTurnitinColor = (sid: number) => {
+      const idx = (Math.max(1, sid) - 1) % turnitinPalette.length;
+      return turnitinPalette[idx];
     };
 
     const highlightedContent = result.highlightedHtml || inputText;
@@ -665,11 +683,11 @@ export default function DocComplianceChecker() {
           </tr>
         </table>
 
-        <div class="primary-sources-title">PRIMARY SOURCES</div>
+        <div class="primary-sources-title">PRIMARY SOURCES (${matchedSources.length} NGUỒN TƯƠNG ĐỒNG)</div>
         <table class="sources-table">
           ${matchedSources.map((src) => {
             const sid = src.sourceId || 1;
-            const styleColor = turnitinColors[sid] || turnitinColors[1];
+            const styleColor = getTurnitinColor(sid);
             const typeLabel = src.sourceType === 'internet' 
               ? 'Internet Source' 
               : src.sourceType === 'publication' 
