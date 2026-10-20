@@ -109,8 +109,19 @@ export default function DocComplianceChecker() {
       if (lower.endsWith('.docx') || lower.endsWith('.doc')) {
         const arrayBuffer = await file.arrayBuffer();
         try {
-          // Trích xuất cả định dạng giàu HTML giữ nguyên hình ảnh, biểu đồ, bảng biểu
-          const htmlRes = await mammoth.convertToHtml({ arrayBuffer });
+          // Trích xuất định dạng HTML giàu có nhúng toàn bộ ảnh base64 qua convertImage
+          const htmlRes = await mammoth.convertToHtml(
+            { arrayBuffer },
+            {
+              convertImage: mammoth.images.imgElement((image: any) => {
+                return image.read('base64').then((imageBuffer: string) => {
+                  return {
+                    src: `data:${image.contentType};base64,${imageBuffer}`
+                  };
+                });
+              })
+            }
+          );
           richHtml = htmlRes.value || '';
 
           const textRes = await mammoth.extractRawText({ arrayBuffer });
@@ -896,7 +907,7 @@ export default function DocComplianceChecker() {
                     )}
                   </div>
                   <div 
-                    className={`turnitin-highlight-view ${selectedSourceId ? 'filter-active' : ''}`}
+                    className={`turnitin-highlight-view original-doc-viewer ${selectedSourceId ? 'filter-active' : ''}`}
                     onClick={(e) => {
                       const target = (e.target as HTMLElement).closest('mark.turnitin-match') as HTMLElement;
                       if (target) {
@@ -915,6 +926,26 @@ export default function DocComplianceChecker() {
                         ? (result.highlightedHtml || '').replace(new RegExp(`class="([^"]*match-${selectedSourceId}[^"]*)"`, 'gi'), 'class="$1 active-filter"')
                         : (result.highlightedHtml || '')
                     }}
+                  />
+                </div>
+              ) : originalRichHtml ? (
+                /* HIỂN THỊ NGUYÊN VẸN ĐỊNH DẠNG TÀI LIỆU GỐC (HÌNH ẢNH, BẢNG BIỂU, TIÊU ĐỀ) NGAY KHI TẢI LÊN */
+                <div className="turnitin-reader-container">
+                  <div className="turnitin-reader-legend" style={{ background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '0.82rem', color: '#64748b' }}>
+                      📄 <strong>Bản xem trước tài liệu gốc:</strong> Giữ nguyên hình ảnh, biểu đồ, bảng biểu và cấu trúc phân đoạn.
+                    </span>
+                    <button 
+                      type="button" 
+                      onClick={() => setOriginalRichHtml('')}
+                      style={{ background: 'none', border: 'none', color: '#2563eb', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}
+                    >
+                      Chuyển sang dạng soạn thảo văn bản
+                    </button>
+                  </div>
+                  <div 
+                    className="turnitin-highlight-view original-doc-viewer"
+                    dangerouslySetInnerHTML={{ __html: originalRichHtml }}
                   />
                 </div>
               ) : (

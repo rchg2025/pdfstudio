@@ -1246,6 +1246,53 @@
 .turnitin-highlight-view mark.match-14 { background-color: #f3e8ff; color: #581c87; border-bottom: 2px solid #6b21a8; }
 .turnitin-highlight-view mark.match-15 { background-color: #ffe4e6; color: #9f1239; border-bottom: 2px solid #be123c; }
 
+/* Enhanced Original Document Viewer Styles (Giữ nguyên bố cục gốc, hình ảnh, bảng biểu, sơ đồ) */
+.turnitin-highlight-view.original-doc-viewer img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.turnitin-highlight-view.original-doc-viewer table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 1rem;
+}
+
+.turnitin-highlight-view.original-doc-viewer table, 
+.turnitin-highlight-view.original-doc-viewer th, 
+.turnitin-highlight-view.original-doc-viewer td {
+  border: 1px solid #cbd5e1;
+  padding: 8px 12px;
+}
+
+.turnitin-highlight-view.original-doc-viewer th {
+  background-color: #f8fafc;
+  font-weight: 700;
+}
+
+.turnitin-highlight-view.original-doc-viewer p {
+  margin-bottom: 1rem;
+  line-height: 1.75;
+  text-align: justify;
+}
+
+.turnitin-highlight-view.original-doc-viewer h1,
+.turnitin-highlight-view.original-doc-viewer h2,
+.turnitin-highlight-view.original-doc-viewer h3,
+.turnitin-highlight-view.original-doc-viewer h4 {
+  font-family: inherit;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
 /* Filtered source highlighting */
 .turnitin-highlight-view.filter-active mark.turnitin-match:not(.active-filter) {
   opacity: 0.35;
