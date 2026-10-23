@@ -2526,24 +2526,30 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
       const startOffset = Number(chunkOffset) || 0;
       const endOffset = startOffset + Number(duration);
 
-      const prompt = `Bạn là chuyên gia chuyển giọng nói sang văn bản (Speech-to-Text & Subtitle AI) hàng đầu thế giới bằng tiếng Việt.
-Dưới đây là một phân đoạn âm thanh trích từ video.
-MỐC THỜI GIAN CỦA PHÂN ĐOẠN NÀY TRONG TOÀN BỘ VIDEO: Bắt đầu từ ${startOffset.toFixed(1)}s đến ${endOffset.toFixed(1)}s (thời lượng phân đoạn: ${Math.round(duration)} giây).
-${contextHint ? `Gợi ý ngữ cảnh/tiêu đề video: "${contextHint}".` : ''}
+      const prompt = `Bạn là chuyên gia thẩm âm và chuyển giọng nói sang văn bản (Speech-to-Text & Subtitle Synchronizer) chính xác nhất thế giới bằng tiếng Việt.
+Dưới đây là một tệp âm thanh trích xuất trực tiếp từ video.
+MỐC THỜI GIAN CỦA TỆP ÂM THANH NÀY TRONG VIDEO GỐC: Bắt đầu từ giây ${startOffset.toFixed(2)}s đến giây ${endOffset.toFixed(2)}s (tổng thời lượng: ${duration.toFixed(2)}s).
+${contextHint ? `Ngữ cảnh/Tựa đề video: "${contextHint}".` : ''}
 
-NHIỆM VỤ BẮT BUỘC:
-1. Lắng nghe KỸ LƯỠNG từ đầu đến cuối và bóc tách TOÀN BỘ mọi câu nói, thuyết minh tiếng Việt có trong phân đoạn âm thanh này, KHÔNG ĐƯỢC BỎ SÓT bất kỳ câu từ nào.
-2. Căn mốc thời gian "start" và "end" chuẩn xác theo THỜI GIAN THỰC TẾ TRONG VIDEO (tính bằng giây, phải nằm trong khoảng từ ${startOffset.toFixed(1)}s đến ${endOffset.toFixed(1)}s).
-3. Chia câu hợp lý theo từng nhịp nói tự nhiên (mỗi đoạn khoảng 4 - 10 từ để người xem dễ đọc trên màn hình).
-4. Viết đúng chính tả tiếng Việt, chuẩn văn phong tiếng Việt có dấu.
+YÊU CẦU ĐỒNG BỘ THỜI GIAN KHẮT KHE (TIMECODE ACCURACY):
+1. MỐC START VÀ END PHẢI CHUẨN XÁC THEO TỪNG TỪ PHÁT RA:
+   - "start": Khoảnh khắc CHÍNH XÁC (tính bằng giây trong video gốc, cộng thêm offset ${startOffset.toFixed(2)}s) khi người nói bắt đầu cất tiếng phát âm từ đầu tiên của câu đó.
+   - "end": Khoảnh khắc người nói kết thúc phát âm từ cuối cùng của câu đó.
+   - TUYỆT ĐỐI KHÔNG làm tròn đại khái hay ước lượng ngẫu nhiên. Phải lắng nghe đúng điểm sóng âm người nói mở miệng và ngắt tiếng.
+2. PHÂN ĐOẠN NGẮN GỌN (CHIA THEO CỤM TỪ / CÂU NGẮN):
+   - Mỗi câu phụ đề chỉ nên dài từ 3 đến 7 từ (thời lượng hiển thị khoảng 1.2s đến 3.5s) để chữ xuất hiện trùng khớp từng nhịp nói, người xem video đọc kịp và không bị trễ phụ đề.
+3. KHÔNG BỎ SÓT LỜI THOẠI:
+   - Bóc tách đầy đủ 100% tất cả các câu từ, tiếng thuyết minh, hướng dẫn.
+4. GIÁ TRỊ START/END:
+   - Tất cả giá trị "start" và "end" PHẢI nằm trong khoảng [${startOffset.toFixed(2)}, ${endOffset.toFixed(2)}] và "end" luôn lớn hơn "start".
 
-BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không có chữ giải thích nào ngoài JSON):
+BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không dùng markdown giải thích bên ngoài):
 {
   "subtitles": [
     {
-      "start": ${startOffset.toFixed(1)},
-      "end": ${(startOffset + 3.2).toFixed(1)},
-      "text": "Nội dung câu nói thực tế..."
+      "start": ${startOffset.toFixed(2)},
+      "end": ${(startOffset + 2.4).toFixed(2)},
+      "text": "Nội dung câu nói thực tế"
     }
   ]
 }`;

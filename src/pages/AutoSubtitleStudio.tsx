@@ -257,8 +257,8 @@ export default function AutoSubtitleStudio() {
       const totalAudioDuration = decodedBuffer.duration;
       const sampleRate = 16000; // 16kHz chuẩn tối ưu nhận diện giọng nói Speech-to-Text
 
-      // 2. Chia âm thanh thành các block vừa phải (~60s đến 90s mỗi block) để AI bóc tách chi tiết 100% không sót từ
-      const CHUNK_DURATION = 75; // 75 giây mỗi phân đoạn
+      // 2. Chia âm thanh thành các block chuẩn ~45 giây để AI căn mốc thời gian cực kỳ chuẩn xác
+      const CHUNK_DURATION = 45; // 45 giây mỗi phân đoạn giúp timecode khớp chuẩn từng từ
       const totalChunks = Math.ceil(totalAudioDuration / CHUNK_DURATION);
       const allRecognizedSubs: SubtitleItem[] = [];
 
@@ -310,22 +310,27 @@ export default function AutoSubtitleStudio() {
 
         if (Array.isArray(data.subtitles) && data.subtitles.length > 0) {
           data.subtitles.forEach((s: any, idx: number) => {
-            const rawStart = Number(s.start ?? chunkStart);
-            const rawEnd = Number(s.end ?? (rawStart + 3));
+            const rawStart = Number(s.start);
+            const rawEnd = Number(s.end);
             const subText = String(s.text || '').trim();
 
-            if (subText.length > 0) {
+            if (subText.length > 0 && !isNaN(rawStart)) {
+              // Căn chỉnh thời gian chuẩn xác
+              const finalStart = Math.max(chunkStart, Math.min(totalAudioDuration, rawStart));
+              const finalEnd = Math.max(finalStart + 0.4, Math.min(totalAudioDuration, isNaN(rawEnd) ? finalStart + 2.5 : rawEnd));
+
               allRecognizedSubs.push({
                 id: `sub-ai-${chunkIdx}-${idx}-${Date.now()}`,
-                start: Math.round(Math.max(chunkStart, Math.min(chunkEnd, rawStart)) * 10) / 10,
-                end: Math.round(Math.max(rawStart + 0.5, Math.min(totalAudioDuration, rawEnd)) * 10) / 10,
+                start: Math.round(finalStart * 100) / 100,
+                end: Math.round(finalEnd * 100) / 100,
                 text: subText
               });
             }
           });
 
-          // Cập nhật liên tục lên UI để người dùng thấy phụ đề xuất hiện dần dần
-          setSubtitles([...allRecognizedSubs].sort((a, b) => a.start - b.start));
+          // Sắp xếp theo thứ tự thời gian tăng dần và cập nhật UI liên tục
+          allRecognizedSubs.sort((a, b) => a.start - b.start);
+          setSubtitles([...allRecognizedSubs]);
         }
       }
 
