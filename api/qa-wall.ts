@@ -2509,7 +2509,7 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
 
     // ACTION: Bóc tách lời thoại video / audio sang phụ đề chuẩn thời gian thực (Audio Transcribe to Subtitles)
     if (action === 'transcribe-video-audio') {
-      const { audioBase64, mimeType = 'audio/mp3', duration = 60, contextHint = '' } = req.body;
+      const { audioBase64, mimeType = 'audio/mp3', duration = 60, contextHint = '', chunkOffset = 0 } = req.body;
 
       if (!audioBase64) {
         return res.status(400).json({ error: 'Thiếu dữ liệu audio âm thanh base64 để nhận diện.' });
@@ -2523,27 +2523,27 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
 
       const modelQueue = await resolveGeminiModels(apiKey, 'gemini-1.5-flash');
 
+      const startOffset = Number(chunkOffset) || 0;
+      const endOffset = startOffset + Number(duration);
+
       const prompt = `Bạn là chuyên gia chuyển giọng nói sang văn bản (Speech-to-Text & Subtitle AI) hàng đầu thế giới bằng tiếng Việt.
-Dưới đây là tệp âm thanh trích từ video có thời lượng khoảng ${Math.round(duration)} giây.
-${contextHint ? `Gợi ý ngữ cảnh video: "${contextHint}".` : ''}
+Dưới đây là một phân đoạn âm thanh trích từ video.
+MỐC THỜI GIAN CỦA PHÂN ĐOẠN NÀY TRONG TOÀN BỘ VIDEO: Bắt đầu từ ${startOffset.toFixed(1)}s đến ${endOffset.toFixed(1)}s (thời lượng phân đoạn: ${Math.round(duration)} giây).
+${contextHint ? `Gợi ý ngữ cảnh/tiêu đề video: "${contextHint}".` : ''}
 
-NHIỆM VỤ:
-1. Hãy lắng nghe và bóc tách CHÍNH XÁC 100% từng câu nói/lời thoại tiếng Việt trong tệp âm thanh này.
-2. Xác định mốc thời gian bắt đầu (start tính bằng giây) và kết thúc (end tính bằng giây) chuẩn xác của từng câu nói, không được trùng lặp chồng chéo và không vượt quá độ dài video (${Math.round(duration)}s).
-3. Đảm bảo đúng chính tả tiếng Việt, có dấu câu đầy đủ, ngắt câu tự nhiên theo nhịp thở (khoảng 3 - 8 từ mỗi đoạn phụ đề để người xem dễ đọc trên màn hình).
+NHIỆM VỤ BẮT BUỘC:
+1. Lắng nghe KỸ LƯỠNG từ đầu đến cuối và bóc tách TOÀN BỘ mọi câu nói, thuyết minh tiếng Việt có trong phân đoạn âm thanh này, KHÔNG ĐƯỢC BỎ SÓT bất kỳ câu từ nào.
+2. Căn mốc thời gian "start" và "end" chuẩn xác theo THỜI GIAN THỰC TẾ TRONG VIDEO (tính bằng giây, phải nằm trong khoảng từ ${startOffset.toFixed(1)}s đến ${endOffset.toFixed(1)}s).
+3. Chia câu hợp lý theo từng nhịp nói tự nhiên (mỗi đoạn khoảng 4 - 10 từ để người xem dễ đọc trên màn hình).
+4. Viết đúng chính tả tiếng Việt, chuẩn văn phong tiếng Việt có dấu.
 
-BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không dùng markdown giải thích bên ngoài):
+BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không có chữ giải thích nào ngoài JSON):
 {
   "subtitles": [
     {
-      "start": 0.0,
-      "end": 2.5,
-      "text": "Chào mừng các bạn đã đến với bài học hôm nay."
-    },
-    {
-      "start": 2.8,
-      "end": 5.4,
-      "text": "Trong video này chúng ta sẽ tìm hiểu về các thao tác."
+      "start": ${startOffset.toFixed(1)},
+      "end": ${(startOffset + 3.2).toFixed(1)},
+      "text": "Nội dung câu nói thực tế..."
     }
   ]
 }`;
@@ -2572,7 +2572,8 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không dùng mark
               }],
               generationConfig: {
                 responseMimeType: 'application/json',
-                temperature: 0.1
+                temperature: 0.1,
+                maxOutputTokens: 8192
               }
             })
           });

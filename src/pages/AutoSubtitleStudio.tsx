@@ -235,7 +235,7 @@ export default function AutoSubtitleStudio() {
     if (selectedSubId === id) setSelectedSubId(null);
   };
 
-  // TỰ ĐỘNG NHẬN DIỆN LỜI THOẠI BẰNG AI GEMINI MULTIMODAL KẾT HỢP TRÍCH XUẤT AUDIO
+  // TỰ ĐỘNG NHẬN DIỆN LỜI THOẠI BẰNG AI GEMINI MULTIMODAL KẾT HỢP TRÍCH XUẤT AUDIO TOÀN DIỆN
   const handleAutoSpeechToText = async () => {
     if (!videoRef.current || !videoFile) {
       showToast('Vui lòng chọn video trước khi nhận diện giọng nói.', 'warning');
@@ -243,77 +243,98 @@ export default function AutoSubtitleStudio() {
     }
 
     setIsRecognizing(true);
-    setStatusMessage('Đang trích xuất dải âm thanh chất lượng cao từ video...');
-    setRecognitionProgress(10);
+    setStatusMessage('Đang trích xuất dải âm thanh chất lượng cao từ toàn bộ video...');
+    setRecognitionProgress(5);
 
     try {
-      // 1. Trích xuất âm thanh video bằng AudioContext
+      // 1. Trích xuất toàn bộ âm thanh video bằng AudioContext
       const arrayBuffer = await videoFile.arrayBuffer();
-      setRecognitionProgress(25);
-      setStatusMessage('Đang giải mã âm thanh thoại...');
+      setRecognitionProgress(15);
+      setStatusMessage('Đang giải mã âm thanh toàn bộ video...');
 
       const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
       const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-      setRecognitionProgress(45);
+      const totalAudioDuration = decodedBuffer.duration;
+      const sampleRate = 16000; // 16kHz chuẩn tối ưu nhận diện giọng nói Speech-to-Text
 
-      // Nếu video quá dài (> 5 phút), cắt mẫu 3 phút đầu hoặc lấy toàn bộ
-      const maxDuration = Math.min(decodedBuffer.duration, 180);
-      const offlineCtx = new OfflineAudioContext(1, Math.ceil(decodedBuffer.sampleRate * maxDuration), decodedBuffer.sampleRate);
-      const source = offlineCtx.createBufferSource();
-      source.buffer = decodedBuffer;
-      source.connect(offlineCtx.destination);
-      source.start(0, 0, maxDuration);
+      // 2. Chia âm thanh thành các block vừa phải (~60s đến 90s mỗi block) để AI bóc tách chi tiết 100% không sót từ
+      const CHUNK_DURATION = 75; // 75 giây mỗi phân đoạn
+      const totalChunks = Math.ceil(totalAudioDuration / CHUNK_DURATION);
+      const allRecognizedSubs: SubtitleItem[] = [];
 
-      setStatusMessage('Đang mã hóa âm thanh PCM gửi AI nhận diện...');
-      setRecognitionProgress(60);
-      const renderedMonoBuffer = await offlineCtx.startRendering();
-      const wavBlob = audioBufferToWavBlob(renderedMonoBuffer);
+      for (let chunkIdx = 0; chunkIdx < totalChunks; chunkIdx++) {
+        const chunkStart = chunkIdx * CHUNK_DURATION;
+        const chunkEnd = Math.min(totalAudioDuration, (chunkIdx + 1) * CHUNK_DURATION);
+        const chunkLength = chunkEnd - chunkStart;
 
-      // 2. Chuyển sang Base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => {
-          const res = reader.result as string;
-          resolve(res);
-        };
-        reader.onerror = reject;
-      });
-      reader.readAsDataURL(wavBlob);
-      const audioBase64 = await base64Promise;
+        const currentPct = Math.round(((chunkIdx) / totalChunks) * 80) + 15;
+        setRecognitionProgress(currentPct);
+        setStatusMessage(`Đang bóc tách âm thanh phần ${chunkIdx + 1}/${totalChunks} (${Math.round(chunkStart)}s - ${Math.round(chunkEnd)}s)...`);
 
-      setRecognitionProgress(75);
-      setStatusMessage('AI đang lắng nghe và bóc tách từng câu nói chuẩn xác theo thời gian...');
+        // Kết xuất phân đoạn âm thanh này sang mono 16kHz
+        const offlineCtx = new OfflineAudioContext(1, Math.ceil(sampleRate * chunkLength), sampleRate);
+        const source = offlineCtx.createBufferSource();
+        source.buffer = decodedBuffer;
+        source.connect(offlineCtx.destination);
+        source.start(0, chunkStart, chunkLength);
 
-      // 3. Gửi lên backend AI Transcribe
-      const res = await fetch('/api/qa-wall?action=transcribe-video-audio', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          audioBase64,
-          mimeType: 'audio/wav',
-          duration: maxDuration,
-          contextHint: videoFile.name.replace(/\.[^/.]+$/, '')
-        })
-      });
+        const renderedMonoBuffer = await offlineCtx.startRendering();
+        const wavBlob = audioBufferToWavBlob(renderedMonoBuffer);
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || `HTTP ${res.status}`);
+        // Chuyển sang Base64
+        const reader = new FileReader();
+        const base64Promise = new Promise<string>((resolve, reject) => {
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+        });
+        reader.readAsDataURL(wavBlob);
+        const audioBase64 = await base64Promise;
+
+        // Gọi AI nhận diện từng phân đoạn
+        const res = await fetch('/api/qa-wall?action=transcribe-video-audio', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            audioBase64,
+            mimeType: 'audio/wav',
+            duration: chunkLength,
+            chunkOffset: chunkStart,
+            contextHint: videoFile.name.replace(/\.[^/.]+$/, '')
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || `Lỗi bóc tách phần ${chunkIdx + 1}`);
+        }
+
+        if (Array.isArray(data.subtitles) && data.subtitles.length > 0) {
+          data.subtitles.forEach((s: any, idx: number) => {
+            const rawStart = Number(s.start ?? chunkStart);
+            const rawEnd = Number(s.end ?? (rawStart + 3));
+            const subText = String(s.text || '').trim();
+
+            if (subText.length > 0) {
+              allRecognizedSubs.push({
+                id: `sub-ai-${chunkIdx}-${idx}-${Date.now()}`,
+                start: Math.round(Math.max(chunkStart, Math.min(chunkEnd, rawStart)) * 10) / 10,
+                end: Math.round(Math.max(rawStart + 0.5, Math.min(totalAudioDuration, rawEnd)) * 10) / 10,
+                text: subText
+              });
+            }
+          });
+
+          // Cập nhật liên tục lên UI để người dùng thấy phụ đề xuất hiện dần dần
+          setSubtitles([...allRecognizedSubs].sort((a, b) => a.start - b.start));
+        }
       }
 
-      if (Array.isArray(data.subtitles) && data.subtitles.length > 0) {
-        const generatedSubs: SubtitleItem[] = data.subtitles.map((s: any, idx: number) => ({
-          id: 'sub-ai-' + Date.now() + '-' + idx,
-          start: Math.round(Number(s.start || 0) * 10) / 10,
-          end: Math.round(Number(s.end || (s.start + 2.5)) * 10) / 10,
-          text: String(s.text || '').trim()
-        })).filter((s: SubtitleItem) => s.text.length > 0);
-
-        setSubtitles(generatedSubs);
-        setRecognitionProgress(100);
-        showToast(`Đã nhận diện thành công ${generatedSubs.length} đoạn phụ đề chuẩn xác!`, 'success');
+      setRecognitionProgress(100);
+      setStatusMessage('');
+      if (allRecognizedSubs.length > 0) {
+        showToast(`Đã nhận diện hoàn tất toàn bộ video với ${allRecognizedSubs.length} mốc phụ đề!`, 'success');
       } else {
-        throw new Error('AI không phát hiện lời thoại rõ ràng trong âm thanh.');
+        showToast('Không tìm thấy lời thoại rõ ràng trong video.', 'warning');
       }
     } catch (err: any) {
       console.error('AI Transcribe error:', err);
