@@ -1,6 +1,7 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import VisitorTracker from './VisitorTracker';
+import BackToTop from './BackToTop';
 
 const Layout = () => {
   const location = useLocation();
@@ -29,6 +30,7 @@ const Layout = () => {
         <VisitorTracker />
         <p>© 2026 RCHG Studio by <a href="https://rongcon.net" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', fontWeight: 600, textDecoration: 'none' }}>Rồng Con HG</a>.</p>
       </footer>
+      <BackToTop />
     </>
   );
 };
