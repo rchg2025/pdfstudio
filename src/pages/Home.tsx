@@ -240,6 +240,13 @@ const mediaTools = [
     isHot: true
   },
   {
+    path: '/tach-am-thanh-video',
+    icon: <Music size={24} color="#0284c7" />,
+    title: '🎵 Trích Xuất Âm Thanh Từ Video & Sang MP3/WAV',
+    desc: 'Tách trọn vẹn dải âm thanh lossless từ MP4, MOV, WebM, hỗ trợ cắt đoạn âm thanh yêu thích và tăng âm lượng (Audio Boost).',
+    isHot: true
+  },
+  {
     path: '/quay-man-hinh',
     icon: <Video size={24} color="#0284c7" />,
     title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',

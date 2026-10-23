@@ -588,6 +588,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['tạo phụ đề video', 'auto subtitle', 'đốt sub vào video', 'hard sub online', 'chèn phụ đề video', 'nhận diện giọng nói thành văn bản srt', 'tạo srt tiếng việt'],
     priority: 0.95,
     changefreq: 'weekly'
+  },
+  {
+    path: '/tach-am-thanh-video',
+    title: '🎵 Trích Xuất Âm Thanh Từ Video & Chuyển Sang MP3/WAV (Video Audio Extractor)',
+    desc: 'Trích xuất âm thanh lossless chuẩn phòng thu từ MP4, MOV, WebM, hỗ trợ cắt đoạn âm thanh theo mốc giây, khuếch đại âm lượng (gain boost lên 200%), chạy 100% trên máy không tải file lên server.',
+    category: 'media',
+    isHot: true,
+    keywords: ['tách âm thanh từ video', 'trích xuất mp3 từ mp4', 'chuyển video sang wav', 'video to audio converter', 'lấy nhạc từ video', 'tách tiếng video'],
+    priority: 0.95,
+    changefreq: 'weekly'
   }
 ];
 

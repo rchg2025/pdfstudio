@@ -79,6 +79,7 @@ const VideoComplianceChecker = React.lazy(() => import('./pages/VideoComplianceC
 const DocComplianceChecker = React.lazy(() => import('./pages/DocComplianceChecker'));
 const VideoMerger = React.lazy(() => import('./pages/VideoMerger'));
 const AutoSubtitleStudio = React.lazy(() => import('./pages/AutoSubtitleStudio'));
+const VideoToAudioExtractor = React.lazy(() => import('./pages/VideoToAudioExtractor'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -387,6 +388,12 @@ function App() {
             } />
             <Route path="auto-subtitle" element={
               <Suspense fallback={<FallbackLoader />}><AutoSubtitleStudio /></Suspense>
+            } />
+            <Route path="tach-am-thanh-video" element={
+              <Suspense fallback={<FallbackLoader />}><VideoToAudioExtractor /></Suspense>
+            } />
+            <Route path="video-to-audio" element={
+              <Suspense fallback={<FallbackLoader />}><VideoToAudioExtractor /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
