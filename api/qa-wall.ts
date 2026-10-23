@@ -2507,6 +2507,116 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
       });
     }
 
+    // ACTION: Bóc tách lời thoại video / audio sang phụ đề chuẩn thời gian thực (Audio Transcribe to Subtitles)
+    if (action === 'transcribe-video-audio') {
+      const { audioBase64, mimeType = 'audio/mp3', duration = 60, contextHint = '' } = req.body;
+
+      if (!audioBase64) {
+        return res.status(400).json({ error: 'Thiếu dữ liệu audio âm thanh base64 để nhận diện.' });
+      }
+
+      let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.status(400).json({ error: 'Chưa cấu hình GEMINI_API_KEY trên hệ thống.' });
+      }
+
+      const modelQueue = await resolveGeminiModels(apiKey, 'gemini-1.5-flash');
+
+      const prompt = `Bạn là chuyên gia chuyển giọng nói sang văn bản (Speech-to-Text & Subtitle AI) hàng đầu thế giới bằng tiếng Việt.
+Dưới đây là tệp âm thanh trích từ video có thời lượng khoảng ${Math.round(duration)} giây.
+${contextHint ? `Gợi ý ngữ cảnh video: "${contextHint}".` : ''}
+
+NHIỆM VỤ:
+1. Hãy lắng nghe và bóc tách CHÍNH XÁC 100% từng câu nói/lời thoại tiếng Việt trong tệp âm thanh này.
+2. Xác định mốc thời gian bắt đầu (start tính bằng giây) và kết thúc (end tính bằng giây) chuẩn xác của từng câu nói, không được trùng lặp chồng chéo và không vượt quá độ dài video (${Math.round(duration)}s).
+3. Đảm bảo đúng chính tả tiếng Việt, có dấu câu đầy đủ, ngắt câu tự nhiên theo nhịp thở (khoảng 3 - 8 từ mỗi đoạn phụ đề để người xem dễ đọc trên màn hình).
+
+BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không dùng markdown giải thích bên ngoài):
+{
+  "subtitles": [
+    {
+      "start": 0.0,
+      "end": 2.5,
+      "text": "Chào mừng các bạn đã đến với bài học hôm nay."
+    },
+    {
+      "start": 2.8,
+      "end": 5.4,
+      "text": "Trong video này chúng ta sẽ tìm hiểu về các thao tác."
+    }
+  ]
+}`;
+
+      let resultJson: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue) {
+        try {
+          const apiEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+          const geminiRes = await fetch(apiEndpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              contents: [{
+                parts: [
+                  { text: prompt },
+                  {
+                    inlineData: {
+                      mimeType: mimeType.split(';')[0],
+                      data: audioBase64.replace(/^data:[^;]+;base64,/, '')
+                    }
+                  }
+                ]
+              }],
+              generationConfig: {
+                responseMimeType: 'application/json',
+                temperature: 0.1
+              }
+            })
+          });
+
+          if (!geminiRes.ok) {
+            const errTxt = await geminiRes.text();
+            throw new Error(`Gemini API HTTP ${geminiRes.status}: ${errTxt.slice(0, 150)}`);
+          }
+
+          const geminiData = await geminiRes.json();
+          const rawText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (!rawText) throw new Error('Model không trả về nội dung');
+
+          let parsed: any = null;
+          try {
+            parsed = JSON.parse(rawText);
+          } catch {
+            const cleaned = rawText.replace(/```json\s*|```/g, '').trim();
+            const match = cleaned.match(/\{[\s\S]*\}/);
+            if (match) parsed = JSON.parse(match[0]);
+          }
+
+          if (parsed && Array.isArray(parsed.subtitles)) {
+            resultJson = parsed;
+            usedModel = m;
+            break;
+          }
+        } catch (err: any) {
+          attemptErrors.push(`[${m}]: ${err.message || 'Lỗi bóc tách audio'}`);
+        }
+      }
+
+      if (!resultJson || !Array.isArray(resultJson.subtitles)) {
+        return res.status(500).json({
+          error: `Không thể nhận diện lời thoại âm thanh: ${attemptErrors[0] || 'Lỗi AI bóc tách'}.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        usedModel,
+        subtitles: resultJson.subtitles
+      });
+    }
+
     return res.status(400).json({ error: 'Không tìm thấy action' });
   } catch (error: any) {
     console.error('Lỗi API qa-wall / quiz:', error);

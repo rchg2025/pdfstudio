@@ -17,6 +17,69 @@ import {
 import { useNotification } from '../contexts/NotificationContext';
 import './AutoSubtitleStudio.css';
 
+// Helper chuyển AudioBuffer thành WAV Blob chuẩn PCM 16-bit
+function audioBufferToWavBlob(buffer: AudioBuffer): Blob {
+  const numOfChan = buffer.numberOfChannels;
+  const length = buffer.length * numOfChan * 2 + 44;
+  const out = new ArrayBuffer(length);
+  const view = new DataView(out);
+  const channels: Float32Array[] = [];
+  let sampleRate = buffer.sampleRate;
+  let offset = 0;
+  let pos = 0;
+
+  function writeString(s: string) {
+    for (let i = 0; i < s.length; i++) {
+      view.setUint8(pos++, s.charCodeAt(i));
+    }
+  }
+
+  function setUint16(data: number) {
+    view.setUint16(pos, data, true);
+    pos += 2;
+  }
+
+  function setUint32(data: number) {
+    view.setUint32(pos, data, true);
+    pos += 4;
+  }
+
+  // RIFF header
+  writeString('RIFF');
+  setUint32(length - 8);
+  writeString('WAVE');
+
+  // fmt sub-chunk
+  writeString('fmt ');
+  setUint32(16);
+  setUint16(1); // PCM
+  setUint16(numOfChan);
+  setUint32(sampleRate);
+  setUint32(sampleRate * 2 * numOfChan);
+  setUint16(numOfChan * 2);
+  setUint16(16);
+
+  // data sub-chunk
+  writeString('data');
+  setUint32(length - pos - 4);
+
+  for (let i = 0; i < numOfChan; i++) {
+    channels.push(buffer.getChannelData(i));
+  }
+
+  while (pos < length) {
+    for (let i = 0; i < numOfChan; i++) {
+      let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+      sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767) | 0;
+      view.setInt16(pos, sample, true);
+      pos += 2;
+    }
+    offset++;
+  }
+
+  return new Blob([out], { type: 'audio/wav' });
+}
+
 export interface SubtitleItem {
   id: string;
   start: number; // giây
@@ -175,24 +238,107 @@ export default function AutoSubtitleStudio() {
     if (selectedSubId === id) setSelectedSubId(null);
   };
 
-  // TỰ ĐỘNG NHẬN DIỆN LỜI THOẠI BẰNG WEB SPEECH API / AI CHUẨN TRÌNH DUYỆT
-  const handleAutoSpeechToText = () => {
+  // TỰ ĐỘNG NHẬN DIỆN LỜI THOẠI BẰNG AI GEMINI MULTIMODAL KẾT HỢP TRÍCH XUẤT AUDIO
+  const handleAutoSpeechToText = async () => {
     if (!videoRef.current || !videoFile) {
       showToast('Vui lòng chọn video trước khi nhận diện giọng nói.', 'warning');
       return;
     }
 
+    setIsRecognizing(true);
+    setStatusMessage('Đang trích xuất dải âm thanh chất lượng cao từ video...');
+    setRecognitionProgress(10);
+
+    try {
+      // 1. Trích xuất âm thanh video bằng AudioContext
+      const arrayBuffer = await videoFile.arrayBuffer();
+      setRecognitionProgress(25);
+      setStatusMessage('Đang giải mã âm thanh thoại...');
+
+      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const decodedBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+      setRecognitionProgress(45);
+
+      // Nếu video quá dài (> 5 phút), cắt mẫu 3 phút đầu hoặc lấy toàn bộ
+      const maxDuration = Math.min(decodedBuffer.duration, 180);
+      const offlineCtx = new OfflineAudioContext(1, Math.ceil(decodedBuffer.sampleRate * maxDuration), decodedBuffer.sampleRate);
+      const source = offlineCtx.createBufferSource();
+      source.buffer = decodedBuffer;
+      source.connect(offlineCtx.destination);
+      source.start(0, 0, maxDuration);
+
+      setStatusMessage('Đang mã hóa âm thanh PCM gửi AI nhận diện...');
+      setRecognitionProgress(60);
+      const renderedMonoBuffer = await offlineCtx.startRendering();
+      const wavBlob = audioBufferToWavBlob(renderedMonoBuffer);
+
+      // 2. Chuyển sang Base64
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const res = reader.result as string;
+          resolve(res);
+        };
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(wavBlob);
+      const audioBase64 = await base64Promise;
+
+      setRecognitionProgress(75);
+      setStatusMessage('AI đang lắng nghe và bóc tách từng câu nói chuẩn xác theo thời gian...');
+
+      // 3. Gửi lên backend AI Transcribe
+      const res = await fetch('/api/qa-wall?action=transcribe-video-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audioBase64,
+          mimeType: 'audio/wav',
+          duration: maxDuration,
+          contextHint: videoFile.name.replace(/\.[^/.]+$/, '')
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      if (Array.isArray(data.subtitles) && data.subtitles.length > 0) {
+        const generatedSubs: SubtitleItem[] = data.subtitles.map((s: any, idx: number) => ({
+          id: 'sub-ai-' + Date.now() + '-' + idx,
+          start: Math.round(Number(s.start || 0) * 10) / 10,
+          end: Math.round(Number(s.end || (s.start + 2.5)) * 10) / 10,
+          text: String(s.text || '').trim()
+        })).filter((s: SubtitleItem) => s.text.length > 0);
+
+        setSubtitles(generatedSubs);
+        setRecognitionProgress(100);
+        showToast(`Đã nhận diện thành công ${generatedSubs.length} đoạn phụ đề chuẩn xác!`, 'success');
+      } else {
+        throw new Error('AI không phát hiện lời thoại rõ ràng trong âm thanh.');
+      }
+    } catch (err: any) {
+      console.warn('AI Transcribe failed, falling back to Web Speech API / Smart Generator:', err);
+      showToast('Đang chuyển sang bộ nhận diện giọng nói trình duyệt: ' + (err.message || ''), 'info');
+      fallbackWebSpeechRecognition();
+    } finally {
+      setIsRecognizing(false);
+      setStatusMessage('');
+    }
+  };
+
+  // Fallback: Web Speech API của trình duyệt
+  const fallbackWebSpeechRecognition = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      // Fallback: AI Gemini hoặc mẫu hướng dẫn
-      showToast('Trình duyệt chưa hỗ trợ Web Speech API trực tiếp, hệ thống sẽ chuyển sang chế độ tạo phụ đề thông minh.', 'info');
       handleAutoGenerateSmartSubtitles();
       return;
     }
 
     setIsRecognizing(true);
-    setStatusMessage('Đang phát âm thanh và lắng nghe nhận diện giọng nói tiếng Việt...');
-    setRecognitionProgress(5);
+    setStatusMessage('Đang phát âm thanh và nhận diện qua Web Speech API...');
+    setRecognitionProgress(10);
 
     try {
       const recognition = new SpeechRecognition();
@@ -204,11 +350,12 @@ export default function AutoSubtitleStudio() {
       const recognizedSubs: SubtitleItem[] = [];
       let startTime = 0;
 
-      // Đưa video về đầu và bật tiếng để mic/audio engine bắt
-      videoRef.current.currentTime = 0;
-      videoRef.current.muted = false;
-      videoRef.current.play().catch(e => console.warn('Autoplay check:', e));
-      setIsPlaying(true);
+      if (videoRef.current) {
+        videoRef.current.currentTime = 0;
+        videoRef.current.muted = false;
+        videoRef.current.play().catch(e => console.warn('Autoplay check:', e));
+        setIsPlaying(true);
+      }
 
       recognition.onresult = (event: any) => {
         const resultIndex = event.resultIndex;
@@ -231,9 +378,7 @@ export default function AutoSubtitleStudio() {
         }
       };
 
-      recognition.onerror = (err: any) => {
-        console.warn('Speech recognition error:', err);
-        // Nếu không có quyền micro hoặc lỗi, dùng bộ tự động sinh timecode thông minh
+      recognition.onerror = () => {
         handleAutoGenerateSmartSubtitles();
       };
 
@@ -244,14 +389,7 @@ export default function AutoSubtitleStudio() {
       };
 
       recognition.start();
-
-      // Dừng khi video kết thúc
-      videoRef.current.onended = () => {
-        try { recognition.stop(); } catch (e) {}
-        setIsRecognizing(false);
-        setIsPlaying(false);
-      };
-    } catch (e: any) {
+    } catch {
       handleAutoGenerateSmartSubtitles();
     }
   };

@@ -24,7 +24,7 @@
 }
 
 .sub-header-inner {
-  max-width: 1200px;
+  max-width: 98%;
   margin: 0 auto;
   position: relative;
   z-index: 1;
@@ -82,9 +82,10 @@
 
 /* Container */
 .sub-container {
-  max-width: 1300px;
+  max-width: 98%;
+  width: 98%;
   margin: -1.5rem auto 0;
-  padding: 0 1.25rem;
+  padding: 0 1rem;
   position: relative;
   z-index: 2;
 }
