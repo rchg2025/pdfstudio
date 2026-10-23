@@ -9,6 +9,7 @@ import {
   Image as ImageIcon, 
   GraduationCap, 
   Link as LinkIcon,
+  Video,
   CornerDownLeft
 } from 'lucide-react';
 import { ALL_TOOLS } from '../data/toolsConfig';
@@ -35,6 +36,11 @@ const CATEGORY_META: Record<ToolItem['category'], { label: string; icon: React.R
     label: 'Ảnh & Đồ Họa AI',
     icon: <ImageIcon size={14} />,
     color: '#8b5cf6'
+  },
+  media: {
+    label: 'Âm Thanh & Video',
+    icon: <Video size={14} />,
+    color: '#ec4899'
   },
   other: {
     label: 'Tiện Ích Khác',
@@ -239,6 +245,13 @@ export const GlobalSearchModal: React.FC<GlobalSearchModalProps> = ({ isOpen, on
             onClick={() => setSelectedCategory('image')}
           >
             <ImageIcon size={13} /> Xử Lý Ảnh
+          </button>
+          <button
+            type="button"
+            className={`search-cat-chip ${selectedCategory === 'media' ? 'active' : ''}`}
+            onClick={() => setSelectedCategory('media')}
+          >
+            <Video size={13} /> Âm Thanh & Video
           </button>
           <button
             type="button"

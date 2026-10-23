@@ -2,7 +2,7 @@ export interface ToolItem {
   path: string;
   title: string;
   desc: string;
-  category: 'edtech' | 'pdf' | 'image' | 'other';
+  category: 'edtech' | 'pdf' | 'image' | 'media' | 'other';
   isHot?: boolean;
   keywords?: string[];
   priority?: number;
@@ -485,7 +485,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/cat-ghep-am-thanh',
     title: 'Cắt Ghép Âm Thanh & Audio MP3 Trực Tuyến',
     desc: 'Cắt, chia nhỏ hoặc ghép nối nhiều file âm thanh lại với nhau trực tiếp trên trình duyệt.',
-    category: 'other',
+    category: 'media',
     keywords: ['cắt nhạc mp3', 'ghép âm thanh', 'cắt nhạc chuông online'],
     priority: 0.8,
     changefreq: 'weekly'
@@ -494,7 +494,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/doc-van-ban',
     title: 'Chuyển Đổi Văn Bản Thành Giọng Nói (Text To Speech)',
     desc: 'Chuyển đổi văn bản thành giọng nói tiếng Việt mượt mà với công nghệ AI Edge, tải file MP3 miễn phí.',
-    category: 'other',
+    category: 'media',
     keywords: ['đọc văn bản', 'text to speech tiếng việt', 'chuyển văn bản thành mp3', 'giọng đọc hoài my'],
     priority: 0.9,
     changefreq: 'weekly'
@@ -503,7 +503,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/tai-video-am-thanh',
     title: 'Tải Video & Âm Thanh Đa Nền Tảng (Media Downloader)',
     desc: 'Tải video Full HD không logo watermark, tách âm thanh MP3 320kbps từ YouTube, TikTok, Facebook Reels, Instagram, CapCut, SoundCloud.',
-    category: 'other',
+    category: 'media',
     isHot: true,
     keywords: ['tải video youtube', 'tải video tiktok không logo', 'tách mp3 youtube', 'tải facebook reels', 'media downloader'],
     priority: 0.9,
@@ -513,7 +513,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/quay-man-hinh',
     title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',
     desc: 'Quay video màn hình, webcam hoặc lồng tiếng trực tiếp trên trình duyệt, không cần cài phần mềm, chất lượng Full HD, bảo mật 100%.',
-    category: 'other',
+    category: 'media',
     isHot: true,
     keywords: ['quay màn hình máy tính', 'screen recorder online', 'quay video webcam', 'quay bài giảng trực tuyến', 'ghi hình màn hình không cài app'],
     priority: 0.9,
@@ -533,7 +533,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/cat-video',
     title: 'Cắt Video Nhanh Trực Tuyến (Fast Video Cutter & Trimmer)',
     desc: 'Cắt tỉa phân đoạn video MP4, WebM, MOV theo mốc thời gian chính xác, xem trước trực quan, xử lý 100% bảo mật ngay trên trình duyệt mà không cần tải lên máy chủ.',
-    category: 'other',
+    category: 'media',
     isHot: true,
     keywords: ['cắt video online', 'video cutter', 'trim video online', 'cắt mp4 không mất tiếng', 'cắt video trực tuyến'],
     priority: 0.9,
@@ -563,7 +563,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/kiem-tra-ban-quyen-video',
     title: '⚖️ Thẩm Định Bản Quyền, Kỹ Thuật & Pháp Lý Video (Video Compliance Checker)',
     desc: 'Kiểm tra nội dung, kỹ thuật, bản quyền đối với video không tự xây dựng lấy từ không gian mạng hoặc chia sẻ theo Luật Bản Quyền SHTT 2022 và Luật Báo Chí Việt Nam mới nhất.',
-    category: 'edtech',
+    category: 'media',
     isHot: true,
     keywords: ['kiểm tra bản quyền video', 'thẩm định video không tự xây dựng', 'luật bản quyền video', 'luật sở hữu trí tuệ video', 'luật báo chí video', 'video compliance checker'],
     priority: 0.9,
@@ -573,7 +573,7 @@ export const ALL_TOOLS: ToolItem[] = [
     path: '/noi-video',
     title: '🎬 Ghép Nối Video Trực Tuyến Thành 2 Video Dài (Dual Video Merger)',
     desc: 'Tải lên hàng loạt video clip ngắn, linh hoạt phân bổ vào Video 1 và Video 2 (hoặc tự động chia đều/xen kẽ), sắp xếp thứ tự và render xuất 2 video dài độc lập trực tiếp trên trình duyệt.',
-    category: 'other',
+    category: 'media',
     isHot: true,
     keywords: ['nối video online', 'ghép video thành 2 video', 'gộp video ngắn', 'video merger', 'nối video trực tuyến', 'ghép clip mp4 webm'],
     priority: 0.9,

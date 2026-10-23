@@ -210,6 +210,70 @@ const imageTools = [
   }
 ];
 
+const mediaTools = [
+  {
+    path: '/tai-video-am-thanh',
+    icon: <Film size={24} color="#ec4899" />,
+    title: 'Tải Video & Âm Thanh Đa Nền Tảng (Media Downloader)',
+    desc: 'Tải video Full HD không logo watermark, tách âm thanh MP3 320kbps từ YouTube, TikTok, Facebook Reels, Instagram, CapCut, SoundCloud.',
+    isHot: true
+  },
+  {
+    path: '/cat-video',
+    icon: <Scissors size={24} color="#f43f5e" />,
+    title: 'Cắt Video Nhanh Trực Tuyến (Fast Video Cutter)',
+    desc: 'Cắt tỉa phân đoạn video MP4, WebM, MOV theo mốc thời gian chính xác, xem trước trực quan, xử lý 100% bảo mật ngay trên trình duyệt.',
+    isHot: true
+  },
+  {
+    path: '/noi-video',
+    icon: <Film size={24} color="#8b5cf6" />,
+    title: '🎬 Ghép Nối Video Thành 2 Video Dài',
+    desc: 'Tải nhiều clip ngắn, phân bổ sang 2 luồng Video 1 và Video 2 (hoặc tự động chia đều/xen kẽ), render xuất 2 video dài độc lập trực tiếp trên trình duyệt.',
+    isHot: true
+  },
+  {
+    path: '/quay-man-hinh',
+    icon: <Video size={24} color="#0284c7" />,
+    title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',
+    desc: 'Quay video màn hình, webcam hoặc lồng tiếng trực tiếp trên trình duyệt, không cần cài phần mềm, chất lượng Full HD, bảo mật 100%.',
+    isHot: true
+  },
+  {
+    path: '/cat-ghep-am-thanh',
+    icon: <Music size={24} color="#10b981" />,
+    title: 'Cắt Ghép Âm Thanh & Audio MP3',
+    desc: 'Cắt, chia nhỏ hoặc ghép nối nhiều file âm thanh lại với nhau trực tiếp trên trình duyệt.'
+  },
+  {
+    path: '/doc-van-ban',
+    icon: <Mic size={24} color="#6366f1" />,
+    title: 'Chuyển Đổi Văn Bản Thành Giọng Nói (Text To Speech)',
+    desc: 'Chuyển đổi văn bản thành giọng nói tiếng Việt mượt mà với công nghệ AI Edge, tải file MP3 miễn phí.'
+  },
+  {
+    path: '/ai-podcast-studio',
+    icon: <Mic size={24} color="#9333ea" />,
+    title: '🎙️ AI Voiceover Studio & Tạo Podcast Bài Giảng',
+    desc: 'Tự động biên kịch đối thoại 2 người, phân vai lồng tiếng Edge TTS cảm xúc và hòa âm nhạc nền Lofi thư giãn xuất MP3/WAV hoàn chỉnh.',
+    isHot: true
+  },
+  {
+    path: '/kich-ban-video-ai',
+    icon: <Film size={24} color="#f43f5e" />,
+    title: '🎬 AI Video Script Studio (Kịch Bản 6-10s)',
+    desc: 'Biên kịch video bài giảng & mô phỏng thao tác: Phân cảnh 6-10s liền mạch góc quay, prompt tiếng Anh chuẩn Runway/Kling và thuyết minh tiếng Việt.',
+    isHot: true
+  },
+  {
+    path: '/kiem-tra-ban-quyen-video',
+    icon: <Scale size={24} color="#4f46e5" />,
+    title: '⚖️ Thẩm Định Bản Quyền & Kỹ Thuật Video',
+    desc: 'Kiểm tra nội dung, kỹ thuật, bản quyền đối với video không tự xây dựng theo Luật Bản Quyền SHTT 2022 và Luật Báo Chí Việt Nam mới nhất.',
+    isHot: true
+  }
+];
+
 const otherTools = [
   {
     path: '/qr-link',
@@ -230,40 +294,10 @@ const otherTools = [
     desc: 'Chuyển toàn bộ dữ liệu từ Drive A sang Drive B siêu tốc mà không tốn mạng.'
   },
   {
-    path: '/cat-ghep-am-thanh',
-    icon: <Music size={24} />,
-    title: 'Cắt Ghép Âm Thanh',
-    desc: 'Cắt, chia nhỏ hoặc ghép nối nhiều file âm thanh lại với nhau trực tiếp trên trình duyệt.'
-  },
-  {
-    path: '/doc-van-ban',
-    icon: <Mic size={24} />,
-    title: 'Đọc Văn Bản (Trình Duyệt)',
-    desc: 'Chuyển đổi văn bản thành giọng nói bằng bộ máy của trình duyệt, không cần tải server.'
-  },
-  {
-    path: '/tai-video-am-thanh',
-    icon: <Film size={24} />,
-    title: 'Tải Video & Âm Thanh Đa Nền Tảng (Media Downloader)',
-    desc: 'Tải video Full HD không logo watermark, tách âm thanh MP3 320kbps từ YouTube, TikTok, Facebook Reels, Instagram, CapCut, SoundCloud.'
-  },
-  {
-    path: '/quay-man-hinh',
-    icon: <Video size={24} />,
-    title: 'Quay Video Màn Hình & Âm Thanh Trực Tuyến (Screen Recorder)',
-    desc: 'Quay video màn hình, webcam hoặc lồng tiếng trực tiếp trên trình duyệt, không cần cài phần mềm, chất lượng Full HD, bảo mật 100%.'
-  },
-  {
     path: '/tao-ma-qr-nang-cao',
     icon: <QrCode size={24} />,
     title: 'Tạo Mã QR Nâng Cao Đa Năng (Custom QR Code)',
     desc: 'Tạo mã QR Wi-Fi, danh bạ vCard, đường dẫn, văn bản với tùy chọn màu gradient, bo góc mắt mã QR và chèn logo thương hiệu ở giữa.'
-  },
-  {
-    path: '/cat-video',
-    icon: <Scissors size={24} />,
-    title: 'Cắt Video Nhanh Trực Tuyến (Fast Video Cutter)',
-    desc: 'Cắt tỉa phân đoạn video MP4, WebM, MOV theo mốc thời gian chính xác, xem trước trực quan, xử lý 100% bảo mật ngay trên trình duyệt.'
   },
   {
     path: '/tim-file-trung',
@@ -277,13 +311,6 @@ const otherTools = [
     icon: <Zap size={24} color="#10b981" />,
     title: '⚡ Tối Ưu Hiệu Suất & Dọn Dẹp Bộ Nhớ Tạm (System Optimizer)',
     desc: 'Giải phóng bộ nhớ RAM, xóa sạch cache web, sinh kịch bản dọn dẹp file rác hệ thống Windows (%TEMP%, Prefetch, Thùng rác) và macOS an toàn.',
-    isHot: true
-  },
-  {
-    path: '/noi-video',
-    icon: <Film size={24} color="#ec4899" />,
-    title: '🎬 Ghép Nối Video Thành 2 Video Dài',
-    desc: 'Tải nhiều clip ngắn, phân bổ sang 2 luồng Video 1 và Video 2 (hoặc tự động chia đều/xen kẽ), render xuất 2 video dài độc lập trực tiếp trên trình duyệt.',
     isHot: true
   }
 ];
@@ -451,7 +478,7 @@ const removeVietnameseTones = (str: string): string => {
 };
 
 const Home = () => {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'edtech' | 'pdf' | 'image' | 'other'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'edtech' | 'pdf' | 'image' | 'media' | 'other'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Lọc công cụ theo từ khóa tìm kiếm
@@ -469,12 +496,14 @@ const Home = () => {
   const filteredEdTechTools = filterTools(edTechTools);
   const filteredPdfTools = filterTools(pdfTools);
   const filteredImageTools = filterTools(imageTools);
+  const filteredMediaTools = filterTools(mediaTools);
   const filteredOtherTools = filterTools(otherTools);
 
   const totalFilteredCount = 
     filteredEdTechTools.length + 
     filteredPdfTools.length + 
     filteredImageTools.length + 
+    filteredMediaTools.length + 
     filteredOtherTools.length;
 
   return (
@@ -603,6 +632,16 @@ const Home = () => {
 
         <button 
           type="button" 
+          onClick={() => setActiveCategory('media')} 
+          className={`category-tab-btn ${activeCategory === 'media' ? 'active' : ''}`}
+        >
+          <Video size={16} /> 
+          Âm Thanh & Video
+          <span className="tab-pill-badge" style={{ background: '#ec4899' }}>MỚI</span>
+        </button>
+
+        <button 
+          type="button" 
           onClick={() => setActiveCategory('other')} 
           className={`category-tab-btn ${activeCategory === 'other' ? 'active' : ''}`}
         >
@@ -696,7 +735,43 @@ const Home = () => {
         </section>
       )}
 
-      {/* SECTION 4: TIỆN ÍCH KHÁC */}
+      {/* SECTION 4: ÂM THANH & VIDEO */}
+      {(activeCategory === 'all' || activeCategory === 'media') && filteredMediaTools.length > 0 && (
+        <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem' }}>
+          <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
+            <Video size={28} /> Âm Thanh & Video Trực Tuyến
+          </h2>
+          <div className="tools-grid">
+            {filteredMediaTools.map((tool, index) => (
+              <Link 
+                to={tool.path} 
+                key={index} 
+                className={`tool-card ${tool.isHot ? 'tool-card-highlight' : ''}`}
+                style={{ borderColor: tool.isHot ? '#ec4899' : 'rgba(236, 72, 153, 0.25)' }}
+              >
+                {tool.isHot && (
+                  <div className="tool-card-badge" style={{ background: '#ec4899' }}>MỚI & HOT</div>
+                )}
+                <div className="tool-card-bg-icon">
+                  {tool.icon}
+                </div>
+                <div className="tool-icon" style={{ 
+                  background: tool.isHot ? 'rgba(236, 72, 153, 0.12)' : 'rgba(236, 72, 153, 0.1)', 
+                  color: tool.isHot ? '#db2777' : '#ec4899' 
+                }}>
+                  {tool.icon}
+                </div>
+                <div className="tool-content">
+                  <h3 className="tool-title">{tool.title}</h3>
+                  <p className="tool-desc">{tool.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* SECTION 5: TIỆN ÍCH KHÁC */}
       {(activeCategory === 'all' || activeCategory === 'other') && filteredOtherTools.length > 0 && (
         <section style={{ marginTop: activeCategory === 'all' ? '4.5rem' : '2.5rem', marginBottom: '4rem' }}>
           <h2 className="text-2xl font-bold mb-8 text-gradient section-header-title">
