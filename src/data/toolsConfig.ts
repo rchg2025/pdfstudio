@@ -578,6 +578,16 @@ export const ALL_TOOLS: ToolItem[] = [
     keywords: ['nối video online', 'ghép video thành 2 video', 'gộp video ngắn', 'video merger', 'nối video trực tuyến', 'ghép clip mp4 webm'],
     priority: 0.9,
     changefreq: 'weekly'
+  },
+  {
+    path: '/tao-phu-de-video',
+    title: '📝 Tạo Phụ Đề Video Tự Động & Đốt Sub (Auto Subtitle Studio)',
+    desc: 'Tự động nhận diện lời thoại video sang phụ đề tiếng Việt, chỉnh sửa timecode trực quan, tùy biến font/màu sắc/nền mờ, xuất file SRT và render đốt phụ đề (hard-sub) trực tiếp trên trình duyệt.',
+    category: 'media',
+    isHot: true,
+    keywords: ['tạo phụ đề video', 'auto subtitle', 'đốt sub vào video', 'hard sub online', 'chèn phụ đề video', 'nhận diện giọng nói thành văn bản srt', 'tạo srt tiếng việt'],
+    priority: 0.95,
+    changefreq: 'weekly'
   }
 ];
 

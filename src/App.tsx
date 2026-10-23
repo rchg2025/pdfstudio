@@ -78,6 +78,7 @@ const SystemOptimizer = React.lazy(() => import('./pages/SystemOptimizer'));
 const VideoComplianceChecker = React.lazy(() => import('./pages/VideoComplianceChecker'));
 const DocComplianceChecker = React.lazy(() => import('./pages/DocComplianceChecker'));
 const VideoMerger = React.lazy(() => import('./pages/VideoMerger'));
+const AutoSubtitleStudio = React.lazy(() => import('./pages/AutoSubtitleStudio'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -380,6 +381,12 @@ function App() {
             } />
             <Route path="video-merger" element={
               <Suspense fallback={<FallbackLoader />}><VideoMerger /></Suspense>
+            } />
+            <Route path="tao-phu-de-video" element={
+              <Suspense fallback={<FallbackLoader />}><AutoSubtitleStudio /></Suspense>
+            } />
+            <Route path="auto-subtitle" element={
+              <Suspense fallback={<FallbackLoader />}><AutoSubtitleStudio /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
