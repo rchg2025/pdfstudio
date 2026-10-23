@@ -581,11 +581,11 @@ export const ALL_TOOLS: ToolItem[] = [
   },
   {
     path: '/tao-phu-de-video',
-    title: '📝 Tạo Phụ Đề Video Tự Động & Đốt Sub (Auto Subtitle Studio)',
-    desc: 'Tự động nhận diện lời thoại video sang phụ đề tiếng Việt, chỉnh sửa timecode trực quan, tùy biến font/màu sắc/nền mờ, xuất file SRT và render đốt phụ đề (hard-sub) trực tiếp trên trình duyệt.',
+    title: '📝 Tạo Phụ Đề Video Tự Động & Chèn Phụ Đề (Auto Subtitle Studio)',
+    desc: 'Tự động nhận diện lời thoại video sang phụ đề tiếng Việt, chỉnh sửa timecode trực quan, tùy biến font/màu sắc/nền mờ, xuất file SRT và render chèn phụ đề trực tiếp trên trình duyệt.',
     category: 'media',
     isHot: true,
-    keywords: ['tạo phụ đề video', 'auto subtitle', 'đốt sub vào video', 'hard sub online', 'chèn phụ đề video', 'nhận diện giọng nói thành văn bản srt', 'tạo srt tiếng việt'],
+    keywords: ['tạo phụ đề video', 'auto subtitle', 'chèn phụ đề vào video', 'hard sub online', 'chèn phụ đề video', 'nhận diện giọng nói thành văn bản srt', 'tạo srt tiếng việt'],
     priority: 0.95,
     changefreq: 'weekly'
   },

@@ -2515,9 +2515,10 @@ BẮT BUỘC TRẢ VỀ ĐÚNG ĐỊNH DẠNG JSON DUY NHẤT (không bọc text
         return res.status(400).json({ error: 'Thiếu dữ liệu audio âm thanh base64 để nhận diện.' });
       }
 
-      let apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+      const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+      let apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
       if (!apiKey) {
-        return res.status(400).json({ error: 'Chưa cấu hình GEMINI_API_KEY trên hệ thống.' });
+        return res.status(400).json({ error: 'Chưa cấu hình GEMINI_API_KEY trên hệ thống hoặc trong Cấu hình Quản trị.' });
       }
 
       const modelQueue = await resolveGeminiModels(apiKey, 'gemini-1.5-flash');

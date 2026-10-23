@@ -120,9 +120,6 @@ export default function AutoSubtitleStudio() {
   const [subtitlePosition, setSubtitlePosition] = useState<'bottom' | 'top' | 'middle'>('bottom');
   const [fontStyle] = useState<'sans' | 'serif' | 'mono'>('sans');
 
-  // Speech Recognition API (Trình duyệt)
-  const recognitionRef = useRef<any>(null);
-
   // Helper format time MM:SS.mmm hoặc HH:MM:SS,mmm
   const formatTime = (seconds: number, includeMs: boolean = false): string => {
     const hrs = Math.floor(seconds / 3600);
@@ -319,120 +316,12 @@ export default function AutoSubtitleStudio() {
         throw new Error('AI không phát hiện lời thoại rõ ràng trong âm thanh.');
       }
     } catch (err: any) {
-      console.warn('AI Transcribe failed, falling back to Web Speech API / Smart Generator:', err);
-      showToast('Đang chuyển sang bộ nhận diện giọng nói trình duyệt: ' + (err.message || ''), 'info');
-      fallbackWebSpeechRecognition();
+      console.error('AI Transcribe error:', err);
+      showToast('Lỗi nhận diện AI: ' + (err.message || 'Không thể kết nối dịch vụ'), 'error');
     } finally {
       setIsRecognizing(false);
       setStatusMessage('');
     }
-  };
-
-  // Fallback: Web Speech API của trình duyệt
-  const fallbackWebSpeechRecognition = () => {
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      handleAutoGenerateSmartSubtitles();
-      return;
-    }
-
-    setIsRecognizing(true);
-    setStatusMessage('Đang phát âm thanh và nhận diện qua Web Speech API...');
-    setRecognitionProgress(10);
-
-    try {
-      const recognition = new SpeechRecognition();
-      recognition.lang = 'vi-VN';
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognitionRef.current = recognition;
-
-      const recognizedSubs: SubtitleItem[] = [];
-      let startTime = 0;
-
-      if (videoRef.current) {
-        videoRef.current.currentTime = 0;
-        videoRef.current.muted = false;
-        videoRef.current.play().catch(e => console.warn('Autoplay check:', e));
-        setIsPlaying(true);
-      }
-
-      recognition.onresult = (event: any) => {
-        const resultIndex = event.resultIndex;
-        const result = event.results[resultIndex];
-        const transcript = result[0].transcript.trim();
-
-        if (videoRef.current) {
-          const now = videoRef.current.currentTime;
-          if (result.isFinal && transcript) {
-            const subEnd = Math.max(startTime + 1.2, now);
-            recognizedSubs.push({
-              id: 'sub-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4),
-              start: Math.round(startTime * 10) / 10,
-              end: Math.round(subEnd * 10) / 10,
-              text: transcript
-            });
-            setSubtitles([...recognizedSubs]);
-            startTime = subEnd + 0.2;
-          }
-        }
-      };
-
-      recognition.onerror = () => {
-        handleAutoGenerateSmartSubtitles();
-      };
-
-      recognition.onend = () => {
-        setIsRecognizing(false);
-        setStatusMessage('');
-        showToast(`Đã nhận diện thành công ${recognizedSubs.length} đoạn phụ đề!`, 'success');
-      };
-
-      recognition.start();
-    } catch {
-      handleAutoGenerateSmartSubtitles();
-    }
-  };
-
-  // Fallback: Tự động phân đoạn timecode thông minh dựa trên độ dài video
-  const handleAutoGenerateSmartSubtitles = () => {
-    setIsRecognizing(true);
-    setStatusMessage('Đang phân tích phổ âm thanh và tạo mốc thời gian phụ đề mẫu...');
-    setRecognitionProgress(25);
-
-    setTimeout(() => {
-      const vidDuration = duration || videoRef.current?.duration || 60;
-      const step = 4; // Mỗi phân đoạn ~4s
-      const generated: SubtitleItem[] = [];
-      let cur = 0.5;
-
-      const sampleSentences = [
-        'Chào mừng các bạn đến với bài học hôm nay.',
-        'Hôm nay chúng ta sẽ tìm hiểu về các khái niệm cốt lõi.',
-        'Hãy quan sát kỹ các thao tác trên màn hình minh họa.',
-        'Lưu ý các bước quan trọng để tránh gặp lỗi sai.',
-        'Tiếp tục theo dõi các phần tiếp theo của hướng dẫn.',
-        'Cảm ơn các bạn đã lắng nghe và thực hành.'
-      ];
-
-      let idx = 0;
-      while (cur < vidDuration) {
-        const segEnd = Math.min(vidDuration, cur + step);
-        generated.push({
-          id: 'sub-auto-' + idx + '-' + Date.now(),
-          start: Math.round(cur * 10) / 10,
-          end: Math.round(segEnd * 10) / 10,
-          text: sampleSentences[idx % sampleSentences.length]
-        });
-        cur += step + 0.5;
-        idx++;
-      }
-
-      setSubtitles(generated);
-      setIsRecognizing(false);
-      setStatusMessage('');
-      showToast(`Đã sinh ${generated.length} mốc phụ đề thông minh. Bạn có thể bấm vào để chỉnh sửa lời thoại!`, 'success');
-    }, 1200);
   };
 
   // Nhập file .SRT có sẵn
@@ -693,15 +582,15 @@ export default function AutoSubtitleStudio() {
         <div className="sub-header-inner">
           <div className="sub-badge">
             <Sparkles size={16} />
-            <span>AI Video Subtitle & Hard-sub Studio</span>
+            <span>AI Video Subtitle Studio</span>
           </div>
-          <h1>Tạo Phụ Đề Tự Động & Đốt Sub Vào Video Trực Tuyến</h1>
+          <h1>Tạo Phụ Đề Tự Động & Chèn Phụ Đề Vào Video Trực Tuyến</h1>
           <p className="sub-desc">
-            Nhận diện lời thoại tự động, khớp mốc thời gian chính xác, tùy biến phong cách chữ <strong>Karaoke / Reels / TikTok</strong> và <strong>đốt thẳng chữ vào video (Hard-sub)</strong> trực tiếp trên trình duyệt, không cần cài app, bảo mật 100%.
+            Nhận diện lời thoại tự động, khớp mốc thời gian chính xác, tùy biến phong cách chữ <strong>Karaoke / Reels / TikTok</strong> và <strong>chèn thẳng chữ vào video</strong> trực tiếp trên trình duyệt, không cần cài app, bảo mật 100%.
           </p>
 
           <div className="sub-meta-bar">
-            <div className="meta-tag"><Subtitles size={15} /> Nhận diện giọng nói tiếng Việt</div>
+            <div className="meta-tag"><Subtitles size={15} /> Nhận diện giọng nói tiếng Việt chuẩn AI</div>
             <div className="meta-tag"><FileText size={15} /> Nhập / Xuất file .SRT chuẩn</div>
             <div className="meta-tag"><Palette size={15} /> Tùy chỉnh màu sắc, cỡ chữ & vị trí</div>
             <div className="meta-tag"><Film size={15} /> Xuất video Full HD nhúng sẵn Sub</div>
@@ -775,7 +664,7 @@ export default function AutoSubtitleStudio() {
               title="Ghép chữ phụ đề vĩnh viễn vào khung hình video để đăng TikTok, Facebook, YouTube"
             >
               <Film size={16} />
-              <span>{isBurning ? `Đang Render (${burnProgress}%)...` : 'Đốt Sub & Xuất Video MP4'}</span>
+              <span>{isBurning ? `Đang Render (${burnProgress}%)...` : 'Chèn Phụ Đề & Xuất Video MP4'}</span>
             </button>
           </div>
         </div>
@@ -959,7 +848,7 @@ export default function AutoSubtitleStudio() {
                     className="btn-download-burned"
                   >
                     <Download size={18} />
-                    <span>Tải Video Đã Đốt Sub Về Máy</span>
+                    <span>Tải Video Đã Chèn Phụ Đề Về Máy</span>
                   </a>
                 </div>
               </div>

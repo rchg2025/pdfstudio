@@ -235,8 +235,8 @@ const mediaTools = [
   {
     path: '/tao-phu-de-video',
     icon: <Type size={24} color="#06b6d4" />,
-    title: '📝 Tạo Phụ Đề Video Tự Động & Đốt Sub',
-    desc: 'Nhận diện lời thoại video tự động (Speech-to-Text), tinh chỉnh timecode, đổi kiểu chữ/màu sắc/nền mờ, xuất file SRT và đốt sub trực tiếp vào video.',
+    title: '📝 Tạo Phụ Đề Video Tự Động & Chèn Phụ Đề',
+    desc: 'Nhận diện lời thoại video tự động (Speech-to-Text), tinh chỉnh timecode, đổi kiểu chữ/màu sắc/nền mờ, xuất file SRT và chèn phụ đề trực tiếp vào video.',
     isHot: true
   },
   {
