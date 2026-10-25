@@ -152,23 +152,52 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
         {/* Tab Content iOS */}
         {activeTab === 'ios' && (
           <div className="install-tab-body">
+            {/* Header Preview App trên iPhone */}
+            <div className="ios-app-preview-card">
+              <div className="ios-preview-icon-wrapper">
+                <img src="/apple-touch-icon.png" alt="Logo Tiện ích ITE" className="ios-preview-app-icon" />
+              </div>
+              <div className="ios-preview-info">
+                <div className="ios-preview-title">Tiện ích ITE</div>
+                <div className="ios-preview-desc">Ứng dụng web toàn màn hình cho iPhone & iPad</div>
+                <div className="ios-preview-status">
+                  <span className="ios-badge-ready">✓ Đã sẵn sàng cài đặt</span>
+                  <span className="ios-badge-free">Miễn phí 100%</span>
+                </div>
+              </div>
+            </div>
+
             <div className="ios-badge-note">
-              <span>💡 Dành riêng cho trình duyệt Safari trên iPhone / iPad</span>
+              <span>💡 Dành riêng cho trình duyệt Safari trên iPhone / iPad (iOS)</span>
             </div>
 
             <div className="install-steps-box" style={{ marginTop: '0.5rem' }}>
-              <h4 className="steps-title"><Apple size={16} /> Các bước cài đặt lên iPhone / iPad:</h4>
-              <ol className="install-steps-list">
-                <li>Mở liên kết <strong>https://tienich.ite.id.vn</strong> bằng trình duyệt <strong>Safari</strong>.</li>
-                <li>Bấm vào biểu tượng <strong>Chia sẻ</strong> (ô vuông có mũi tên chỉ lên ⬆️) ở thanh công cụ dưới đáy màn hình.</li>
-                <li>Cuộn xuống danh sách tùy chọn và nhấn chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong>.</li>
-                <li>Nhấn nút <strong>"Thêm" (Add)</strong> ở góc trên bên phải để xác nhận.</li>
+              <h4 className="steps-title"><Apple size={16} /> 3 bước cài đặt vào màn hình iPhone cực nhanh:</h4>
+              <ol className="install-steps-list-ios">
+                <li>
+                  <div className="step-num">1</div>
+                  <div className="step-desc">
+                    Mở trang web bằng trình duyệt <strong>Safari</strong> trên iPhone.
+                  </div>
+                </li>
+                <li>
+                  <div className="step-num">2</div>
+                  <div className="step-desc">
+                    Nhấn vào nút <strong>Chia sẻ</strong> <span className="safari-share-icon">⎙ / ⬆️</span> ở thanh công cụ dưới đáy Safari.
+                  </div>
+                </li>
+                <li>
+                  <div className="step-num">3</div>
+                  <div className="step-desc">
+                    Cuộn xuống và chọn <strong>"Thêm vào MH chính" (Add to Home Screen)</strong> ➔ Nhấn <strong>"Thêm" (Add)</strong>.
+                  </div>
+                </li>
               </ol>
             </div>
 
             <div className="ios-feature-card">
-              <Check size={16} color="#16a34a" />
-              <span>Sau khi thêm, mở ứng dụng từ Màn hình chính sẽ có giao diện toàn màn hình, không bị vướng thanh địa chỉ Safari!</span>
+              <Check size={18} color="#16a34a" style={{ flexShrink: 0 }} />
+              <span>Biểu tượng <strong>Tiện ích ITE</strong> sẽ xuất hiện ngay trên màn hình iPhone với logo chuẩn sắc nét, mở lên chạy toàn màn hình siêu mượt!</span>
             </div>
           </div>
         )}
