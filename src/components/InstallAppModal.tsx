@@ -81,7 +81,7 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
             onClick={() => setActiveTab('android')}
           >
             <Smartphone size={18} />
-            <span>Android (APK & PWA)</span>
+            <span>Android</span>
           </button>
           <button 
             className={`install-tab-btn ${activeTab === 'ios' ? 'active' : ''}`}
@@ -95,34 +95,28 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
         {/* Tab Content Android */}
         {activeTab === 'android' && (
           <div className="install-tab-body">
-            {/* Lựa chọn 1: Tải APK trực tiếp */}
-            <div className="install-quick-action" style={{ background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(59, 130, 246, 0.03))', borderColor: 'rgba(37, 99, 235, 0.25)' }}>
-              <div className="quick-action-text">
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <strong>Cài Đặt Bằng File APK</strong>
-                  <span style={{ fontSize: '11px', background: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>Khuyên dùng</span>
-                </div>
-                <span>Tải trực tiếp file .apk cài đặt vào điện thoại Android</span>
+            {/* Header Preview App Android */}
+            <div className="ios-app-preview-card" style={{ background: 'linear-gradient(135deg, rgba(22, 163, 74, 0.08), rgba(2, 132, 199, 0.06))', borderColor: 'rgba(22, 163, 74, 0.2)' }}>
+              <div className="ios-preview-icon-wrapper">
+                <img src="/icon-192.png" alt="Logo Tiện ích ITE" className="ios-preview-app-icon" />
               </div>
-              <a 
-                href="/download/tienich-ite.apk" 
-                download="tienich-ite.apk"
-                className="btn-install-primary"
-                style={{ textDecoration: 'none' }}
-              >
-                <Download size={18} /> Tải File APK
-              </a>
+              <div className="ios-preview-info">
+                <div className="ios-preview-title">Tiện ích ITE</div>
+                <div className="ios-preview-desc">Ứng dụng màn hình chính cho điện thoại Android</div>
+                <div className="ios-preview-status">
+                  <span className="ios-badge-ready" style={{ background: '#dcfce7', color: '#16a34a' }}>✓ Sẵn sàng cài đặt</span>
+                  <span className="ios-badge-free">Toàn màn hình</span>
+                </div>
+              </div>
             </div>
 
-            {/* Lựa chọn 2: Cài PWA nhanh */}
-            <div className="install-quick-action" style={{ marginTop: '0.75rem' }}>
+            <div className="install-quick-action" style={{ marginTop: '0.85rem' }}>
               <div className="quick-action-text">
-                <strong>Thêm Nhanh (PWA Web App)</strong>
-                <span>Thêm trực tiếp vào màn hình chính mà không cần tải file</span>
+                <strong>Cài Đặt Vào Màn Hình Chính</strong>
+                <span>Khởi động siêu tốc trong 1 giây, mở toàn màn hình không vướng thanh web</span>
               </div>
               <button 
                 className="btn-install-primary"
-                style={{ background: '#475569' }}
                 onClick={handleInstallClick}
                 disabled={isInstalled}
               >
@@ -132,18 +126,19 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
                   </>
                 ) : (
                   <>
-                    <Smartphone size={18} /> Thêm Vào MH
+                    <Download size={18} /> Cài Đặt Ngay
                   </>
                 )}
               </button>
             </div>
 
             <div className="install-steps-box" style={{ marginTop: '0.85rem' }}>
-              <h4 className="steps-title"><Info size={16} /> Lưu ý khi cài file APK trên Android:</h4>
+              <h4 className="steps-title"><Info size={16} /> Cách thêm thủ công nếu trình duyệt không tự hiện:</h4>
               <ol className="install-steps-list">
-                <li>Sau khi bấm <strong>"Tải File APK"</strong>, mở file vừa tải về từ thông báo điện thoại.</li>
-                <li>Nếu điện thoại hỏi <em>"Cho phép cài đặt ứng dụng từ nguồn này"</em>, hãy bật <strong>Cho phép</strong>.</li>
-                <li>Bấm <strong>Cài đặt</strong> và mở ứng dụng Tiện Ích ITE để trải nghiệm ngay!</li>
+                <li>Mở web bằng trình duyệt <strong>Chrome</strong> hoặc <strong>Cốc Cốc</strong>.</li>
+                <li>Nhấn vào biểu tượng <strong>3 dấu chấm ⋮</strong> ở góc trên bên phải màn hình.</li>
+                <li>Chọn <strong>"Cài đặt ứng dụng"</strong> hoặc <strong>"Thêm vào Màn hình chính"</strong>.</li>
+                <li>Biểu tượng <strong>Tiện ích ITE</strong> sẽ xuất hiện ngay trên màn hình điện thoại!</li>
               </ol>
             </div>
           </div>
