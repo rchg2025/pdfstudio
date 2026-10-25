@@ -53,8 +53,12 @@ import {
   Scale,
   ArrowRight,
   Search,
-  X
+  X,
+  Smartphone,
+  Apple,
+  DownloadCloud
 } from 'lucide-react';
+import InstallAppModal from '../components/InstallAppModal';
 import './Home.css';
 
 const pdfTools = [
@@ -494,6 +498,13 @@ const removeVietnameseTones = (str: string): string => {
 const Home = () => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'edtech' | 'pdf' | 'image' | 'media' | 'other'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [installModalOpen, setInstallModalOpen] = useState(false);
+  const [installDefaultTab, setInstallDefaultTab] = useState<'android' | 'ios'>('android');
+
+  const openInstallApp = (tab: 'android' | 'ios') => {
+    setInstallDefaultTab(tab);
+    setInstallModalOpen(true);
+  };
 
   // Lọc công cụ theo từ khóa tìm kiếm
   const filterTools = <T extends { title: string; desc: string; path: string }>(tools: T[]): T[] => {
@@ -537,6 +548,31 @@ const Home = () => {
         <p className="home-subtitle">
           Nền tảng tất cả trong một phục vụ công việc văn phòng, xử lý PDF, đồ họa hình ảnh và bộ công cụ số hóa giảng dạy trực quan.
         </p>
+
+        {/* NÚT CÀI ĐẶT ỨNG DỤNG CHO ANDROID VÀ IOS */}
+        <div className="home-app-install-bar">
+          <span className="install-bar-label">
+            <DownloadCloud size={16} /> Ứng dụng di động:
+          </span>
+          <button 
+            type="button" 
+            className="btn-install-badge android"
+            onClick={() => openInstallApp('android')}
+            title="Cài đặt ứng dụng trên Android (APK / Màn hình chính)"
+          >
+            <Smartphone size={16} />
+            <span>Cài đặt cho Android</span>
+          </button>
+          <button 
+            type="button" 
+            className="btn-install-badge ios"
+            onClick={() => openInstallApp('ios')}
+            title="Cài đặt ứng dụng trên iPhone / iPad (iOS)"
+          >
+            <Apple size={16} />
+            <span>Cài đặt cho iOS (iPhone)</span>
+          </button>
+        </div>
 
         {/* Nổi bật: Truy cập nhanh các tính năng Giáo Dục / LMS hàng đầu */}
         <div className="hero-quick-shortcuts">
@@ -830,6 +866,13 @@ const Home = () => {
           </button>
         </div>
       )}
+
+      {/* Modal hướng dẫn cài đặt ứng dụng cho Android & iOS */}
+      <InstallAppModal
+        isOpen={installModalOpen}
+        onClose={() => setInstallModalOpen(false)}
+        defaultTab={installDefaultTab}
+      />
     </div>
   );
 };
