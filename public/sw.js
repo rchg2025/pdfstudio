@@ -1,10 +1,12 @@
-const CACHE_NAME = 'tienich-ite-v1';
+const CACHE_NAME = 'tienich-ite-v2';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
   '/manifest.json',
   '/logo.webp',
   '/logo.jpg',
+  '/icon-192.png',
+  '/icon-512.png',
   '/favicon.svg'
 ];
 

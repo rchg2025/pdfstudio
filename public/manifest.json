@@ -9,6 +9,7 @@
   "orientation": "any",
   "background_color": "#ffffff",
   "theme_color": "#0284c7",
+  "categories": ["education", "productivity", "utilities"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -33,6 +34,22 @@
       "sizes": "512x512",
       "type": "image/jpeg",
       "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/desktop-preview.png",
+      "sizes": "1280x1280",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Tiện ích ITE Desktop"
+    },
+    {
+      "src": "/screenshots/mobile-preview.png",
+      "sizes": "640x640",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Tiện ích ITE Mobile"
     }
   ]
 }
