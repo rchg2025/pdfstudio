@@ -47,6 +47,19 @@
       "browserRequirements": "Requires JavaScript. Requires HTML5."
     }
     </script>
+    <!-- PWA Install Prompt Capture Càng sớm càng tốt -->
+    <script>
+      window.__pwaInstallPrompt = null;
+      window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        window.__pwaInstallPrompt = e;
+        window.dispatchEvent(new CustomEvent('pwa-prompt-ready'));
+      });
+      window.addEventListener('appinstalled', function() {
+        window.__pwaInstallPrompt = null;
+        window.dispatchEvent(new CustomEvent('pwa-installed'));
+      });
+    </script>
   </head>
   <body>
     <div id="root"></div>

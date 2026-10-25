@@ -22,7 +22,9 @@ if (typeof window !== 'undefined') {
 
 export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android' }: InstallAppModalProps) {
   const [activeTab, setActiveTab] = useState<InstallTabType>(defaultTab);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(globalDeferredPrompt);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(() => {
+    return (typeof window !== 'undefined' && (window as any).__pwaInstallPrompt) || globalDeferredPrompt;
+  });
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
@@ -30,24 +32,35 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
   }, [defaultTab]);
 
   useEffect(() => {
-    if (globalDeferredPrompt) {
-      setDeferredPrompt(globalDeferredPrompt);
-    }
+    const checkPrompt = () => {
+      const p = (window as any).__pwaInstallPrompt || globalDeferredPrompt;
+      if (p) setDeferredPrompt(p);
+    };
+
+    checkPrompt();
+
+    const handlePromptReady = () => {
+      checkPrompt();
+    };
 
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
       globalDeferredPrompt = e;
+      (window as any).__pwaInstallPrompt = e;
       setDeferredPrompt(e);
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
       globalDeferredPrompt = null;
+      (window as any).__pwaInstallPrompt = null;
       setDeferredPrompt(null);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('pwa-prompt-ready', handlePromptReady);
     window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('pwa-installed', handleAppInstalled);
 
     if (window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
@@ -55,19 +68,23 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('pwa-prompt-ready', handlePromptReady);
       window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('pwa-installed', handleAppInstalled);
     };
   }, []);
 
-  // Tự động kích hoạt hộp thoại cài đặt ngay khi mở modal nếu trình duyệt hỗ trợ
+  // Tự động kích hoạt hộp thoại cài đặt ngay khi mở modal nếu có prompt sẵn sàng
   useEffect(() => {
-    if (isOpen && (activeTab === 'android' || activeTab === 'desktop') && deferredPrompt && !isInstalled) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then((choice: any) => {
-        if (choice.outcome === 'accepted') {
+    const promptObj = deferredPrompt || (typeof window !== 'undefined' && (window as any).__pwaInstallPrompt) || globalDeferredPrompt;
+    if (isOpen && (activeTab === 'android' || activeTab === 'desktop') && promptObj && !isInstalled) {
+      promptObj.prompt().catch(() => {});
+      promptObj.userChoice.then((choice: any) => {
+        if (choice && choice.outcome === 'accepted') {
           setIsInstalled(true);
         }
         globalDeferredPrompt = null;
+        if (typeof window !== 'undefined') (window as any).__pwaInstallPrompt = null;
         setDeferredPrompt(null);
       }).catch(() => {});
     }
@@ -76,19 +93,25 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
   if (!isOpen) return null;
 
   const handleInstallClick = async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === 'accepted') {
-        setIsInstalled(true);
+    const promptObj = deferredPrompt || (typeof window !== 'undefined' && (window as any).__pwaInstallPrompt) || globalDeferredPrompt;
+    if (promptObj) {
+      try {
+        await promptObj.prompt();
+        const choice = await promptObj.userChoice;
+        if (choice && choice.outcome === 'accepted') {
+          setIsInstalled(true);
+        }
+        globalDeferredPrompt = null;
+        if (typeof window !== 'undefined') (window as any).__pwaInstallPrompt = null;
+        setDeferredPrompt(null);
+      } catch (err) {
+        console.warn('Lỗi kích hoạt prompt:', err);
       }
-      globalDeferredPrompt = null;
-      setDeferredPrompt(null);
     } else {
       if (activeTab === 'desktop') {
-        alert('Để cài đặt vào máy tính:\n1. Nhìn lên thanh địa chỉ trình duyệt (bên phải cạnh dấu sao bookmark) ➔ Nhấn biểu tượng "Cài đặt" (máy tính có mũi tên xuống ⤓)\n2. Hoặc nhấn biểu tượng 3 chấm ⋮ góc phải trình duyệt ➔ Chọn "Lưu và chia sẻ" ➔ "Cài đặt Tiện ích ITE".');
+        alert('Trình duyệt của bạn đang kiểm tra điều kiện cài đặt:\n\n1. Nhìn ngay lên thanh địa chỉ (URL) của trình duyệt ở góc trên cùng bên phải (cạnh biểu tượng dấu sao ⭐).\n2. Nhấn vào biểu tượng "Cài đặt ứng dụng" (Hình máy tính có mũi tên xuống ⤓ hoặc dấu cộng ⊕).\n3. Nhấn "Cài đặt" để hoàn tất.');
       } else {
-        alert('Để thêm ứng dụng vào màn hình: Nhấn biểu tượng 3 chấm ⋮ (hoặc Menu chia sẻ) của trình duyệt ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
+        alert('Để thêm ứng dụng vào màn hình:\nNhấn biểu tượng 3 chấm ⋮ góc phải trình duyệt ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
       }
     }
   };
