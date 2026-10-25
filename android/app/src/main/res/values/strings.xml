@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tiện ích ITE</string>
+    <string name="title_activity_main">Tiện ích ITE</string>
+    <string name="package_name">vn.id.ite.tienich</string>
+    <string name="custom_url_scheme">vn.id.ite.tienich</string>
+</resources>

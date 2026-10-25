@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Mobile App Native Build Artifacts
+android/app/build/
+android/.gradle/
+ios/App/build/
+ios/App/Pods/
