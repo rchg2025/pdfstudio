@@ -53,14 +53,14 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
       setDeferredPrompt(null);
     } else {
       // Hướng dẫn nếu trình duyệt không tự kích hoạt prompt
-      alert('Để cài đặt: Bấm vào biểu tượng ⋮ (Menu) ở góc trên bên phải trình duyệt Chrome/Cốc Cốc ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
+      alert('Để cài đặt PWA: Bấm vào biểu tượng ⋮ (Menu) ở góc trên bên phải trình duyệt Chrome/Cốc Cốc ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính". Hoặc bấm nút "Tải File APK" ở trên!');
     }
   };
 
   return (
     <div className="install-modal-overlay" onClick={onClose}>
       <div className="install-modal-container" onClick={(e) => e.stopPropagation()}>
-        <button className="install-modal-close" onClick={onClose}>
+        <button className="install-modal-close" onClick={onClose} aria-label="Đóng">
           <X size={20} />
         </button>
 
@@ -70,7 +70,7 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
           </div>
           <div>
             <h2 className="install-modal-title">Cài Đặt Ứng Dụng Tiện Ích ITE</h2>
-            <p className="install-modal-subtitle">Sử dụng mượt mà, mở nhanh trong 1 giây không cần gõ địa chỉ web</p>
+            <p className="install-modal-subtitle">Trải nghiệm mượt mà, khởi động ngay tức thì không cần gõ web</p>
           </div>
         </div>
 
@@ -81,7 +81,7 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
             onClick={() => setActiveTab('android')}
           >
             <Smartphone size={18} />
-            <span>Android (APK / PWA)</span>
+            <span>Android (APK & PWA)</span>
           </button>
           <button 
             className={`install-tab-btn ${activeTab === 'ios' ? 'active' : ''}`}
@@ -95,13 +95,34 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
         {/* Tab Content Android */}
         {activeTab === 'android' && (
           <div className="install-tab-body">
-            <div className="install-quick-action">
+            {/* Lựa chọn 1: Tải APK trực tiếp */}
+            <div className="install-quick-action" style={{ background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(59, 130, 246, 0.03))', borderColor: 'rgba(37, 99, 235, 0.25)' }}>
               <div className="quick-action-text">
-                <strong>Cài Đặt Nhanh Vào Màn Hình Chính</strong>
-                <span>Ứng dụng chạy độc lập, toàn màn hình, mượt mà như app gốc</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <strong>Cài Đặt Bằng File APK</strong>
+                  <span style={{ fontSize: '11px', background: '#2563eb', color: '#fff', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>Khuyên dùng</span>
+                </div>
+                <span>Tải trực tiếp file .apk cài đặt vào điện thoại Android</span>
+              </div>
+              <a 
+                href="/download/tienich-ite.apk" 
+                download="tienich-ite.apk"
+                className="btn-install-primary"
+                style={{ textDecoration: 'none' }}
+              >
+                <Download size={18} /> Tải File APK
+              </a>
+            </div>
+
+            {/* Lựa chọn 2: Cài PWA nhanh */}
+            <div className="install-quick-action" style={{ marginTop: '0.75rem' }}>
+              <div className="quick-action-text">
+                <strong>Thêm Nhanh (PWA Web App)</strong>
+                <span>Thêm trực tiếp vào màn hình chính mà không cần tải file</span>
               </div>
               <button 
                 className="btn-install-primary"
+                style={{ background: '#475569' }}
                 onClick={handleInstallClick}
                 disabled={isInstalled}
               >
@@ -111,19 +132,18 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
                   </>
                 ) : (
                   <>
-                    <Download size={18} /> Cài Đặt Ngay
+                    <Smartphone size={18} /> Thêm Vào MH
                   </>
                 )}
               </button>
             </div>
 
-            <div className="install-steps-box">
-              <h4 className="steps-title"><Info size={16} /> Cách cài đặt thủ công trên Android (Chrome, Cốc Cốc, Brave):</h4>
+            <div className="install-steps-box" style={{ marginTop: '0.85rem' }}>
+              <h4 className="steps-title"><Info size={16} /> Lưu ý khi cài file APK trên Android:</h4>
               <ol className="install-steps-list">
-                <li>Mở trang web bằng trình duyệt <strong>Google Chrome</strong> hoặc <strong>Cốc Cốc</strong>.</li>
-                <li>Nhấn vào biểu tượng <strong>3 dấu chấm ⋮</strong> ở góc trên bên phải màn hình.</li>
-                <li>Chọn <strong>"Cài đặt ứng dụng"</strong> (hoặc <strong>"Thêm vào Màn hình chính"</strong>).</li>
-                <li>Nhấn <strong>"Cài đặt"</strong> để hoàn tất. Biểu tượng ứng dụng sẽ xuất hiện ngay trên màn hình điện thoại!</li>
+                <li>Sau khi bấm <strong>"Tải File APK"</strong>, mở file vừa tải về từ thông báo điện thoại.</li>
+                <li>Nếu điện thoại hỏi <em>"Cho phép cài đặt ứng dụng từ nguồn này"</em>, hãy bật <strong>Cho phép</strong>.</li>
+                <li>Bấm <strong>Cài đặt</strong> và mở ứng dụng Tiện Ích ITE để trải nghiệm ngay!</li>
               </ol>
             </div>
           </div>
