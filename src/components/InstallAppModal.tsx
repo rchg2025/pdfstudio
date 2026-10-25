@@ -8,9 +8,19 @@ interface InstallAppModalProps {
   defaultTab?: 'android' | 'ios';
 }
 
+// Lưu trữ event beforeinstallprompt toàn cục để không bị mất khi modal mount/unmount
+let globalDeferredPrompt: any = null;
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeinstallprompt', (e: any) => {
+    e.preventDefault();
+    globalDeferredPrompt = e;
+  });
+}
+
 export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android' }: InstallAppModalProps) {
   const [activeTab, setActiveTab] = useState<'android' | 'ios'>(defaultTab);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(globalDeferredPrompt);
   const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
@@ -18,13 +28,19 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
   }, [defaultTab]);
 
   useEffect(() => {
+    if (globalDeferredPrompt) {
+      setDeferredPrompt(globalDeferredPrompt);
+    }
+
     const handleBeforeInstallPrompt = (e: any) => {
       e.preventDefault();
+      globalDeferredPrompt = e;
       setDeferredPrompt(e);
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
+      globalDeferredPrompt = null;
       setDeferredPrompt(null);
     };
 
@@ -41,6 +57,20 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
     };
   }, []);
 
+  // Tự động kích hoạt hộp thoại cài đặt ngay khi mở modal trên Android nếu trình duyệt hỗ trợ
+  useEffect(() => {
+    if (isOpen && activeTab === 'android' && deferredPrompt && !isInstalled) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choice: any) => {
+        if (choice.outcome === 'accepted') {
+          setIsInstalled(true);
+        }
+        globalDeferredPrompt = null;
+        setDeferredPrompt(null);
+      }).catch(() => {});
+    }
+  }, [isOpen, activeTab, deferredPrompt, isInstalled]);
+
   if (!isOpen) return null;
 
   const handleInstallClick = async () => {
@@ -50,10 +80,11 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
       if (outcome === 'accepted') {
         setIsInstalled(true);
       }
+      globalDeferredPrompt = null;
       setDeferredPrompt(null);
     } else {
-      // Hướng dẫn nếu trình duyệt không tự kích hoạt prompt
-      alert('Để cài đặt PWA: Bấm vào biểu tượng ⋮ (Menu) ở góc trên bên phải trình duyệt Chrome/Cốc Cốc ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính". Hoặc bấm nút "Tải File APK" ở trên!');
+      // Hướng dẫn nếu trình duyệt đã kích hoạt hoặc không cung cấp prompt
+      alert('Để thêm ứng dụng vào màn hình: Nhấn biểu tượng 3 chấm ⋮ (hoặc Menu chia sẻ) của trình duyệt ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
     }
   };
 

@@ -4,7 +4,7 @@ import './index.css'
 import App from './App.tsx'
 
 // Đăng ký Service Worker cho PWA
-if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch((err) => {
       console.warn('ServiceWorker registration failed: ', err);
