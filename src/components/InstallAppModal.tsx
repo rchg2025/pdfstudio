@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Smartphone, Apple, Download, Check, X, Info } from 'lucide-react';
+import { Smartphone, Apple, Monitor, Download, Check, X, Info, Laptop } from 'lucide-react';
 import './InstallAppModal.css';
+
+export type InstallTabType = 'android' | 'ios' | 'desktop';
 
 interface InstallAppModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'android' | 'ios';
+  defaultTab?: InstallTabType;
 }
 
 // Lưu trữ event beforeinstallprompt toàn cục để không bị mất khi modal mount/unmount
@@ -19,7 +21,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android' }: InstallAppModalProps) {
-  const [activeTab, setActiveTab] = useState<'android' | 'ios'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<InstallTabType>(defaultTab);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(globalDeferredPrompt);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -57,9 +59,9 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
     };
   }, []);
 
-  // Tự động kích hoạt hộp thoại cài đặt ngay khi mở modal trên Android nếu trình duyệt hỗ trợ
+  // Tự động kích hoạt hộp thoại cài đặt ngay khi mở modal nếu trình duyệt hỗ trợ
   useEffect(() => {
-    if (isOpen && activeTab === 'android' && deferredPrompt && !isInstalled) {
+    if (isOpen && (activeTab === 'android' || activeTab === 'desktop') && deferredPrompt && !isInstalled) {
       deferredPrompt.prompt();
       deferredPrompt.userChoice.then((choice: any) => {
         if (choice.outcome === 'accepted') {
@@ -83,8 +85,11 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
       globalDeferredPrompt = null;
       setDeferredPrompt(null);
     } else {
-      // Hướng dẫn nếu trình duyệt đã kích hoạt hoặc không cung cấp prompt
-      alert('Để thêm ứng dụng vào màn hình: Nhấn biểu tượng 3 chấm ⋮ (hoặc Menu chia sẻ) của trình duyệt ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
+      if (activeTab === 'desktop') {
+        alert('Để cài đặt vào máy tính:\n1. Nhìn lên thanh địa chỉ trình duyệt (bên phải cạnh dấu sao bookmark) ➔ Nhấn biểu tượng "Cài đặt" (máy tính có mũi tên xuống ⤓)\n2. Hoặc nhấn biểu tượng 3 chấm ⋮ góc phải trình duyệt ➔ Chọn "Lưu và chia sẻ" ➔ "Cài đặt Tiện ích ITE".');
+      } else {
+        alert('Để thêm ứng dụng vào màn hình: Nhấn biểu tượng 3 chấm ⋮ (hoặc Menu chia sẻ) của trình duyệt ➔ Chọn "Cài đặt ứng dụng" hoặc "Thêm vào màn hình chính".');
+      }
     }
   };
 
@@ -111,15 +116,22 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
             className={`install-tab-btn ${activeTab === 'android' ? 'active' : ''}`}
             onClick={() => setActiveTab('android')}
           >
-            <Smartphone size={18} />
+            <Smartphone size={17} />
             <span>Android</span>
           </button>
           <button 
             className={`install-tab-btn ${activeTab === 'ios' ? 'active' : ''}`}
             onClick={() => setActiveTab('ios')}
           >
-            <Apple size={18} />
-            <span>iPhone / iPad (iOS)</span>
+            <Apple size={17} />
+            <span>iPhone / iOS</span>
+          </button>
+          <button 
+            className={`install-tab-btn ${activeTab === 'desktop' ? 'active' : ''}`}
+            onClick={() => setActiveTab('desktop')}
+          >
+            <Monitor size={17} />
+            <span>PC / Mac / Linux</span>
           </button>
         </div>
 
@@ -224,6 +236,77 @@ export default function InstallAppModal({ isOpen, onClose, defaultTab = 'android
             <div className="ios-feature-card">
               <Check size={18} color="#16a34a" style={{ flexShrink: 0 }} />
               <span>Biểu tượng <strong>Tiện ích ITE</strong> sẽ xuất hiện ngay trên màn hình iPhone với logo chuẩn sắc nét, mở lên chạy toàn màn hình siêu mượt!</span>
+            </div>
+          </div>
+        )}
+
+        {/* Tab Content Desktop (Windows, MacOS, Linux) */}
+        {activeTab === 'desktop' && (
+          <div className="install-tab-body">
+            {/* Header Preview App Desktop */}
+            <div className="ios-app-preview-card" style={{ background: 'linear-gradient(135deg, rgba(2, 132, 199, 0.08), rgba(99, 102, 241, 0.08))', borderColor: 'rgba(2, 132, 199, 0.2)' }}>
+              <div className="ios-preview-icon-wrapper">
+                <img src="/icon-192.png" alt="Logo Tiện ích ITE" className="ios-preview-app-icon" />
+              </div>
+              <div className="ios-preview-info">
+                <div className="ios-preview-title">Tiện ích ITE - Desktop App</div>
+                <div className="ios-preview-desc">Ứng dụng cửa sổ độc lập cho Windows, Mac & Linux</div>
+                <div className="ios-preview-status">
+                  <span className="ios-badge-ready" style={{ background: '#e0f2fe', color: '#0284c7' }}>✓ Chạy độc lập</span>
+                  <span className="ios-badge-free">Ghim Taskbar / Dock</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="install-quick-action" style={{ marginTop: '0.85rem' }}>
+              <div className="quick-action-text">
+                <strong>Cài Đặt Thành Ứng Dụng Máy Tính</strong>
+                <span>Mở trong cửa sổ riêng, có phím tắt trên Desktop, ghim vào thanh Taskbar / Dock</span>
+              </div>
+              <button 
+                className="btn-install-primary"
+                onClick={handleInstallClick}
+                disabled={isInstalled}
+              >
+                {isInstalled ? (
+                  <>
+                    <Check size={18} /> Đã Cài Đặt
+                  </>
+                ) : (
+                  <>
+                    <Laptop size={18} /> Cài Vào Máy Tính
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="install-steps-box" style={{ marginTop: '0.85rem' }}>
+              <h4 className="steps-title"><Monitor size={16} /> Cách cài nhanh trên máy tính (Chrome, Edge, Cốc Cốc, Brave):</h4>
+              <ol className="install-steps-list-ios">
+                <li>
+                  <div className="step-num">1</div>
+                  <div className="step-desc">
+                    Nhìn vào <strong>thanh địa chỉ URL</strong> của trình duyệt (phía bên phải, cạnh biểu tượng dấu sao ⭐).
+                  </div>
+                </li>
+                <li>
+                  <div className="step-num">2</div>
+                  <div className="step-desc">
+                    Nhấn vào biểu tượng <strong>"Cài đặt Tiện ích ITE"</strong> (hình máy tính có mũi tên xuống ⤓ hoặc biểu tượng dấu cộng ⊕).
+                  </div>
+                </li>
+                <li>
+                  <div className="step-num">3</div>
+                  <div className="step-desc">
+                    Bấm <strong>"Cài đặt" (Install)</strong>. Ứng dụng sẽ xuất hiện trên Desktop và thanh Taskbar (Windows) hoặc Launchpad / Dock (MacBook)!
+                  </div>
+                </li>
+              </ol>
+            </div>
+
+            <div className="ios-feature-card">
+              <Check size={18} color="#0284c7" style={{ flexShrink: 0 }} />
+              <span>Chạy nhanh như app phần mềm cài đặt thật, không tốn ram trình duyệt, tự động cập nhật phiên bản mới nhất!</span>
             </div>
           </div>
         )}

@@ -56,9 +56,10 @@ import {
   X,
   Smartphone,
   Apple,
+  Monitor,
   DownloadCloud
 } from 'lucide-react';
-import InstallAppModal from '../components/InstallAppModal';
+import InstallAppModal, { type InstallTabType } from '../components/InstallAppModal';
 import './Home.css';
 
 const pdfTools = [
@@ -499,9 +500,9 @@ const Home = () => {
   const [activeCategory, setActiveCategory] = useState<'all' | 'edtech' | 'pdf' | 'image' | 'media' | 'other'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [installModalOpen, setInstallModalOpen] = useState(false);
-  const [installDefaultTab, setInstallDefaultTab] = useState<'android' | 'ios'>('android');
+  const [installDefaultTab, setInstallDefaultTab] = useState<InstallTabType>('android');
 
-  const openInstallApp = (tab: 'android' | 'ios') => {
+  const openInstallApp = (tab: InstallTabType) => {
     setInstallDefaultTab(tab);
     setInstallModalOpen(true);
   };
@@ -549,19 +550,19 @@ const Home = () => {
           Nền tảng tất cả trong một phục vụ công việc văn phòng, xử lý PDF, đồ họa hình ảnh và bộ công cụ số hóa giảng dạy trực quan.
         </p>
 
-        {/* NÚT CÀI ĐẶT ỨNG DỤNG CHO ANDROID VÀ IOS */}
+        {/* NÚT CÀI ĐẶT ỨNG DỤNG CHO ANDROID, IOS VÀ MÁY TÍNH (WINDOWS, MACBOOK, LINUX) */}
         <div className="home-app-install-bar">
           <span className="install-bar-label">
-            <DownloadCloud size={16} /> Ứng dụng di động:
+            <DownloadCloud size={16} /> Cài đặt ứng dụng:
           </span>
           <button 
             type="button" 
             className="btn-install-badge android"
             onClick={() => openInstallApp('android')}
-            title="Cài đặt ứng dụng trên Android (APK / Màn hình chính)"
+            title="Cài đặt ứng dụng trên điện thoại Android"
           >
             <Smartphone size={16} />
-            <span>Cài đặt cho Android</span>
+            <span>Android</span>
           </button>
           <button 
             type="button" 
@@ -570,7 +571,16 @@ const Home = () => {
             title="Cài đặt ứng dụng trên iPhone / iPad (iOS)"
           >
             <Apple size={16} />
-            <span>Cài đặt cho iOS (iPhone)</span>
+            <span>iPhone / iPad</span>
+          </button>
+          <button 
+            type="button" 
+            className="btn-install-badge desktop"
+            onClick={() => openInstallApp('desktop')}
+            title="Cài đặt ứng dụng trên máy tính Windows, MacBook, Linux"
+          >
+            <Monitor size={16} />
+            <span>PC / Mac / Linux</span>
           </button>
         </div>
 

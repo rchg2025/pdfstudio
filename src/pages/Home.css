@@ -111,6 +111,18 @@
   box-shadow: 0 3px 10px rgba(15, 23, 42, 0.12);
 }
 
+.btn-install-badge.desktop {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+.btn-install-badge.desktop:hover {
+  background: #dbeafe;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(29, 78, 216, 0.15);
+}
+
 @media (max-width: 640px) {
   .home-app-install-bar {
     border-radius: 16px;
