@@ -618,7 +618,7 @@ export default function AiLessonSlideStudio() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-3 form-group">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 form-group">
               <div>
                 <label className="form-label">Môn học / Mô-đun</label>
                 <input
@@ -648,7 +648,7 @@ export default function AiLessonSlideStudio() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 form-group">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 form-group">
               <div>
                 <label className="form-label">Hình thức mô-đun</label>
                 <select
