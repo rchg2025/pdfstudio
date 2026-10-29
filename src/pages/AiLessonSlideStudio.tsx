@@ -311,14 +311,14 @@ export default function AiLessonSlideStudio() {
 
             <label
               htmlFor={`node-${node.id}`}
-              className="text-xs font-medium text-gray-700 dark:text-gray-200 cursor-pointer select-none truncate"
+              className="syllabus-tree-label truncate"
             >
               {node.title}
             </label>
           </div>
 
           {hasChildren && isExpanded && (
-            <div className="border-l border-gray-200 dark:border-slate-700 ml-2 pl-1">
+            <div className="border-l-2 border-blue-200 ml-2 pl-1.5 my-0.5">
               {renderTreeNodes(node.children!, depth + 1)}
             </div>
           )}
