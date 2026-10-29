@@ -456,51 +456,43 @@ export default function AiLessonSlideStudio() {
 
           {/* Chọn nguồn Giáo trình */}
           <div className="mb-4">
-            <label className="form-label font-semibold text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-2 block">
+            <label className="form-label font-semibold text-xs text-blue-600 uppercase tracking-wider mb-2 block">
               1. Chọn nguồn tài liệu giáo trình:
             </label>
             <div className="grid grid-cols-2 gap-2 mb-3">
               <button
                 type="button"
-                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                  sourceMode === 'saved_subject'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-950/40 dark:border-blue-500 dark:text-blue-300'
-                    : 'bg-white border-gray-200 text-gray-600 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300'
-                }`}
+                className={`source-tab-btn ${sourceMode === 'saved_subject' ? 'active' : ''}`}
                 onClick={() => setSourceMode('saved_subject')}
               >
-                <FolderOpen size={14} />
+                <FolderOpen size={15} />
                 <span>Giáo trình đã lưu ({savedSubjects.length})</span>
               </button>
 
               <button
                 type="button"
-                className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
-                  sourceMode === 'upload_file'
-                    ? 'bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-950/40 dark:border-blue-500 dark:text-blue-300'
-                    : 'bg-white border-gray-200 text-gray-600 dark:bg-slate-800 dark:border-slate-700 dark:text-gray-300'
-                }`}
+                className={`source-tab-btn ${sourceMode === 'upload_file' ? 'active' : ''}`}
                 onClick={() => setSourceMode('upload_file')}
               >
-                <FileUp size={14} />
+                <FileUp size={15} />
                 <span>Tải tệp (.docx, .pdf)</span>
               </button>
             </div>
 
             {/* Chi tiết từng nguồn */}
             {sourceMode === 'saved_subject' && (
-              <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-200 dark:border-slate-700 mb-3">
+              <div className="source-box-card">
                 {isLoadingSavedSubjects ? (
-                  <div className="text-xs text-gray-500 flex items-center gap-1.5">
-                    <RefreshCw size={12} className="animate-spin" /> Đang tải danh mục giáo trình...
+                  <div className="text-xs text-gray-500 flex items-center gap-1.5 py-1">
+                    <RefreshCw size={13} className="animate-spin text-blue-600" /> Đang tải danh mục giáo trình...
                   </div>
                 ) : savedSubjects.length > 0 ? (
                   <div>
-                    <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+                    <label className="text-xs font-semibold text-gray-600 block mb-1.5">
                       Chọn giáo trình môn học:
                     </label>
                     <select
-                      className="form-select text-xs py-1.5"
+                      className="form-select text-xs py-2 bg-white"
                       value={selectedSubjectId}
                       onChange={(e) => {
                         const found = savedSubjects.find((s) => s.id === e.target.value);
@@ -515,15 +507,15 @@ export default function AiLessonSlideStudio() {
                     </select>
                   </div>
                 ) : (
-                  <div className="text-xs text-gray-500">
-                    Chưa có giáo trình lưu sẵn. Hãy chuyển sang tab <strong>"Tải tệp"</strong> để tải lên giáo trình Word/PDF!
+                  <div className="text-xs text-gray-600 leading-relaxed py-1">
+                    Chưa có giáo trình lưu sẵn trong tài khoản. Hãy bấm tab <strong>"Tải tệp"</strong> ở trên để nạp giáo trình Word/PDF!
                   </div>
                 )}
               </div>
             )}
 
             {sourceMode === 'upload_file' && (
-              <div className="p-3 bg-gray-50 dark:bg-slate-800/60 rounded-lg border border-gray-200 dark:border-slate-700 mb-3">
+              <div className="source-box-card">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -535,21 +527,22 @@ export default function AiLessonSlideStudio() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isReadingFile}
-                  className="w-full flex items-center justify-center gap-2 py-2 px-3 border border-dashed border-blue-400 rounded-lg bg-blue-50/50 hover:bg-blue-50 text-blue-700 dark:bg-blue-950/20 dark:hover:bg-blue-950/40 dark:text-blue-300 text-xs font-semibold"
+                  className="upload-dropzone-btn"
                 >
                   {isReadingFile ? (
                     <>
-                      <RefreshCw size={14} className="animate-spin" /> Đang đọc tài liệu giáo trình...
+                      <RefreshCw size={15} className="animate-spin text-blue-600" /> Đang đọc tài liệu giáo trình...
                     </>
                   ) : (
                     <>
-                      <Upload size={14} /> Tải tệp Giáo trình Word / PDF (.docx, .pdf)
+                      <Upload size={15} /> Tải tệp Giáo trình Word / PDF (.docx, .pdf)
                     </>
                   )}
                 </button>
                 {uploadedFileName && (
-                  <div className="mt-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium truncate">
-                    ✓ Đã nạp: {uploadedFileName}
+                  <div className="mt-2 text-xs text-emerald-600 font-semibold truncate flex items-center gap-1">
+                    <span>✓ Đã nạp thành công:</span>
+                    <span className="underline">{uploadedFileName}</span>
                   </div>
                 )}
               </div>
@@ -559,8 +552,8 @@ export default function AiLessonSlideStudio() {
           {/* CÂY ĐỀ MỤC GIÁO TRÌNH (CHO PHÉP CHỌN PHẠM VI SOẠN BÀI GIẢNG) */}
           <div className="mb-4">
             <div className="flex items-center justify-between mb-1.5">
-              <label className="form-label font-semibold text-xs text-blue-600 dark:text-blue-400 uppercase tracking-wider flex items-center gap-1">
-                <ListTree size={14} />
+              <label className="form-label font-semibold text-xs text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                <ListTree size={15} />
                 <span>2. Chọn phạm vi đề mục soạn slide:</span>
               </label>
 
@@ -568,36 +561,36 @@ export default function AiLessonSlideStudio() {
                 <button
                   type="button"
                   onClick={handleToggleSelectAll}
-                  className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 font-semibold"
+                  className="text-xs text-blue-600 hover:text-blue-800 font-bold px-2 py-0.5 rounded bg-blue-50"
                 >
                   {selectAll ? 'Bỏ chọn hết' : 'Chọn tất cả'}
                 </button>
               )}
             </div>
 
-            <div className="max-h-56 overflow-y-auto p-2.5 bg-gray-50 dark:bg-slate-900/50 border border-gray-200 dark:border-slate-700 rounded-lg text-xs">
+            <div className="syllabus-tree-container">
               {isExtractingTree ? (
-                <div className="py-4 text-center text-gray-500 flex flex-col items-center gap-2">
-                  <RefreshCw size={18} className="animate-spin text-blue-500" />
-                  <span>AI đang phân tích cấu trúc chương & đề mục giáo trình...</span>
+                <div className="py-5 text-center text-gray-600 flex flex-col items-center gap-2">
+                  <RefreshCw size={20} className="animate-spin text-blue-600" />
+                  <span className="font-medium text-xs">AI đang phân tích cấu trúc chương & đề mục giáo trình...</span>
                 </div>
               ) : syllabusTree.length > 0 ? (
                 <div>
-                  <div className="text-[11px] text-gray-500 dark:text-gray-400 mb-1.5 italic">
+                  <div className="text-[11px] font-semibold text-blue-800 mb-1.5 pb-1 border-b border-gray-200">
                     Đã chọn {selectedNodeIds.size} / {getAllNodeIds(syllabusTree).length} đề mục:
                   </div>
                   {renderTreeNodes(syllabusTree)}
                 </div>
               ) : (
-                <div className="py-3 text-center text-gray-400">
+                <div className="py-4 text-center text-gray-500 leading-relaxed">
                   Chưa có cây đề mục. Vui lòng nạp tệp giáo trình ở bước trên hoặc dán nội dung.
                   {rawSyllabusContent && (
                     <button
                       type="button"
                       onClick={() => handleExtractTreeFromContent()}
-                      className="block mx-auto mt-2 text-blue-600 underline font-semibold text-xs"
+                      className="block mx-auto mt-2 text-blue-600 font-bold text-xs bg-white px-3 py-1.5 rounded-md border border-blue-200 shadow-sm hover:bg-blue-50"
                     >
-                      Bóc tách đề mục ngay
+                      ✨ Bóc tách đề mục ngay
                     </button>
                   )}
                 </div>
