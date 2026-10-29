@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Download, Settings, RefreshCw, CheckCircle2, Info, FileBox } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorkerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url';
-import { jsPDF } from "jspdf";
 import FileUploadZone from '../components/FileUploadZone';
 import './PdfCompressor.css';
 
@@ -59,6 +58,7 @@ export default function PdfCompressor() {
       const typedarray = new Uint8Array(arrayBuffer);
       const pdf = await pdfjsLib.getDocument({ data: typedarray }).promise;
       
+      const { jsPDF } = await import('jspdf');
       const newPdf = new jsPDF({ unit: 'pt', format: 'a4' });
       newPdf.deletePage(1);
 

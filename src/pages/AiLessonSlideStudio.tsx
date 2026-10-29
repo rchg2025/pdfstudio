@@ -19,8 +19,6 @@ import {
   ChevronRight,
   BookOpen
 } from 'lucide-react';
-import mammoth from 'mammoth';
-import * as pdfjsLib from 'pdfjs-dist';
 import {
   type SlideDeckData,
   type SlideData,
@@ -31,13 +29,6 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
 import './AiLessonSlideStudio.css';
-
-// Cấu hình worker pdfjs
-try {
-  if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
-  }
-} catch {}
 
 interface TreeNode {
   id: string;
@@ -166,10 +157,17 @@ export default function AiLessonSlideStudio() {
       const name = file.name.toLowerCase();
       if (name.endsWith('.docx') || name.endsWith('.doc')) {
         const arrayBuffer = await file.arrayBuffer();
+        const { default: mammoth } = await import('mammoth');
         const res = await mammoth.extractRawText({ arrayBuffer });
         extracted = res.value || '';
       } else if (name.endsWith('.pdf')) {
         const arrayBuffer = await file.arrayBuffer();
+        const pdfjsLib = await import('pdfjs-dist');
+        try {
+          if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+          }
+        } catch {}
         const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
         let pdfText = '';
         for (let i = 1; i <= pdf.numPages; i++) {

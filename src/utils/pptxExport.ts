@@ -1,4 +1,5 @@
-import pptxgen from 'pptxgenjs';
+// Lazy load pptxgenjs inside exportToPowerPoint to avoid bloating bundle
+
 
 export interface SlideData {
   slideNumber: number;
@@ -111,6 +112,7 @@ export const SLIDE_THEMES: Record<string, ThemeConfig> = {
  * Xuất file PowerPoint chuẩn 16:9 (.pptx)
  */
 export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_blue') {
+  const { default: pptxgen } = await import('pptxgenjs');
   const pptx = new pptxgen();
   pptx.layout = 'LAYOUT_16x9';
   pptx.author = 'Tiện Ích ITE - AI Lesson Slide Studio';
