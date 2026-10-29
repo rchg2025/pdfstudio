@@ -54,6 +54,7 @@ const AnonymousQaWall = React.lazy(() => import('./pages/AnonymousQaWall'));
 const QuizManager = React.lazy(() => import('./pages/QuizManager'));
 const QuizExam = React.lazy(() => import('./pages/QuizExam'));
 const SyllabusExamGenerator = React.lazy(() => import('./pages/SyllabusExamGenerator'));
+const AiLessonSlideStudio = React.lazy(() => import('./pages/AiLessonSlideStudio'));
 const IdPhotoStudio = React.lazy(() => import('./pages/IdPhotoStudio'));
 const AttendanceManager = React.lazy(() => import('./pages/AttendanceManager'));
 const AttendanceCheckIn = React.lazy(() => import('./pages/AttendanceCheckIn'));
@@ -280,6 +281,12 @@ function App() {
             } />
             <Route path="soan-de-thi-ai" element={
               <Suspense fallback={<FallbackLoader />}><SyllabusExamGenerator /></Suspense>
+            } />
+            <Route path="soan-bai-giang-ai" element={
+              <Suspense fallback={<FallbackLoader />}><AiLessonSlideStudio /></Suspense>
+            } />
+            <Route path="tao-slide-ai" element={
+              <Suspense fallback={<FallbackLoader />}><AiLessonSlideStudio /></Suspense>
             } />
             <Route path="phong-thi/:quizId" element={
               <Suspense fallback={<FallbackLoader />}><QuizExam /></Suspense>

@@ -24,6 +24,7 @@ import {
   Music,
   Mic,
   Sparkles,
+  Presentation,
   Code,
   GraduationCap,
   Compass,
@@ -385,6 +386,13 @@ const edTechTools = [
     isHot: true
   },
   {
+    path: '/soan-bai-giang-ai',
+    icon: <Presentation size={24} color="#3b82f6" />,
+    title: '📊 AI Soạn Bài Giảng & Slide PPTX Tự Động (EdTech Copilot)',
+    desc: 'Lập dàn bài sư phạm thông minh, thiết kế bộ slide trình chiếu 16:9 sắc nét, tải file PowerPoint .pptx kèm Giáo án Word chuẩn 5512 BGD&ĐT chỉ với 1 cú click.',
+    isHot: true
+  },
+  {
     path: '/quan-ly-thi-trac-nghiem',
     icon: <CheckSquare size={24} />,
     title: 'Khảo Thí & Ngân Hàng Câu Hỏi Trắc Nghiệm',
@@ -603,6 +611,15 @@ const Home = () => {
             <div className="qsp-text">
               <span className="qsp-title">Khảo Thí & Thi Trắc Nghiệm</span>
               <span className="qsp-sub">Tự luận, thực hành, xuất LMS</span>
+            </div>
+            <ArrowRight size={18} className="qsp-arrow" />
+          </Link>
+
+          <Link to="/soan-bai-giang-ai" className="quick-shortcut-pill featured-ai">
+            <span className="qsp-icon">📊</span>
+            <div className="qsp-text">
+              <span className="qsp-title">Soạn Slide PPTX AI</span>
+              <span className="qsp-sub">Tạo slide & giáo án 5512</span>
             </div>
             <ArrowRight size={18} className="qsp-arrow" />
           </Link>

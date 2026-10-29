@@ -1429,6 +1429,167 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       return res.status(200).json({ success: true });
     }
 
+    // 17.4 SOẠN BÀI GIẢNG & SLIDE PPTX BẰNG AI (EDTECH SLIDE & LESSON PLAN COPILOT)
+    if (req.method === 'POST' && action === 'generate-ai-slides') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const {
+        topic,
+        subject = 'Chung',
+        gradeLevel = 'Lớp 10',
+        slideCount = 8,
+        themeColor = 'ocean_blue',
+        teachingMethod = '5e_model', // 5e_model | active_learning | project_based | standard
+        outlineDetail,
+        customApiKey
+      } = body || {};
+
+      if (!topic || !String(topic).trim()) {
+        return res.status(400).json({ error: 'Chủ đề / Bài học không được để trống.' });
+      }
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({
+          error: 'Chưa cấu hình Google Gemini API Key trong hệ thống! Vui lòng vào Cấu hình AI để lưu key hoặc nhập key cá nhân.'
+        });
+      }
+
+      const modelRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiCustomModel']);
+      const preferredModel = modelRes.rows[0]?.value?.trim();
+      const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
+
+      const numSlides = Math.min(Math.max(Number(slideCount) || 8, 4), 20);
+
+      const systemInstruction = `Bạn là Chuyên gia Sư phạm Xuất sắc & Kỹ sư Thiết kế Bài giảng Điện tử PowerPoint chuyên nghiệp.
+Nhiệm vụ của bạn là soạn bộ slide bài giảng chuẩn mực, logic sư phạm chặt chẽ, hiện đại và sinh động theo chuẩn giáo dục Việt Nam (kết nối chương trình GDPT mới).
+Bộ slide gồm chính xác ${numSlides} trang slide.
+
+Cấu trúc bài giảng sư phạm cần phân bổ:
+1. Slide mở đầu (Tiêu đề, Giáo viên, Môn học, Khối lớp).
+2. Mục tiêu bài học (Kiến thức, Kỹ năng, Thái độ/Phẩm chất).
+3. Khởi động / Kết nối thực tiễn (Câu hỏi gợi mở hoặc tình huống thú vị).
+4. Khám phá kiến thức trọng tâm (Chia thành các slide cô đọng, có cấu trúc bullet point rõ ràng, nhấn mạnh từ khóa).
+5. Luyện tập / Bài tập tương tác / Câu hỏi trắc nghiệm nhanh củng cố.
+6. Vận dụng thực tiễn / Mở rộng / Bài tập về nhà.
+7. Slide kết thúc / Tóm tắt thông điệp.
+
+BẮT BUỘC TRẢ VỀ ĐỊNH DẠNG JSON THUẦN TÚY (không kèm markdown ngoài JSON):
+{
+  "deckTitle": "Tên bài giảng / Chủ đề",
+  "subject": "${subject}",
+  "gradeLevel": "${gradeLevel}",
+  "summary": "Tóm tắt ngắn gọn 1-2 câu về mục tiêu bài giảng",
+  "slides": [
+    {
+      "slideNumber": 1,
+      "layout": "title" | "content" | "two_column" | "quiz" | "quote" | "summary",
+      "title": "Tiêu đề slide ngắn gọn, súc tích",
+      "subtitle": "Phụ đề hoặc lời giải thích thêm (nếu có)",
+      "bullets": [
+        "Ý chính 1 (ngắn gọn, cô đọng, không viết thành đoạn văn dài)",
+        "Ý chính 2",
+        "Ý chính 3"
+      ],
+      "secondaryContent": [
+        "Nội dung cột thứ 2 (dành cho layout two_column) hoặc ghi chú phụ"
+      ],
+      "quiz": {
+        "question": "Câu hỏi trắc nghiệm ngắn (nếu layout là quiz)",
+        "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+        "answer": "A",
+        "explanation": "Giải thích ngắn"
+      },
+      "teacherNotes": "Lời gợi ý giảng dạy cho giáo viên khi trình chiếu slide này (khoảng 2-3 câu hướng dẫn sư phạm)",
+      "visualKeyword": "Từ khóa tiếng Anh hoặc tiếng Việt mô tả hình minh họa phù hợp cho slide (vd: 'solar system planets', 'dna double helix')"
+    }
+  ],
+  "lessonPlanOutline": {
+    "objectives": "Mục tiêu bài dạy chuẩn sư phạm",
+    "preparation": "Thiết bị và học liệu cần chuẩn bị",
+    "timeline": "Phân bổ thời gian ước tính 45 phút"
+  }
+}`;
+
+      const userPrompt = `Hãy thiết kế bộ bài giảng PowerPoint chuẩn chất lượng cao:
+- Chủ đề: ${topic}
+- Môn học: ${subject}
+- Khối lớp: ${gradeLevel}
+- Phương pháp giảng dạy: ${teachingMethod}
+- Số lượng slide: ${numSlides} slide
+${outlineDetail ? `- Đề cương / Yêu cầu chi tiết từ giáo viên: ${outlineDetail}` : ''}
+
+Yêu cầu chất lượng:
+- Ngôn ngữ: 100% tiếng Việt chuẩn mực, đúng thuật ngữ chuyên môn.
+- Nội dung mỗi slide phải cô đọng, trực quan, chia thành các gạch đầu dòng rõ ràng.
+- Ghi chú giáo viên (teacherNotes) phải thiết thực, hướng dẫn cách dẫn dắt lớp học.
+- Đảm bảo đủ chính xác ${numSlides} slide. Trả về đúng JSON theo mô tả.`;
+
+      let generatedResult: any = null;
+      let usedModel = '';
+      const attemptErrors: string[] = [];
+
+      for (const m of modelQueue) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 28000);
+
+          const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: userPrompt }] }],
+              systemInstruction: { parts: [{ text: systemInstruction }] },
+              generationConfig: {
+                responseMimeType: "application/json"
+              }
+            })
+          });
+          clearTimeout(timeoutId);
+
+          if (response.ok) {
+            const data = await response.json();
+            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (text) {
+              const cleaned = text.replace(/^```json\s*/i, '').replace(/\s*```$/i, '').trim();
+              const parsed = JSON.parse(cleaned);
+              if (parsed && Array.isArray(parsed.slides) && parsed.slides.length > 0) {
+                generatedResult = parsed;
+                usedModel = m;
+                break;
+              }
+            }
+          } else {
+            const errText = await response.text();
+            attemptErrors.push(`[${m}]: ${response.status} - ${errText.substring(0, 150)}`);
+          }
+        } catch (e: any) {
+          attemptErrors.push(`[${m}]: ${e.name === 'AbortError' ? 'Timeout 28s' : e.message}`);
+        }
+      }
+
+      if (!generatedResult) {
+        return res.status(500).json({
+          error: 'Tất cả mô hình AI đều gặp sự cố khi tạo slide bài giảng.',
+          details: attemptErrors.join(' | ')
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        modelUsed: usedModel,
+        data: generatedResult
+      });
+    }
+
     // 18. TẠO KỊCH BẢN VIDEO LIỀN MẠCH BẰNG AI (AI VIDEO SCRIPT CONTINUITY STUDIO)
     if (req.method === 'POST' && action === 'generate-video-script') {
       let body = req.body;
