@@ -47,7 +47,7 @@ export interface ThemeConfig {
 export const SLIDE_THEMES: Record<string, ThemeConfig> = {
   ocean_blue: {
     id: 'ocean_blue',
-    name: 'Xanh Đại Dương (Trang Nhã)',
+    name: 'Xanh Đại Dương',
     primary: '1E3A8A', // Deep blue
     secondary: '3B82F6', // Blue
     accent: '06B6D4', // Cyan
@@ -59,7 +59,7 @@ export const SLIDE_THEMES: Record<string, ThemeConfig> = {
   },
   emerald_forest: {
     id: 'emerald_forest',
-    name: 'Xanh Lá Tươi Sáng (Môi Trường / Tự Nhiên)',
+    name: 'Xanh Lá Tự Nhiên',
     primary: '065F46', // Emerald 800
     secondary: '10B981', // Emerald 500
     accent: 'F59E0B', // Amber
@@ -71,7 +71,7 @@ export const SLIDE_THEMES: Record<string, ThemeConfig> = {
   },
   sunset_orange: {
     id: 'sunset_orange',
-    name: 'Cam Hoàng Hôn (Năng Động / Sáng Tạo)',
+    name: 'Cam Hoàng Hôn',
     primary: '9A3412', // Orange 800
     secondary: 'F97316', // Orange 500
     accent: 'E11D48', // Rose
@@ -83,7 +83,7 @@ export const SLIDE_THEMES: Record<string, ThemeConfig> = {
   },
   royal_purple: {
     id: 'royal_purple',
-    name: 'Tím Quý Phái (Văn Học / Nghệ Thuật)',
+    name: 'Tím Nghệ Thuật',
     primary: '581C87', // Purple 900
     secondary: '8B5CF6', // Purple 500
     accent: 'EC4899', // Pink
@@ -95,7 +95,7 @@ export const SLIDE_THEMES: Record<string, ThemeConfig> = {
   },
   dark_slate: {
     id: 'dark_slate',
-    name: 'Dark Mode Hiện Đại (Công Nghệ)',
+    name: 'Dark Mode Công Nghệ',
     primary: '38BDF8', // Sky 400
     secondary: '818CF8', // Indigo 400
     accent: '34D399', // Emerald 400

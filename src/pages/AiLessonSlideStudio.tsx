@@ -689,7 +689,7 @@ export default function AiLessonSlideStudio() {
                       className="theme-color-dot"
                       style={{ backgroundColor: `#${th.primary}` }}
                     />
-                    <span className="truncate">{th.name}</span>
+                    <span className="theme-btn-text">{th.name}</span>
                   </button>
                 ))}
               </div>
