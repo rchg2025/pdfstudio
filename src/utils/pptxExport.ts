@@ -21,6 +21,7 @@ export interface SlideDeckData {
   deckTitle: string;
   subject: string;
   gradeLevel: string;
+  moduleType?: string;
   summary?: string;
   slides: SlideData[];
   lessonPlanOutline?: {
@@ -145,7 +146,7 @@ export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_b
         align: 'left'
       });
 
-      slide.addText('Tạo bởi Tiện Ích ITE (tienich.ite.id.vn)', {
+      slide.addText('Hệ Thống Giáo Dục Cao Đẳng • Tiện Ích ITE', {
         x: 8.0,
         y: 7.0,
         w: 4.5,
@@ -157,7 +158,7 @@ export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_b
       });
     }
 
-    // Ghi chú giáo viên (Speaker Notes)
+    // Ghi chú giảng viên (Speaker Notes)
     if (slideItem.teacherNotes) {
       slide.addNotes(slideItem.teacherNotes);
     }
@@ -175,12 +176,12 @@ export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_b
       });
 
       // Tag môn học & khối lớp
-      slide.addText(`${deck.subject.toUpperCase()} • ${deck.gradeLevel.toUpperCase()}`, {
+      slide.addText(`BÀI GIẢNG HỆ CAO ĐẲNG • ${deck.subject.toUpperCase()} • ${deck.gradeLevel.toUpperCase()}`, {
         x: 1.5,
         y: 1.6,
         w: 10.33,
         h: 0.5,
-        fontSize: 14,
+        fontSize: 13,
         fontFace: theme.fontFace,
         color: theme.secondary,
         bold: true,
@@ -193,7 +194,7 @@ export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_b
         y: 2.3,
         w: 10.33,
         h: 1.8,
-        fontSize: 34,
+        fontSize: 32,
         fontFace: theme.fontFace,
         color: theme.primary,
         bold: true,
@@ -217,7 +218,7 @@ export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_b
       }
 
       // Footer trang bìa
-      slide.addText('BÀI GIẢNG ĐIỆN TỬ TƯƠNG TÁC • CHƯƠNG TRÌNH GIÁO DỤC PHỔ THÔNG', {
+      slide.addText(`GIÁO TRÌNH ĐÀO TẠO NGHỀ BẬC CAO ĐẲNG • ${deck.moduleType || 'MÔ-ĐUN TÍCH HỢP'}`, {
         x: 1.5,
         y: 5.4,
         w: 10.33,
@@ -465,14 +466,14 @@ export async function exportToPowerPoint(deck: SlideDeckData, themeId = 'ocean_b
 }
 
 /**
- * Xuất kế hoạch bài dạy / Giáo án Word (.doc HTML định dạng tải về) chuẩn 5512
+ * Xuất kế hoạch bài dạy / Giáo án Word (.doc HTML định dạng tải về) chuẩn đào tạo Cao Đẳng
  */
 export function exportLessonPlanDocx(deck: SlideDeckData) {
   const htmlContent = `
   <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
   <head>
     <meta charset="utf-8">
-    <title>Kế hoạch bài dạy - ${deck.deckTitle}</title>
+    <title>Giáo án bài giảng - ${deck.deckTitle}</title>
     <style>
       body { font-family: 'Times New Roman', serif; font-size: 13pt; line-height: 1.4; color: #000; }
       h1 { font-size: 16pt; font-weight: bold; text-align: center; margin-bottom: 4px; text-transform: uppercase; }
@@ -491,38 +492,38 @@ export function exportLessonPlanDocx(deck: SlideDeckData) {
   <body>
     <table class="header-table">
       <tr>
-        <td style="text-align: left; width: 50%;"><strong>TRƯỜNG:</strong> .....................................<br><strong>TỔ BỘ MÔN:</strong> ..............................</td>
-        <td style="text-align: right; width: 50%;"><strong>HỌ VÀ TÊN GV:</strong> ....................................<br><strong>MÔN:</strong> ${deck.subject} - <strong>KHỐI:</strong> ${deck.gradeLevel}</td>
+        <td style="text-align: left; width: 50%;"><strong>TRƯỜNG CAO ĐẲNG:</strong> .....................................<br><strong>KHOA / BỘ MÔN:</strong> ..............................</td>
+        <td style="text-align: right; width: 50%;"><strong>GIẢNG VIÊN:</strong> ....................................<br><strong>MÔN / MÔ-ĐUN:</strong> ${deck.subject}<br><strong>BẬC ĐÀO TẠO:</strong> ${deck.gradeLevel}</td>
       </tr>
     </table>
 
-    <h1>KẾ HOẠCH BÀI DẠY (GIÁO ÁN)</h1>
+    <h1>GIÁO ÁN BÀI GIẢNG HỆ CAO ĐẲNG</h1>
     <h2>BÀI DẠY: ${deck.deckTitle.toUpperCase()}</h2>
-    <p style="text-align: center; font-style: italic;">Thời lượng: 01 - 02 tiết (Theo phân phối chương trình GDPT)</p>
+    <p style="text-align: center; font-style: italic;">Hình thức: ${deck.moduleType || 'Tích hợp Lý thuyết - Thực hành'} | Thời lượng: Theo đề cương môn học</p>
 
-    <h3>I. MỤC TIÊU BÀI HỌC</h3>
-    <p><strong>1. Kiến thức:</strong></p>
-    <p>${deck.lessonPlanOutline?.objectives || deck.summary || 'Học sinh nắm vững các khái niệm, định luật và ứng dụng thực tiễn của bài học.'}</p>
-    <p><strong>2. Năng lực:</strong></p>
+    <h3>I. MỤC TIÊU BÀI DẠY (CHUẨN ĐẦU RA CAO ĐẲNG)</h3>
+    <p><strong>1. Kiến thức nghề:</strong></p>
+    <p>${deck.lessonPlanOutline?.objectives || deck.summary || 'Trang bị các kiến thức chuyên môn, nguyên lý hoạt động và quy trình kỹ thuật chuẩn nghề.'}</p>
+    <p><strong>2. Kỹ năng thực hành:</strong></p>
     <ul>
-      <li>Năng lực tự chủ và tự học: Tự giác tìm hiểu kiến thức thông qua học liệu và bài trình chiếu.</li>
-      <li>Năng lực giao tiếp và hợp tác: Tương tác nhóm, thảo luận câu hỏi củng cố và bài tập thực hành.</li>
-      <li>Năng lực giải quyết vấn đề và sáng tạo: Vận dụng kiến thức bài học vào thực tiễn cuộc sống.</li>
+      <li>Thực hiện thành thạo các bước thao tác kỹ thuật theo đúng quy trình công nghệ.</li>
+      <li>Vận dụng phân tích, chẩn đoán và khắc phục sự cố / lỗi kỹ thuật phát sinh trong thực tế.</li>
+      <li>Sử dụng đúng cách và an toàn các trang thiết bị, công cụ, phần mềm chuyên dụng.</li>
     </ul>
-    <p><strong>3. Phẩm chất:</strong> Chăm chỉ, trung thực, có trách nhiệm trong học tập.</p>
+    <p><strong>3. Năng lực tự chủ và trách nhiệm:</strong> Tuân thủ nghiêm ngặt quy định an toàn lao động, tác phong công nghiệp và tinh thần làm việc nhóm.</p>
 
-    <h3>II. THIẾT BỊ DẠY HỌC VÀ HỌC LIỆU</h3>
-    <p><strong>1. Giáo viên:</strong> Máy chiếu, bộ slide bài giảng điện tử PowerPoint (đã tạo gồm ${deck.slides.length} slide), phiếu học tập.</p>
-    <p><strong>2. Học sinh:</strong> Sách giáo khoa, vở ghi, thiết bị học tập.</p>
+    <h3>II. ĐIỀU KIỆN THỰC HIỆN BÀI DẠY</h3>
+    <p><strong>1. Phòng học & Thiết bị dạy học:</strong> ${deck.lessonPlanOutline?.preparation || 'Phòng học lý thuyết / Phòng Lab máy tính / Xưởng thực hành, máy chiếu, bộ slide bài giảng PPTX điện tử, phiếu giao việc.'}</p>
+    <p><strong>2. Học liệu & Tài liệu tham khảo:</strong> Giáo trình môn học / Mô-đun đào tạo hệ Cao đẳng, tiêu chuẩn kỹ thuật liên quan.</p>
 
-    <h3>III. TIẾN TRÌNH DẠY HỌC (CHUẨN CÔNG VĂN 5512)</h3>
+    <h3>III. TIẾN TRÌNH THỰC HIỆN BÀI DẠY</h3>
     <table>
       <thead>
         <tr>
-          <th style="width: 12%;">Hoạt động</th>
-          <th style="width: 28%;">Mục tiêu & Nội dung trọng tâm</th>
-          <th style="width: 35%;">Tiến trình thực hiện (Gợi ý Slide & Hoạt động sư phạm)</th>
-          <th style="width: 25%;">Sản phẩm & Đánh giá</th>
+          <th style="width: 15%;">Nội dung / Hoạt động</th>
+          <th style="width: 30%;">Nội dung trọng tâm & Quy trình</th>
+          <th style="width: 35%;">Hoạt động dạy học (Giảng viên thị phạm / Sinh viên thực hành)</th>
+          <th style="width: 20%;">Thời gian & Đánh giá</th>
         </tr>
       </thead>
       <tbody>
@@ -531,19 +532,19 @@ export function exportLessonPlanDocx(deck: SlideDeckData) {
             <td><strong>Slide ${s.slideNumber}: ${s.layout.toUpperCase()}</strong></td>
             <td><strong>${s.title}</strong><br>${s.subtitle ? `<em>${s.subtitle}</em><br>` : ''}${s.bullets ? s.bullets.join('<br>') : ''}</td>
             <td>
-              <strong>Hướng dẫn giáo viên:</strong><br>
-              ${s.teacherNotes || 'Trình chiếu slide, nêu vấn đề cho học sinh quan sát và thảo luận.'}
-              ${s.quiz ? `<br><br><strong>Câu hỏi tương tác:</strong> ${s.quiz.question}<br>Đáp án: ${s.quiz.answer}` : ''}
+              <strong>Hướng dẫn giảng viên:</strong><br>
+              ${s.teacherNotes || 'Giảng giải nguyên lý, thị phạm thao tác mẫu và hướng dẫn sinh viên thực hiện.'}
+              ${s.quiz ? `<br><br><strong>Tình huống / Kiểm tra:</strong> ${s.quiz.question}<br>Đáp án: ${s.quiz.answer}` : ''}
             </td>
-            <td>Học sinh lắng nghe, ghi chép và hoàn thành câu hỏi tương tác.</td>
+            <td>Sinh viên quan sát, ghi nhớ quy trình và thao tác thực hành.</td>
           </tr>
         `).join('')}
       </tbody>
     </table>
 
-    <h3>IV. HỒ SƠ DẠY HỌC & DẶN DÒ</h3>
-    <p>- Học sinh ôn tập lại các nội dung chính của ${deck.deckTitle}.</p>
-    <p>- Làm bài tập vận dụng và chuẩn bị cho bài học tiếp theo.</p>
+    <h3>IV. ĐÁNH GIÁ VÀ HƯỚNG DẪN TỰ HỌC</h3>
+    <p>- Nhận xét thái độ, kết quả thao tác thực hành của các nhóm sinh viên tại xưởng/phòng Lab.</p>
+    <p>- Giao phiếu bài tập thực hành nâng cao và dặn dò chuẩn bị cho bài học tiếp theo.</p>
   </body>
   </html>
   `;
@@ -554,7 +555,7 @@ export function exportLessonPlanDocx(deck: SlideDeckData) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `Giao_An_${(deck.deckTitle || 'Bai_Day').replace(/[\s/\\?%*:|"<>]/g, '_')}_5512.doc`;
+  a.download = `Giao_An_Cao_Dang_${(deck.deckTitle || 'Bai_Day').replace(/[\s/\\?%*:|"<>]/g, '_')}.doc`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

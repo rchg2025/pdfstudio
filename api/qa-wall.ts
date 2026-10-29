@@ -1429,7 +1429,7 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       return res.status(200).json({ success: true });
     }
 
-    // 17.4 SOẠN BÀI GIẢNG & SLIDE PPTX BẰNG AI (EDTECH SLIDE & LESSON PLAN COPILOT)
+    // 17.4 SOẠN BÀI GIẢNG & SLIDE PPTX BẰNG AI (EDTECH SLIDE & LESSON PLAN COPILOT - HỆ CAO ĐẲNG / NGHỀ)
     if (req.method === 'POST' && action === 'generate-ai-slides') {
       let body = req.body;
       if (typeof body === 'string') {
@@ -1437,17 +1437,20 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       }
       const {
         topic,
-        subject = 'Chung',
-        gradeLevel = 'Lớp 10',
+        subject = 'Công nghệ thông tin',
+        gradeLevel = 'Hệ Cao Đẳng (Năm 1 & 2)',
+        moduleType = 'Tích hợp (Lý thuyết kết hợp Thực hành)',
         slideCount = 8,
         themeColor = 'ocean_blue',
-        teachingMethod = '5e_model', // 5e_model | active_learning | project_based | standard
+        teachingMethod = 'vocational_practical', // vocational_practical | active_learning | project_based | standard
         outlineDetail,
+        selectedChapters = [],
+        rawSyllabusContent,
         customApiKey
       } = body || {};
 
       if (!topic || !String(topic).trim()) {
-        return res.status(400).json({ error: 'Chủ đề / Bài học không được để trống.' });
+        return res.status(400).json({ error: 'Tên môn học / Mô-đun hoặc Bài học không được để trống.' });
       }
 
       let apiKey = customApiKey?.trim();
@@ -1466,71 +1469,86 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       const preferredModel = modelRes.rows[0]?.value?.trim();
       const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
 
-      const numSlides = Math.min(Math.max(Number(slideCount) || 8, 4), 20);
+      const numSlides = Math.min(Math.max(Number(slideCount) || 8, 4), 25);
 
-      const systemInstruction = `Bạn là Chuyên gia Sư phạm Xuất sắc & Kỹ sư Thiết kế Bài giảng Điện tử PowerPoint chuyên nghiệp.
-Nhiệm vụ của bạn là soạn bộ slide bài giảng chuẩn mực, logic sư phạm chặt chẽ, hiện đại và sinh động theo chuẩn giáo dục Việt Nam (kết nối chương trình GDPT mới).
+      const systemInstruction = `Bạn là Giảng viên Cao cấp & Chuyên gia Sư phạm Giáo dục Nghề nghiệp bậc Cao đẳng / Đại học thực hành tại Việt Nam (thuộc Tổng cục Giáo dục Nghề nghiệp, Bộ LĐ-TB&XH).
+Nhiệm vụ của bạn là dựa trên Đề cương / Giáo trình môn học / Mô-đun đào tạo nghề hệ Cao đẳng để thiết kế bộ bài giảng trình chiếu PowerPoint điện tử chuyên nghiệp (16:9), tập trung vào:
+- KIẾN THỨC NGHỀ & TƯ DUY THỰC TIỄN DOANH NGHIỆP: Không lý thuyết suông như phổ thông, gắn chặt với thao tác thực hành, quy chuẩn kỹ thuật và giải quyết lỗi thực tế.
+- TIẾN TRÌNH DẠY HỌC CAO ĐẲNG / NGHỀ: 
+  1. Slide Bìa (Trường Cao đẳng, Khoa, Môn học/Mô-đun, Tên Bài học/Chương, Giảng viên).
+  2. Mục tiêu bài học (Kiến thức nghề, Kỹ năng thực hành, Năng lực tự chủ và trách nhiệm/An toàn nghề nghiệp).
+  3. Đặt vấn đề / Tình huống thực tế trong công việc (Case study / Bài toán doanh nghiệp).
+  4. Nội dung chuyên môn trọng tâm (Chia thành các slide cô đọng, quy trình các bước thực hiện, sơ đồ khối, gạch đầu dòng rõ ràng).
+  5. Hướng dẫn thực hành & Thao tác kỹ thuật (Quy trình mẫu, lưu ý an toàn, các lỗi thường gặp và cách khắc phục).
+  6. Bài tập rèn luyện kỹ năng nghề / Câu hỏi tình huống kiểm tra đánh giá.
+  7. Tổng kết bài học & Nhiệm vụ thực hành / Phiếu giao việc tại xưởng hoặc lab.
+
 Bộ slide gồm chính xác ${numSlides} trang slide.
-
-Cấu trúc bài giảng sư phạm cần phân bổ:
-1. Slide mở đầu (Tiêu đề, Giáo viên, Môn học, Khối lớp).
-2. Mục tiêu bài học (Kiến thức, Kỹ năng, Thái độ/Phẩm chất).
-3. Khởi động / Kết nối thực tiễn (Câu hỏi gợi mở hoặc tình huống thú vị).
-4. Khám phá kiến thức trọng tâm (Chia thành các slide cô đọng, có cấu trúc bullet point rõ ràng, nhấn mạnh từ khóa).
-5. Luyện tập / Bài tập tương tác / Câu hỏi trắc nghiệm nhanh củng cố.
-6. Vận dụng thực tiễn / Mở rộng / Bài tập về nhà.
-7. Slide kết thúc / Tóm tắt thông điệp.
 
 BẮT BUỘC TRẢ VỀ ĐỊNH DẠNG JSON THUẦN TÚY (không kèm markdown ngoài JSON):
 {
-  "deckTitle": "Tên bài giảng / Chủ đề",
+  "deckTitle": "Tên bài dạy / Bài học trong Mô-đun",
   "subject": "${subject}",
   "gradeLevel": "${gradeLevel}",
-  "summary": "Tóm tắt ngắn gọn 1-2 câu về mục tiêu bài giảng",
+  "moduleType": "${moduleType}",
+  "summary": "Tóm tắt ngắn gọn 1-2 câu về năng lực nghề nghiệp đạt được",
   "slides": [
     {
       "slideNumber": 1,
       "layout": "title" | "content" | "two_column" | "quiz" | "quote" | "summary",
-      "title": "Tiêu đề slide ngắn gọn, súc tích",
-      "subtitle": "Phụ đề hoặc lời giải thích thêm (nếu có)",
+      "title": "Tiêu đề slide ngắn gọn, chuẩn thuật ngữ nghề",
+      "subtitle": "Phụ đề kỹ thuật hoặc lưu ý",
       "bullets": [
-        "Ý chính 1 (ngắn gọn, cô đọng, không viết thành đoạn văn dài)",
+        "Ý chính 1 (ngắn gọn, cô đọng, tập trung kỹ thuật và thao tác)",
         "Ý chính 2",
         "Ý chính 3"
       ],
       "secondaryContent": [
-        "Nội dung cột thứ 2 (dành cho layout two_column) hoặc ghi chú phụ"
+        "Nội dung cột thứ 2 (dành cho layout two_column) ví dụ: So sánh, Các bước thực hiện, Lỗi thường gặp"
       ],
       "quiz": {
-        "question": "Câu hỏi trắc nghiệm ngắn (nếu layout là quiz)",
+        "question": "Câu hỏi trắc nghiệm nghề hoặc xử lý tình huống kỹ thuật",
         "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
         "answer": "A",
-        "explanation": "Giải thích ngắn"
+        "explanation": "Giải thích kỹ thuật thực tế"
       },
-      "teacherNotes": "Lời gợi ý giảng dạy cho giáo viên khi trình chiếu slide này (khoảng 2-3 câu hướng dẫn sư phạm)",
-      "visualKeyword": "Từ khóa tiếng Anh hoặc tiếng Việt mô tả hình minh họa phù hợp cho slide (vd: 'solar system planets', 'dna double helix')"
+      "teacherNotes": "Lời dẫn và hướng dẫn sư phạm nghề cho giảng viên (cách thị phạm, nhắc nhở sinh viên thực hành, lưu ý an toàn)",
+      "visualKeyword": "Từ khóa mô tả hình ảnh sơ đồ kỹ thuật / thiết bị nghề phù hợp"
     }
   ],
   "lessonPlanOutline": {
-    "objectives": "Mục tiêu bài dạy chuẩn sư phạm",
-    "preparation": "Thiết bị và học liệu cần chuẩn bị",
-    "timeline": "Phân bổ thời gian ước tính 45 phút"
+    "objectives": "Mục tiêu bài giảng hệ Cao đẳng: Kiến thức, Kỹ năng nghề, Mức độ tự chủ và trách nhiệm",
+    "preparation": "Thiết bị, máy móc, phòng Lab/Xưởng thực hành, phần mềm học liệu cần thiết",
+    "timeline": "Phân bổ thời gian dự kiến (Lý thuyết, Thao tác mẫu thị phạm, Sinh viên thực hành, Đánh giá)"
   }
 }`;
 
-      const userPrompt = `Hãy thiết kế bộ bài giảng PowerPoint chuẩn chất lượng cao:
-- Chủ đề: ${topic}
-- Môn học: ${subject}
-- Khối lớp: ${gradeLevel}
-- Phương pháp giảng dạy: ${teachingMethod}
-- Số lượng slide: ${numSlides} slide
-${outlineDetail ? `- Đề cương / Yêu cầu chi tiết từ giáo viên: ${outlineDetail}` : ''}
+      let chaptersContext = '';
+      if (Array.isArray(selectedChapters) && selectedChapters.length > 0) {
+        chaptersContext = `\n- PHẠM VI ĐỀ MỤC ĐƯỢC GIẢNG VIÊN CHỌN TỪ GIÁO TRÌNH:\n` + selectedChapters.map((c: string, idx: number) => `  ${idx + 1}. ${c}`).join('\n');
+      }
 
-Yêu cầu chất lượng:
-- Ngôn ngữ: 100% tiếng Việt chuẩn mực, đúng thuật ngữ chuyên môn.
-- Nội dung mỗi slide phải cô đọng, trực quan, chia thành các gạch đầu dòng rõ ràng.
-- Ghi chú giáo viên (teacherNotes) phải thiết thực, hướng dẫn cách dẫn dắt lớp học.
-- Đảm bảo đủ chính xác ${numSlides} slide. Trả về đúng JSON theo mô tả.`;
+      let rawSnippet = '';
+      if (rawSyllabusContent && typeof rawSyllabusContent === 'string') {
+        rawSnippet = `\n- TRÍCH NỘI DUNG TÀI LIỆU/GIÁO TRÌNH GỐC ĐỂ BÁM SÁT:\n${rawSyllabusContent.substring(0, 4500)}\n`;
+      }
+
+      const userPrompt = `Hãy thiết kế bộ bài giảng PowerPoint chuẩn hệ đào tạo CAO ĐẲNG:
+- Tên Môn học / Mô-đun: ${subject}
+- Tên Bài học / Chương: ${topic}
+- Đối tượng: ${gradeLevel}
+- Hình thức: ${moduleType}
+- Phương pháp: ${teachingMethod}
+- Số lượng slide: ${numSlides} trang slide
+${chaptersContext}
+${outlineDetail ? `- Đề cương / Yêu cầu riêng của Giảng viên: ${outlineDetail}` : ''}
+${rawSnippet}
+
+Yêu cầu sư phạm đào tạo nghề hệ Cao đẳng:
+1. 100% tiếng Việt chuẩn hóa, thuật ngữ chuyên ngành chính xác.
+2. Tránh hàn lâm xa rời thực tế; tập trung quy trình, kỹ năng nghề, phân tích tình huống thực tế và an toàn kỹ thuật.
+3. Ghi chú giảng viên (teacherNotes) phải hướng dẫn cách thị phạm kỹ thuật và quản lý thực hành của sinh viên.
+4. Đảm bảo đúng định dạng JSON yêu cầu.`;
 
       let generatedResult: any = null;
       let usedModel = '';
