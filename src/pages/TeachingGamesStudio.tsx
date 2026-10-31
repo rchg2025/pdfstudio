@@ -22,7 +22,11 @@ import {
   Zap,
   Star,
   Calendar,
-  FileText
+  FileText,
+  Upload,
+  Brain,
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './TeachingGamesStudio.css';
@@ -132,11 +136,20 @@ export default function TeachingGamesStudio() {
   const [isMemoryRunning, setIsMemoryRunning] = useState(false);
 
   // ---------- GAME 3: GIẢI MÃ ĐẢO CHỮ (WORD SCRAMBLE) ----------
-  const [scrambles] = useState<WordScramble[]>(PRESET_SCRAMBLES);
+  const [scrambles, setScrambles] = useState<WordScramble[]>(PRESET_SCRAMBLES);
   const [currentScrambleIdx, setCurrentScrambleIdx] = useState(0);
   const [userGuess, setUserGuess] = useState('');
   const [scrambleShowHint, setScrambleShowHint] = useState(false);
   const [scrambleSolved, setScrambleSolved] = useState(false);
+
+  // ---------- TÍCH HỢP AI GENERATOR CHO TRÒ CHƠI ----------
+  const [showAiModal, setShowAiModal] = useState(false);
+  const [aiTopic, setAiTopic] = useState('');
+  const [aiSubject, setAiSubject] = useState('Chuyên ngành Cao đẳng / Đại học');
+  const [aiBoxCount, setAiBoxCount] = useState(12);
+  const [aiRawContent, setAiRawContent] = useState('');
+  const [isGeneratingAi, setIsGeneratingAi] = useState(false);
+  const [uploadedDocName, setUploadedDocName] = useState('');
 
   // Export Iframe / HTML modal
   const [showExportModal, setShowExportModal] = useState(false);
@@ -579,6 +592,121 @@ export default function TeachingGamesStudio() {
     showToast('Đã tải xuống file HTML độc lập!', 'success');
   };
 
+  // 6. Xử lý tạo Game bằng AI
+  const handleGenerateAiGame = async () => {
+    if (!aiTopic.trim()) {
+      showToast('Vui lòng nhập chủ đề hoặc bài học cần tạo game.', 'warning');
+      return;
+    }
+
+    setIsGeneratingAi(true);
+    try {
+      const res = await fetch('/api/qa-wall?action=generate-interactive-game', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: aiTopic.trim(),
+          subject: aiSubject.trim(),
+          boxCount: aiBoxCount,
+          rawContent: aiRawContent.trim() || undefined
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Lỗi khi gọi AI sinh trò chơi.');
+      }
+
+      const gameData = data.game;
+      if (gameData?.mysteryBoxes?.length) {
+        const newBoxes: MysteryBox[] = gameData.mysteryBoxes.map((b: any, idx: number) => ({
+          id: idx + 1,
+          question: b.question,
+          points: b.points || 15,
+          specialType: b.specialType || 'normal',
+          explanation: b.explanation || '',
+          isOpen: false,
+          openedByTeam: null
+        }));
+        setBoxes(newBoxes);
+      }
+
+      if (gameData?.memoryPairs?.length) {
+        const rawCards: MemoryCard[] = [];
+        gameData.memoryPairs.forEach((pair: any) => {
+          rawCards.push({
+            id: `${pair.pairId}-c`,
+            pairId: pair.pairId,
+            text: pair.concept,
+            type: 'concept',
+            isFlipped: false,
+            isMatched: false,
+            color: pair.color || '#3b82f6'
+          });
+          rawCards.push({
+            id: `${pair.pairId}-d`,
+            pairId: pair.pairId,
+            text: pair.definition,
+            type: 'definition',
+            isFlipped: false,
+            isMatched: false,
+            color: pair.color || '#3b82f6'
+          });
+        });
+        const shuffled = [...rawCards].sort(() => Math.random() - 0.5);
+        setMemoryCards(shuffled);
+        setFlippedCards([]);
+        setMatchedPairsCount(0);
+      }
+
+      if (gameData?.wordScrambles?.length) {
+        setScrambles(gameData.wordScrambles);
+        setCurrentScrambleIdx(0);
+        setUserGuess('');
+        setScrambleSolved(false);
+      }
+
+      showToast(`Đã dùng AI tạo thành công gói trò chơi cho chủ đề "${aiTopic}"!`, 'success');
+      setShowAiModal(false);
+      setActiveTab('boxes');
+      playSound('victory');
+    } catch (err: any) {
+      alert(err.message || 'Không thể tạo trò chơi, vui lòng thử lại.');
+    } finally {
+      setIsGeneratingAi(false);
+    }
+  };
+
+  // 7. Đọc tệp giáo trình Word (.docx) hoặc Text (.txt) cho AI
+  const handleUploadSyllabus = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadedDocName(file.name);
+    try {
+      let content = '';
+      if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+        const { default: mammoth } = await import('mammoth');
+        const buffer = await file.arrayBuffer();
+        const res = await mammoth.extractRawText({ arrayBuffer: buffer });
+        content = res.value || '';
+      } else {
+        content = await file.text();
+      }
+
+      if (content.trim()) {
+        setAiRawContent(content);
+        const autoTopic = file.name.replace(/\.[^/.]+$/, '');
+        if (!aiTopic) setAiTopic(autoTopic);
+        showToast(`Đã đọc xong nội dung tệp "${file.name}"!`, 'success');
+      }
+    } catch (err: any) {
+      alert('Lỗi đọc tài liệu: ' + (err.message || 'Thử lại.'));
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
+
   return (
     <div className="teaching-games-page animate-fade-in" ref={gameContainerRef}>
       {/* Header */}
@@ -603,6 +731,20 @@ export default function TeachingGamesStudio() {
           >
             {soundEnabled ? <Volume2 size={18} /> : <VolumeX size={18} />}
             <span>{soundEnabled ? 'Âm thanh: Bật' : 'Âm thanh: Tắt'}</span>
+          </button>
+
+          <button 
+            className="tg-btn" 
+            style={{ 
+              background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', 
+              color: 'white',
+              boxShadow: '0 2px 8px rgba(139, 92, 246, 0.3)'
+            }}
+            onClick={() => setShowAiModal(true)}
+            title="Dùng AI tạo trò chơi từ giáo trình"
+          >
+            <Brain size={18} />
+            <span>AI Tạo Trò Chơi</span>
           </button>
 
           <button 
@@ -1086,6 +1228,140 @@ export default function TeachingGamesStudio() {
               <button className="tg-btn tg-btn-primary" onClick={handleDownloadHtml}>
                 <Download size={18} />
                 <span>Tải File .HTML Độc Lập</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AI SOẠN TRÒ CHƠI TỰ ĐỘNG TỪ GIÁO TRÌNH */}
+      {showAiModal && (
+        <div className="tg-modal-overlay animate-fade-in" onClick={() => !isGeneratingAi && setShowAiModal(false)}>
+          <div className="tg-modal-card" style={{ maxWidth: 580 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Brain size={22} className="text-primary" />
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                  AI Soạn Bộ Trò Chơi Tương Tác Lớp Học
+                </h3>
+              </div>
+              {!isGeneratingAi && (
+                <button className="modal-close" onClick={() => setShowAiModal(false)}>×</button>
+              )}
+            </div>
+
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <p style={{ margin: 0, fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                Gemini AI sẽ tự động phân tích bài học và sinh trọn bộ: <strong>Hộp Quà Bí Mật</strong> (có bom, kim cương, x2 điểm), <strong>Thẻ Lật Ghép Đôi Thuật Ngữ</strong> và <strong>Đảo Chữ Chuyên Ngành</strong>.
+              </p>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  Tên môn học / Chuyên ngành:
+                </label>
+                <input 
+                  type="text"
+                  className="code-textarea"
+                  style={{ height: 'auto', padding: '0.6rem 0.8rem', resize: 'none' }}
+                  value={aiSubject}
+                  onChange={e => setAiSubject(e.target.value)}
+                  placeholder="Ví dụ: Lập trình Web, Dược lý học, Quản trị mạng, Kế toán..."
+                  disabled={isGeneratingAi}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                  Bài học / Chủ đề trò chơi (*):
+                </label>
+                <input 
+                  type="text"
+                  className="code-textarea"
+                  style={{ height: 'auto', padding: '0.6rem 0.8rem', resize: 'none' }}
+                  value={aiTopic}
+                  onChange={e => setAiTopic(e.target.value)}
+                  placeholder="Ví dụ: Kiến trúc máy tính, Thuật toán sắp xếp, Pháp luật đại cương..."
+                  disabled={isGeneratingAi}
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                    Số lượng hộp quà bí mật:
+                  </label>
+                  <select 
+                    className="code-textarea"
+                    style={{ height: 'auto', padding: '0.6rem 0.8rem', resize: 'none' }}
+                    value={aiBoxCount}
+                    onChange={e => setAiBoxCount(Number(e.target.value))}
+                    disabled={isGeneratingAi}
+                  >
+                    <option value={8}>8 Hộp (Tiết ngắn 45p)</option>
+                    <option value={12}>12 Hộp (Chuẩn 2 tiết)</option>
+                    <option value={16}>16 Hộp (Quy mô lớp lớn)</option>
+                  </select>
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.35rem' }}>
+                    Tải giáo trình (Word / Text):
+                  </label>
+                  <label 
+                    className="tg-btn tg-btn-outline" 
+                    style={{ width: '100%', justifyContent: 'center', cursor: isGeneratingAi ? 'not-allowed' : 'pointer' }}
+                  >
+                    <Upload size={16} />
+                    <span>{uploadedDocName ? 'Đổi tệp khác' : 'Chọn tệp...'}</span>
+                    <input 
+                      type="file" 
+                      style={{ display: 'none' }} 
+                      accept=".docx,.doc,.txt"
+                      onChange={handleUploadSyllabus}
+                      disabled={isGeneratingAi}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {uploadedDocName && (
+                <div style={{ fontSize: '0.825rem', color: '#10b981', background: 'rgba(16, 185, 129, 0.1)', padding: '0.4rem 0.8rem', borderRadius: 6 }}>
+                  ✓ Đã nạp tài liệu: <strong>{uploadedDocName}</strong> ({aiRawContent.length} ký tự)
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+              <button 
+                className="tg-btn tg-btn-outline" 
+                onClick={() => setShowAiModal(false)}
+                disabled={isGeneratingAi}
+              >
+                Hủy bỏ
+              </button>
+              
+              <button 
+                className="tg-btn" 
+                style={{ 
+                  background: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', 
+                  color: 'white',
+                  fontWeight: 600,
+                  boxShadow: '0 2px 10px rgba(139, 92, 246, 0.4)'
+                }}
+                onClick={handleGenerateAiGame}
+                disabled={isGeneratingAi || !aiTopic.trim()}
+              >
+                {isGeneratingAi ? (
+                  <>
+                    <Loader2 size={18} className="spin" />
+                    <span>AI Đang Soạn Trò Chơi (10s)...</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 size={18} />
+                    <span>Tạo Trò Chơi Ngay Bằng AI</span>
+                  </>
+                )}
               </button>
             </div>
           </div>

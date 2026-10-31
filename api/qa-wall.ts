@@ -1429,6 +1429,154 @@ BẮT BUỘC chỉ trả về định dạng JSON thuần túy (không markdown,
       return res.status(200).json({ success: true });
     }
 
+    // 17.41 TẠO BỘ TRÒ CHƠI TƯƠNG TÁC LỚP HỌC BẰNG AI (INTERACTIVE CLASSROOM GAMES STUDIO)
+    if (req.method === 'POST' && action === 'generate-interactive-game') {
+      let body = req.body;
+      if (typeof body === 'string') {
+        try { body = JSON.parse(body); } catch { body = {}; }
+      }
+      const {
+        topic,
+        subject = 'Chuyên ngành Cao đẳng / Đại học',
+        gameType = 'all', // 'all' | 'boxes' | 'memory' | 'scramble'
+        boxCount = 12,
+        customApiKey,
+        rawContent
+      } = body || {};
+
+      if (!topic || !String(topic).trim()) {
+        return res.status(400).json({ error: 'Chủ đề / Bài học không được để trống.' });
+      }
+
+      let apiKey = customApiKey?.trim();
+      if (!apiKey) {
+        const keyRes = await pool.query('SELECT value FROM "Setting" WHERE key = $1 LIMIT 1', ['geminiApiKey']);
+        apiKey = keyRes.rows[0]?.value?.trim() || process.env.GEMINI_API_KEY;
+      }
+
+      if (!apiKey) {
+        return res.status(400).json({
+          error: 'Chưa cấu hình Google Gemini API Key trong Quản trị hệ thống hoặc phiên đăng nhập.'
+        });
+      }
+
+      const prompt = `Bạn là một chuyên gia thiết kế sư phạm tích cực (Gamification Education Expert) cho hệ sinh viên Cao đẳng và Đại học.
+Hãy thiết kế bộ trò chơi tương tác hấp dẫn, kịch tính và mang tính thực hành/chuyên môn cao cho môn học: "${subject}", bài học/chủ đề: "${topic}".
+${rawContent ? `Dựa trên tài liệu / nội dung sau:\n"""\n${String(rawContent).substring(0, 5000)}\n"""\n` : ''}
+
+Yêu cầu xuất ra JSON hợp lệ (không chứa markdown \`\`\`json ở ngoài cùng, chỉ JSON thuần túy) theo đúng cấu trúc sau:
+{
+  "mysteryBoxes": [
+    {
+      "id": 1,
+      "question": "Nội dung câu hỏi ngắn gọn, thú vị và thực tế...",
+      "points": 15,
+      "specialType": "normal",
+      "explanation": "Giải thích chi tiết kiến thức chuyên môn sau khi mở đáp án."
+    },
+    {
+      "id": 2,
+      "question": "💣 HỘP BOM BÍ ẨN! Trả lời sai bị trừ 10 điểm. Câu hỏi thử thách...",
+      "points": 20,
+      "specialType": "bomb",
+      "explanation": "Giải thích..."
+    },
+    {
+      "id": 3,
+      "question": "🌟 HỘP KIM CƯƠNG MAY MẮN! Tặng ngay 30 điểm cho đội nếu trả lời đúng...",
+      "points": 30,
+      "specialType": "bonus",
+      "explanation": "Giải thích..."
+    },
+    {
+      "id": 4,
+      "question": "✨ HỘP NHÂN ĐÔI ĐIỂM (x2)!...",
+      "points": 40,
+      "specialType": "double",
+      "explanation": "Giải thích..."
+    },
+    {
+      "id": 5,
+      "question": "🔄 HỘP HOÁN ĐỔI VỊ TRÍ! Trả lời đúng được quyền đổi điểm với đội đầu bảng...",
+      "points": 25,
+      "specialType": "swap",
+      "explanation": "Giải thích..."
+    }
+  ],
+  "memoryPairs": [
+    {
+      "pairId": "p1",
+      "concept": "Tên thuật ngữ / Khái niệm chuyên ngành (ngắn gọn)",
+      "definition": "Định nghĩa hoặc công dụng thực tế trong công việc (1-2 câu)",
+      "color": "#10b981"
+    }
+  ],
+  "wordScrambles": [
+    {
+      "id": "w1",
+      "scrambled": "C-O-M-P-U-T-E-R",
+      "original": "COMPUTER",
+      "hint": "Gợi ý về thuật ngữ này...",
+      "category": "Thuật ngữ chuyên ngành",
+      "points": 15
+    }
+  ]
+}
+
+Quy định số lượng:
+- Tạo đúng ${boxCount || 12} hộp quà (mysteryBoxes), trong đó xen kẽ 1 hộp "bomb", 1 hộp "bonus", 1 hộp "double", 1 hộp "swap", các hộp còn lại là "normal".
+- Tạo từ 6 đến 8 cặp thẻ ghi nhớ (memoryPairs) có màu sắc hex đa dạng (#10b981, #f59e0b, #06b6d4, #8b5cf6, #ec4899, #3b82f6).
+- Tạo 5 đến 6 từ đảo chữ (wordScrambles) có phân loại và gợi ý ngắn gọn.
+Nội dung câu hỏi phải phù hợp sinh viên Cao đẳng / Đại học, kích thích tư duy giải quyết vấn đề.`;
+
+      try {
+        const candidateModels = await resolveGeminiModels(apiKey);
+        let responseText = '';
+        let lastError = null;
+
+        for (const model of candidateModels) {
+          try {
+            const apiRes = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+              {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: prompt }] }],
+                  generationConfig: {
+                    temperature: 0.7,
+                    responseMimeType: 'application/json'
+                  }
+                })
+              }
+            );
+
+            if (!apiRes.ok) {
+              const errBody = await apiRes.text();
+              throw new Error(`Model ${model} thất bại: ${apiRes.status} - ${errBody}`);
+            }
+
+            const data = await apiRes.json();
+            responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (responseText.trim()) break;
+          } catch (e: any) {
+            lastError = e;
+          }
+        }
+
+        if (!responseText.trim()) {
+          throw lastError || new Error('Không nhận được phản hồi từ AI.');
+        }
+
+        let cleaned = responseText.replace(/```json/gi, '').replace(/```/g, '').trim();
+        const parsedData = JSON.parse(cleaned);
+        return res.status(200).json({ success: true, game: parsedData });
+      } catch (err: any) {
+        console.error('Lỗi generate-interactive-game:', err);
+        return res.status(500).json({ error: 'Lỗi tạo trò chơi bằng AI: ' + (err.message || 'Thử lại.') });
+      }
+    }
+
     // 17.4 SOẠN BÀI GIẢNG & SLIDE PPTX BẰNG AI (EDTECH SLIDE & LESSON PLAN COPILOT - HỆ CAO ĐẲNG / NGHỀ)
     if (req.method === 'POST' && action === 'generate-ai-slides') {
       let body = req.body;
