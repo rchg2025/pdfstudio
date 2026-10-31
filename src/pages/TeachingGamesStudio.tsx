@@ -26,7 +26,11 @@ import {
   Upload,
   Brain,
   Wand2,
-  Loader2
+  Loader2,
+  Plus,
+  Trash2,
+  Edit,
+  Save
 } from 'lucide-react';
 import { useNotification } from '../contexts/NotificationContext';
 import './TeachingGamesStudio.css';
@@ -151,6 +155,11 @@ export default function TeachingGamesStudio() {
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
   const [uploadedDocName, setUploadedDocName] = useState('');
 
+  // ---------- TỰ TẠO & CHỈNH SỬA CÂU HỎI / NỘI DUNG (MANUAL EDITOR) ----------
+  const [showManualEditorModal, setShowManualEditorModal] = useState(false);
+  const [editorActiveSubTab, setEditorActiveSubTab] = useState<'boxes' | 'memory' | 'scramble'>('boxes');
+  const [customMemoryPairs, setCustomMemoryPairs] = useState<typeof PRESET_MEMORY_PAIRS>(PRESET_MEMORY_PAIRS);
+
   // Export Iframe / HTML modal
   const [showExportModal, setShowExportModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -233,9 +242,10 @@ export default function TeachingGamesStudio() {
   };
 
   // Khởi tạo thẻ Memory Match
-  const initMemoryGame = () => {
+  const initMemoryGame = (pairsToUse?: typeof PRESET_MEMORY_PAIRS) => {
+    const list = pairsToUse || customMemoryPairs || PRESET_MEMORY_PAIRS;
     const rawCards: MemoryCard[] = [];
-    PRESET_MEMORY_PAIRS.forEach(pair => {
+    list.forEach(pair => {
       rawCards.push({
         id: `${pair.pairId}-c`,
         pairId: pair.pairId,
@@ -749,6 +759,16 @@ export default function TeachingGamesStudio() {
 
           <button 
             className="tg-btn tg-btn-outline"
+            style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+            onClick={() => setShowManualEditorModal(true)}
+            title="Tự tạo và chỉnh sửa câu hỏi, thẻ bài thủ công"
+          >
+            <Edit size={18} />
+            <span>Tự Soạn Câu Hỏi</span>
+          </button>
+
+          <button 
+            className="tg-btn tg-btn-outline"
             onClick={toggleFullscreen}
             title="Toàn màn hình trình chiếu"
           >
@@ -881,6 +901,9 @@ export default function TeachingGamesStudio() {
                     <button className="tg-btn-sm" onClick={() => setActiveTab('boxes')}>
                       <Sparkles size={14} /> Mở trò chơi Hộp Quà Bí Mật
                     </button>
+                    <button className="tg-btn-sm" onClick={() => { setEditorActiveSubTab('boxes'); setShowManualEditorModal(true); }}>
+                      <Edit size={14} /> Tự soạn câu hỏi Hộp quà
+                    </button>
                     <a href="/vong-quay-lop-hoc" target="_blank" rel="noreferrer" className="tg-btn-sm">
                       <Play size={14} /> Mở Vòng Quay May Mắn
                     </a>
@@ -936,8 +959,14 @@ export default function TeachingGamesStudio() {
                     <button className="tg-btn-sm" onClick={() => setActiveTab('memory')}>
                       <BookOpen size={14} /> Mở Lật Hình Ghép Đôi
                     </button>
+                    <button className="tg-btn-sm" onClick={() => { setEditorActiveSubTab('memory'); setShowManualEditorModal(true); }}>
+                      <Edit size={14} /> Tự soạn thẻ ghép đôi
+                    </button>
                     <button className="tg-btn-sm" onClick={() => setActiveTab('scramble')}>
                       <Zap size={14} /> Mở Giải Mã Đảo Chữ
+                    </button>
+                    <button className="tg-btn-sm" onClick={() => { setEditorActiveSubTab('scramble'); setShowManualEditorModal(true); }}>
+                      <Edit size={14} /> Tự soạn từ đảo chữ
                     </button>
                     <a href="/dong-ho-hoat-dong" target="_blank" rel="noreferrer" className="tg-btn-sm">
                       <Clock size={14} /> Đồng Hồ Hoạt Động & Chuông Bấm
@@ -982,10 +1011,19 @@ export default function TeachingGamesStudio() {
                 <h2>Hộp Quà May Mắn & Thử Thách Bất Ngờ</h2>
                 <p>12 chiếc hộp chứa câu hỏi ôn tập, hộp kim cương (+30đ), hộp nhân đôi điểm (x2) và hộp bom (-10đ)!</p>
               </div>
-              <div className="tg-legend">
-                <span className="legend-item"><Star size={14} color="#f59e0b" /> Kim Cương</span>
-                <span className="legend-item"><Flame size={14} color="#ef4444" /> Bom Bí Ẩn</span>
-                <span className="legend-item"><Shuffle size={14} color="#8b5cf6" /> Hoán Đổi</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button 
+                  className="tg-btn tg-btn-outline" 
+                  style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  onClick={() => { setEditorActiveSubTab('boxes'); setShowManualEditorModal(true); }}
+                >
+                  <Edit size={16} /> Tự Soạn Câu Hỏi Hộp Quà
+                </button>
+                <div className="tg-legend">
+                  <span className="legend-item"><Star size={14} color="#f59e0b" /> Kim Cương</span>
+                  <span className="legend-item"><Flame size={14} color="#ef4444" /> Bom Bí Ẩn</span>
+                  <span className="legend-item"><Shuffle size={14} color="#8b5cf6" /> Hoán Đổi</span>
+                </div>
               </div>
             </div>
 
@@ -1023,10 +1061,17 @@ export default function TeachingGamesStudio() {
                 <p>Lật mở các cặp thẻ tương ứng giữa Thuật ngữ tiếng Anh & Định nghĩa tiếng Việt để ghi điểm.</p>
               </div>
               <div className="tg-memory-stats">
+                <button 
+                  className="tg-btn-sm" 
+                  style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  onClick={() => { setEditorActiveSubTab('memory'); setShowManualEditorModal(true); }}
+                >
+                  <Edit size={14} /> Tự Soạn Thẻ Ghép Đôi
+                </button>
                 <span className="stat-pill"><Clock size={16} /> Thời gian: {memoryTimer}s</span>
                 <span className="stat-pill"><Shuffle size={16} /> Lượt lật: {memoryMoves}</span>
-                <span className="stat-pill"><Check size={16} /> Đã ghép: {matchedPairsCount}/{PRESET_MEMORY_PAIRS.length} cặp</span>
-                <button className="tg-btn-sm" onClick={initMemoryGame}>
+                <span className="stat-pill"><Check size={16} /> Đã ghép: {matchedPairsCount}/{customMemoryPairs.length} cặp</span>
+                <button className="tg-btn-sm" onClick={() => initMemoryGame()}>
                   <RotateCcw size={14} /> Xáo lại bài
                 </button>
               </div>
@@ -1066,7 +1111,16 @@ export default function TeachingGamesStudio() {
                 <h2>Giải Mã Đảo Chữ Bí Ẩn (Word Scramble Challenge)</h2>
                 <p>Quan sát các chữ cái bị xáo trộn và gợi ý để ghép lại thành từ khóa hoàn chỉnh.</p>
               </div>
-              <span className="tg-level-badge">Câu {currentScrambleIdx + 1} / {scrambles.length}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <button 
+                  className="tg-btn-sm" 
+                  style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                  onClick={() => { setEditorActiveSubTab('scramble'); setShowManualEditorModal(true); }}
+                >
+                  <Edit size={14} /> Tự Soạn Từ Đảo Chữ
+                </button>
+                <span className="tg-level-badge">Câu {currentScrambleIdx + 1} / {scrambles.length}</span>
+              </div>
             </div>
 
             <div className="tg-scramble-arena">
@@ -1362,6 +1416,447 @@ export default function TeachingGamesStudio() {
                     <span>Tạo Trò Chơi Ngay Bằng AI</span>
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TỰ TẠO & CHỈNH SỬA CÂU HỎI / NỘI DUNG THỦ CÔNG */}
+      {showManualEditorModal && (
+        <div className="tg-modal-overlay animate-fade-in" onClick={() => setShowManualEditorModal(false)}>
+          <div className="tg-modal-card" style={{ maxWidth: 840, maxHeight: '90vh', display: 'flex', flexDirection: 'column' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Edit size={22} className="text-primary" />
+                <h3 style={{ margin: 0, fontSize: '1.2rem', fontWeight: 700 }}>
+                  Quản Lý & Tự Soạn Nội Dung Trò Chơi
+                </h3>
+              </div>
+              <button className="modal-close" onClick={() => setShowManualEditorModal(false)}>×</button>
+            </div>
+
+            {/* Sub-tabs chuyển đổi giữa 3 trò chơi */}
+            <div style={{ display: 'flex', gap: '0.5rem', padding: '0.75rem 1.5rem', borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+              <button 
+                className={`tg-btn-sm ${editorActiveSubTab === 'boxes' ? 'tg-btn-primary' : 'tg-btn-outline'}`}
+                onClick={() => setEditorActiveSubTab('boxes')}
+              >
+                <Sparkles size={14} /> 1. Hộp Quà Bí Mật ({boxes.length})
+              </button>
+              <button 
+                className={`tg-btn-sm ${editorActiveSubTab === 'memory' ? 'tg-btn-primary' : 'tg-btn-outline'}`}
+                onClick={() => setEditorActiveSubTab('memory')}
+              >
+                <BookOpen size={14} /> 2. Thẻ Lật Ghép Đôi ({customMemoryPairs.length} cặp)
+              </button>
+              <button 
+                className={`tg-btn-sm ${editorActiveSubTab === 'scramble' ? 'tg-btn-primary' : 'tg-btn-outline'}`}
+                onClick={() => setEditorActiveSubTab('scramble')}
+              >
+                <Zap size={14} /> 3. Đảo Chữ ({scrambles.length} từ)
+              </button>
+            </div>
+
+            <div className="modal-body" style={{ overflowY: 'auto', flex: 1, padding: '1.25rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {/* PHẦN 1: QUẢN LÝ CÂU HỎI HỘP QUÀ BÍ MẬT */}
+              {editorActiveSubTab === 'boxes' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Tự do thêm bớt, chỉnh sửa câu hỏi, điểm thưởng và loại hộp đặc biệt:
+                    </span>
+                    <button 
+                      className="tg-btn-sm tg-btn-primary"
+                      onClick={() => {
+                        const newId = boxes.length + 1;
+                        setBoxes(prev => [
+                          ...prev,
+                          {
+                            id: newId,
+                            question: `Câu hỏi số ${newId}...`,
+                            points: 15,
+                            specialType: 'normal',
+                            explanation: 'Đáp án chi tiết...',
+                            isOpen: false,
+                            openedByTeam: null
+                          }
+                        ]);
+                      }}
+                    >
+                      <Plus size={14} /> Thêm Hộp Quà Mới
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {boxes.map((b, idx) => (
+                      <div 
+                        key={b.id} 
+                        style={{ 
+                          border: '1px solid var(--border)', 
+                          borderRadius: 8, 
+                          padding: '0.75rem 1rem', 
+                          background: 'var(--bg-primary)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--primary)' }}>
+                            🎁 Hộp #{idx + 1}
+                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <select 
+                              className="code-textarea"
+                              style={{ height: 'auto', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                              value={b.specialType || 'normal'}
+                              onChange={e => {
+                                const val = e.target.value as any;
+                                setBoxes(prev => prev.map((item, i) => i === idx ? { ...item, specialType: val } : item));
+                              }}
+                            >
+                              <option value="normal">Thường (+Điểm)</option>
+                              <option value="bomb">💣 Hộp Bom (Trừ điểm)</option>
+                              <option value="bonus">🌟 Kim Cương (Thưởng lớn)</option>
+                              <option value="double">✨ Nhân đôi (x2)</option>
+                              <option value="swap">🔄 Hoán đổi vị trí</option>
+                            </select>
+
+                            <input 
+                              type="number"
+                              className="code-textarea"
+                              style={{ width: 70, height: 'auto', padding: '0.3rem 0.5rem', fontSize: '0.8rem' }}
+                              value={b.points}
+                              onChange={e => {
+                                const val = Number(e.target.value);
+                                setBoxes(prev => prev.map((item, i) => i === idx ? { ...item, points: val } : item));
+                              }}
+                              title="Điểm số"
+                            />
+
+                            <button 
+                              className="mini-btn"
+                              style={{ color: '#ef4444', padding: '0.3rem' }}
+                              onClick={() => {
+                                if (boxes.length <= 4) {
+                                  alert('Cần giữ ít nhất 4 hộp quà để chơi.');
+                                  return;
+                                }
+                                setBoxes(prev => prev.filter((_, i) => i !== idx).map((item, newI) => ({ ...item, id: newI + 1 })));
+                              }}
+                              title="Xóa hộp này"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div>
+                          <input 
+                            type="text"
+                            className="code-textarea"
+                            style={{ height: 'auto', padding: '0.5rem 0.75rem', width: '100%', fontSize: '0.875rem' }}
+                            value={b.question}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setBoxes(prev => prev.map((item, i) => i === idx ? { ...item, question: val } : item));
+                            }}
+                            placeholder="Nhập nội dung câu hỏi..."
+                          />
+                        </div>
+
+                        <div>
+                          <input 
+                            type="text"
+                            className="code-textarea"
+                            style={{ height: 'auto', padding: '0.4rem 0.75rem', width: '100%', fontSize: '0.8rem', opacity: 0.85 }}
+                            value={b.explanation || ''}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setBoxes(prev => prev.map((item, i) => i === idx ? { ...item, explanation: val } : item));
+                            }}
+                            placeholder="Giải thích đáp án (hiện khi mở)..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* PHẦN 2: QUẢN LÝ THẺ LẬT GHÉP ĐÔI (MEMORY PAIRS) */}
+              {editorActiveSubTab === 'memory' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Tự soạn các cặp ghép đôi giữa Thuật ngữ chuyên môn và Định nghĩa/Ứng dụng:
+                    </span>
+                    <button 
+                      className="tg-btn-sm tg-btn-primary"
+                      onClick={() => {
+                        const newPId = `p_custom_${Date.now()}`;
+                        const colors = ['#10b981', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#3b82f6'];
+                        const randomColor = colors[customMemoryPairs.length % colors.length];
+                        setCustomMemoryPairs(prev => [
+                          ...prev,
+                          {
+                            pairId: newPId,
+                            concept: 'Thuật ngữ mới',
+                            definition: 'Định nghĩa / Giải thích ngắn gọn...',
+                            color: randomColor
+                          }
+                        ]);
+                      }}
+                    >
+                      <Plus size={14} /> Thêm Cặp Thẻ Mới
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {customMemoryPairs.map((p, idx) => (
+                      <div 
+                        key={p.pairId}
+                        style={{ 
+                          border: '1px solid var(--border)', 
+                          borderRadius: 8, 
+                          padding: '0.75rem 1rem', 
+                          background: 'var(--bg-primary)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.75rem'
+                        }}
+                      >
+                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: p.color, minWidth: 24 }}>
+                          #{idx + 1}
+                        </span>
+
+                        <input 
+                          type="text"
+                          className="code-textarea"
+                          style={{ height: 'auto', padding: '0.45rem 0.6rem', flex: 1, fontSize: '0.85rem' }}
+                          value={p.concept}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCustomMemoryPairs(prev => prev.map((item, i) => i === idx ? { ...item, concept: val } : item));
+                          }}
+                          placeholder="Thuật ngữ / Khái niệm..."
+                        />
+
+                        <span style={{ color: 'var(--text-secondary)' }}>⇌</span>
+
+                        <input 
+                          type="text"
+                          className="code-textarea"
+                          style={{ height: 'auto', padding: '0.45rem 0.6rem', flex: 2, fontSize: '0.85rem' }}
+                          value={p.definition}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCustomMemoryPairs(prev => prev.map((item, i) => i === idx ? { ...item, definition: val } : item));
+                          }}
+                          placeholder="Định nghĩa / Ý nghĩa thực tiễn..."
+                        />
+
+                        <input 
+                          type="color"
+                          value={p.color || '#3b82f6'}
+                          onChange={e => {
+                            const val = e.target.value;
+                            setCustomMemoryPairs(prev => prev.map((item, i) => i === idx ? { ...item, color: val } : item));
+                          }}
+                          style={{ width: 34, height: 34, border: 'none', background: 'transparent', cursor: 'pointer' }}
+                          title="Chọn màu nhận diện cặp"
+                        />
+
+                        <button 
+                          className="mini-btn"
+                          style={{ color: '#ef4444', padding: '0.3rem' }}
+                          onClick={() => {
+                            if (customMemoryPairs.length <= 3) {
+                              alert('Cần giữ ít nhất 3 cặp thẻ để lật hình.');
+                              return;
+                            }
+                            setCustomMemoryPairs(prev => prev.filter((_, i) => i !== idx));
+                          }}
+                          title="Xóa cặp thẻ này"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* PHẦN 3: QUẢN LÝ TỪ ĐẢO CHỮ (WORD SCRAMBLE) */}
+              {editorActiveSubTab === 'scramble' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                      Tự soạn các từ khóa chuyên ngành cho thử thách Đảo Chữ:
+                    </span>
+                    <button 
+                      className="tg-btn-sm tg-btn-primary"
+                      onClick={() => {
+                        const newWId = `w_custom_${Date.now()}`;
+                        setScrambles(prev => [
+                          ...prev,
+                          {
+                            id: newWId,
+                            original: 'TỪ MỚI',
+                            scrambled: 'T-Ư-M-Ớ-I',
+                            hint: 'Gợi ý cho từ khóa này...',
+                            category: 'Chuyên ngành',
+                            points: 15
+                          }
+                        ]);
+                      }}
+                    >
+                      <Plus size={14} /> Thêm Từ Đảo Chữ Mới
+                    </button>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                    {scrambles.map((s, idx) => (
+                      <div 
+                        key={s.id}
+                        style={{ 
+                          border: '1px solid var(--border)', 
+                          borderRadius: 8, 
+                          padding: '0.75rem 1rem', 
+                          background: 'var(--bg-primary)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.75rem' }}>
+                          <span style={{ fontWeight: 700, fontSize: '0.85rem', color: 'var(--primary)' }}>
+                            Từ #{idx + 1}
+                          </span>
+
+                          <input 
+                            type="text"
+                            className="code-textarea"
+                            style={{ height: 'auto', padding: '0.35rem 0.6rem', width: 140, fontSize: '0.8rem' }}
+                            value={s.category}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setScrambles(prev => prev.map((item, i) => i === idx ? { ...item, category: val } : item));
+                            }}
+                            placeholder="Danh mục..."
+                          />
+
+                          <input 
+                            type="number"
+                            className="code-textarea"
+                            style={{ height: 'auto', padding: '0.35rem 0.6rem', width: 70, fontSize: '0.8rem' }}
+                            value={s.points}
+                            onChange={e => {
+                              const val = Number(e.target.value);
+                              setScrambles(prev => prev.map((item, i) => i === idx ? { ...item, points: val } : item));
+                            }}
+                            title="Điểm số"
+                          />
+
+                          <button 
+                            className="mini-btn"
+                            style={{ color: '#ef4444', padding: '0.3rem' }}
+                            onClick={() => {
+                              if (scrambles.length <= 1) {
+                                alert('Cần giữ ít nhất 1 từ đảo chữ.');
+                                return;
+                              }
+                              setScrambles(prev => prev.filter((_, i) => i !== idx));
+                              if (currentScrambleIdx >= scrambles.length - 1) {
+                                setCurrentScrambleIdx(0);
+                              }
+                            }}
+                            title="Xóa từ này"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                              Đáp án chuẩn (Original):
+                            </label>
+                            <input 
+                              type="text"
+                              className="code-textarea"
+                              style={{ height: 'auto', padding: '0.45rem 0.6rem', width: '100%', fontSize: '0.85rem', fontWeight: 700 }}
+                              value={s.original}
+                              onChange={e => {
+                                const val = e.target.value;
+                                // Tự động tạo scrambled nếu người dùng gõ
+                                const letters = val.replace(/\s+/g, '').toUpperCase().split('');
+                                const autoScrambled = [...letters].sort(() => Math.random() - 0.5).join('-');
+                                setScrambles(prev => prev.map((item, i) => i === idx ? { ...item, original: val, scrambled: autoScrambled } : item));
+                              }}
+                              placeholder="Ví dụ: QUANG HỢP"
+                            />
+                          </div>
+
+                          <div style={{ flex: 1 }}>
+                            <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>
+                              Dạng xáo trộn (Các ký tự cách nhau dấu -):
+                            </label>
+                            <input 
+                              type="text"
+                              className="code-textarea"
+                              style={{ height: 'auto', padding: '0.45rem 0.6rem', width: '100%', fontSize: '0.85rem' }}
+                              value={s.scrambled}
+                              onChange={e => {
+                                const val = e.target.value;
+                                setScrambles(prev => prev.map((item, i) => i === idx ? { ...item, scrambled: val } : item));
+                              }}
+                              placeholder="Ví dụ: Q-U-A-N-G-H-O-P"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <input 
+                            type="text"
+                            className="code-textarea"
+                            style={{ height: 'auto', padding: '0.4rem 0.6rem', width: '100%', fontSize: '0.8rem' }}
+                            value={s.hint}
+                            onChange={e => {
+                              const val = e.target.value;
+                              setScrambles(prev => prev.map((item, i) => i === idx ? { ...item, hint: val } : item));
+                            }}
+                            placeholder="Gợi ý bí mật cho sinh viên..."
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer" style={{ justifyContent: 'space-between' }}>
+              <button 
+                className="tg-btn tg-btn-outline" 
+                onClick={() => setShowManualEditorModal(false)}
+              >
+                Đóng
+              </button>
+
+              <button 
+                className="tg-btn tg-btn-primary" 
+                onClick={() => {
+                  if (editorActiveSubTab === 'memory') {
+                    initMemoryGame(customMemoryPairs);
+                  }
+                  showToast('Đã lưu và áp dụng nội dung trò chơi thành công!', 'success');
+                  setShowManualEditorModal(false);
+                }}
+              >
+                <Save size={16} />
+                <span>Lưu & Áp Dụng Ngay Vào Game</span>
               </button>
             </div>
           </div>
