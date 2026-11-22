@@ -898,13 +898,52 @@ export default function ScreenRecorder() {
                     )}
                   </>
                 ) : (
-                  /* 3. Màn hình chờ rỗng */
-                  <div className="empty-stage-state">
-                    <Monitor size={54} className="text-muted" />
-                    <h3>Sẵn sàng ghi hình phong cách Studio</h3>
-                    <p>
-                      Chọn nguồn quay ở bảng bên trái và bấm <strong>"Bắt Đầu Ghi Màn Hình"</strong>. Có thể bật tắt chế độ <strong>Recordly Studio</strong> với viền Gradient nghệ thuật và tự động phóng to theo con trỏ chuột.
-                    </p>
+                  /* 3. Màn hình chờ rỗng - Hiển thị bản Mockup Recordly Trực Quan */
+                  <div className="recordly-canvas-wrapper" style={{
+                    background: studioConfig.backgroundGradient,
+                    padding: `${studioConfig.padding}px`,
+                    width: '100%',
+                    height: '100%',
+                    boxSizing: 'border-box'
+                  }}>
+                    <div 
+                      className="recordly-mockup-frame"
+                      style={{
+                        borderRadius: `${studioConfig.borderRadius}px`,
+                        boxShadow: `0 20px ${studioConfig.shadowBlur}px rgba(0, 0, 0, 0.45)`,
+                        width: '100%',
+                        maxWidth: '560px',
+                        background: '#0f172a'
+                      }}
+                    >
+                      {studioConfig.showWindowHeader && (
+                        <div className="mockup-window-header">
+                          <span className="mac-dot red"></span>
+                          <span className="mac-dot yellow"></span>
+                          <span className="mac-dot green"></span>
+                          <span className="mockup-window-title">Recordly Studio Canvas • Sẵn sàng ghi hình</span>
+                        </div>
+                      )}
+                      <div className="empty-stage-state" style={{ padding: '2.5rem 1.5rem', background: 'rgba(15, 23, 42, 0.95)' }}>
+                        <div style={{
+                          width: '56px',
+                          height: '56px',
+                          borderRadius: '16px',
+                          background: 'rgba(99, 102, 241, 0.15)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginBottom: '0.5rem',
+                          border: '1px solid rgba(99, 102, 241, 0.3)'
+                        }}>
+                          <Sparkles size={28} className="text-primary" />
+                        </div>
+                        <h3 style={{ color: '#ffffff', fontSize: '1.2rem', marginBottom: '0.4rem' }}>Chế Độ Recordly Studio Đang Sẵn Sàng</h3>
+                        <p style={{ color: '#94a3b8', fontSize: '0.88rem', maxWidth: '420px', lineHeight: 1.6 }}>
+                          Chọn nguồn thu ở bảng bên trái và nhấn <strong style={{ color: '#f43f5e' }}>"Bắt Đầu Ghi Màn Hình"</strong>. Video sẽ được đóng khung canvas gradient nghệ thuật với hiệu ứng Auto-Zoom và sóng chuột cực mượt.
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 )}
               </>
