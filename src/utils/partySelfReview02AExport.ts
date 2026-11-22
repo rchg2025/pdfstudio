@@ -265,7 +265,7 @@ export function exportPartySelfReview02ADocx(data: PartySelfReview02AData) {
     <table style="width: 100%; border: none; margin: 2px 0;">
       <tr>
         <td style="width: 50%; border: none; padding: 0;">- Ngày, tháng, năm sinh: <strong>${data.namSinh || '................................'}</strong></td>
-        <td style="width: 50%; border: none; padding: 0;">- Chi bộ sinh hoạt: <strong>${data.chiBoSinhHoat || data.chiBo || '................................'}</strong></td>
+        <td style="width: 50%; border: none; padding: 0;">- Chi bộ sinh hoạt: <strong>${data.chiBo || data.chiBoSinhHoat || '................................'}</strong></td>
       </tr>
       <tr>
         <td style="width: 50%; border: none; padding: 0;">- Chức vụ Đảng: <strong>${data.chucVuDang || '................................'}</strong></td>

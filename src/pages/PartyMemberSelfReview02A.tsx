@@ -50,10 +50,13 @@ export default function PartyMemberSelfReview02A() {
   }, [formData]);
 
   const handleChange = (field: keyof PartySelfReview02AData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'chiBo') {
+        next.chiBoSinhHoat = value;
+      }
+      return next;
+    });
   };
 
   const handleReset = () => {
@@ -786,7 +789,7 @@ ${aiPrompt}
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '3px 0' }}>
                 <div>- Ngày sinh: <strong>{formData.namSinh || '................................'}</strong></div>
-                <div>- Chi bộ sinh hoạt: <strong>{formData.chiBoSinhHoat || formData.chiBo || '................................'}</strong></div>
+                <div>- Chi bộ sinh hoạt: <strong>{formData.chiBo || formData.chiBoSinhHoat || '................................'}</strong></div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', margin: '3px 0' }}>
                 <div>- Chức vụ Đảng: <strong>{formData.chucVuDang || '................................'}</strong></div>

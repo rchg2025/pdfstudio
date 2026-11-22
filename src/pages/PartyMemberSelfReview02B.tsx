@@ -51,10 +51,13 @@ export default function PartyMemberSelfReview02B() {
   }, [formData]);
 
   const handleChange = (field: keyof PartySelfReview02BData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'chiBo') {
+        next.chiBoSinhHoat = value;
+      }
+      return next;
+    });
   };
 
   const handleReset = () => {
@@ -721,7 +724,7 @@ ${aiPrompt}
                 Đơn vị công tác: {formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}
               </div>
               <div className="paper-p">
-                Chi bộ sinh hoạt: {formData.chiBoSinhHoat || 'Chi bộ 1'}
+                Chi bộ sinh hoạt: {formData.chiBo || formData.chiBoSinhHoat || 'Chi bộ 1'}
               </div>
 
               <div className="paper-heading-1">A. NỘI DUNG KIỂM ĐIỂM</div>
