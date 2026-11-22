@@ -477,6 +477,8 @@
   .review-paper-viewport {
     padding: 0.75rem 0.25rem;
     max-height: 500px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .review-paper-sheet {
@@ -484,5 +486,23 @@
     font-size: 11pt;
     line-height: 1.35;
     min-width: 320px;
+    box-sizing: border-box;
+  }
+
+  .paper-header-grid {
+    font-size: 10.5pt;
+  }
+
+  .paper-title-main {
+    font-size: 12pt;
+  }
+
+  .paper-signature-grid {
+    margin-top: 20px;
+    gap: 0.5rem;
+  }
+
+  .sig-col-center {
+    font-size: 10pt;
   }
 }
