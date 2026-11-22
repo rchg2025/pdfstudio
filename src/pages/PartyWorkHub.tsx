@@ -100,7 +100,7 @@ export default function PartyWorkHub() {
       {/* TOP STATS & QUICK HIGHLIGHTS */}
       <div className="party-stats-bar">
         <div className="party-stat-item">
-          <div className="party-stat-num">35+</div>
+          <div className="party-stat-num">200+</div>
           <div className="party-stat-label">Biểu mẫu Đảng chuẩn</div>
         </div>
         <div className="party-stat-item">
