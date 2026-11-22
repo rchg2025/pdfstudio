@@ -13,10 +13,17 @@ import {
   FileVideo, 
   CheckCircle2, 
   Layers,
-  Sparkles
+  Sparkles,
+  Palette
 } from 'lucide-react';
 import { useDialogs } from '../components/CustomDialogs';
+import { 
+  type RecordlyStudioConfig, 
+  defaultRecordlyConfig, 
+  RECORDLY_GRADIENTS 
+} from '../utils/recordlyStudioHelper';
 import './ScreenRecorder.css';
+import './RecordlyStudio.css';
 
 export default function ScreenRecorder() {
   const { showAlert } = useDialogs();
@@ -47,13 +54,40 @@ export default function ScreenRecorder() {
   const pipCameraVideoRef = useRef<HTMLVideoElement | null>(null);
   const playbackVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Active stream state để render preview video phản ứng tức thì
+  const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
+  const [activeCamStream, setActiveCamStream] = useState<MediaStream | null>(null);
+
   // Recorded video blob url
   const [recordedVideoUrl, setRecordedVideoUrl] = useState<string | null>(null);
   const [recordedBlobSize, setRecordedBlobSize] = useState<number>(0);
 
-  // Active stream state để render preview video phản ứng tức thì
-  const [activeStream, setActiveStream] = useState<MediaStream | null>(null);
-  const [activeCamStream, setActiveCamStream] = useState<MediaStream | null>(null);
+  // Cấu hình Recordly Studio Effects
+  const [studioConfig, setStudioConfig] = useState<RecordlyStudioConfig>(defaultRecordlyConfig);
+  const [isHoveredPreview, setIsHoveredPreview] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
+  const [clickRipples, setClickRipples] = useState<{ id: number; x: number; y: number }[]>([]);
+
+  // Tương tác Auto-Zoom & Click Ripple kiểu Recordly
+  const handleStageMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!studioConfig.enableAutoZoom) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    setMousePos({ x, y });
+  };
+
+  const handleStageClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!studioConfig.enableCursorHighlight) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const newRipple = { id: Date.now(), x, y };
+    setClickRipples(prev => [...prev.slice(-4), newRipple]);
+    setTimeout(() => {
+      setClickRipples(prev => prev.filter(r => r.id !== newRipple.id));
+    }, 450);
+  };
 
   // Tự động gán stream vào previewVideoRef khi component render
   useEffect(() => {
@@ -480,6 +514,154 @@ export default function ScreenRecorder() {
             )}
           </div>
 
+          {/* RECORDLY STUDIO CONTROL PANEL */}
+          <div className="recordly-studio-card">
+            <div className="recordly-title">
+              <span className="flex items-center gap-1.5">
+                <Sparkles size={18} className="text-primary" />
+                Recordly Studio Mode
+              </span>
+              <span className="recordly-badge-pill">Pro Style</span>
+            </div>
+
+            <div className="setting-row" style={{ marginBottom: '1rem' }}>
+              <div className="setting-info">
+                <span className="setting-name">Khung Nền Canvas Nghệ Thuật</span>
+                <span className="setting-desc">Tạo khung viền gradient & đổ bóng như Screen Studio</span>
+              </div>
+              <label className="toggle-switch">
+                <input 
+                  type="checkbox" 
+                  checked={studioConfig.enableStudioMode} 
+                  onChange={(e) => setStudioConfig(prev => ({ ...prev, enableStudioMode: e.target.checked }))}
+                />
+                <span className="toggle-slider"></span>
+              </label>
+            </div>
+
+            {studioConfig.enableStudioMode && (
+              <div className="recordly-control-grid animate-fade-in">
+                <div className="recordly-field" style={{ gridColumn: 'span 2' }}>
+                  <label>
+                    <span className="flex items-center gap-1"><Palette size={14} /> Bảng Màu Nền Studio</span>
+                    <span className="text-xs text-muted">Gradient & Solid</span>
+                  </label>
+                  <div className="recordly-palettes">
+                    {RECORDLY_GRADIENTS.map(g => (
+                      <button
+                        key={g.id}
+                        type="button"
+                        className={`palette-btn ${studioConfig.backgroundGradient === g.value ? 'active' : ''}`}
+                        style={{ background: g.value }}
+                        title={g.label}
+                        onClick={() => setStudioConfig(prev => ({ ...prev, backgroundGradient: g.value }))}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="recordly-field">
+                  <label>
+                    <span>Viền Lề (Padding)</span>
+                    <span className="text-xs font-mono">{studioConfig.padding}px</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min={8} 
+                    max={64} 
+                    value={studioConfig.padding}
+                    onChange={(e) => setStudioConfig(prev => ({ ...prev, padding: Number(e.target.value) }))}
+                    className="recordly-range"
+                  />
+                </div>
+
+                <div className="recordly-field">
+                  <label>
+                    <span>Bo Góc Video</span>
+                    <span className="text-xs font-mono">{studioConfig.borderRadius}px</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={28} 
+                    value={studioConfig.borderRadius}
+                    onChange={(e) => setStudioConfig(prev => ({ ...prev, borderRadius: Number(e.target.value) }))}
+                    className="recordly-range"
+                  />
+                </div>
+
+                <div className="recordly-field">
+                  <label>
+                    <span>Độ Đổ Bóng (Shadow)</span>
+                    <span className="text-xs font-mono">{studioConfig.shadowBlur}px</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min={0} 
+                    max={50} 
+                    value={studioConfig.shadowBlur}
+                    onChange={(e) => setStudioConfig(prev => ({ ...prev, shadowBlur: Number(e.target.value) }))}
+                    className="recordly-range"
+                  />
+                </div>
+
+                <div className="recordly-field">
+                  <label>
+                    <span>Tỉ Lệ Phóng To (Zoom)</span>
+                    <span className="text-xs font-mono">{studioConfig.zoomScale}x</span>
+                  </label>
+                  <input 
+                    type="range" 
+                    min={1.1} 
+                    max={1.8} 
+                    step={0.05}
+                    value={studioConfig.zoomScale}
+                    onChange={(e) => setStudioConfig(prev => ({ ...prev, zoomScale: Number(e.target.value) }))}
+                    className="recordly-range"
+                  />
+                </div>
+
+                <div className="recordly-field" style={{ gridColumn: 'span 2' }}>
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Hiển thị thanh tiêu đề macOS</span>
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={studioConfig.showWindowHeader} 
+                        onChange={(e) => setStudioConfig(prev => ({ ...prev, showWindowHeader: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Auto-Zoom theo con trỏ chuột</span>
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={studioConfig.enableAutoZoom} 
+                        onChange={(e) => setStudioConfig(prev => ({ ...prev, enableAutoZoom: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-center justify-between py-1">
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-200">Hiệu ứng Cursor Ripple khi click</span>
+                    <label className="toggle-switch">
+                      <input 
+                        type="checkbox" 
+                        checked={studioConfig.enableCursorHighlight} 
+                        onChange={(e) => setStudioConfig(prev => ({ ...prev, enableCursorHighlight: e.target.checked }))}
+                      />
+                      <span className="toggle-slider"></span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* KHỐI ĐỒNG HỒ & TRẠNG THÁI */}
           {(recordingStatus === 'recording' || recordingStatus === 'paused') && (
             <div className="recording-status-box animate-fade-in">
@@ -562,66 +744,170 @@ export default function ScreenRecorder() {
             )}
           </div>
 
-          <div className="video-display-area">
-            {/* 1. Màn hình playback xem lại sau khi quay xong */}
-            {recordedVideoUrl ? (
-              <video 
-                ref={playbackVideoRef} 
-                src={recordedVideoUrl} 
-                controls 
-                autoPlay 
-                className="live-video-player"
-              />
-            ) : recordingStatus !== 'idle' ? (
-              /* 2. Màn hình live stream trong lúc đang quay */
-              <>
-                {recordMode === 'audio' ? (
-                  <div className="empty-stage-state animate-fade-in">
-                    <Mic size={64} className="text-primary animate-pulse" />
-                    <h3 style={{ color: '#ffffff' }}>Đang thu âm thanh Micro</h3>
-                    <p style={{ color: '#94a3b8' }}>
-                      Hệ thống đang ghi lại giọng nói của bạn với bộ lọc khử ồn thông minh.
-                    </p>
-                  </div>
-                ) : (
-                  <video 
-                    ref={previewVideoRef} 
-                    autoPlay 
-                    muted 
-                    playsInline 
-                    className="live-video-player"
-                    onLoadedMetadata={() => {
-                      if (previewVideoRef.current) {
-                        previewVideoRef.current.play().catch(() => {});
-                      }
-                    }}
-                  />
-                )}
-                {recordMode === 'both' && (
-                  <div className="pip-camera-overlay">
+          <div 
+            className="video-display-area"
+            onMouseEnter={() => setIsHoveredPreview(true)}
+            onMouseLeave={() => setIsHoveredPreview(false)}
+            onMouseMove={handleStageMouseMove}
+            onClick={handleStageClick}
+          >
+            {/* Nếu bật Studio Mode và có video (live hoặc playback) thì bọc khung Canvas & Mockup Window */}
+            {studioConfig.enableStudioMode && (recordedVideoUrl || (recordingStatus !== 'idle' && recordMode !== 'audio')) ? (
+              <div 
+                className="recordly-canvas-wrapper"
+                style={{
+                  background: studioConfig.backgroundGradient,
+                  padding: `${studioConfig.padding}px`
+                }}
+              >
+                <div 
+                  className="recordly-mockup-frame"
+                  style={{
+                    borderRadius: `${studioConfig.borderRadius}px`,
+                    boxShadow: `0 20px ${studioConfig.shadowBlur}px rgba(0, 0, 0, 0.45)`,
+                    transform: (studioConfig.enableAutoZoom && isHoveredPreview) 
+                      ? `scale(${studioConfig.zoomScale})` 
+                      : 'scale(1)',
+                    transformOrigin: `${mousePos.x}% ${mousePos.y}%`
+                  }}
+                >
+                  {/* macOS Mockup Window Header */}
+                  {studioConfig.showWindowHeader && (
+                    <div className="mockup-window-header">
+                      <span className="mac-dot red"></span>
+                      <span className="mac-dot yellow"></span>
+                      <span className="mac-dot green"></span>
+                      <span className="mockup-window-title">
+                        {recordedVideoUrl ? 'Recordly Export Player • 1080p' : 'Studio Screen Recording Session'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Player hoặc Live Stream */}
+                  {recordedVideoUrl ? (
                     <video 
-                      ref={pipCameraVideoRef} 
+                      ref={playbackVideoRef} 
+                      src={recordedVideoUrl} 
+                      controls 
+                      autoPlay 
+                      className="live-video-player"
+                      style={{ borderRadius: studioConfig.showWindowHeader ? '0 0 12px 12px' : `${studioConfig.borderRadius}px` }}
+                    />
+                  ) : (
+                    <video 
+                      ref={previewVideoRef} 
                       autoPlay 
                       muted 
                       playsInline 
+                      className="live-video-player"
+                      style={{ borderRadius: studioConfig.showWindowHeader ? '0 0 12px 12px' : `${studioConfig.borderRadius}px` }}
                       onLoadedMetadata={() => {
-                        if (pipCameraVideoRef.current) {
-                          pipCameraVideoRef.current.play().catch(() => {});
+                        if (previewVideoRef.current) {
+                          previewVideoRef.current.play().catch(() => {});
                         }
                       }}
                     />
+                  )}
+
+                  {/* Pip Camera Bubble kiểu Recordly */}
+                  {recordMode === 'both' && (
+                    <div 
+                      className="recordly-camera-bubble"
+                      style={{
+                        bottom: '24px',
+                        right: '24px',
+                        width: `${studioConfig.cameraBubbleSize}px`,
+                        height: `${studioConfig.cameraBubbleSize}px`
+                      }}
+                    >
+                      <video 
+                        ref={pipCameraVideoRef} 
+                        autoPlay 
+                        muted 
+                        playsInline 
+                        onLoadedMetadata={() => {
+                          if (pipCameraVideoRef.current) {
+                            pipCameraVideoRef.current.play().catch(() => {});
+                          }
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Click Ripple Effect */}
+                {clickRipples.map(ripple => (
+                  <div 
+                    key={ripple.id}
+                    className="cursor-ripple"
+                    style={{ left: ripple.x, top: ripple.y }}
+                  />
+                ))}
+              </div>
+            ) : (
+              /* Màn hình thông thường khi tắt Studio Mode hoặc chế độ Audio / Màn hình chờ */
+              <>
+                {/* 1. Màn hình playback xem lại sau khi quay xong */}
+                {recordedVideoUrl ? (
+                  <video 
+                    ref={playbackVideoRef} 
+                    src={recordedVideoUrl} 
+                    controls 
+                    autoPlay 
+                    className="live-video-player"
+                  />
+                ) : recordingStatus !== 'idle' ? (
+                  /* 2. Màn hình live stream trong lúc đang quay */
+                  <>
+                    {recordMode === 'audio' ? (
+                      <div className="empty-stage-state animate-fade-in">
+                        <Mic size={64} className="text-primary animate-pulse" />
+                        <h3 style={{ color: '#ffffff' }}>Đang thu âm thanh Micro</h3>
+                        <p style={{ color: '#94a3b8' }}>
+                          Hệ thống đang ghi lại giọng nói của bạn với bộ lọc khử ồn thông minh.
+                        </p>
+                      </div>
+                    ) : (
+                      <video 
+                        ref={previewVideoRef} 
+                        autoPlay 
+                        muted 
+                        playsInline 
+                        className="live-video-player"
+                        onLoadedMetadata={() => {
+                          if (previewVideoRef.current) {
+                            previewVideoRef.current.play().catch(() => {});
+                          }
+                        }}
+                      />
+                    )}
+                    {recordMode === 'both' && (
+                      <div className="pip-camera-overlay">
+                        <video 
+                          ref={pipCameraVideoRef} 
+                          autoPlay 
+                          muted 
+                          playsInline 
+                          onLoadedMetadata={() => {
+                            if (pipCameraVideoRef.current) {
+                              pipCameraVideoRef.current.play().catch(() => {});
+                            }
+                          }}
+                        />
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  /* 3. Màn hình chờ rỗng */
+                  <div className="empty-stage-state">
+                    <Monitor size={54} className="text-muted" />
+                    <h3>Sẵn sàng ghi hình phong cách Studio</h3>
+                    <p>
+                      Chọn nguồn quay ở bảng bên trái và bấm <strong>"Bắt Đầu Ghi Màn Hình"</strong>. Có thể bật tắt chế độ <strong>Recordly Studio</strong> với viền Gradient nghệ thuật và tự động phóng to theo con trỏ chuột.
+                    </p>
                   </div>
                 )}
               </>
-            ) : (
-              /* 3. Màn hình chờ rỗng */
-              <div className="empty-stage-state">
-                <Monitor size={54} className="text-muted" />
-                <h3>Sẵn sàng ghi hình</h3>
-                <p>
-                  Chọn nguồn quay ở bảng bên trái và bấm <strong>"Bắt Đầu Ghi Màn Hình"</strong>. Trình duyệt sẽ yêu cầu bạn cấp quyền chọn màn hình hoặc thẻ tab cần chia sẻ.
-                </p>
-              </div>
             )}
           </div>
 

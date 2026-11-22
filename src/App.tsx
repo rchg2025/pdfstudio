@@ -189,6 +189,12 @@ function App() {
             <Route path="quay-man-hinh" element={
               <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
             } />
+            <Route path="quay-man" element={
+              <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
+            } />
+            <Route path="quay-man-hinh-online" element={
+              <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
+            } />
             <Route path="screen-recorder" element={
               <Suspense fallback={<FallbackLoader />}><ScreenRecorder /></Suspense>
             } />
