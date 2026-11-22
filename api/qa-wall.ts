@@ -881,7 +881,7 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
       });
     }
 
-    // 13. TẠO CÂU HỎI TRẮC NGHIỆM BẰNG AI (TỰ ĐỘNG THAY ĐỔI CÁC MODEL KHI GẶP LỖI)
+    // 13. TẠO CÂU HỎI TRẮC NGHIỆM HOẶC VĂN BẢN ĐẢNG BẰNG AI (TỰ ĐỘNG THAY ĐỔI CÁC MODEL KHI GẶP LỖI)
     if (req.method === 'POST' && action === 'generate-ai-quiz') {
       let body = req.body;
       if (typeof body === 'string') {
@@ -889,7 +889,7 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
       }
       const { topic, count, difficulty, format, customApiKey } = body || {};
       if (!topic || !topic.trim()) {
-        return res.status(400).json({ error: 'Chủ đề bài thi không được để trống' });
+        return res.status(400).json({ error: 'Nội dung yêu cầu không được để trống' });
       }
 
       let apiKey = customApiKey?.trim();
@@ -909,6 +909,61 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
 
       // Tự động cập nhật model mới nhất và xoay vòng thử tất cả model đến khi thành công
       const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
+
+      // KIỂM TRA NẾU ĐÂY LÀ YÊU CẦU SOẠN THẢO VĂN BẢN ĐẢNG / THƯ KÝ ĐẢNG (trả về JSON đối tượng trực tiếp)
+      const isPartyPrompt = topic.includes('Bản kiểm điểm') || topic.includes('Mẫu 3-HSĐV') || topic.includes('chuyên gia thư ký') || topic.includes('quy chuẩn chữ "K"') || topic.includes('Mẫu 02');
+
+      if (isPartyPrompt) {
+        let partyResultText = '';
+        let usedModel = '';
+        const attemptErrors: string[] = [];
+
+        for (const m of modelQueue) {
+          try {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`;
+            const gRes = await fetch(endpoint, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ parts: [{ text: topic }] }],
+                generationConfig: {
+                  temperature: 0.3,
+                  responseMimeType: 'application/json'
+                }
+              }),
+              signal: AbortSignal.timeout(35000)
+            });
+
+            if (!gRes.ok) {
+              attemptErrors.push(`[${m}]: HTTP ${gRes.status}`);
+              continue;
+            }
+
+            const data = await gRes.json();
+            const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (rawText && rawText.includes('{')) {
+              partyResultText = rawText;
+              usedModel = m;
+              break;
+            }
+          } catch (err: any) {
+            attemptErrors.push(`[${m}]: ${err.message || 'Lỗi kết nối'}`);
+          }
+        }
+
+        if (!partyResultText) {
+          return res.status(400).json({
+            error: `Đã thử các model Gemini (${modelQueue.slice(0, 4).join(', ')}) nhưng không thành công: ${attemptErrors[0] || 'Lỗi kết nối'}.`
+          });
+        }
+
+        return res.status(200).json({
+          success: true,
+          questions: [{ question: partyResultText }],
+          text: partyResultText,
+          modelUsed: usedModel
+        });
+      }
 
       const qCount = Number(count) || 5;
       const diffLabel = difficulty === 'easy' ? 'Dễ (Nhận biết cơ bản)' : (difficulty === 'hard' ? 'Khó (Vận dụng nâng cao)' : 'Hỗn hợp các mức Dễ, Trung bình, Khó');
