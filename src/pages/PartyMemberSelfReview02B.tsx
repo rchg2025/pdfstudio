@@ -7,7 +7,6 @@ import {
   RotateCcw, 
   Printer, 
   Building2, 
-  UserCheck, 
   Award,
   AlertCircle
 } from 'lucide-react';
@@ -129,7 +128,7 @@ ${aiPrompt}
       }
     } catch (err: any) {
       console.error('Lỗi AI hỗ trợ kiểm điểm 02B:', err);
-      setAiError(err.message || 'Có lỗi xảy ra khi gọi AI. Vui lòng kiểm tra API Key hoặc thử lại.');
+      setAiError(err.message || 'Có lỗi xảy ra khi gọi AI. Vui lòng thử lại.');
     } finally {
       setIsAiLoading(false);
     }
@@ -155,56 +154,73 @@ ${aiPrompt}
             className="btn-review-act secondary"
             onClick={() => setShowAiModal(true)}
           >
-            <Sparkles size={16} />
-            Trợ Lý AI Viết Hộ
-          </button>
-          <button 
-            type="button" 
-            className="btn-review-act danger"
-            onClick={handleReset}
-            title="Đặt lại bản kiểm điểm về chuẩn mặc định"
-          >
-            <RotateCcw size={16} />
-            Đặt lại mẫu
-          </button>
-          <button 
-            type="button" 
-            className="btn-review-act outline"
-            onClick={handlePrint}
-          >
-            <Printer size={16} />
-            In A4
+            <Sparkles size={18} />
+            AI Soạn Thảo / Chuẩn Hóa
           </button>
           <button 
             type="button" 
             className="btn-review-act primary"
             onClick={handleDownloadDocx}
           >
-            <Download size={16} />
+            <Download size={18} />
             Tải File Word (.doc)
+          </button>
+          <button 
+            type="button" 
+            className="btn-review-act secondary"
+            onClick={handlePrint}
+          >
+            <Printer size={18} />
+            In Bản Kiểm Điểm
           </button>
         </div>
       </div>
 
       {savedToast && (
-        <div className="toast-notify">
-          <Check size={16} /> Đã áp dụng gợi ý soạn thảo từ AI thành công!
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: '#059669',
+          color: '#ffffff',
+          padding: '12px 20px',
+          borderRadius: '10px',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          zIndex: 9999,
+          fontWeight: 600
+        }}>
+          <Check size={18} /> Đã cập nhật và tự động lưu nháp!
         </div>
       )}
 
-      {/* WORKSPACE: FORM + LIVE PAPER PREVIEW */}
-      <div className="party-review-body">
+      {/* 2-COLUMN SPLIT: FORM TRÁI - PREVIEW PHẢI */}
+      <div className="party-review-grid">
         {/* CỘT TRÁI: FORM NHẬP LIỆU */}
-        <div className="review-editor-column">
-          {/* KHỐI 1: TỔ CHỨC ĐẢNG */}
-          <div className="review-card-section">
-            <div className="section-heading">
+        <div className="party-review-form">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+            <button 
+              type="button" 
+              onClick={handleReset}
+              className="btn-quick-k"
+              style={{ background: '#f1f5f9', color: '#475569', borderColor: '#cbd5e1' }}
+            >
+              <RotateCcw size={15} /> Đặt lại mẫu mặc định
+            </button>
+          </div>
+
+          {/* 1. THÔNG TIN CẤP ỦY & CÁ NHÂN */}
+          <div className="review-section">
+            <div className="review-sec-badge">
               <Building2 size={18} />
-              <h3>1. Thông Tin Cấp Ủy & Hồ Sơ</h3>
+              1. Thông Tin Cấp Ủy & Đảng Viên Tự Kiểm Điểm
             </div>
-            <div className="form-grid-2">
-              <div className="form-group">
-                <label>Tỉnh ủy / Đảng ủy cấp trên trực tiếp</label>
+
+            <div className="review-form-row">
+              <div className="review-field">
+                <label>Đảng bộ cấp trên / Tỉnh ủy</label>
                 <input 
                   type="text" 
                   value={formData.tinhUy} 
@@ -212,7 +228,7 @@ ${aiPrompt}
                   placeholder="Ví dụ: ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH"
                 />
               </div>
-              <div className="form-group">
+              <div className="review-field">
                 <label>Huyện ủy / Đảng ủy trực thuộc</label>
                 <input 
                   type="text" 
@@ -222,8 +238,9 @@ ${aiPrompt}
                 />
               </div>
             </div>
-            <div className="form-grid-2">
-              <div className="form-group">
+
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>Đảng bộ cơ sở</label>
                 <input 
                   type="text" 
@@ -232,7 +249,7 @@ ${aiPrompt}
                   placeholder="Ví dụ: Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn"
                 />
               </div>
-              <div className="form-group">
+              <div className="review-field">
                 <label>Chi bộ trực thuộc</label>
                 <input 
                   type="text" 
@@ -242,8 +259,9 @@ ${aiPrompt}
                 />
               </div>
             </div>
-            <div className="form-grid-2">
-              <div className="form-group">
+
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>Năm kiểm điểm</label>
                 <input 
                   type="text" 
@@ -252,7 +270,7 @@ ${aiPrompt}
                   placeholder="2026"
                 />
               </div>
-              <div className="form-group">
+              <div className="review-field">
                 <label>Địa danh lập bản kiểm điểm</label>
                 <input 
                   type="text" 
@@ -262,27 +280,20 @@ ${aiPrompt}
                 />
               </div>
             </div>
-          </div>
 
-          {/* KHỐI 2: THÔNG TIN CÁ NHÂN */}
-          <div className="review-card-section">
-            <div className="section-heading">
-              <UserCheck size={18} />
-              <h3>2. Thông Tin Đảng Viên Tự Kiểm Điểm</h3>
-            </div>
-            <div className="form-grid-2">
-              <div className="form-group">
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>Họ và tên (chữ in hoa)</label>
                 <input 
                   type="text" 
                   value={formData.hoVaTen} 
-                  onChange={e => handleChange('hoVaTen', e.target.value)} 
+                  onChange={e => handleChange('hoVaTen', e.target.value.toUpperCase())} 
                   placeholder="NGUYỄN VĂN A"
-                  style={{ fontWeight: 600, textTransform: 'uppercase' }}
+                  style={{ fontWeight: 'bold' }}
                 />
               </div>
-              <div className="form-group">
-                <label>Ngày tháng năm sinh</label>
+              <div className="review-field">
+                <label>Ngày, tháng, năm sinh</label>
                 <input 
                   type="text" 
                   value={formData.namSinh} 
@@ -291,8 +302,9 @@ ${aiPrompt}
                 />
               </div>
             </div>
-            <div className="form-grid-3">
-              <div className="form-group">
+
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>Chức vụ Đảng</label>
                 <input 
                   type="text" 
@@ -301,8 +313,8 @@ ${aiPrompt}
                   placeholder="Đảng viên"
                 />
               </div>
-              <div className="form-group">
-                <label>Chức vụ chính quyền / Chuyên môn</label>
+              <div className="review-field">
+                <label>Chức vụ chuyên môn / Giảng dạy</label>
                 <input 
                   type="text" 
                   value={formData.chucVuChinhQuyen} 
@@ -310,7 +322,10 @@ ${aiPrompt}
                   placeholder="Giảng viên, Chuyên viên..."
                 />
               </div>
-              <div className="form-group">
+            </div>
+
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>Chức vụ đoàn thể</label>
                 <input 
                   type="text" 
@@ -319,18 +334,7 @@ ${aiPrompt}
                   placeholder="Đoàn viên công đoàn..."
                 />
               </div>
-            </div>
-            <div className="form-grid-2">
-              <div className="form-group">
-                <label>Đơn vị công tác</label>
-                <input 
-                  type="text" 
-                  value={formData.donViCongTac} 
-                  onChange={e => handleChange('donViCongTac', e.target.value)} 
-                  placeholder="Khoa/Phòng... Trường Cao đẳng Bách khoa Nam Sài Gòn"
-                />
-              </div>
-              <div className="form-group">
+              <div className="review-field">
                 <label>Chi bộ sinh hoạt</label>
                 <input 
                   type="text" 
@@ -340,19 +344,27 @@ ${aiPrompt}
                 />
               </div>
             </div>
+
+            <div className="review-field">
+              <label>Đơn vị công tác</label>
+              <input 
+                type="text" 
+                value={formData.donViCongTac} 
+                onChange={e => handleChange('donViCongTac', e.target.value)} 
+                placeholder="Trường Cao đẳng Bách khoa Nam Sài Gòn"
+              />
+            </div>
           </div>
 
-          {/* KHỐI 3: I. ƯU ĐIỂM, KẾT QUẢ ĐẠT ĐƯỢC (3 MỤC CHUẨN MẪU 02B) */}
-          <div className="review-card-section">
-            <div className="section-heading">
+          {/* 2. I. ƯU ĐIỂM, KẾT QUẢ ĐẠT ĐƯỢC (3 MỤC CHUẨN MẪU 02B) */}
+          <div className="review-section">
+            <div className="review-sec-badge">
               <FileText size={18} />
-              <h3>I. Ưu Điểm, Kết Quả Đạt Được (Mẫu 02B)</h3>
+              I. Ưu Điểm, Kết Quả Đạt Được (Mẫu 02B)
             </div>
-            <div className="form-group">
+
+            <div className="review-field">
               <label>1. Phẩm chất chính trị, đạo đức, lối sống, ý thức tổ chức kỷ luật, trách nhiệm nêu gương</label>
-              <span className="field-hint">
-                Tư tưởng chính trị, đạo đức, lối sống, giữ gìn đoàn kết nội bộ, chấp hành kỷ luật, đấu tranh chống suy thoái, "tự diễn biến", "tự chuyển hóa".
-              </span>
               <textarea 
                 rows={6}
                 value={formData.uuDiemPhamChatChinhTri}
@@ -360,11 +372,8 @@ ${aiPrompt}
               />
             </div>
 
-            <div className="form-group">
-              <label>2. Thực hiện nhiệm vụ, quyền hạn và kết quả thực hiện các chỉ tiêu, nhiệm vụ được giao trong năm</label>
-              <span className="field-hint">
-                Khối lượng, chất lượng, tiến độ thực hiện chức trách chuyên môn giảng dạy, công tác; tinh thần trách nhiệm, đổi mới, chuyển đổi số.
-              </span>
+            <div className="review-field">
+              <label>2. Thực hiện nhiệm vụ, quyền hạn và chỉ tiêu chuyên môn được giao trong năm</label>
               <textarea 
                 rows={6}
                 value={formData.uuDiemThucHienNhiemVu}
@@ -372,11 +381,8 @@ ${aiPrompt}
               />
             </div>
 
-            <div className="form-group">
-              <label>3. Việc thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu hằng năm</label>
-              <span className="field-hint">
-                Đối chiếu với bản cam kết đầu năm và giữ mối liên hệ với cấp ủy nơi cư trú (Quy định 213-QĐ/TW).
-              </span>
+            <div className="review-field">
+              <label>3. Việc thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu hằng năm (theo Quy định 213-QĐ/TW)</label>
               <textarea 
                 rows={4}
                 value={formData.uuDiemCamKetTuDuong}
@@ -385,22 +391,24 @@ ${aiPrompt}
             </div>
           </div>
 
-          {/* KHỐI 4: HẠN CHẾ, KHUYẾT ĐIỂM & NGUYÊN NHÂN */}
-          <div className="review-card-section">
-            <div className="section-heading">
+          {/* 3. II. HẠN CHẾ, KHUYẾT ĐIỂM VÀ NGUYÊN NHÂN */}
+          <div className="review-section">
+            <div className="review-sec-badge">
               <AlertCircle size={18} />
-              <h3>II. Hạn Chế, Khuyết Điểm Và Nguyên Nhân</h3>
+              II. Hạn Chế, Khuyết Điểm Và Nguyên Nhân
             </div>
-            <div className="form-group">
-              <label>1. Hạn chế, khuyết điểm (chỉ ra thẳng thắn)</label>
+
+            <div className="review-field">
+              <label>1. Hạn chế, khuyết điểm</label>
               <textarea 
                 rows={4}
                 value={formData.hanCheKhuyetDiem}
                 onChange={e => handleChange('hanCheKhuyetDiem', e.target.value)}
               />
             </div>
-            <div className="form-grid-2">
-              <div className="form-group">
+
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>2.1. Nguyên nhân khách quan</label>
                 <textarea 
                   rows={3}
@@ -408,7 +416,7 @@ ${aiPrompt}
                   onChange={e => handleChange('nguyenNhanKhachQuan', e.target.value)}
                 />
               </div>
-              <div className="form-group">
+              <div className="review-field">
                 <label>2.2. Nguyên nhân chủ quan (chủ yếu)</label>
                 <textarea 
                   rows={3}
@@ -419,21 +427,23 @@ ${aiPrompt}
             </div>
           </div>
 
-          {/* KHỐI 5: KHẮC PHỤC, GIẢI TRÌNH & PHƯƠNG HƯỚNG */}
-          <div className="review-card-section">
-            <div className="section-heading">
+          {/* 4. III, IV & V. KHẮC PHỤC & PHƯƠNG HƯỚNG */}
+          <div className="review-section">
+            <div className="review-sec-badge">
               <FileText size={18} />
-              <h3>III, IV & V. Khắc Phục, Giải Trình & Phương Hướng</h3>
+              III, IV & V. Khắc Phục, Giải Trình & Phương Hướng
             </div>
-            <div className="form-group">
-              <label>III. Kết quả khắc phục hạn chế, khuyết điểm đã được chỉ ra ở các kỳ kiểm điểm trước (năm 2025)</label>
+
+            <div className="review-field">
+              <label>III. Kết quả khắc phục hạn chế, khuyết điểm năm trước (năm 2025)</label>
               <textarea 
                 rows={3}
                 value={formData.ketQuaKhacPhucNamTruoc}
                 onChange={e => handleChange('ketQuaKhacPhucNamTruoc', e.target.value)}
               />
             </div>
-            <div className="form-group">
+
+            <div className="review-field">
               <label>IV. Giải trình / Làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể (nếu có)</label>
               <textarea 
                 rows={3}
@@ -441,8 +451,9 @@ ${aiPrompt}
                 onChange={e => handleChange('giaiTrinhTrachNhiem', e.target.value)}
               />
             </div>
-            <div className="form-group">
-              <label>V. Phương hướng, biện pháp khắc phục hạn chế, khuyết điểm trong thời gian tới</label>
+
+            <div className="review-field">
+              <label>V. Phương hướng, biện pháp khắc phục hạn chế, khuyết điểm</label>
               <textarea 
                 rows={4}
                 value={formData.phuongHuongKhacPhuc}
@@ -451,18 +462,19 @@ ${aiPrompt}
             </div>
           </div>
 
-          {/* KHỐI 6: TỰ XẾP LOẠI CHẤT LƯỢNG */}
-          <div className="review-card-section">
-            <div className="section-heading">
+          {/* 5. TỰ ĐÁNH GIÁ, XẾP LOẠI CHẤT LƯỢNG */}
+          <div className="review-section">
+            <div className="review-sec-badge">
               <Award size={18} />
-              <h3>B. Tự Đánh Giá, Xếp Loại Chất Lượng</h3>
+              B. Tự Đánh Giá, Xếp Loại Chất Lượng
             </div>
-            <div className="form-grid-2">
-              <div className="form-group">
+
+            <div className="review-form-row">
+              <div className="review-field">
                 <label>1. Tự xếp loại chất lượng Đảng viên</label>
                 <select 
                   value={formData.tuXepLoaiDangVien}
-                  onChange={e => handleChange('tuXepLoaiDangVien', e.target.value)}
+                  onChange={e => handleChange('tuXepLoaiDangVien', e.target.value as any)}
                 >
                   <option value="Hoàn thành xuất sắc nhiệm vụ">Hoàn thành xuất sắc nhiệm vụ</option>
                   <option value="Hoàn thành tốt nhiệm vụ">Hoàn thành tốt nhiệm vụ</option>
@@ -470,11 +482,12 @@ ${aiPrompt}
                   <option value="Không hoàn thành nhiệm vụ">Không hoàn thành nhiệm vụ</option>
                 </select>
               </div>
-              <div className="form-group">
+
+              <div className="review-field">
                 <label>2. Tự xếp loại chất lượng Viên chức / Người lao động</label>
                 <select 
                   value={formData.tuXepLoaiVienChuc}
-                  onChange={e => handleChange('tuXepLoaiVienChuc', e.target.value)}
+                  onChange={e => handleChange('tuXepLoaiVienChuc', e.target.value as any)}
                 >
                   <option value="Hoàn thành xuất sắc nhiệm vụ">Hoàn thành xuất sắc nhiệm vụ</option>
                   <option value="Hoàn thành tốt nhiệm vụ">Hoàn thành tốt nhiệm vụ</option>
@@ -486,119 +499,135 @@ ${aiPrompt}
           </div>
         </div>
 
-        {/* CỘT PHẢI: TRANG GIẤY A4 XEM TRƯỚC (LIVE PAPER VIEW) */}
-        <div className="review-preview-column">
-          <div className="paper-controls">
-            <span className="paper-badge">
-              <FileText size={14} /> Mẫu 02B-HD KĐ.ĐG (Chuẩn A4)
-            </span>
-            <div className="paper-btns">
-              <button onClick={handlePrint} className="btn-sm"><Printer size={14} /> In</button>
-              <button onClick={handleDownloadDocx} className="btn-sm primary"><Download size={14} /> Tải .doc</button>
+        {/* CỘT PHẢI: XEM TRƯỚC PAPER VIEW A4 */}
+        <div className="party-review-sticky">
+          <div className="review-preview-toolbar">
+            <div className="review-preview-title">
+              <FileText size={18} color="#b91c1c" />
+              Xem Trước Bản Kiểm Điểm A4 (Chuẩn Mẫu 02B)
             </div>
+            <button 
+              type="button" 
+              className="btn-quick-k"
+              onClick={handleDownloadDocx}
+            >
+              <Download size={14} /> Tải .doc
+            </button>
           </div>
 
-          <div className="paper-a4 printable-area">
-            {/* Header Mẫu 02B */}
-            <div className="doc-header-table">
-              <div className="doc-header-col left">
-                <p className="org-upper">{formData.tinhUy || 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH'}</p>
-                <p className="org-upper">{formData.huyenUy || 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH'}</p>
-                <p className="org-name">{formData.dangBoCoSo || 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn'}</p>
-                <p className="org-name"><strong>{formData.chiBo || 'Chi bộ 1'}</strong></p>
-                <div className="dash-line"></div>
-                <p className="doc-num">*</p>
+          <div className="review-paper-viewport">
+            <div className="review-paper-sheet">
+              {/* Header 2 cột */}
+              <div className="paper-header-grid">
+                <div className="paper-org-left">
+                  <div className="org-upper">{formData.tinhUy || 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH'}</div>
+                  <div className="org-upper">{formData.huyenUy || 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH'}</div>
+                  <div style={{ fontWeight: 'bold' }}>{formData.dangBoCoSo || 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn'}</div>
+                  <div>Chi bộ: <strong>{formData.chiBo || 'Chi bộ 1'}</strong></div>
+                </div>
+                <div className="paper-motto-right">
+                  <div className="motto-main">ĐẢNG CỘNG SẢN VIỆT NAM</div>
+                  <div className="motto-stars">***</div>
+                  <div className="motto-date">
+                    {formData.diaDanh || 'Thành phố Hồ Chí Minh'}, ngày {formData.ngayKhai || '....'} tháng {formData.thangKhai || '....'} năm {formData.namKhai || '2026'}
+                  </div>
+                </div>
               </div>
-              <div className="doc-header-col right">
-                <p className="motto-top"><strong><u>ĐẢNG CỘNG SẢN VIỆT NAM</u></strong></p>
-                <p className="doc-template-code">
-                  <strong>Mẫu 02B-HD KĐ.ĐG</strong><br />
-                  <em>(Dành cho cá nhân không giữ chức vụ lãnh đạo, quản lý)</em>
-                </p>
-                <p className="doc-date">
-                  <em>{formData.diaDanh || 'Thành phố Hồ Chí Minh'}, ngày {formData.ngayKhai} tháng {formData.thangKhai} năm {formData.namKhai}</em>
-                </p>
+
+              {/* Tiêu đề */}
+              <div className="paper-title-block">
+                <div style={{ fontSize: '11pt', fontWeight: 'bold', textAlign: 'right', marginBottom: '4px' }}>Mẫu 02B-HD KĐ.ĐG</div>
+                <h2 className="paper-title-main">BẢN KIỂM ĐIỂM, TỰ ĐÁNH GIÁ, XẾP LOẠI CỦA CÁ NHÂN</h2>
+                <div className="paper-title-sub">Năm {formData.namKiemDiem || '2026'}</div>
+                <div className="paper-note">
+                  (Dành cho cá nhân không giữ chức vụ lãnh đạo, quản lý; dùng cho kiểm điểm năm 2026 theo Hướng dẫn số 43-HD/BTCTW và Công văn số 2772-CV/BTCTW)
+                </div>
               </div>
-            </div>
 
-            <div className="doc-title-block">
-              <h2 className="doc-main-title">BẢN KIỂM ĐIỂM CÁ NHÂN</h2>
-              <h3 className="doc-sub-title">Năm {formData.namKiemDiem || '2026'}</h3>
-            </div>
+              {/* Thông tin */}
+              <div className="paper-p">
+                Họ và tên: <strong style={{ textTransform: 'uppercase' }}>{formData.hoVaTen || '....................................................................'}</strong>. Ngày sinh: {formData.namSinh || '................................'}
+              </div>
+              <div className="paper-p">
+                Chức vụ Đảng: {formData.chucVuDang || 'Đảng viên'}
+              </div>
+              <div className="paper-p">
+                Chức vụ chính quyền, chuyên môn: {formData.chucVuChinhQuyen || 'Giảng viên'}
+              </div>
+              <div className="paper-p">
+                Chức vụ đoàn thể: {formData.chucVuDoanThe || 'Đoàn viên công đoàn'}
+              </div>
+              <div className="paper-p">
+                Đơn vị công tác: {formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}
+              </div>
+              <div className="paper-p">
+                Chi bộ sinh hoạt: {formData.chiBoSinhHoat || 'Chi bộ 1'}
+              </div>
 
-            <div className="doc-personal-info">
-              <p>Họ và tên: <strong>{formData.hoVaTen || '....................................................................'}</strong>. Ngày sinh: {formData.namSinh || '................................'}</p>
-              <p>Chức vụ Đảng: {formData.chucVuDang || 'Đảng viên'}</p>
-              <p>Chức vụ chính quyền, chuyên môn: {formData.chucVuChinhQuyen || 'Giảng viên'}</p>
-              <p>Chức vụ đoàn thể: {formData.chucVuDoanThe || 'Đoàn viên công đoàn'}</p>
-              <p>Đơn vị công tác: {formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}</p>
-              <p>Chi bộ sinh hoạt: {formData.chiBoSinhHoat || 'Chi bộ 1'}</p>
-            </div>
+              <div className="paper-heading-1">A. NỘI DUNG KIỂM ĐIỂM</div>
 
-            <div className="doc-content-body">
-              <p className="doc-heading-level-1"><strong>A. NỘI DUNG KIỂM ĐIỂM</strong></p>
+              <div className="paper-heading-2">I. Ưu điểm, kết quả đạt được</div>
+              <div className="paper-heading-3">1. Phẩm chất chính trị, đạo đức, lối sống; ý thức tổ chức kỷ luật, trách nhiệm nêu gương</div>
+              <div className="paper-text-block">{formData.uuDiemPhamChatChinhTri}</div>
+
+              <div className="paper-heading-3">2. Thực hiện nhiệm vụ, quyền hạn và kết quả thực hiện các chỉ tiêu, nhiệm vụ được giao trong năm</div>
+              <div className="paper-text-block">{formData.uuDiemThucHienNhiemVu}</div>
+
+              <div className="paper-heading-3">3. Việc thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu hằng năm</div>
+              <div className="paper-text-block">{formData.uuDiemCamKetTuDuong}</div>
+
+              <div className="paper-heading-2">II. Hạn chế, khuyết điểm và nguyên nhân</div>
+              <div className="paper-heading-3">1. Hạn chế, khuyết điểm:</div>
+              <div className="paper-text-block">{formData.hanCheKhuyetDiem}</div>
+
+              <div className="paper-heading-3">2. Nguyên nhân của hạn chế, khuyết điểm:</div>
+              <div className="paper-p"><em>- Nguyên nhân khách quan:</em> {formData.nguyenNhanKhachQuan}</div>
+              <div className="paper-p"><em>- Nguyên nhân chủ quan:</em> {formData.nguyenNhanChuQuan}</div>
+
+              <div className="paper-heading-2">III. Kết quả khắc phục hạn chế, khuyết điểm đã được chỉ ra ở các kỳ kiểm điểm trước</div>
+              <div className="paper-text-block">{formData.ketQuaKhacPhucNamTruoc}</div>
+
+              <div className="paper-heading-2">IV. Giải trình / Làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể (nếu có)</div>
+              <div className="paper-text-block">{formData.giaiTrinhTrachNhiem}</div>
+
+              <div className="paper-heading-2">V. Phương hướng, biện pháp khắc phục hạn chế, khuyết điểm</div>
+              <div className="paper-text-block">{formData.phuongHuongKhacPhuc}</div>
+
+              <div className="paper-heading-1" style={{ marginTop: '16px' }}>B. TỰ ĐÁNH GIÁ, XẾP LOẠI CHẤT LƯỢNG</div>
               
-              <p className="doc-heading-level-2"><strong>I. Ưu điểm, kết quả đạt được</strong></p>
-              <p className="doc-heading-level-3"><strong>1. Phẩm chất chính trị, đạo đức, lối sống; ý thức tổ chức kỷ luật, trách nhiệm nêu gương</strong></p>
-              <div className="doc-text-paragraph">{formData.uuDiemPhamChatChinhTri}</div>
-
-              <p className="doc-heading-level-3"><strong>2. Thực hiện nhiệm vụ, quyền hạn và kết quả thực hiện các chỉ tiêu, nhiệm vụ được giao trong năm</strong></p>
-              <div className="doc-text-paragraph">{formData.uuDiemThucHienNhiemVu}</div>
-
-              <p className="doc-heading-level-3"><strong>3. Việc thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu hằng năm</strong></p>
-              <div className="doc-text-paragraph">{formData.uuDiemCamKetTuDuong}</div>
-
-              <p className="doc-heading-level-2"><strong>II. Hạn chế, khuyết điểm và nguyên nhân</strong></p>
-              <p className="doc-heading-level-3"><strong>1. Hạn chế, khuyết điểm:</strong></p>
-              <div className="doc-text-paragraph">{formData.hanCheKhuyetDiem}</div>
-
-              <p className="doc-heading-level-3"><strong>2. Nguyên nhân của hạn chế, khuyết điểm:</strong></p>
-              <p><em>- Nguyên nhân khách quan:</em> {formData.nguyenNhanKhachQuan}</p>
-              <p><em>- Nguyên nhân chủ quan:</em> {formData.nguyenNhanChuQuan}</p>
-
-              <p className="doc-heading-level-2"><strong>III. Kết quả khắc phục hạn chế, khuyết điểm đã được chỉ ra ở các kỳ kiểm điểm trước</strong></p>
-              <div className="doc-text-paragraph">{formData.ketQuaKhacPhucNamTruoc}</div>
-
-              <p className="doc-heading-level-2"><strong>IV. Giải trình / Làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể (nếu có)</strong></p>
-              <div className="doc-text-paragraph">{formData.giaiTrinhTrachNhiem}</div>
-
-              <p className="doc-heading-level-2"><strong>V. Phương hướng, biện pháp khắc phục hạn chế, khuyết điểm</strong></p>
-              <div className="doc-text-paragraph">{formData.phuongHuongKhacPhuc}</div>
-
-              <p className="doc-heading-level-1" style={{ marginTop: '16px' }}><strong>B. TỰ ĐÁNH GIÁ, XẾP LOẠI CHẤT LƯỢNG</strong></p>
-              
-              <p className="doc-heading-level-2"><strong>1. Tự đánh giá, xếp loại chất lượng đảng viên:</strong></p>
-              <div className="checkbox-list">
-                <span className={formData.tuXepLoaiDangVien === 'Hoàn thành xuất sắc nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiDangVien === 'Hoàn thành xuất sắc nhiệm vụ' ? 'X' : '  '} ] Hoàn thành xuất sắc nhiệm vụ</span><br />
-                <span className={formData.tuXepLoaiDangVien === 'Hoàn thành tốt nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiDangVien === 'Hoàn thành tốt nhiệm vụ' ? 'X' : '  '} ] Hoàn thành tốt nhiệm vụ</span><br />
-                <span className={formData.tuXepLoaiDangVien === 'Hoàn thành nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiDangVien === 'Hoàn thành nhiệm vụ' ? 'X' : '  '} ] Hoàn thành nhiệm vụ</span><br />
-                <span className={formData.tuXepLoaiDangVien === 'Không hoàn thành nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiDangVien === 'Không hoàn thành nhiệm vụ' ? 'X' : '  '} ] Không hoàn thành nhiệm vụ</span>
+              <div className="paper-heading-2">1. Tự đánh giá, xếp loại chất lượng đảng viên:</div>
+              <div style={{ marginLeft: '10mm', marginTop: '4px', marginBottom: '4px' }}>
+                <div>[{formData.tuXepLoaiDangVien === 'Hoàn thành xuất sắc nhiệm vụ' ? 'X' : ' '}] Hoàn thành xuất sắc nhiệm vụ</div>
+                <div>[{formData.tuXepLoaiDangVien === 'Hoàn thành tốt nhiệm vụ' ? 'X' : ' '}] Hoàn thành tốt nhiệm vụ</div>
+                <div>[{formData.tuXepLoaiDangVien === 'Hoàn thành nhiệm vụ' ? 'X' : ' '}] Hoàn thành nhiệm vụ</div>
+                <div>[{formData.tuXepLoaiDangVien === 'Không hoàn thành nhiệm vụ' ? 'X' : ' '}] Không hoàn thành nhiệm vụ</div>
               </div>
 
-              <p className="doc-heading-level-2"><strong>2. Tự đánh giá, xếp loại chất lượng viên chức / người lao động:</strong></p>
-              <div className="checkbox-list">
-                <span className={formData.tuXepLoaiVienChuc === 'Hoàn thành xuất sắc nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiVienChuc === 'Hoàn thành xuất sắc nhiệm vụ' ? 'X' : '  '} ] Hoàn thành xuất sắc nhiệm vụ</span><br />
-                <span className={formData.tuXepLoaiVienChuc === 'Hoàn thành tốt nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiVienChuc === 'Hoàn thành tốt nhiệm vụ' ? 'X' : '  '} ] Hoàn thành tốt nhiệm vụ</span><br />
-                <span className={formData.tuXepLoaiVienChuc === 'Hoàn thành nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiVienChuc === 'Hoàn thành nhiệm vụ' ? 'X' : '  '} ] Hoàn thành nhiệm vụ</span><br />
-                <span className={formData.tuXepLoaiVienChuc === 'Không hoàn thành nhiệm vụ' ? 'checked' : ''}>[ {formData.tuXepLoaiVienChuc === 'Không hoàn thành nhiệm vụ' ? 'X' : '  '} ] Không hoàn thành nhiệm vụ</span>
+              <div className="paper-heading-2" style={{ marginTop: '8px' }}>2. Tự đánh giá, xếp loại chất lượng viên chức, người lao động:</div>
+              <div style={{ marginLeft: '10mm', marginTop: '4px', marginBottom: '4px' }}>
+                <div>[{formData.tuXepLoaiVienChuc === 'Hoàn thành xuất sắc nhiệm vụ' ? 'X' : ' '}] Hoàn thành xuất sắc nhiệm vụ</div>
+                <div>[{formData.tuXepLoaiVienChuc === 'Hoàn thành tốt nhiệm vụ' ? 'X' : ' '}] Hoàn thành tốt nhiệm vụ</div>
+                <div>[{formData.tuXepLoaiVienChuc === 'Hoàn thành nhiệm vụ' ? 'X' : ' '}] Hoàn thành nhiệm vụ</div>
+                <div>[{formData.tuXepLoaiVienChuc === 'Không hoàn thành nhiệm vụ' ? 'X' : ' '}] Không hoàn thành nhiệm vụ</div>
               </div>
-            </div>
 
-            {/* Chữ ký văn bản Đảng Mẫu 02B */}
-            <div className="doc-signature-table">
-              <div className="doc-sig-col">
-                <p><strong>ĐÁNH GIÁ, XẾP LOẠI CỦA CHI BỘ</strong></p>
-                <p className="sig-sub"><em>(Xếp loại chất lượng đảng viên)</em></p>
-                <div style={{ height: '70px' }}></div>
-                <p><strong>T/M CHI ỦY</strong></p>
-                <p className="sig-sub"><em>(Ký, ghi rõ họ tên)</em></p>
-              </div>
-              <div className="doc-sig-col">
-                <p className="sig-date"><em>{formData.diaDanh || 'Thành phố Hồ Chí Minh'}, ngày {formData.ngayKhai} tháng {formData.thangKhai} năm {formData.namKhai}</em></p>
-                <p><strong>NGƯỜI TỰ KIỂM ĐIỂM</strong></p>
-                <p className="sig-sub"><em>(Ký, ghi rõ họ tên)</em></p>
-                <div style={{ height: '70px' }}></div>
-                <p><strong>{formData.hoVaTen || '...........................................'}</strong></p>
+              {/* Chữ ký 2 bên */}
+              <div className="paper-signature-grid">
+                <div className="sig-col-center">
+                  <div style={{ fontWeight: 'bold' }}>ĐÁNH GIÁ, XẾP LOẠI CỦA CHI BỘ</div>
+                  <div style={{ fontStyle: 'italic', fontSize: '10pt', marginBottom: '50px' }}>(Xếp loại chất lượng đảng viên)</div>
+                  <div style={{ fontWeight: 'bold' }}>T/M CHI ỦY (CHI BỘ)</div>
+                  <div style={{ fontStyle: 'italic', fontSize: '10pt' }}>(Ký, ghi rõ họ tên)</div>
+                </div>
+
+                <div className="sig-col-center">
+                  <div style={{ fontStyle: 'italic', fontSize: '11pt' }}>
+                    {formData.diaDanh || 'Thành phố Hồ Chí Minh'}, ngày {formData.ngayKhai || '....'} tháng {formData.thangKhai || '....'} năm {formData.namKhai || '2026'}
+                  </div>
+                  <div style={{ fontWeight: 'bold', marginTop: '2px' }}>NGƯỜI TỰ KIỂM ĐIỂM</div>
+                  <div style={{ fontStyle: 'italic', fontSize: '10pt', marginBottom: '55px' }}>(Ký, ghi rõ họ tên)</div>
+                  <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{formData.hoVaTen || '...........................................'}</div>
+                </div>
               </div>
             </div>
           </div>
@@ -607,47 +636,66 @@ ${aiPrompt}
 
       {/* MODAL TRỢ LÝ AI SOẠN THẢO */}
       {showAiModal && (
-        <div className="modal-overlay">
-          <div className="modal-content-card">
-            <div className="modal-header">
-              <div className="modal-icon"><Sparkles size={22} /></div>
-              <div>
-                <h3>Trợ Lý AI Viết Bản Kiểm Điểm (Mẫu 02B)</h3>
-                <p>Nhập vị trí chuyên môn, khối lượng công việc, ưu điểm hoặc một vài gạch đầu dòng để AI chuẩn hóa văn phong Đảng.</p>
+        <div className="review-modal-backdrop" onClick={() => setShowAiModal(false)}>
+          <div className="review-ai-modal" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#b91c1c', fontWeight: 800, fontSize: '1.15rem' }}>
+                <Sparkles size={22} />
+                Trợ Lý AI Soạn Bản Kiểm Điểm (Mẫu 02B)
               </div>
-            </div>
-            
-            <div className="modal-body">
-              <label>Mô tả ngắn gọn công tác trong năm 2026 của bạn:</label>
-              <textarea 
-                rows={5}
-                placeholder="Ví dụ: Tôi là Giảng viên Khoa Công nghệ thông tin, hoàn thành 100% giờ giảng dạy chuyên môn, tham gia nghiên cứu đề tài khoa học, tích cực xây dựng bài giảng số. Tinh thần đóng góp ý kiến đôi khi còn ít, chưa chủ động ngoại ngữ..."
-                value={aiPrompt}
-                onChange={e => setAiPrompt(e.target.value)}
-              />
-              {aiError && (
-                <div className="ai-error-box">
-                  <AlertCircle size={16} /> {aiError}
-                </div>
-              )}
-            </div>
-
-            <div className="modal-footer">
               <button 
                 type="button" 
-                className="btn-modal cancel" 
+                onClick={() => setShowAiModal(false)}
+                style={{ background: 'none', border: 'none', fontSize: '1.25rem', cursor: 'pointer', color: '#64748b' }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            <p style={{ margin: 0, fontSize: '0.88rem', color: '#64748b', lineHeight: 1.5 }}>
+              Nhập tóm tắt công tác chuyên môn, giảng dạy, ưu khuyết điểm trong năm 2026. Trợ lý AI của dự án sẽ tự động chuẩn hóa đúng thể thức văn phong xây dựng Đảng.
+            </p>
+
+            <textarea 
+              rows={5}
+              placeholder="Ví dụ: Tôi là Giảng viên Khoa Công nghệ thông tin, hoàn thành 100% giờ chuẩn giảng dạy, tích cực ứng dụng LMS và chuyển đổi số bài giảng, có 1 bài báo khoa học. Hạn chế: Ít phát biểu trong sinh hoạt chi bộ..."
+              value={aiPrompt}
+              onChange={e => setAiPrompt(e.target.value)}
+              style={{
+                width: '100%',
+                padding: '0.75rem',
+                borderRadius: '8px',
+                border: '1px solid #cbd5e1',
+                fontSize: '0.9rem',
+                fontFamily: 'inherit',
+                outline: 'none'
+              }}
+            />
+
+            {aiError && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#dc2626', fontSize: '0.85rem' }}>
+                <AlertCircle size={16} /> {aiError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+              <button 
+                type="button" 
+                className="btn-quick-k" 
                 onClick={() => setShowAiModal(false)}
                 disabled={isAiLoading}
+                style={{ background: '#f1f5f9', color: '#475569', borderColor: '#cbd5e1' }}
               >
-                Hủy
+                Hủy bỏ
               </button>
               <button 
                 type="button" 
-                className="btn-modal submit" 
+                className="btn-review-act primary" 
                 onClick={handleAiGenerate}
                 disabled={isAiLoading || !aiPrompt.trim()}
+                style={{ background: '#b91c1c', color: '#ffffff' }}
               >
-                {isAiLoading ? 'Đang soạn thảo...' : 'Tạo nội dung kiểm điểm'}
+                {isAiLoading ? 'AI đang soạn...' : 'Tạo nội dung kiểm điểm'}
               </button>
             </div>
           </div>
