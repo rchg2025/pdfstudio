@@ -108,7 +108,14 @@ const Navbar = () => {
             ref={navRef}
             onScroll={checkScroll}
           >
-            {/* Nhóm nổi bật: Đấu trường Live, Điểm danh QR & Vinh Danh & Hỏi đáp PDF */}
+            {/* Nhóm nổi bật: Công tác Đảng, Đấu trường Live, Ký tên PDF */}
+            <NavLink to="/cong-tac-dang" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"} style={{ background: 'rgba(185, 28, 28, 0.1)', color: '#b91c1c', borderColor: 'rgba(185, 28, 28, 0.3)' }}>
+              <span className="nav-badge-new" style={{ background: '#b91c1c' }}>MỚI</span>
+              ⭐ Công Tác Đảng
+            </NavLink>
+            <NavLink to="/bo-sung-ho-so-dang-vien" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
+              📋 Bổ Sung Hồ Sơ ĐV
+            </NavLink>
             <NavLink to="/dau-truong-live" className={({isActive}) => isActive ? "nav-link active nav-featured-link pulse-badge" : "nav-link nav-featured-link pulse-badge"}>
               <span className="nav-badge-new">HOT</span>
               ⚡ Đấu Trường Live
@@ -257,7 +264,29 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Nhóm nổi bật: Giảng dạy & Điểm danh trên mobile */}
+          {/* Nhóm nổi bật: Công tác Đảng & Giảng dạy */}
+          <div className="mobile-section-heading">
+            <span>⭐ Công Tác Đảng & Biểu Mẫu</span>
+            <span className="mobile-section-tag" style={{ background: '#fef2f2', color: '#b91c1c' }}>Mới</span>
+          </div>
+          <div className="mobile-featured-grid">
+            <NavLink to="/cong-tac-dang" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>⭐</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Trung Tâm Công Tác Đảng</div>
+                <div className="mfc-desc">Biểu mẫu Đảng bộ, Chi bộ, Hướng dẫn TW</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/bo-sung-ho-so-dang-vien" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>📋</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Bổ Sung Hồ Sơ ĐV (Mẫu 3) <span className="mfc-badge" style={{ background: '#b91c1c' }}>MỚI</span></div>
+                <div className="mfc-desc">Chuẩn hóa chữ K, xuất Word & PDF</div>
+              </div>
+            </NavLink>
+          </div>
+
           <div className="mobile-section-heading">
             <span>🎓 Giảng Dạy & Lớp Học</span>
             <span className="mobile-section-tag">Khuyên Dùng</span>

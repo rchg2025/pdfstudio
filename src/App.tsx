@@ -81,6 +81,8 @@ const DocComplianceChecker = React.lazy(() => import('./pages/DocComplianceCheck
 const VideoMerger = React.lazy(() => import('./pages/VideoMerger'));
 const AutoSubtitleStudio = React.lazy(() => import('./pages/AutoSubtitleStudio'));
 const VideoToAudioExtractor = React.lazy(() => import('./pages/VideoToAudioExtractor'));
+const PartyMemberProfileUpdate = React.lazy(() => import('./pages/PartyMemberProfileUpdate'));
+const PartyWorkHub = React.lazy(() => import('./pages/PartyWorkHub'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -401,6 +403,16 @@ function App() {
             } />
             <Route path="video-to-audio" element={
               <Suspense fallback={<FallbackLoader />}><VideoToAudioExtractor /></Suspense>
+            } />
+            {/* Nhóm chức năng Công tác Đảng */}
+            <Route path="cong-tac-dang" element={
+              <Suspense fallback={<FallbackLoader />}><PartyWorkHub /></Suspense>
+            } />
+            <Route path="bo-sung-ho-so-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberProfileUpdate /></Suspense>
+            } />
+            <Route path="party-member-profile" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberProfileUpdate /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

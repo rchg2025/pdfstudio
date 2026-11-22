@@ -2,7 +2,7 @@ export interface ToolItem {
   path: string;
   title: string;
   desc: string;
-  category: 'edtech' | 'pdf' | 'image' | 'media' | 'other';
+  category: 'edtech' | 'pdf' | 'image' | 'media' | 'party' | 'other';
   isHot?: boolean;
   keywords?: string[];
   priority?: number;
@@ -10,6 +10,28 @@ export interface ToolItem {
 }
 
 export const ALL_TOOLS: ToolItem[] = [
+  // ================= CÔNG TÁC ĐẢNG =================
+  {
+    path: '/bo-sung-ho-so-dang-vien',
+    title: '⭐ Phiếu Bổ Sung Hồ Sơ Đảng Viên (Mẫu 3-HSĐV)',
+    desc: 'Soạn thảo nhanh, chuẩn hóa quy chuẩn chữ "K" theo Ban Tổ chức Trung ương Đảng, xem trước trực quan tờ A4 và xuất file Word (.doc) 100% chuẩn thể thức Đảng.',
+    category: 'party',
+    isHot: true,
+    keywords: ['phiếu bổ sung hồ sơ đảng viên', 'mẫu 3-hsdv', 'bổ sung lý lịch đảng viên', 'công tác đảng', 'hướng dẫn 01-hd/tw', 'quy định 24-qđ/tw', 'mẫu 3 đảng viên', 'latendoc', 'thư ký văn bản đảng'],
+    priority: 1.0,
+    changefreq: 'weekly'
+  },
+  {
+    path: '/cong-tac-dang',
+    title: '🏛️ Trung Tâm Quản Lý Văn Bản & Công Tác Đảng',
+    desc: 'Hệ thống số hóa quy trình công tác Đảng dành cho Cấp ủy cơ sở, Chi ủy chi bộ và Đảng viên: Khai bổ sung hồ sơ định kỳ, kiểm điểm đảng viên, biên bản sinh hoạt chi bộ.',
+    category: 'party',
+    isHot: true,
+    keywords: ['trung tâm công tác đảng', 'quản lý văn bản đảng', 'biểu mẫu đảng', 'kiểm điểm đảng viên', 'biên bản sinh hoạt chi bộ', 'điều lệ đảng'],
+    priority: 0.95,
+    changefreq: 'weekly'
+  },
+
   // ================= CÔNG CỤ GIẢNG DẠY & LMS (EDTECH) =================
   {
     path: '/kiem-tra-dao-van-chinh-ta',

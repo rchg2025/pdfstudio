@@ -58,10 +58,28 @@ import {
   Smartphone,
   Apple,
   Monitor,
-  DownloadCloud
+  DownloadCloud,
+  Building2
 } from 'lucide-react';
 import InstallAppModal, { type InstallTabType } from '../components/InstallAppModal';
 import './Home.css';
+
+const partyTools = [
+  {
+    path: '/bo-sung-ho-so-dang-vien',
+    icon: <FileText size={24} color="#b91c1c" />,
+    title: '⭐ Phiếu Bổ Sung Hồ Sơ Đảng Viên (Mẫu 3-HSĐV)',
+    desc: 'Soạn thảo chuẩn hóa quy chuẩn "K" theo Ban Tổ chức Trung ương Đảng, xem trước trực quan tờ A4 và xuất file Word (.doc) 100% chuẩn văn bản Đảng.',
+    isHot: true
+  },
+  {
+    path: '/cong-tac-dang',
+    icon: <Building2 size={24} color="#dc2626" />,
+    title: '🏛️ Trung Tâm Quản Lý Văn Bản & Công Tác Đảng',
+    desc: 'Tổng hợp trọn bộ biểu mẫu Đảng bộ, Chi bộ: Phiếu bổ sung hồ sơ, Bản kiểm điểm đảng viên Mẫu 02, Biên bản họp chi bộ, Trợ lý AI tra cứu Điều lệ Đảng.',
+    isHot: true
+  }
+];
 
 const pdfTools = [
   {
@@ -505,7 +523,7 @@ const removeVietnameseTones = (str: string): string => {
 };
 
 const Home = () => {
-  const [activeCategory, setActiveCategory] = useState<'all' | 'edtech' | 'pdf' | 'image' | 'media' | 'other'>('all');
+  const [activeCategory, setActiveCategory] = useState<'all' | 'party' | 'edtech' | 'pdf' | 'image' | 'media' | 'other'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [installModalOpen, setInstallModalOpen] = useState(false);
   const [installDefaultTab, setInstallDefaultTab] = useState<InstallTabType>('android');
@@ -527,6 +545,7 @@ const Home = () => {
     });
   };
 
+  const filteredPartyTools = filterTools(partyTools);
   const filteredEdTechTools = filterTools(edTechTools);
   const filteredPdfTools = filterTools(pdfTools);
   const filteredImageTools = filterTools(imageTools);
@@ -534,6 +553,7 @@ const Home = () => {
   const filteredOtherTools = filterTools(otherTools);
 
   const totalFilteredCount = 
+    filteredPartyTools.length +
     filteredEdTechTools.length + 
     filteredPdfTools.length + 
     filteredImageTools.length + 
@@ -592,8 +612,20 @@ const Home = () => {
           </button>
         </div>
 
-        {/* Nổi bật: Truy cập nhanh các tính năng Giáo Dục / LMS hàng đầu */}
+        {/* Nổi bật: Truy cập nhanh các tính năng Giáo Dục / LMS / Công tác Đảng hàng đầu */}
         <div className="hero-quick-shortcuts">
+          <Link to="/bo-sung-ho-so-dang-vien" className="quick-shortcut-pill" style={{ borderColor: 'rgba(185, 28, 28, 0.3)', background: 'linear-gradient(135deg, #fff5f5 0%, #fff 100%)' }}>
+            <span className="qsp-icon">⭐</span>
+            <div className="qsp-text">
+              <span className="qsp-title" style={{ color: '#b91c1c' }}>
+                Hồ Sơ Đảng Viên Mẫu 3
+                <span className="hot-tag" style={{ background: '#b91c1c' }}>MỚI</span>
+              </span>
+              <span className="qsp-sub">Chuẩn hóa chữ K, xuất Word & PDF</span>
+            </div>
+            <ArrowRight size={18} className="qsp-arrow" style={{ color: '#b91c1c' }} />
+          </Link>
+
           <Link to="/quan-ly-diem-danh" className="quick-shortcut-pill featured-qr">
             <span className="qsp-icon">📍</span>
             <div className="qsp-text">
@@ -683,6 +715,17 @@ const Home = () => {
 
         <button 
           type="button" 
+          onClick={() => setActiveCategory('party')} 
+          className={`category-tab-btn ${activeCategory === 'party' ? 'active' : ''}`}
+          style={{ borderColor: activeCategory === 'party' ? '#b91c1c' : undefined }}
+        >
+          <Building2 size={16} color="#b91c1c" /> 
+          Công Tác Đảng
+          <span className="tab-pill-badge" style={{ background: '#b91c1c' }}>MỚI</span>
+        </button>
+
+        <button 
+          type="button" 
           onClick={() => setActiveCategory('edtech')} 
           className={`category-tab-btn ${activeCategory === 'edtech' ? 'active' : ''}`}
         >
@@ -725,6 +768,49 @@ const Home = () => {
           <LinkIcon size={16} /> Tiện ích Khác
         </button>
       </div>
+
+      {/* SECTION 0: NHÓM CHỨC NĂNG CÔNG TÁC ĐẢNG */}
+      {(activeCategory === 'all' || activeCategory === 'party') && filteredPartyTools.length > 0 && (
+        <section style={{ marginTop: '2.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem', marginBottom: '1.5rem' }}>
+            <h2 className="text-2xl font-bold section-header-title" style={{ color: '#b91c1c', display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <Building2 size={28} color="#b91c1c" /> Nhóm Chức Năng Công Tác Đảng
+            </h2>
+            <Link 
+              to="/cong-tac-dang" 
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', color: '#b91c1c', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none' }}
+            >
+              Xem trung tâm văn bản Đảng <ArrowRight size={16} />
+            </Link>
+          </div>
+          <div className="tools-grid">
+            {filteredPartyTools.map((tool, index) => (
+              <Link 
+                to={tool.path} 
+                key={index} 
+                className="tool-card hover-lift"
+                style={{ borderColor: 'rgba(185, 28, 28, 0.25)', background: 'linear-gradient(180deg, #fff 0%, #fffbfb 100%)' }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '1rem' }}>
+                  <div className="tool-icon-wrapper" style={{ background: '#fef2f2', color: '#b91c1c', border: '1px solid #fee2e2' }}>
+                    {tool.icon}
+                  </div>
+                  {tool.isHot && (
+                    <span className="tool-card-badge" style={{ background: '#b91c1c', color: '#fff' }}>MỚI</span>
+                  )}
+                </div>
+                <h3 className="tool-title" style={{ color: '#991b1b' }}>{tool.title}</h3>
+                <p className="tool-desc">{tool.desc}</p>
+                <div className="tool-card-footer">
+                  <span className="tool-btn-action" style={{ color: '#b91c1c' }}>
+                    Sử dụng ngay <ArrowRight size={14} />
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* SECTION 1: CÔNG CỤ GIẢNG DẠY & LMS */}
       {(activeCategory === 'all' || activeCategory === 'edtech') && filteredEdTechTools.length > 0 && (

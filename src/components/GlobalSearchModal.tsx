@@ -22,6 +22,11 @@ interface GlobalSearchModalProps {
 }
 
 const CATEGORY_META: Record<ToolItem['category'], { label: string; icon: React.ReactNode; color: string }> = {
+  party: {
+    label: 'Công Tác Đảng',
+    icon: <FileText size={14} />,
+    color: '#b91c1c'
+  },
   edtech: {
     label: 'Giảng Dạy & LMS',
     icon: <GraduationCap size={14} />,
