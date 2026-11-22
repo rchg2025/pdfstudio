@@ -68,10 +68,10 @@ export interface PartyMemberProfileData {
 }
 
 export const defaultPartyProfileData: PartyMemberProfileData = {
-  tinhUy: 'TỈNH ỦY HẬU GIANG',
-  huyenUy: 'THÀNH ỦY VỊ THANH',
-  dangBoCoSo: 'Đảng bộ Trường Cao đẳng Hậu Giang',
-  chiBo: 'Chi bộ Khoa Công nghệ Thông tin',
+  tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
+  huyenUy: 'ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG',
+  dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
+  chiBo: 'Chi bộ 1',
   namBoSung: new Date().getFullYear().toString(),
   soLyLich: '',
   soTheDangVien: '',
@@ -109,7 +109,7 @@ export const defaultPartyProfileData: PartyMemberProfileData = {
   quanHeVoChong: 'K',
   quanHeConCai: 'K',
 
-  diaDanh: 'Hậu Giang',
+  diaDanh: 'Thành phố Hồ Chí Minh',
   ngayKhai: new Date().getDate().toString().padStart(2, '0'),
   thangKhai: (new Date().getMonth() + 1).toString().padStart(2, '0'),
   namKhai: new Date().getFullYear().toString(),

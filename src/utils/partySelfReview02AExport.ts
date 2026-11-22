@@ -57,10 +57,10 @@ export interface PartySelfReview02AData {
 }
 
 export const defaultPartySelfReview02AData: PartySelfReview02AData = {
-  tinhUy: 'TỈNH ỦY HẬU GIANG',
-  huyenUy: 'THÀNH ỦY VỊ THANH',
-  dangBoCoSo: 'Đảng bộ Trường Cao đẳng Hậu Giang',
-  chiBo: 'Chi bộ Khoa Công nghệ Thông tin',
+  tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
+  huyenUy: 'ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG',
+  dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
+  chiBo: 'Chi bộ 1',
   namKiemDiem: '2026',
 
   hoVaTen: '',
@@ -68,8 +68,8 @@ export const defaultPartySelfReview02AData: PartySelfReview02AData = {
   chucVuDang: 'Bí thư Chi bộ',
   chucVuChinhQuyen: 'Trưởng khoa',
   chucVuDoanThe: '',
-  donViCongTac: 'Khoa Công nghệ Thông tin',
-  chiBoSinhHoat: 'Chi bộ Khoa Công nghệ Thông tin',
+  donViCongTac: 'Trường Cao đẳng Bách khoa Nam Sài Gòn',
+  chiBoSinhHoat: 'Chi bộ 1',
 
   uuDiemPhamChatChinhTri: `1. Về tư tưởng chính trị: Luôn kiên định với chủ nghĩa Mác - Lênin, tư tưởng Hồ Chí Minh và đường lối đổi mới của Đảng; chấp hành nghiêm Cương lĩnh chính trị, Điều lệ Đảng, các nghị quyết, chỉ thị, kết luận của Ban Chấp hành Trung ương, Bộ Chính trị, Ban Bí thư và cấp ủy các cấp. Thường xuyên tự giác học tập, nghiên cứu nâng cao trình độ lý luận chính trị và chuyên môn nghiệp vụ.
 
@@ -108,7 +108,7 @@ export const defaultPartySelfReview02AData: PartySelfReview02AData = {
   tuXepLoaiCanBo: 'Hoàn thành xuất sắc nhiệm vụ',
   tuXepLoaiDangVien: 'Hoàn thành xuất sắc nhiệm vụ',
 
-  diaDanh: 'Hậu Giang',
+  diaDanh: 'Thành phố Hồ Chí Minh',
   ngayKhai: new Date().getDate().toString().padStart(2, '0'),
   thangKhai: (new Date().getMonth() + 1).toString().padStart(2, '0'),
   namKhai: new Date().getFullYear().toString()
