@@ -12,6 +12,16 @@ export interface ToolItem {
 export const ALL_TOOLS: ToolItem[] = [
   // ================= CÔNG TÁC ĐẢNG =================
   {
+    path: '/ban-kiem-diem-dang-vien-mau-02a',
+    title: '⭐ Bản Kiểm Điểm Đảng Viên Cuối Năm Mẫu 02A (Lãnh Đạo, Quản Lý)',
+    desc: 'Bản tự đánh giá, xếp loại chất lượng năm 2026 cho cán bộ giữ chức vụ lãnh đạo, quản lý theo Hướng dẫn 43-HD/BTCTW và Công văn 2772-CV/BTCTW, xem trước A4 và xuất file Word (.doc).',
+    category: 'party',
+    isHot: true,
+    keywords: ['bản kiểm điểm đảng viên mẫu 02a', 'kiểm điểm lãnh đạo quản lý', 'mẫu 02a-hd kd.dg', 'hướng dẫn 43-hd/btctw', 'công văn 2772-cv/btctw', 'kiểm điểm đảng viên 2026', 'tự đánh giá xếp loại đảng viên'],
+    priority: 1.0,
+    changefreq: 'weekly'
+  },
+  {
     path: '/bo-sung-ho-so-dang-vien',
     title: '⭐ Phiếu Bổ Sung Hồ Sơ Đảng Viên (Mẫu 3-HSĐV)',
     desc: 'Soạn thảo nhanh, chuẩn hóa quy chuẩn chữ "K" theo Ban Tổ chức Trung ương Đảng, xem trước trực quan tờ A4 và xuất file Word (.doc) 100% chuẩn thể thức Đảng.',

@@ -26,6 +26,16 @@ interface PartyToolItem {
 export default function PartyWorkHub() {
   const tools: PartyToolItem[] = [
     {
+      id: 'ban-kiem-diem-02a',
+      title: 'Bản Kiểm Điểm Đảng Viên Cuối Năm (Mẫu 02A - Lãnh Đạo, Quản Lý)',
+      desc: 'Bản tự đánh giá, xếp loại chất lượng năm 2026 dành cho cá nhân giữ chức vụ lãnh đạo, quản lý theo Hướng dẫn 43-HD/BTCTW và Công văn 2772-CV/BTCTW, xem trước A4 và xuất Word (.doc).',
+      path: '/ban-kiem-diem-dang-vien-mau-02a',
+      icon: <CheckSquare size={28} color="#dc2626" />,
+      badge: 'MỚI 2026',
+      badgeColor: '#dc2626',
+      isAvailable: true
+    },
+    {
       id: 'bo-sung-ho-so',
       title: 'Phiếu Bổ Sung Hồ Sơ Đảng Viên (Mẫu 3-HSĐV)',
       desc: 'Soạn thảo nhanh, chuẩn hóa quy chuẩn chữ "K" theo Ban Tổ chức Trung ương, tự động dàn trang in A4 và xuất file Word (.doc) 100% chuẩn thể thức Đảng.',

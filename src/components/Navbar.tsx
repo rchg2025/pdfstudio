@@ -113,6 +113,9 @@ const Navbar = () => {
               <span className="nav-badge-new" style={{ background: '#b91c1c' }}>MỚI</span>
               ⭐ Công Tác Đảng
             </NavLink>
+            <NavLink to="/ban-kiem-diem-dang-vien-mau-02a" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
+              🎖️ Kiểm Điểm 02A
+            </NavLink>
             <NavLink to="/bo-sung-ho-so-dang-vien" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
               📋 Bổ Sung Hồ Sơ ĐV
             </NavLink>
