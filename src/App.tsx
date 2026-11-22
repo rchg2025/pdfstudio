@@ -436,6 +436,15 @@ function App() {
             <Route path="cam-ket-tu-duong-dang-vien" element={
               <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
             } />
+            <Route path="ban-cam-ket-tu-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
+            } />
+            <Route path="cam-ket-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
+            } />
+            <Route path="ban-cam-ket-tu-duong" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
+            } />
             <Route path="soan-thao-bieu-mau-dang/:templateId" element={
               <Suspense fallback={<FallbackLoader />}><PartyDocumentEditor /></Suspense>
             } />
