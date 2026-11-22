@@ -190,15 +190,18 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.35rem;
   gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
-.review-field label {
-  font-size: 0.85rem;
-  font-weight: 600;
+.review-field-header label {
+  font-size: 0.88rem;
+  font-weight: 700;
   color: var(--text-primary, #1e293b);
   line-height: 1.4;
+  flex: 1;
+  min-width: 200px;
 }
 
 .review-field input,

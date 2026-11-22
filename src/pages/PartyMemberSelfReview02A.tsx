@@ -86,7 +86,7 @@ Nội dung hiện tại hoặc ý chính cần viết lại:
 ${currentValue || 'Hãy viết nội dung chuẩn mực, đầy đủ và nêu cao tinh thần trách nhiệm của cán bộ lãnh đạo quản lý.'}
 """
 
-Chỉ trả về ĐÚNG đoạn văn bản đã hoàn thiện (không có lời dẫn, không markdown hoa mỹ, không bọc JSON).
+Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản đã hoàn thiện chuẩn xác theo đúng ngôn phong của Đảng"}
       `;
 
       const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
@@ -102,7 +102,13 @@ Chỉ trả về ĐÚNG đoạn văn bản đã hoàn thiện (không có lời 
 
       const resData = await response.json();
       const rawText = resData?.questions?.[0]?.question || resData?.text || '';
-      const cleanText = rawText.replace(/```json\s*|```/g, '').trim();
+      let cleanText = '';
+      try {
+        const parsed = JSON.parse(rawText.replace(/```json\s*|```/g, '').trim());
+        cleanText = parsed.content || parsed.text || '';
+      } catch {
+        cleanText = rawText.replace(/```json\s*|```/g, '').trim();
+      }
       
       if (cleanText) {
         setFormData(prev => ({
