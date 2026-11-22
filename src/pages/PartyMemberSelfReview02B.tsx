@@ -8,7 +8,9 @@ import {
   Printer, 
   Building2, 
   Award,
-  AlertCircle
+  AlertCircle,
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { 
   type PartySelfReview02BData, 
@@ -35,6 +37,9 @@ export default function PartyMemberSelfReview02B() {
   const [aiPrompt, setAiPrompt] = useState('');
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiError, setAiError] = useState('');
+
+  // Trạng thái AI viết lại theo từng mục (field-level AI loading)
+  const [loadingField, setLoadingField] = useState<keyof PartySelfReview02BData | null>(null);
 
   // Tự động lưu nháp
   useEffect(() => {
@@ -67,7 +72,56 @@ export default function PartyMemberSelfReview02B() {
     window.print();
   };
 
-  // Trợ lý AI Viết / Hoàn thiện bản kiểm điểm Mẫu 02B (Đảng viên không giữ chức vụ lãnh đạo)
+  // Trợ lý AI Viết Lại Từng Mục Cụ Thể (Field-level AI Rewrite)
+  const handleRewriteSection = async (field: keyof PartySelfReview02BData, fieldLabel: string) => {
+    setLoadingField(field);
+    try {
+      const currentValue = formData[field] as string;
+      const promptInstruction = `
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại và chuẩn hóa nội dung mục "${fieldLabel}" trong "Bản kiểm điểm đảng viên cuối năm Mẫu 02B (năm 2026, Hướng dẫn 43-HD/BTCTW & Công văn 2772-CV/BTCTW)".
+Chức danh người kiểm điểm: ${formData.chucVuChinhQuyen || 'Giảng viên/Nhân viên'}, Chức vụ Đảng: ${formData.chucVuDang || 'Đảng viên'}, Đơn vị: ${formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
+Yêu cầu văn phong: Chuẩn mực, trang trọng, thẳng thắn, đúng nguyên tắc tự phê bình và phê bình của Đảng.
+
+Nội dung hiện tại hoặc ý chính cần viết lại:
+"""
+${currentValue || 'Hãy viết nội dung chuẩn mực, đầy đủ và nêu cao tinh thần trách nhiệm của người đảng viên.'}
+"""
+
+Chỉ trả về ĐÚNG đoạn văn bản đã hoàn thiện (không có lời dẫn, không markdown hoa mỹ, không bọc JSON).
+      `;
+
+      const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: promptInstruction,
+          count: 1
+        })
+      });
+
+      if (!response.ok) throw new Error('Không thể kết nối đến máy chủ AI');
+
+      const resData = await response.json();
+      const rawText = resData?.questions?.[0]?.question || resData?.text || '';
+      const cleanText = rawText.replace(/```json\s*|```/g, '').trim();
+      
+      if (cleanText) {
+        setFormData(prev => ({
+          ...prev,
+          [field]: cleanText
+        }));
+        setSavedToast(true);
+        setTimeout(() => setSavedToast(false), 2500);
+      }
+    } catch (err: any) {
+      console.error(`Lỗi AI viết mục ${field}:`, err);
+      alert('Có lỗi khi gọi AI viết lại mục này. Vui lòng thử lại!');
+    } finally {
+      setLoadingField(null);
+    }
+  };
+
+  // Trợ lý AI Toàn Diện (Modal)
   const handleAiGenerate = async () => {
     if (!aiPrompt.trim()) return;
     setIsAiLoading(true);
@@ -155,7 +209,7 @@ ${aiPrompt}
             onClick={() => setShowAiModal(true)}
           >
             <Sparkles size={18} />
-            AI Soạn Thảo / Chuẩn Hóa
+            AI Soạn Thảo Toàn Bản
           </button>
           <button 
             type="button" 
@@ -364,7 +418,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>1. Phẩm chất chính trị, đạo đức, lối sống, ý thức tổ chức kỷ luật, trách nhiệm nêu gương</label>
+              <div className="review-field-header">
+                <label>1. Phẩm chất chính trị, đạo đức, lối sống, ý thức tổ chức kỷ luật, trách nhiệm nêu gương</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('uuDiemPhamChatChinhTri', 'Phẩm chất chính trị, đạo đức, lối sống, ý thức tổ chức kỷ luật')}
+                  disabled={loadingField === 'uuDiemPhamChatChinhTri'}
+                >
+                  {loadingField === 'uuDiemPhamChatChinhTri' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={6}
                 value={formData.uuDiemPhamChatChinhTri}
@@ -373,7 +438,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>2. Thực hiện nhiệm vụ, quyền hạn và chỉ tiêu chuyên môn được giao trong năm</label>
+              <div className="review-field-header">
+                <label>2. Thực hiện nhiệm vụ, quyền hạn và chỉ tiêu chuyên môn được giao trong năm</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('uuDiemThucHienNhiemVu', 'Thực hiện nhiệm vụ, quyền hạn và chỉ tiêu chuyên môn, giảng dạy/công tác')}
+                  disabled={loadingField === 'uuDiemThucHienNhiemVu'}
+                >
+                  {loadingField === 'uuDiemThucHienNhiemVu' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={6}
                 value={formData.uuDiemThucHienNhiemVu}
@@ -382,7 +458,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>3. Việc thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu hằng năm (theo Quy định 213-QĐ/TW)</label>
+              <div className="review-field-header">
+                <label>3. Việc thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu hằng năm (theo Quy định 213-QĐ/TW)</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('uuDiemCamKetTuDuong', 'Thực hiện cam kết tu dưỡng, rèn luyện, phấn đấu và mối liên hệ nơi cư trú theo Quy định 213')}
+                  disabled={loadingField === 'uuDiemCamKetTuDuong'}
+                >
+                  {loadingField === 'uuDiemCamKetTuDuong' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={4}
                 value={formData.uuDiemCamKetTuDuong}
@@ -399,7 +486,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>1. Hạn chế, khuyết điểm</label>
+              <div className="review-field-header">
+                <label>1. Hạn chế, khuyết điểm</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('hanCheKhuyetDiem', 'Chỉ ra hạn chế, khuyết điểm cụ thể của đảng viên')}
+                  disabled={loadingField === 'hanCheKhuyetDiem'}
+                >
+                  {loadingField === 'hanCheKhuyetDiem' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={4}
                 value={formData.hanCheKhuyetDiem}
@@ -409,15 +507,38 @@ ${aiPrompt}
 
             <div className="review-form-row">
               <div className="review-field">
-                <label>2.1. Nguyên nhân khách quan</label>
+                <div className="review-field-header">
+                  <label>2.1. Nguyên nhân khách quan</label>
+                  <button 
+                    type="button" 
+                    className="btn-field-ai"
+                    onClick={() => handleRewriteSection('nguyenNhanKhachQuan', 'Nguyên nhân khách quan của hạn chế')}
+                    disabled={loadingField === 'nguyenNhanKhachQuan'}
+                  >
+                    {loadingField === 'nguyenNhanKhachQuan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                    AI
+                  </button>
+                </div>
                 <textarea 
                   rows={3}
                   value={formData.nguyenNhanKhachQuan}
                   onChange={e => handleChange('nguyenNhanKhachQuan', e.target.value)}
                 />
               </div>
+
               <div className="review-field">
-                <label>2.2. Nguyên nhân chủ quan (chủ yếu)</label>
+                <div className="review-field-header">
+                  <label>2.2. Nguyên nhân chủ quan (chủ yếu)</label>
+                  <button 
+                    type="button" 
+                    className="btn-field-ai"
+                    onClick={() => handleRewriteSection('nguyenNhanChuQuan', 'Nguyên nhân chủ quan xuất phát từ bản thân đảng viên')}
+                    disabled={loadingField === 'nguyenNhanChuQuan'}
+                  >
+                    {loadingField === 'nguyenNhanChuQuan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                    AI
+                  </button>
+                </div>
                 <textarea 
                   rows={3}
                   value={formData.nguyenNhanChuQuan}
@@ -435,7 +556,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>III. Kết quả khắc phục hạn chế, khuyết điểm năm trước (năm 2025)</label>
+              <div className="review-field-header">
+                <label>III. Kết quả khắc phục hạn chế, khuyết điểm năm trước (năm 2025)</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('ketQuaKhacPhucNamTruoc', 'Kết quả khắc phục những hạn chế, khuyết điểm đã chỉ ra ở kỳ kiểm điểm năm trước')}
+                  disabled={loadingField === 'ketQuaKhacPhucNamTruoc'}
+                >
+                  {loadingField === 'ketQuaKhacPhucNamTruoc' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={3}
                 value={formData.ketQuaKhacPhucNamTruoc}
@@ -444,7 +576,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>IV. Giải trình / Làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể (nếu có)</label>
+              <div className="review-field-header">
+                <label>IV. Giải trình / Làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể (nếu có)</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('giaiTrinhTrachNhiem', 'Giải trình làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể hoặc vấn đề gợi ý kiểm điểm')}
+                  disabled={loadingField === 'giaiTrinhTrachNhiem'}
+                >
+                  {loadingField === 'giaiTrinhTrachNhiem' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={3}
                 value={formData.giaiTrinhTrachNhiem}
@@ -453,7 +596,18 @@ ${aiPrompt}
             </div>
 
             <div className="review-field">
-              <label>V. Phương hướng, biện pháp khắc phục hạn chế, khuyết điểm</label>
+              <div className="review-field-header">
+                <label>V. Phương hướng, biện pháp khắc phục hạn chế, khuyết điểm</label>
+                <button 
+                  type="button" 
+                  className="btn-field-ai"
+                  onClick={() => handleRewriteSection('phuongHuongKhacPhuc', 'Phương hướng, giải pháp cụ thể khắc phục hạn chế trong năm tới')}
+                  disabled={loadingField === 'phuongHuongKhacPhuc'}
+                >
+                  {loadingField === 'phuongHuongKhacPhuc' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  AI Viết lại mục này
+                </button>
+              </div>
               <textarea 
                 rows={4}
                 value={formData.phuongHuongKhacPhuc}
