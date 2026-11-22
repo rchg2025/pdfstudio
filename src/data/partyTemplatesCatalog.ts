@@ -471,13 +471,27 @@ export const ALL_PARTY_TEMPLATES: PartyDocumentTemplate[] = [
   },
   {
     id: 'ban-dang-ky-chuong-trinh-hanh-dong-ca-nhan-dang-vien',
-    title: 'bản đăng ký chương trình hành động cá nhân của đảng viên (học tập và làm theo tư tưởng, đạo đức, phong cách Hồ Chí Minh)',
-    code: 'Mẫu b',
+    title: 'Kế hoạch cá nhân học tập và làm theo tư tưởng, đạo đức, phong cách Hồ Chí Minh',
+    code: 'Kế hoạch học tập Bác',
     category: 'kiem-diem',
     categoryLabel: 'Bản Kiểm Điểm & Đánh Giá',
-    desc: 'Đảng viên đăng ký nội dung học tập, rèn luyện và nhiệm vụ cụ thể trong năm theo nghị quyết của chi bộ. Tải file Word miễn phí.',
-    guidance: '',
-    status: 'generator'
+    desc: 'Cán bộ, giáo viên, nhân viên, đảng viên lập kế hoạch hành động thực hiện học tập và làm theo Bác theo chuyên đề hằng năm.',
+    guidance: 'Chỉ thị 05-CT/TW & Kết luận 01-KL/TW',
+    isPopular: true,
+    status: 'ready',
+    targetPath: '/soan-thao-bieu-mau-dang/ban-dang-ky-chuong-trinh-hanh-dong-ca-nhan-dang-vien'
+  },
+  {
+    id: 'ke-hoach-ca-nhan-hoc-tap-theo-bac',
+    title: 'Kế hoạch cá nhân học tập và làm theo tư tưởng, đạo đức, phong cách Hồ Chí Minh (Chuyên đề năm)',
+    code: 'Mẫu KH-HTB',
+    category: 'kiem-diem',
+    categoryLabel: 'Bản Kiểm Điểm & Đánh Giá',
+    desc: 'Kế hoạch đăng ký nội dung “làm theo” Bác về đạo đức lối sống, nâng cao nghiệp vụ, tính tiên phong gương mẫu và biện pháp thực hiện.',
+    guidance: 'Kết luận số 01-KL/TW',
+    isPopular: true,
+    status: 'ready',
+    targetPath: '/soan-thao-bieu-mau-dang/ke-hoach-ca-nhan-hoc-tap-theo-bac'
   },
   {
     id: 'ban-kiem-diem-dang-vien-duong-chuc',
