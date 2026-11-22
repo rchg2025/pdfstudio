@@ -10,7 +10,10 @@ import {
   Download,
   BookOpen,
   X,
-  Award
+  Award,
+  Sparkles,
+  Wand2,
+  Loader2
 } from 'lucide-react';
 import { 
   ALL_PARTY_TEMPLATES, 
@@ -30,7 +33,65 @@ export default function PartyWorkHub() {
     chucVu: '',
     donVi: 'Trường Cao đẳng Bách khoa Nam Sài Gòn'
   });
+  const [customBody, setCustomBody] = useState('');
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isAiGenerating, setIsAiGenerating] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+
+  // Mở modal soạn thảo & gán nội dung mẫu ban đầu
+  const handleOpenTemplateModal = (tmpl: PartyDocumentTemplate) => {
+    setSelectedTemplate(tmpl);
+    setCustomBody(tmpl.desc || '');
+    setAiPrompt('');
+  };
+
+  // Trợ lý AI viết lại / tạo mới nội dung chuyên biệt cho biểu mẫu
+  const handleAiGenerateDoc = async () => {
+    if (!selectedTemplate) return;
+    setIsAiGenerating(true);
+    try {
+      const promptInstruction = `
+Bạn là chuyên gia thư ký xây dựng Đảng giàu kinh nghiệm. Hãy soạn thảo chi tiết toàn bộ phần nội dung trọng tâm cho biểu mẫu Đảng sau:
+Tên biểu mẫu: "${selectedTemplate.title}"
+Mã số/Căn cứ: "${selectedTemplate.code || ''}" (${selectedTemplate.guidance || 'Quy định Đảng'})
+Thông tin người lập/cơ quan: Đồng chí ${customInfo.hoVaTen || 'đảng viên'}, Chức vụ: ${customInfo.chucVu || 'Cán bộ'}, Đơn vị: ${customInfo.donVi || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
+
+Yêu cầu hoặc thông tin tóm tắt bổ sung từ người dùng:
+"""
+${aiPrompt || 'Hãy soạn thảo chi tiết, đầy đủ các mục chuẩn theo quy định và thể thức của tổ chức Đảng.'}
+"""
+
+Văn phong: Chính trị chuẩn mực, mạch lạc, trang trọng, nghiêm túc đúng ngôn phong của Đảng.
+Trả về duy nhất chuỗi JSON: {"content": "toàn bộ nội dung văn bản chi tiết với các đề mục, dòng gạch đầu dòng rõ ràng"}
+      `;
+
+      const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
+      const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          topic: promptInstruction,
+          apiKey: customKey
+        })
+      });
+
+      const resData = await response.json();
+      let rawText = resData.data || resData.content || '';
+      if (typeof rawText === 'string') {
+        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
+        if (jsonMatch) rawText = jsonMatch[0];
+        const parsed = JSON.parse(rawText);
+        if (parsed.content) {
+          setCustomBody(parsed.content);
+        }
+      }
+    } catch (e) {
+      console.error('Lỗi AI soạn biểu mẫu:', e);
+      alert('Không thể kết nối trợ lý AI lúc này. Bạn vẫn có thể tự chỉnh sửa nội dung trong ô bên dưới.');
+    } finally {
+      setIsAiGenerating(false);
+    }
+  };
 
   // Bộ lọc biểu mẫu
   const filteredTemplates = useMemo(() => {
@@ -57,7 +118,8 @@ export default function PartyWorkHub() {
         dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
         huyenUy: 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC TP.HCM',
         tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
-        diaDanh: 'Thành phố Hồ Chí Minh'
+        diaDanh: 'Thành phố Hồ Chí Minh',
+        customBody: customBody
       });
 
       const blob = new Blob(['\ufeff', htmlContent], {
@@ -183,6 +245,26 @@ export default function PartyWorkHub() {
             <span className="party-tool-btn">Sử dụng ngay <ArrowRight size={16} /></span>
           </div>
         </Link>
+
+        {/* Card 4: Bản Cam Kết Tu Dưỡng Đảng Viên */}
+        <Link to="/ban-cam-ket-tu-duong-ren-luyen-dang-vien" className="party-tool-card featured">
+          <div className="party-tool-top">
+            <div className="party-tool-icon">
+              <CheckSquare size={26} color="#16a34a" />
+            </div>
+            <span className="party-tool-badge" style={{ background: '#f0fdf4', color: '#16a34a', borderColor: '#86efac' }}>
+              MỚI 2026
+            </span>
+          </div>
+          <h3 className="party-tool-title">Bản Cam Kết Tu Dưỡng, Rèn Luyện, Phấn Đấu (Đầu Năm)</h3>
+          <p className="party-tool-desc">
+            Đăng ký và cam kết rèn luyện 5 nhóm nội dung trọng tâm theo Nghị quyết TW 4 khóa XII, XIII và Chỉ thị 05-CT/TW; 
+            tích hợp trợ lý AI gợi ý viết lại từng phần và xuất file Word (.doc).
+          </p>
+          <div className="party-tool-footer">
+            <span className="party-tool-btn">Sử dụng ngay <ArrowRight size={16} /></span>
+          </div>
+        </Link>
       </div>
 
       {/* TRA CỨU & DANH MỤC ĐẦY ĐỦ CÁC MẪU VĂN BẢN ĐẢNG */}
@@ -251,15 +333,15 @@ export default function PartyWorkHub() {
                 <div className="template-row-right">
                   {tmpl.status === 'ready' && tmpl.targetPath ? (
                     <Link to={tmpl.targetPath} className="btn-tmpl-act primary">
-                      Soạn thảo ngay <ArrowRight size={15} />
+                      Soạn thảo với AI <ArrowRight size={15} />
                     </Link>
                   ) : (
                     <button 
                       type="button" 
                       className="btn-tmpl-act outline"
-                      onClick={() => setSelectedTemplate(tmpl)}
+                      onClick={() => handleOpenTemplateModal(tmpl)}
                     >
-                      <Download size={15} /> Xuất Word (.doc)
+                      <Sparkles size={14} color="#b91c1c" /> Soạn thảo & Xuất (.doc)
                     </button>
                   )}
                 </div>
@@ -291,15 +373,15 @@ export default function PartyWorkHub() {
         </ul>
       </div>
 
-      {/* MODAL TẢI BIỂU MẪU NHANH */}
+      {/* MODAL SOẠN THẢO VÀ XUẤT BIỂU MẪU VỚI TRỢ LÝ AI */}
       {selectedTemplate && (
         <div className="party-modal-backdrop" onClick={() => setSelectedTemplate(null)}>
-          <div className="party-modal-card" onClick={e => e.stopPropagation()}>
+          <div className="party-modal-card party-modal-large" onClick={e => e.stopPropagation()}>
             <div className="party-modal-header">
               <div className="modal-title-wrap">
                 <FileText size={22} color="#b91c1c" />
                 <div>
-                  <h3>Xuất Biểu Mẫu: {selectedTemplate.code || 'Văn bản Đảng'}</h3>
+                  <h3>Soạn Thảo Biểu Mẫu: {selectedTemplate.code || 'Văn bản Đảng'}</h3>
                   <p>{selectedTemplate.title}</p>
                 </div>
               </div>
@@ -307,13 +389,50 @@ export default function PartyWorkHub() {
             </div>
 
             <div className="party-modal-body">
-              <p className="modal-intro">
-                Điền nhanh thông tin của đồng chí để hệ thống tự động điền sẵn vào biểu mẫu Word (.doc) chuẩn thể thức Đảng:
-              </p>
+              {/* Box hướng dẫn & AI Generator */}
+              <div className="modal-ai-box">
+                <div className="modal-ai-box-head">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#991b1b', fontSize: '0.88rem' }}>
+                    <Sparkles size={16} />
+                    Trợ lý AI viết lại / tạo mới nội dung chuẩn thể thức Đảng
+                  </div>
+                  <button 
+                    type="button" 
+                    className="btn-modal-ai-action"
+                    disabled={isAiGenerating}
+                    onClick={handleAiGenerateDoc}
+                  >
+                    {isAiGenerating ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />}
+                    <span>{isAiGenerating ? 'AI đang soạn...' : 'AI Viết / Chuẩn hóa nội dung'}</span>
+                  </button>
+                </div>
+                <input
+                  type="text"
+                  className="modal-ai-input"
+                  placeholder="Nhập thông tin cốt lõi (VD: Lý do, nội dung chính, kết quả đạt được, thời gian... để AI viết chi tiết)"
+                  value={aiPrompt}
+                  onChange={e => setAiPrompt(e.target.value)}
+                />
+              </div>
+
+              {/* Ô soạn thảo nội dung văn bản */}
+              <div className="modal-form-group">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <label>Nội dung chi tiết văn bản (có thể tự chỉnh sửa hoặc nhờ AI viết ở trên):</label>
+                  <span style={{ fontSize: '0.78rem', color: '#64748b' }}>Đồng bộ vào file Word</span>
+                </div>
+                <textarea 
+                  rows={6}
+                  className="modal-body-textarea"
+                  value={customBody}
+                  onChange={e => setCustomBody(e.target.value)}
+                  placeholder="Nhập hoặc để AI soạn thảo nội dung đầy đủ của biểu mẫu..."
+                />
+              </div>
 
               <div className="modal-form-grid">
                 <div className="modal-form-group">
-                  <label>Họ và tên (chữ in hoa)</label>
+                  <label>Họ và tên cán bộ / đảng viên</label>
                   <input 
                     type="text" 
                     placeholder="NGUYỄN VĂN A" 
@@ -356,8 +475,7 @@ export default function PartyWorkHub() {
                 <p><strong>Cấp ủy áp dụng chuẩn:</strong></p>
                 <p>• Đảng ủy cấp trên: ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH</p>
                 <p>• Đảng ủy trực thuộc: ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH</p>
-                <p>• Đảng bộ cơ sở: Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn</p>
-                <p>• Chi bộ: Chi bộ 1</p>
+                <p>• Đảng bộ cơ sở: Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn — Chi bộ: Chi bộ 1</p>
               </div>
             </div>
 

@@ -10,6 +10,7 @@ interface DocumentExportOptions {
   huyenUy?: string;
   tinhUy?: string;
   diaDanh?: string;
+  customBody?: string;
 }
 
 export function generatePartyDocHtml(template: PartyDocumentTemplate, options: DocumentExportOptions = {}): string {
@@ -221,31 +222,50 @@ export function generatePartyDocHtml(template: PartyDocumentTemplate, options: D
 
     // Mẫu tổng quát chuẩn thể thức cho các biểu mẫu còn lại
     default:
-      specificBodyContent = `
-        <div style="margin: 15px 0;">
-          <p class="content-p">Họ và tên: <strong>${hoVaTen}</strong></p>
-          <p class="content-p">Ngày, tháng, năm sinh: <strong>${namSinh}</strong></p>
-          <p class="content-p">Chức vụ Đảng: ....................................... Chức vụ chính quyền/chuyên môn: <strong>${chucVu}</strong></p>
-          <p class="content-p">Đơn vị công tác: <strong>${donVi}</strong></p>
-          <p class="content-p">Sinh hoạt tại Chi bộ: <strong>${chiBo}</strong> thuộc <strong>${dangBoCoSo}</strong></p>
-        </div>
+      if (options.customBody && options.customBody.trim()) {
+        specificBodyContent = `
+          <div style="margin: 15px 0;">
+            <p class="content-p">Họ và tên: <strong>${hoVaTen}</strong></p>
+            <p class="content-p">Ngày, tháng, năm sinh: <strong>${namSinh}</strong></p>
+            <p class="content-p">Chức vụ Đảng: ....................................... Chức vụ chính quyền/chuyên môn: <strong>${chucVu}</strong></p>
+            <p class="content-p">Đơn vị công tác: <strong>${donVi}</strong></p>
+            <p class="content-p">Sinh hoạt tại Chi bộ: <strong>${chiBo}</strong> thuộc <strong>${dangBoCoSo}</strong></p>
+          </div>
 
-        <div style="margin: 20px 0;">
-          <p class="doc-sec-h">NỘI DUNG VĂN BẢN VÀ CĂN CỨ THỰC HIỆN:</p>
-          <p class="content-p">${template.desc}</p>
-          <p class="content-p">Thực hiện theo đúng hướng dẫn: <strong>${template.guidance || 'Quy định Ban Bí thư & Hướng dẫn Ban Tổ chức Trung ương'}</strong>.</p>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-          <div class="dotted-line"></div>
-        </div>
-      `;
+          <div style="margin: 20px 0;">
+            <p class="doc-sec-h">NỘI DUNG VĂN BẢN (DO TRỢ LÝ AI SOẠN THẢO / CHUẨN HOÁ):</p>
+            <div style="text-align: justify; line-height: 1.5;">
+              ${options.customBody.replace(/\n/g, '<br/>')}
+            </div>
+          </div>
+        `;
+      } else {
+        specificBodyContent = `
+          <div style="margin: 15px 0;">
+            <p class="content-p">Họ và tên: <strong>${hoVaTen}</strong></p>
+            <p class="content-p">Ngày, tháng, năm sinh: <strong>${namSinh}</strong></p>
+            <p class="content-p">Chức vụ Đảng: ....................................... Chức vụ chính quyền/chuyên môn: <strong>${chucVu}</strong></p>
+            <p class="content-p">Đơn vị công tác: <strong>${donVi}</strong></p>
+            <p class="content-p">Sinh hoạt tại Chi bộ: <strong>${chiBo}</strong> thuộc <strong>${dangBoCoSo}</strong></p>
+          </div>
+
+          <div style="margin: 20px 0;">
+            <p class="doc-sec-h">NỘI DUNG VĂN BẢN VÀ CĂN CỨ THỰC HIỆN:</p>
+            <p class="content-p">${template.desc}</p>
+            <p class="content-p">Thực hiện theo đúng hướng dẫn: <strong>${template.guidance || 'Quy định Ban Bí thư & Hướng dẫn Ban Tổ chức Trung ương'}</strong>.</p>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+            <div class="dotted-line"></div>
+          </div>
+        `;
+      }
       break;
   }
 

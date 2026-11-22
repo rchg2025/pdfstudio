@@ -84,6 +84,7 @@ const VideoToAudioExtractor = React.lazy(() => import('./pages/VideoToAudioExtra
 const PartyMemberProfileUpdate = React.lazy(() => import('./pages/PartyMemberProfileUpdate'));
 const PartyMemberSelfReview02A = React.lazy(() => import('./pages/PartyMemberSelfReview02A'));
 const PartyMemberSelfReview02B = React.lazy(() => import('./pages/PartyMemberSelfReview02B'));
+const PartyMemberCommitment = React.lazy(() => import('./pages/PartyMemberCommitment'));
 const PartyWorkHub = React.lazy(() => import('./pages/PartyWorkHub'));
 
 const FallbackLoader = () => (
@@ -427,6 +428,12 @@ function App() {
             } />
             <Route path="kiem-diem-dang-vien-02b" element={
               <Suspense fallback={<FallbackLoader />}><PartyMemberSelfReview02B /></Suspense>
+            } />
+            <Route path="ban-cam-ket-tu-duong-ren-luyen-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
+            } />
+            <Route path="cam-ket-tu-duong-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
