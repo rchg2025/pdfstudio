@@ -465,8 +465,9 @@ export const ALL_PARTY_TEMPLATES: PartyDocumentTemplate[] = [
     category: 'kiem-diem',
     categoryLabel: 'Bản Kiểm Điểm & Đánh Giá',
     desc: 'Bản cam kết rèn luyện, tu dưỡng, phấn đấu đầu năm của cán bộ, đảng viên (phiếu phấn đấu đầu năm, bản đăng ký phấn đấu của đảng viên)… Tải file Word miễn phí.',
-    guidance: '',
-    status: 'generator'
+    guidance: 'Nghị quyết TW 4 & Chỉ thị 05-CT/TW',
+    status: 'ready',
+    targetPath: '/ban-cam-ket-tu-duong-ren-luyen-dang-vien'
   },
   {
     id: 'ban-dang-ky-chuong-trinh-hanh-dong-ca-nhan-dang-vien',

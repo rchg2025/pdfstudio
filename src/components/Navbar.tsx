@@ -119,6 +119,9 @@ const Navbar = () => {
             <NavLink to="/ban-kiem-diem-dang-vien-mau-02b" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
               🎖️ Mẫu 02B (Cá Nhân)
             </NavLink>
+            <NavLink to="/ban-cam-ket-tu-duong-ren-luyen-dang-vien" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
+              ✍️ Cam Kết Tu Dưỡng
+            </NavLink>
             <NavLink to="/bo-sung-ho-so-dang-vien" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
               📋 Bổ Sung Hồ Sơ ĐV
             </NavLink>
