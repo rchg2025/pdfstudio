@@ -337,19 +337,21 @@ Trả về duy nhất chuỗi JSON: {"content": "toàn bộ nội dung văn bả
                 </div>
 
                 <div className="template-row-right">
-                  {tmpl.status === 'ready' && tmpl.targetPath ? (
-                    <Link to={tmpl.targetPath} className="btn-tmpl-act primary">
-                      Soạn thảo với AI <ArrowRight size={15} />
-                    </Link>
-                  ) : (
-                    <button 
-                      type="button" 
-                      className="btn-tmpl-act outline"
-                      onClick={() => handleOpenTemplateModal(tmpl)}
-                    >
-                      <Sparkles size={14} color="#b91c1c" /> Soạn thảo & Xuất (.doc)
-                    </button>
-                  )}
+                  <Link 
+                    to={tmpl.targetPath ? tmpl.targetPath : `/soan-thao-bieu-mau-dang/${tmpl.id}`} 
+                    className="btn-tmpl-act primary"
+                  >
+                    Soạn thảo trên Web với AI <ArrowRight size={15} />
+                  </Link>
+                  <button 
+                    type="button" 
+                    className="btn-tmpl-act outline"
+                    style={{ marginLeft: '6px' }}
+                    onClick={() => handleOpenTemplateModal(tmpl)}
+                    title="Mở nhanh bảng mẫu"
+                  >
+                    <Sparkles size={14} color="#b91c1c" /> Xuất nhanh
+                  </button>
                 </div>
               </div>
             ))

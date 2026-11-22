@@ -85,6 +85,7 @@ const PartyMemberProfileUpdate = React.lazy(() => import('./pages/PartyMemberPro
 const PartyMemberSelfReview02A = React.lazy(() => import('./pages/PartyMemberSelfReview02A'));
 const PartyMemberSelfReview02B = React.lazy(() => import('./pages/PartyMemberSelfReview02B'));
 const PartyMemberCommitment = React.lazy(() => import('./pages/PartyMemberCommitment'));
+const PartyDocumentEditor = React.lazy(() => import('./pages/PartyDocumentEditor'));
 const PartyWorkHub = React.lazy(() => import('./pages/PartyWorkHub'));
 
 const FallbackLoader = () => (
@@ -434,6 +435,12 @@ function App() {
             } />
             <Route path="cam-ket-tu-duong-dang-vien" element={
               <Suspense fallback={<FallbackLoader />}><PartyMemberCommitment /></Suspense>
+            } />
+            <Route path="soan-thao-bieu-mau-dang/:templateId" element={
+              <Suspense fallback={<FallbackLoader />}><PartyDocumentEditor /></Suspense>
+            } />
+            <Route path="soan-thao-bieu-mau-dang" element={
+              <Suspense fallback={<FallbackLoader />}><PartyDocumentEditor /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}
