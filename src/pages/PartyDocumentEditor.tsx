@@ -370,11 +370,11 @@ Trả về duy nhất chuỗi JSON hợp lệ không có markdown bọc ngoài: 
               )}
             </div>
 
-            {/* AI Generator Helper Tool */}
+            {/* AI Generator Helper Tool - Phong cách Latendoc "Kể bằng lời / Gợi ý thông minh" */}
             <div className="editor-ai-box">
               <div className="editor-ai-box-head">
                 <span className="editor-ai-title">
-                  <Sparkles size={16} /> Trợ lý AI soạn thảo / bổ sung nội dung
+                  <Sparkles size={16} /> Trợ lý Thư ký AI (Kể bằng lời / Soạn thảo tự động)
                 </span>
                 <button 
                   type="button" 
@@ -383,16 +383,57 @@ Trả về duy nhất chuỗi JSON hợp lệ không có markdown bọc ngoài: 
                   onClick={handleAiGenerate}
                 >
                   {isAiGenerating ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
-                  <span>{isAiGenerating ? 'AI đang viết...' : 'AI Viết / Nâng Cấp Nội Dung'}</span>
+                  <span>{isAiGenerating ? 'AI đang viết văn bản...' : 'AI Điền Mẫu & Viết Lại'}</span>
                 </button>
               </div>
-              <input 
-                type="text" 
+              <p className="editor-ai-sub-desc">
+                Nhập hoặc mô tả thông tin bằng lời tự nhiên (lý do, mốc thời gian, kết quả đạt được, định mức giảng dạy...). AI sẽ tự động phân tích và điền chuẩn xác vào cấu trúc văn bản.
+              </p>
+              <textarea 
+                rows={3}
                 className="editor-ai-input"
-                placeholder="Nhập yêu cầu thêm cho AI (VD: Viết dài hơn, thêm căn cứ Nghị quyết TW 4, tập trung vào chuyên môn giảng dạy...)"
+                placeholder="Ví dụ: Soạn thảo cho giảng viên Khoa CNTT hoàn thành 100% giờ giảng 2026, ứng dụng AI và LMS trong bài giảng, cam kết rèn luyện tư tưởng bám sát Nghị quyết TW 4 và Chỉ thị 05..."
                 value={aiPrompt}
                 onChange={e => setAiPrompt(e.target.value)}
               />
+              <div className="editor-ai-quick-tags">
+                <span style={{ fontSize: '0.76rem', color: '#64748b', fontWeight: 600 }}>Gợi ý nhanh:</span>
+                <button 
+                  type="button" 
+                  className="btn-ai-quick-tag"
+                  onClick={() => setAiPrompt(prev => prev ? `${prev}, bám sát Nghị quyết TW 4 khóa XII, XIII` : 'Bám sát Nghị quyết TW 4 khóa XII, XIII')}
+                >
+                  + Nghị quyết TW 4
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-ai-quick-tag"
+                  onClick={() => setAiPrompt(prev => prev ? `${prev}, đẩy mạnh học tập và làm theo tư tưởng đạo đức Hồ Chí Minh theo Kết luận 01-KL/TW` : 'Đẩy mạnh học theo Bác (KL 01-KL/TW)')}
+                >
+                  + Học theo Bác (KL 01)
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-ai-quick-tag"
+                  onClick={() => setAiPrompt(prev => prev ? `${prev}, hoàn thành 100% định mức giờ giảng và NCKH năm 2026` : 'Hoàn thành 100% giờ giảng & NCKH')}
+                >
+                  + Đạt 100% chỉ tiêu 2026
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-ai-quick-tag"
+                  onClick={() => setAiPrompt(prev => prev ? `${prev}, gương mẫu nơi cư trú theo Quy định 213-QĐ/TW` : 'Gương mẫu nơi cư trú (QĐ 213)')}
+                >
+                  + Nơi cư trú (QĐ 213)
+                </button>
+                <button 
+                  type="button" 
+                  className="btn-ai-quick-tag"
+                  onClick={() => setAiPrompt(prev => prev ? `${prev}, viết dài dặn, chi tiết, có đánh số 1., 2., 3.` : 'Viết dài dặn, có đánh số 1., 2., 3.')}
+                >
+                  + Viết dài & đánh số 1, 2, 3
+                </button>
+              </div>
             </div>
 
             <div className="editor-field">
