@@ -80,17 +80,22 @@ export default function PartyMemberSelfReview02B() {
     setLoadingField(field);
     try {
       const currentValue = formData[field] as string;
+      const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại và chuẩn hóa nội dung mục "${fieldLabel}" trong "Bản kiểm điểm đảng viên cuối năm Mẫu 02B (năm 2026, Hướng dẫn 43-HD/BTCTW & Công văn 2772-CV/BTCTW)".
-Chức danh người kiểm điểm: ${formData.chucVuChinhQuyen || 'Giảng viên/Nhân viên'}, Chức vụ Đảng: ${formData.chucVuDang || 'Đảng viên'}, Đơn vị: ${formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
-Yêu cầu văn phong: Chuẩn mực, trang trọng, thẳng thắn, đúng nguyên tắc tự phê bình và phê bình của Đảng.
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại, diễn đạt sâu sắc, dài dặn và chuẩn hóa nội dung mục "${fieldLabel}" trong "Bản kiểm điểm đảng viên cuối năm Mẫu 02B (năm 2026, Hướng dẫn 43-HD/BTCTW & Công văn 2772-CV/BTCTW)".
+Chức danh người kiểm điểm: ${formData.chucVuChinhQuyen || 'Giảng viên/Nhân viên/Chuyên viên'}, Chức vụ Đảng: ${formData.chucVuDang || 'Đảng viên'}, Đơn vị: ${formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
+
+YÊU CẦU ĐẶC BIỆT VỀ CHẤT LƯỢNG VĂN BẢN:
+1. Chi tiết và đầy đủ: Viết dài hơn, gồm nhiều luận điểm rõ ràng (đánh số 1., 2., 3.), nêu rõ hành động, kết quả và minh chứng thực tế trong thực hiện nhiệm vụ. Tránh viết ngắn gọn hoặc chung chung.
+2. Ngôn phong công tác Đảng: Sử dụng thuật ngữ chính trị chuẩn mực, trang trọng, thể hiện tinh thần tự soi, tự sửa, trung thực, tinh thần cầu thị và ý thức trách nhiệm cao của người đảng viên.
+3. Nội dung chuyên môn: Bám sát nhiệm vụ chuyên môn (giảng dạy, nghiên cứu khoa học, đổi mới phương pháp, học liệu số LMS, phục vụ người học), chấp hành nội quy, đoàn kết nội bộ và liên hệ nơi cư trú theo Quy định 213-QĐ/TW.
 
 Nội dung hiện tại hoặc ý chính cần viết lại:
 """
-${currentValue || 'Hãy viết nội dung chuẩn mực, đầy đủ và nêu cao tinh thần trách nhiệm của người đảng viên.'}
+${currentValue || 'Hãy viết nội dung đầy đủ, chi tiết, nêu cao tinh thần trách nhiệm và tính tiền phong gương mẫu của người đảng viên.'}
 """
 
-Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản đã hoàn thiện chuẩn xác theo đúng ngôn phong của Đảng"}
+Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản hoàn chỉnh, dài dặn, sâu sắc, chuẩn xác theo đúng ngôn phong công tác Đảng"}
       `;
 
       const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
@@ -98,14 +103,15 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: promptInstruction,
-          count: 1
+          count: 1,
+          customApiKey: customKey || undefined
         })
       });
 
       if (!response.ok) throw new Error('Không thể kết nối đến máy chủ AI');
 
       const resData = await response.json();
-      const rawText = resData?.questions?.[0]?.question || resData?.text || '';
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       let cleanText = '';
       try {
         const parsed = JSON.parse(rawText.replace(/```json\s*|```/g, '').trim());
@@ -139,19 +145,24 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
     try {
       const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là dựa vào tóm tắt hoạt động trong năm của một Đảng viên KHÔNG giữ chức vụ lãnh đạo (giảng viên, giáo viên, chuyên viên, nhân viên...) để viết và hoàn thiện "Bản kiểm điểm, tự đánh giá, xếp loại cá nhân Mẫu 02B (dùng cho kiểm điểm năm 2026, Hướng dẫn 43-HD/BTCTW, Công văn 2772-CV/BTCTW)".
-Văn phong: Chính trị chuẩn mực, trang trọng, thẳng thắn, đúng tinh thần tự phê bình và phê bình của Đảng.
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là dựa vào tóm tắt hoạt động trong năm của một Đảng viên KHÔNG giữ chức vụ lãnh đạo (giảng viên, giáo viên, chuyên viên, nhân viên...) để soạn thảo hoàn chỉnh, sâu sắc và dài dặn "Bản kiểm điểm, tự đánh giá, xếp loại cá nhân Mẫu 02B (dùng cho kiểm điểm năm 2026, Hướng dẫn 43-HD/BTCTW, Công văn 2772-CV/BTCTW)".
+
+YÊU CẦU ĐẶC BIỆT VỀ CHẤT LƯỢNG NỘI DUNG VÀ NGÔN PHONG:
+1. Độ dài và chi tiết: Mỗi mục ưu điểm cần viết từ 2 đến 3 ý rõ ràng (đánh số 1., 2., 3.), nêu cụ thể các kết quả đạt được, số liệu hoặc hành động thực tế trong năm 2026.
+2. Ngôn phong chính trị của Đảng: Nghiêm túc, trang trọng, đúng văn phong tự phê bình và phê bình của Đảng; bám sát Quy định 37-QĐ/TW, Kết luận 01-KL/TW (học Bác), Kết luận 21-KL/TW và Quy định 213-QĐ/TW (nơi cư trú).
+3. Hạn chế và phương hướng: Chỉ rõ khuyết điểm thực tế (như đôi lúc còn e dè trong phát biểu, dồn việc cuối kỳ...), phân tích nguyên nhân khách quan/chủ quan thuyết phục và đề ra phương hướng giải pháp khắc phục có lộ trình rõ ràng.
+
 Trả về DUY NHẤT một chuỗi JSON hợp lệ không có giải thích thêm với cấu trúc:
 {
-  "uuDiemPhamChatChinhTri": "Nội dung phẩm chất chính trị, đạo đức, lối sống, ý thức tổ chức kỷ luật, đoàn kết nội bộ, phòng chống suy thoái...",
-  "uuDiemThucHienNhiemVu": "Nội dung thực hiện chức trách chuyên môn, giảng dạy/công tác, hoàn thành chỉ tiêu nhiệm vụ được giao trong năm...",
-  "uuDiemCamKetTuDuong": "Nội dung thực hiện cam kết tu dưỡng rèn luyện, liên hệ chi ủy nơi cư trú theo Quy định 213-QĐ/TW...",
-  "hanCheKhuyetDiem": "Chỉ ra 1-2 hạn chế khuyết điểm thực tế của cá nhân (ví dụ: phát biểu thảo luận sinh hoạt chi bộ, ứng dụng CNTT...)...",
-  "nguyenNhanKhachQuan": "Nguyên nhân khách quan...",
-  "nguyenNhanChuQuan": "Nguyên nhân chủ quan...",
-  "ketQuaKhacPhucNamTruoc": "Kết quả khắc phục hạn chế năm trước (nếu có)...",
+  "uuDiemPhamChatChinhTri": "Nội dung chi tiết dài dặn về phẩm chất chính trị, đạo đức, lối sống, ý thức tổ chức kỷ luật, đoàn kết nội bộ, phòng chống tự diễn biến tự chuyển hóa...",
+  "uuDiemThucHienNhiemVu": "Nội dung chi tiết về thực hiện nhiệm vụ chuyên môn, giảng dạy/công tác, hoàn thành 100% chỉ tiêu được giao năm 2026, đổi mới sáng tạo...",
+  "uuDiemCamKetTuDuong": "Nội dung chi tiết việc thực hiện cam kết tu dưỡng rèn luyện, giữ mối liên hệ mật thiết với chi ủy và nhân dân nơi cư trú theo Quy định 213-QĐ/TW...",
+  "hanCheKhuyetDiem": "Chỉ rõ 2 hạn chế khuyết điểm thực tế, trung thực (ví dụ: phát biểu thảo luận sinh hoạt chi bộ, cập nhật công nghệ mới...)...",
+  "nguyenNhanKhachQuan": "Phân tích nguyên nhân khách quan một cách thấu đáo...",
+  "nguyenNhanChuQuan": "Phân tích nguyên nhân chủ quan trung thực, thẳng thắn...",
+  "ketQuaKhacPhucNamTruoc": "Nêu rõ kết quả và tiến bộ đã khắc phục so với hạn chế của năm trước...",
   "giaiTrinhTrachNhiem": "Giải trình trách nhiệm cá nhân đối với hạn chế của tập thể hoặc vấn đề gợi ý kiểm điểm...",
-  "phuongHuongKhacPhuc": "3 phương hướng giải pháp cụ thể cho năm tới..."
+  "phuongHuongKhacPhuc": "3 phương hướng giải pháp cụ thể, thiết thực cho năm 2027..."
 }
 
 THÔNG TIN HOẠT ĐỘNG VÀ VỊ TRÍ CHUYÊN MÔN:

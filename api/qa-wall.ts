@@ -911,7 +911,15 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
       const modelQueue = await resolveGeminiModels(apiKey, preferredModel);
 
       // KIỂM TRA NẾU ĐÂY LÀ YÊU CẦU SOẠN THẢO VĂN BẢN ĐẢNG / THƯ KÝ ĐẢNG (trả về JSON đối tượng trực tiếp)
-      const isPartyPrompt = topic.includes('Bản kiểm điểm') || topic.includes('Mẫu 3-HSĐV') || topic.includes('chuyên gia thư ký') || topic.includes('quy chuẩn chữ "K"') || topic.includes('Mẫu 02');
+      const isPartyPrompt = topic.includes('Bản kiểm điểm') || 
+        topic.includes('Mẫu 3-HSĐV') || 
+        topic.includes('chuyên gia thư ký') || 
+        topic.includes('quy chuẩn chữ "K"') || 
+        topic.includes('Mẫu 02') || 
+        topic.includes('Bản cam kết') || 
+        topic.includes('cam kết tu dưỡng') ||
+        topic.includes('công tác Đảng') ||
+        topic.includes('biểu mẫu Đảng');
 
       if (isPartyPrompt) {
         let partyResultText = '';

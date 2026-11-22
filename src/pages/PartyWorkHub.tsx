@@ -51,18 +51,21 @@ export default function PartyWorkHub() {
     setIsAiGenerating(true);
     try {
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng giàu kinh nghiệm. Hãy soạn thảo chi tiết toàn bộ phần nội dung trọng tâm cho biểu mẫu Đảng sau:
+Bạn là chuyên gia thư ký xây dựng Đảng giàu kinh nghiệm và uyên thâm về lý luận, nghiệp vụ công tác Đảng. Hãy soạn thảo chi tiết, toàn diện, dài dặn và mẫu mực toàn bộ nội dung văn bản cho biểu mẫu Đảng sau:
 Tên biểu mẫu: "${selectedTemplate.title}"
 Mã số/Căn cứ: "${selectedTemplate.code || ''}" (${selectedTemplate.guidance || 'Quy định Đảng'})
-Thông tin người lập/cơ quan: Đồng chí ${customInfo.hoVaTen || 'đảng viên'}, Chức vụ: ${customInfo.chucVu || 'Cán bộ'}, Đơn vị: ${customInfo.donVi || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
+Thông tin người lập/cơ quan: Đồng chí ${customInfo.hoVaTen || 'cán bộ, đảng viên'}, Chức danh: ${customInfo.chucVu || 'Giảng viên/Chuyên viên'}, Đơn vị: ${customInfo.donVi || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
+
+YÊU CẦU ĐẶC BIỆT VỀ CHẤT LƯỢNG VĂN BẢN VÀ NGÔN PHONG:
+1. Độ dài và tính hệ thống: Viết dài hơn, bố cục chặt chẽ gồm các phần (Căn cứ chính trị/pháp lý, Tình hình thực tế, Nội dung cụ thể, Đánh giá kết quả, Đề xuất kiến nghị hoặc Lời cam kết), mỗi phần có các gạch đầu dòng hoặc đánh số rõ ràng. Tuyệt đối không viết ngắn, hời hợt.
+2. Ngôn phong chính trị của Đảng: Nghiêm túc, trang trọng, lập trường tư tưởng kiên định, tuân thủ đúng Cương lĩnh, Điều lệ Đảng và thể thức văn bản của Ban Chấp hành Trung ương Đảng.
 
 Yêu cầu hoặc thông tin tóm tắt bổ sung từ người dùng:
 """
-${aiPrompt || 'Hãy soạn thảo chi tiết, đầy đủ các mục chuẩn theo quy định và thể thức của tổ chức Đảng.'}
+${aiPrompt || 'Hãy soạn thảo văn bản hoàn chỉnh, dài dặn, sâu sắc, chuẩn thể thức và nội dung theo đúng nghiệp vụ xây dựng Đảng.'}
 """
 
-Văn phong: Chính trị chuẩn mực, mạch lạc, trang trọng, nghiêm túc đúng ngôn phong của Đảng.
-Trả về duy nhất chuỗi JSON: {"content": "toàn bộ nội dung văn bản chi tiết với các đề mục, dòng gạch đầu dòng rõ ràng"}
+Trả về duy nhất chuỗi JSON: {"content": "toàn bộ nội dung văn bản hoàn chỉnh, dài dặn, chuẩn mực, có đề mục rõ ràng"}
       `;
 
       const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
@@ -71,19 +74,22 @@ Trả về duy nhất chuỗi JSON: {"content": "toàn bộ nội dung văn bả
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: promptInstruction,
-          apiKey: customKey
+          count: 1,
+          customApiKey: customKey || undefined
         })
       });
 
       const resData = await response.json();
-      let rawText = resData.data || resData.content || '';
-      if (typeof rawText === 'string') {
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) rawText = jsonMatch[0];
-        const parsed = JSON.parse(rawText);
-        if (parsed.content) {
-          setCustomBody(parsed.content);
-        }
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
+      let cleanText = '';
+      try {
+        const parsed = JSON.parse(rawText.replace(/```json\s*|```/g, '').trim());
+        cleanText = parsed.content || parsed.text || '';
+      } catch {
+        cleanText = rawText.replace(/```json\s*|```/g, '').trim();
+      }
+      if (cleanText) {
+        setCustomBody(cleanText);
       }
     } catch (e) {
       console.error('Lỗi AI soạn biểu mẫu:', e);

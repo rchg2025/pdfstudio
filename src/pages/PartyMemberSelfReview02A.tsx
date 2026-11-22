@@ -79,17 +79,22 @@ export default function PartyMemberSelfReview02A() {
     setLoadingField(field);
     try {
       const currentValue = formData[field] as string;
+      const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại và chuẩn hóa nội dung mục "${fieldLabel}" trong "Bản kiểm điểm cán bộ lãnh đạo, quản lý cuối năm Mẫu 02A (năm 2026, Hướng dẫn 43-HD/BTCTW & Công văn 2772-CV/BTCTW)".
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại, mở rộng sâu sắc và chuẩn hóa nội dung mục "${fieldLabel}" trong "Bản kiểm điểm cán bộ lãnh đạo, quản lý cuối năm Mẫu 02A (năm 2026, Hướng dẫn 43-HD/BTCTW & Công văn 2772-CV/BTCTW)".
 Chức vụ chính quyền/lãnh đạo: ${formData.chucVuChinhQuyen || 'Trưởng phòng/Trưởng khoa/Cán bộ quản lý'}, Chức vụ Đảng: ${formData.chucVuDang || 'Chi ủy viên/Bí thư'}, Đơn vị: ${formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
-Yêu cầu văn phong: Chuẩn mực, trang trọng, thẳng thắn, nêu bật vai trò tiền phong gương mẫu, trách nhiệm người đứng đầu, đúng nguyên tắc tự phê bình và phê bình của Đảng.
+
+YÊU CẦU ĐẶC BIỆT VỀ CHẤT LƯỢNG VĂN BẢN:
+1. Độ dài và chi tiết: Viết dài hơn, sâu sắc, phân tích có luận cứ, dẫn chứng mạch lạc (đạt từ 3 đến 5 đoạn văn hoặc các ý có đánh số 1., 2., 3. rõ ràng). Tuyệt đối không viết ngắn ngủi, chung chung, sáo rỗng.
+2. Ngôn phong công tác Đảng: Sử dụng thuật ngữ chính trị chuẩn mực, trang trọng, lập trường tư tưởng kiên định, thể hiện rõ tính đảng, tính chiến đấu, tinh thần tự phê bình và phê bình nghiêm túc.
+3. Đặc thù lãnh đạo, quản lý: Nêu bật tinh thần trách nhiệm nêu gương của người đứng đầu, năng động, sáng tạo, dám nghĩ, dám làm, dám chịu trách nhiệm vì lợi ích chung; công tác xây dựng khối đại đoàn kết nội bộ, chỉ đạo chuyên môn, phòng chống tham nhũng, lãng phí, tiêu cực và cải cách hành chính, chuyển đổi số.
 
 Nội dung hiện tại hoặc ý chính cần viết lại:
 """
-${currentValue || 'Hãy viết nội dung chuẩn mực, đầy đủ và nêu cao tinh thần trách nhiệm của cán bộ lãnh đạo quản lý.'}
+${currentValue || 'Hãy viết nội dung toàn diện, sâu sắc, mẫu mực và nêu cao tinh thần trách nhiệm của cán bộ lãnh đạo quản lý.'}
 """
 
-Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản đã hoàn thiện chuẩn xác theo đúng ngôn phong của Đảng"}
+Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản hoàn chỉnh, dài dặn, chuẩn mực, giàu tính thuyết phục theo đúng ngôn phong công tác Đảng"}
       `;
 
       const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
@@ -97,14 +102,15 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: promptInstruction,
-          count: 1
+          count: 1,
+          customApiKey: customKey || undefined
         })
       });
 
       if (!response.ok) throw new Error('Không thể kết nối đến máy chủ AI');
 
       const resData = await response.json();
-      const rawText = resData?.questions?.[0]?.question || resData?.text || '';
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       let cleanText = '';
       try {
         const parsed = JSON.parse(rawText.replace(/```json\s*|```/g, '').trim());
@@ -138,22 +144,27 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
     try {
       const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là dựa vào tóm tắt hoạt động trong năm của một cán bộ lãnh đạo/quản lý để viết và hoàn thiện "Bản kiểm điểm, tự đánh giá, xếp loại cá nhân Mẫu 02A (năm 2026, Hướng dẫn 43-HD/BTCTW, Công văn 2772-CV/BTCTW)".
-Văn phong: Chính trị chuẩn mực, trang trọng, thẳng thắn, đúng tinh thần tự phê bình và phê bình của Đảng.
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là dựa vào tóm tắt hoạt động trong năm của một cán bộ lãnh đạo/quản lý để soạn thảo hoàn chỉnh, sâu sắc và toàn diện "Bản kiểm điểm, tự đánh giá, xếp loại cá nhân Mẫu 02A (năm 2026, Hướng dẫn 43-HD/BTCTW, Công văn 2772-CV/BTCTW)".
+
+YÊU CẦU ĐẶC BIỆT VỀ CHẤT LƯỢNG NỘI DUNG VÀ NGÔN PHONG:
+1. Độ dài và tính sâu sắc: Mỗi mục ưu điểm cần viết từ 2 đến 4 ý cụ thể (đánh số 1., 2., 3.), có dẫn chứng thực tế, phân tích thuyết phục, tuyệt đối không viết ngắn cụt lủn hay sao chép chung chung.
+2. Ngôn phong chính trị của Đảng: Nghiêm túc, trang trọng, thẳng thắn, có tính tự phê bình và phê bình sâu sắc; bám sát các tiêu chí Quy định 124-QĐ/TW, Quy định 37-QĐ/TW, Kết luận 01-KL/TW.
+3. Vai trò người đứng đầu/quản lý: Nêu bật tính tiền phong gương mẫu, năng lực đổi mới sáng tạo, chuyển đổi số, dám nghĩ dám làm, tinh thần trách nhiệm xây dựng khối đoàn kết nội bộ và lãnh đạo đơn vị hoàn thành xuất sắc nhiệm vụ.
+
 Trả về DUY NHẤT một chuỗi JSON hợp lệ không có giải thích thêm với cấu trúc:
 {
-  "uuDiemPhamChatChinhTri": "Nội dung phẩm chất chính trị, đạo đức, lối sống...",
-  "uuDiemThucHienNhiemVu": "Nội dung thực hiện chức trách chuyên môn...",
-  "uuDiemCamKetTuDuong": "Nội dung thực hiện cam kết tu dưỡng rèn luyện...",
-  "uuDiemLanhDaoQuanLy": "Nội dung kết quả công tác lãnh đạo, chỉ đạo, quản lý điều hành, đoàn kết nội bộ...",
-  "uuDiemTrachNhiemDoiMoi": "Nội dung trách nhiệm trong công việc, năng động, đổi mới, dám nghĩ dám làm, cải cách hành chính, chuyển đổi số...",
-  "uuDiemTrachNhiemNeuGuong": "Nội dung trách nhiệm nêu gương bản thân và gia đình, phòng chống tham nhũng lãng phí tiêu cực...",
-  "hanCheKhuyetDiem": "Chỉ ra 2-3 hạn chế trong công tác quản lý điều hành...",
-  "nguyenNhanKhachQuan": "Nguyên nhân khách quan...",
-  "nguyenNhanChuQuan": "Nguyên nhân chủ quan...",
-  "ketQuaKhacPhucNamTruoc": "Kết quả khắc phục hạn chế năm trước...",
-  "giaiTrinhGoiYKiemDiem": "Không có hoặc giải trình cụ thể...",
-  "phuongHuongKhacPhuc": "3 phương hướng giải pháp cụ thể cho năm tới..."
+  "uuDiemPhamChatChinhTri": "Nội dung chi tiết dài dặn về phẩm chất chính trị, đạo đức, lối sống, giữ gìn đoàn kết, phòng chống tự diễn biến tự chuyển hóa...",
+  "uuDiemThucHienNhiemVu": "Nội dung chi tiết về lãnh đạo thực hiện nhiệm vụ chuyên môn, chỉ tiêu công tác năm 2026, cải tiến quy trình...",
+  "uuDiemCamKetTuDuong": "Nội dung chi tiết việc thực hiện cam kết tu dưỡng, giữ mối liên hệ nơi cư trú theo Quy định 213-QĐ/TW...",
+  "uuDiemLanhDaoQuanLy": "Nội dung sâu sắc về năng lực quản lý điều hành, dân chủ cơ sở, phân công giao việc và kiểm tra đôn đốc...",
+  "uuDiemTrachNhiemDoiMoi": "Nội dung về tinh thần đổi mới, dám nghĩ dám làm, cải cách hành chính, chuyển đổi số, ứng dụng công nghệ...",
+  "uuDiemTrachNhiemNeuGuong": "Nội dung về trách nhiệm nêu gương của người lãnh đạo đối với cấp dưới và quần chúng, phòng chống tham nhũng tiêu cực...",
+  "hanCheKhuyetDiem": "Chỉ rõ 2-3 hạn chế, tồn tại mang tính xây dựng trong quản lý điều hành...",
+  "nguyenNhanKhachQuan": "Phân tích nguyên nhân khách quan một cách thấu đáo...",
+  "nguyenNhanChuQuan": "Phân tích nguyên nhân chủ quan trung thực, thẳng thắn...",
+  "ketQuaKhacPhucNamTruoc": "Nêu rõ kết quả và tiến bộ đã khắc phục so với hạn chế của năm trước...",
+  "giaiTrinhGoiYKiemDiem": "Giải trình trách nhiệm rõ ràng hoặc ghi không có gợi ý kiểm điểm...",
+  "phuongHuongKhacPhuc": "3-4 phương hướng, biện pháp, lộ trình khắc phục cụ thể, khả thi cho năm 2027..."
 }
 
 THÔNG TIN HOẠT ĐỘNG VÀ VỊ TRÍ CỦA CÁN BỘ LÃNH ĐẠO:

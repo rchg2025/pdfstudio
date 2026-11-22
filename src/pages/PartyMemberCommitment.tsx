@@ -78,16 +78,20 @@ export default function PartyMemberCommitment() {
     try {
       const currentValue = formData[field] as string;
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại và chuẩn hóa nội dung mục "${fieldLabel}" trong "Bản cam kết tu dưỡng, rèn luyện, phấn đấu năm ${formData.namCamKet || '2026'}" của đảng viên.
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Nhiệm vụ của bạn là viết lại, diễn giải sâu sắc, dài dặn và nâng tầm nội dung mục "${fieldLabel}" trong "Bản cam kết tu dưỡng, rèn luyện, phấn đấu năm ${formData.namCamKet || '2026'}" của cán bộ, đảng viên.
 Chức danh người cam kết: ${formData.chucVuChinhQuyen || 'Giảng viên/Chuyên viên'}, Chức vụ Đảng: ${formData.chucVuDang || 'Đảng viên'}, Đơn vị: ${formData.donViCongTac || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}.
-Văn phong: Chuẩn mực chính trị của Đảng, trang trọng, gương mẫu, bám sát Nghị quyết TW 4 khóa XII, XIII, Kết luận 01-KL/TW (học Bác) và Quy định 37-QĐ/TW.
+
+YÊU CẦU ĐẶC BIỆT VỀ CHẤT LƯỢNG VĂN BẢN VÀ NGÔN PHONG ĐẢNG:
+1. Độ dài và chi tiết: Viết dài hơn, gồm các điều khoản rõ ràng có đánh số (1., 2., 3., 4.), diễn đạt khúc chiết, súc tích nhưng đầy đủ chiều sâu lý luận và tính khả thi trong thực tiễn. Tuyệt đối không viết ngắn, hời hợt.
+2. Ngôn phong chính trị của Đảng: Thể hiện tính tiền phong, gương mẫu, kiên định lập trường chủ nghĩa Mác - Lênin và tư tưởng Hồ Chí Minh; bám sát tinh thần Nghị quyết Trung ương 4 khóa XII, XIII, Kết luận số 01-KL/TW (đẩy mạnh học tập và làm theo Bác), Quy định số 37-QĐ/TW (những điều đảng viên không được làm) và Quy định số 213-QĐ/TW (mối liên hệ nơi cư trú).
+3. Tính hành động cụ thể: Gắn liền với đạo đức nghề nghiệp, hoàn thành xuất sắc chức trách chuyên môn năm 2026, tinh thần đổi mới sáng tạo, chuyển đổi số và phục vụ nhân dân, học sinh - sinh viên.
 
 Nội dung hiện tại hoặc ý chính cần viết lại:
 """
-${currentValue || 'Hãy viết nội dung cam kết chuẩn mực, chi tiết và có tính hành động cao.'}
+${currentValue || 'Hãy viết nội dung cam kết toàn diện, dài dặn, sâu sắc và có tính hành động cao.'}
 """
 
-Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản đã hoàn thiện chuẩn xác theo đúng ngôn phong của Đảng"}
+Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản hoàn chỉnh, dài dặn, chuẩn xác theo đúng ngôn phong công tác Đảng"}
       `;
 
       const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
@@ -96,19 +100,22 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: promptInstruction,
-          apiKey: customKey
+          count: 1,
+          customApiKey: customKey || undefined
         })
       });
 
       const resData = await response.json();
-      let rawText = resData.data || resData.content || '';
-      if (typeof rawText === 'string') {
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) rawText = jsonMatch[0];
-        const parsed = JSON.parse(rawText);
-        if (parsed.content) {
-          handleChange(field, parsed.content);
-        }
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
+      let cleanText = '';
+      try {
+        const parsed = JSON.parse(rawText.replace(/```json\s*|```/g, '').trim());
+        cleanText = parsed.content || parsed.text || '';
+      } catch {
+        cleanText = rawText.replace(/```json\s*|```/g, '').trim();
+      }
+      if (cleanText) {
+        handleChange(field, cleanText);
       }
     } catch (err: any) {
       console.error('Lỗi AI viết lại mục:', err);
@@ -127,15 +134,19 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
     try {
       const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
       const promptInstruction = `
-Bạn là chuyên gia thư ký xây dựng Đảng. Dựa vào tóm tắt thông tin của đảng viên, hãy soạn thảo hoàn chỉnh "Bản cam kết tu dưỡng, rèn luyện, phấn đấu năm ${formData.namCamKet || '2026'}".
-Văn phong chính trị trang trọng, quyết tâm rèn luyện, bám sát các nghị quyết của Đảng.
+Bạn là chuyên gia thư ký xây dựng Đảng cấp cao. Dựa vào tóm tắt thông tin của đảng viên, hãy soạn thảo hoàn chỉnh, dài dặn, mẫu mực và sâu sắc toàn bộ 5 phần của "Bản cam kết tu dưỡng, rèn luyện, phấn đấu năm ${formData.namCamKet || '2026'}".
+
+YÊU CẦU ĐẶC BIỆT:
+1. Độ dài và chi tiết: Mỗi mục cam kết phải viết dài dặn, phân thành các ý có đánh số 1., 2., 3., nêu rõ mục tiêu, hành động cụ thể, quyết tâm chính trị cao.
+2. Ngôn phong chính trị của Đảng: Bám sát Nghị quyết Trung ương 4 khóa XII, Kết luận 21-KL/TW (khóa XIII), Chỉ thị 05-CT/TW, Kết luận 01-KL/TW và Quy định 37-QĐ/TW.
+
 Trả về DUY NHẤT một chuỗi JSON hợp lệ không có giải thích thêm:
 {
-  "camKetTuTuongChinhTri": "Nội dung cam kết tư tưởng chính trị...",
-  "camKetDaoDucLoiSong": "Nội dung cam kết phẩm chất đạo đức lối sống...",
-  "camKetThucHienNhiemVu": "Nội dung cam kết thực hiện chức trách chuyên môn...",
-  "camKetYThucKyLuat": "Nội dung cam kết tổ chức kỷ luật...",
-  "camKetKhacPhucHanChe": "Nội dung cam kết khắc phục hạn chế năm trước..."
+  "camKetTuTuongChinhTri": "Nội dung chi tiết dài dặn về kiên định chủ nghĩa Mác - Lênin, tư tưởng Hồ Chí Minh, tuyệt đối chấp hành Cương lĩnh, Điều lệ Đảng, đấu tranh phản bác luận điệu sai trái, chống tự diễn biến tự chuyển hóa...",
+  "camKetDaoDucLoiSong": "Nội dung chi tiết về tu dưỡng đạo đức cách mạng, cần kiệm liêm chính, khiêm tốn giản dị, thực hiện 19 điều đảng viên không được làm, gương mẫu nơi cư trú theo Quy định 213-QĐ/TW, chống tham nhũng tiêu cực lãng phí...",
+  "camKetThucHienNhiemVu": "Nội dung chi tiết về nêu cao tinh thần trách nhiệm, hoàn thành 100% định mức giảng dạy/chuyên môn năm 2026, đổi mới sáng tạo, chuyển đổi số, tận tụy phục vụ nhân dân và người học...",
+  "camKetYThucKyLuat": "Nội dung chi tiết về chấp hành nguyên tắc tập trung dân chủ, tự phê bình và phê bình, kỷ luật lao động, văn hóa công sở, sinh hoạt chi bộ và đóng đảng phí đúng quy định...",
+  "camKetKhacPhucHanChe": "Nội dung chi tiết về biện pháp và lộ trình khắc phục dứt điểm những hạn chế năm trước (như tính e dè ngại va chạm, dồn việc cuối kỳ...)..."
 }
 
 THÔNG TIN VÀ YÊU CẦU:
@@ -149,16 +160,17 @@ ${aiPrompt}
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           topic: promptInstruction,
-          apiKey: customKey
+          count: 1,
+          customApiKey: customKey || undefined
         })
       });
 
       const resData = await response.json();
-      let rawText = resData.data || resData.content || '';
-      if (typeof rawText === 'string') {
-        const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-        if (jsonMatch) rawText = jsonMatch[0];
-        const parsed = JSON.parse(rawText);
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
+      const cleanJsonStr = rawText.replace(/```json\s*|```/g, '').trim();
+      const match = cleanJsonStr.match(/\{[\s\S]*\}/);
+      if (match) {
+        const parsed = JSON.parse(match[0]);
         setFormData(prev => ({
           ...prev,
           camKetTuTuongChinhTri: parsed.camKetTuTuongChinhTri || prev.camKetTuTuongChinhTri,
@@ -169,6 +181,8 @@ ${aiPrompt}
         }));
         setShowAiModal(false);
         setAiPrompt('');
+      } else {
+        throw new Error('Định dạng AI trả về chưa khớp JSON');
       }
     } catch (err: any) {
       console.error('Lỗi AI viết bản cam kết:', err);
