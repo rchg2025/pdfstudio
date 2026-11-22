@@ -1,18 +1,22 @@
 .party-hub-container {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem 1rem 4rem;
+  padding: 1.5rem 1.5rem 4rem;
+  box-sizing: border-box;
 }
 
 .party-hub-hero {
   background: linear-gradient(135deg, #b91c1c 0%, #7f1d1d 100%);
   color: #ffffff;
-  border-radius: 20px;
-  padding: 2.5rem 2rem;
-  margin-bottom: 2.5rem;
+  border-radius: 18px;
+  padding: 2.25rem 2rem;
+  margin-bottom: 2rem;
   box-shadow: 0 12px 30px -8px rgba(185, 28, 28, 0.4);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .party-hub-hero::after {
@@ -38,43 +42,46 @@
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.04em;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
 }
 
 .party-hub-hero h1 {
-  font-size: 2.2rem;
+  font-size: 2rem;
   font-weight: 800;
-  margin: 0 0 1rem 0;
+  margin: 0 0 0.85rem 0;
   letter-spacing: -0.02em;
 }
 
 .party-hub-hero p {
   margin: 0;
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.6;
   opacity: 0.94;
-  max-width: 800px;
+  max-width: 900px;
 }
 
-/* Grid danh sách công cụ */
+/* Grid danh sách công cụ chuẩn theo hệ thống */
 .party-tools-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 1.5rem;
   margin-bottom: 2.5rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .party-tool-card {
   background: var(--bg-surface, #ffffff);
   border: 1px solid var(--border, #e2e8f0);
   border-radius: 16px;
-  padding: 1.75rem;
+  padding: 1.5rem;
   display: flex;
   flex-direction: column;
   text-decoration: none;
   color: inherit;
   transition: all 0.25s ease;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
 }
 
 .party-tool-card:hover {
@@ -91,14 +98,15 @@
 }
 
 .party-tool-icon {
-  width: 52px;
-  height: 52px;
+  width: 50px;
+  height: 50px;
   border-radius: 12px;
   background: #fef2f2;
   display: flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #fee2e2;
+  flex-shrink: 0;
 }
 
 .party-tool-badge {
@@ -110,18 +118,18 @@
 }
 
 .party-tool-title {
-  font-size: 1.15rem;
+  font-size: 1.12rem;
   font-weight: 700;
   color: var(--text-primary, #0f172a);
-  margin: 0 0 0.65rem 0;
+  margin: 0 0 0.6rem 0;
   line-height: 1.35;
 }
 
 .party-tool-desc {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--text-secondary, #64748b);
   line-height: 1.5;
-  margin: 0 0 1.5rem 0;
+  margin: 0 0 1.25rem 0;
   flex: 1;
 }
 
@@ -150,6 +158,8 @@
   border: 1px solid #fde68a;
   border-radius: 16px;
   padding: 1.75rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .party-info-title {
@@ -172,4 +182,40 @@
 
 .party-info-list li {
   margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .party-hub-container {
+    padding: 0.75rem 0.5rem 3rem;
+  }
+
+  .party-hub-hero {
+    padding: 1.5rem 1rem;
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+  }
+
+  .party-hub-hero h1 {
+    font-size: 1.45rem;
+  }
+
+  .party-hub-hero p {
+    font-size: 0.88rem;
+  }
+
+  .party-tools-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .party-tool-card {
+    padding: 1.25rem 1rem;
+    border-radius: 14px;
+  }
+
+  .party-info-card {
+    padding: 1.25rem 1rem;
+    border-radius: 14px;
+  }
 }
