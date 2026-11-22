@@ -218,7 +218,7 @@ ${aiPrompt}
                   type="text" 
                   value={formData.huyenUy} 
                   onChange={e => handleChange('huyenUy', e.target.value)} 
-                  placeholder="Ví dụ: ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG"
+                  placeholder="Ví dụ: ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH"
                 />
               </div>
             </div>
@@ -503,7 +503,7 @@ ${aiPrompt}
             <div className="doc-header-table">
               <div className="doc-header-col left">
                 <p className="org-upper">{formData.tinhUy || 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH'}</p>
-                <p className="org-upper">{formData.huyenUy || 'ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG'}</p>
+                <p className="org-upper">{formData.huyenUy || 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH'}</p>
                 <p className="org-name">{formData.dangBoCoSo || 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn'}</p>
                 <p className="org-name"><strong>{formData.chiBo || 'Chi bộ 1'}</strong></p>
                 <div className="dash-line"></div>

@@ -69,7 +69,7 @@ export interface PartyMemberProfileData {
 
 export const defaultPartyProfileData: PartyMemberProfileData = {
   tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
-  huyenUy: 'ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG',
+  huyenUy: 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH',
   dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
   chiBo: 'Chi bộ 1',
   namBoSung: new Date().getFullYear().toString(),

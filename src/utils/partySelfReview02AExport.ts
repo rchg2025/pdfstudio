@@ -58,7 +58,7 @@ export interface PartySelfReview02AData {
 
 export const defaultPartySelfReview02AData: PartySelfReview02AData = {
   tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
-  huyenUy: 'ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG',
+  huyenUy: 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH',
   dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
   chiBo: 'Chi bộ 1',
   namKiemDiem: '2026',

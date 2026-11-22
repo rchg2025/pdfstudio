@@ -1,7 +1,7 @@
 export interface PartySelfReview02BData {
   // Cấp ủy & Tiêu đề
   tinhUy: string;             // ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH
-  huyenUy: string;            // ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG
+  huyenUy: string;            // ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH
   dangBoCoSo: string;         // Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn
   chiBo: string;              // Chi bộ 1
   namKiemDiem: string;        // Năm kiểm điểm (ví dụ: 2026)
@@ -51,7 +51,7 @@ export interface PartySelfReview02BData {
 
 export const defaultPartySelfReview02BData: PartySelfReview02BData = {
   tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
-  huyenUy: 'ĐẢNG BỘ PHƯỜNG CHÁNH HƯNG',
+  huyenUy: 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC THÀNH PHỐ HỒ CHÍ MINH',
   dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
   chiBo: 'Chi bộ 1',
   namKiemDiem: '2026',
