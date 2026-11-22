@@ -408,3 +408,115 @@
     position: static;
   }
 }
+
+@media (max-width: 768px) {
+  .review-page-container {
+    padding: 12px 10px 40px 10px;
+  }
+
+  .review-header-card {
+    padding: 16px 14px;
+    border-radius: 12px;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .review-header-title {
+    font-size: 1.15rem;
+  }
+
+  .review-header-sub {
+    font-size: 0.82rem;
+  }
+
+  .review-header-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .btn-header-act {
+    width: 100%;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.86rem;
+  }
+
+  .review-section {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+
+  .review-sec-badge {
+    font-size: 0.88rem;
+    margin-bottom: 12px;
+  }
+
+  .review-form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .review-field-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .btn-field-ai {
+    padding: 5px 8px;
+    font-size: 0.74rem;
+  }
+
+  .review-preview-column {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .review-preview-topbar {
+    margin-bottom: 8px;
+  }
+
+  .review-paper-viewport {
+    max-height: 480px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .review-paper-sheet {
+    padding: 20px 14px;
+    font-size: 10.5pt;
+    min-width: 310px;
+  }
+
+  .paper-header-grid {
+    font-size: 9.5pt;
+    margin-bottom: 14px;
+  }
+
+  .paper-title-main {
+    font-size: 11.5pt;
+  }
+
+  .paper-signature-grid {
+    margin-top: 20px;
+    gap: 10px;
+    font-size: 9.5pt;
+  }
+
+  .ai-modal-card {
+    border-radius: 14px;
+  }
+
+  .ai-modal-header {
+    padding: 14px 16px;
+  }
+
+  .ai-modal-body {
+    padding: 16px;
+  }
+
+  .ai-modal-footer {
+    padding: 12px 16px;
+  }
+}

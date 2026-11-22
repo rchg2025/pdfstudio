@@ -272,7 +272,7 @@ const Navbar = () => {
 
           {/* Nhóm nổi bật: Công tác Đảng & Giảng dạy */}
           <div className="mobile-section-heading">
-            <span>⭐ Công Tác Đảng & Biểu Mẫu</span>
+            <span>⭐ Nhóm Chức Năng Công Tác Đảng</span>
             <span className="mobile-section-tag" style={{ background: '#fef2f2', color: '#b91c1c' }}>Mới</span>
           </div>
           <div className="mobile-featured-grid">
@@ -280,14 +280,38 @@ const Navbar = () => {
               <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>⭐</div>
               <div className="mfc-info">
                 <div className="mfc-title">Trung Tâm Công Tác Đảng</div>
-                <div className="mfc-desc">Biểu mẫu Đảng bộ, Chi bộ, Hướng dẫn TW</div>
+                <div className="mfc-desc">200+ Biểu mẫu chuẩn TW, tra cứu & xuất Word</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/ban-kiem-diem-dang-vien-mau-02a" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>🎖️</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Kiểm Điểm Mẫu 02A (Lãnh Đạo)</div>
+                <div className="mfc-desc">Kiểm điểm Đảng viên 2026, AI hỗ trợ</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/ban-kiem-diem-dang-vien-mau-02b" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>🎖️</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Kiểm Điểm Mẫu 02B (Cá Nhân)</div>
+                <div className="mfc-desc">Dành cho viên chức, giảng viên, AI hỗ trợ</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/ban-cam-ket-tu-duong-ren-luyen-dang-vien" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>✍️</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Cam Kết Tu Dưỡng Đảng Viên</div>
+                <div className="mfc-desc">Cam kết đầu năm, AI soạn 5 mục</div>
               </div>
             </NavLink>
 
             <NavLink to="/bo-sung-ho-so-dang-vien" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
               <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>📋</div>
               <div className="mfc-info">
-                <div className="mfc-title">Bổ Sung Hồ Sơ ĐV (Mẫu 3) <span className="mfc-badge" style={{ background: '#b91c1c' }}>MỚI</span></div>
+                <div className="mfc-title">Bổ Sung Hồ Sơ ĐV (Mẫu 3)</div>
                 <div className="mfc-desc">Chuẩn hóa chữ K, xuất Word & PDF</div>
               </div>
             </NavLink>

@@ -628,14 +628,14 @@ const Home = () => {
 
         {/* Nổi bật: Truy cập nhanh các tính năng Giáo Dục / LMS / Công tác Đảng hàng đầu */}
         <div className="hero-quick-shortcuts">
-          <Link to="/bo-sung-ho-so-dang-vien" className="quick-shortcut-pill" style={{ borderColor: 'rgba(185, 28, 28, 0.3)', background: 'linear-gradient(135deg, #fff5f5 0%, #fff 100%)' }}>
+          <Link to="/cong-tac-dang" className="quick-shortcut-pill" style={{ borderColor: 'rgba(185, 28, 28, 0.3)', background: 'linear-gradient(135deg, #fff5f5 0%, #fff 100%)' }}>
             <span className="qsp-icon">⭐</span>
             <div className="qsp-text">
               <span className="qsp-title" style={{ color: '#b91c1c' }}>
-                Hồ Sơ Đảng Viên Mẫu 3
+                Nhóm Chức Năng Công Tác Đảng
                 <span className="hot-tag" style={{ background: '#b91c1c' }}>MỚI</span>
               </span>
-              <span className="qsp-sub">Chuẩn hóa chữ K, xuất Word & PDF</span>
+              <span className="qsp-sub">200+ Biểu mẫu, Mẫu 02A, 02B, Mẫu 3, Cam kết & AI</span>
             </div>
             <ArrowRight size={18} className="qsp-arrow" style={{ color: '#b91c1c' }} />
           </Link>
