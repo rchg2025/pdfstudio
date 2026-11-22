@@ -22,6 +22,16 @@ export const ALL_TOOLS: ToolItem[] = [
     changefreq: 'weekly'
   },
   {
+    path: '/ban-kiem-diem-dang-vien-mau-02b',
+    title: '⭐ Bản Kiểm Điểm Đảng Viên Cuối Năm Mẫu 02B (Không Giữ Chức Vụ Lãnh Đạo)',
+    desc: 'Bản tự đánh giá, xếp loại chất lượng năm 2026 cho đảng viên không giữ chức vụ lãnh đạo (giảng viên, giáo viên, chuyên viên, nhân viên) theo Hướng dẫn 43-HD/BTCTW và Công văn 2772-CV/BTCTW.',
+    category: 'party',
+    isHot: true,
+    keywords: ['bản kiểm điểm đảng viên mẫu 02b', 'kiểm điểm đảng viên không giữ chức vụ lãnh đạo', 'mẫu 02b-hd kd.dg', 'hướng dẫn 43-hd/btctw', 'công văn 2772-cv/btctw', 'kiểm điểm đảng viên 2026', 'tự đánh giá xếp loại đảng viên'],
+    priority: 1.0,
+    changefreq: 'weekly'
+  },
+  {
     path: '/bo-sung-ho-so-dang-vien',
     title: '⭐ Phiếu Bổ Sung Hồ Sơ Đảng Viên (Mẫu 3-HSĐV)',
     desc: 'Soạn thảo nhanh, chuẩn hóa quy chuẩn chữ "K" theo Ban Tổ chức Trung ương Đảng, xem trước trực quan tờ A4 và xuất file Word (.doc) 100% chuẩn thể thức Đảng.',

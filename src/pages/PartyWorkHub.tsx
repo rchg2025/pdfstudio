@@ -8,7 +8,8 @@ import {
   ShieldCheck, 
   ArrowRight, 
   FolderOpen, 
-  CalendarCheck 
+  CalendarCheck,
+  Award
 } from 'lucide-react';
 import './PartyWorkHub.css';
 
@@ -33,6 +34,16 @@ export default function PartyWorkHub() {
       icon: <CheckSquare size={28} color="#dc2626" />,
       badge: 'MỚI 2026',
       badgeColor: '#dc2626',
+      isAvailable: true
+    },
+    {
+      id: 'ban-kiem-diem-02b',
+      title: 'Bản Kiểm Điểm Đảng Viên Cuối Năm (Mẫu 02B - Không Giữ Chức Vụ Lãnh Đạo)',
+      desc: 'Bản tự đánh giá, xếp loại chất lượng năm 2026 dành cho cá nhân không giữ chức vụ lãnh đạo, quản lý (giảng viên, giáo viên, chuyên viên, nhân viên) theo Hướng dẫn 43 và Công văn 2772.',
+      path: '/ban-kiem-diem-dang-vien-mau-02b',
+      icon: <Award size={28} color="#ea580c" />,
+      badge: 'MỚI 2026',
+      badgeColor: '#ea580c',
       isAvailable: true
     },
     {
