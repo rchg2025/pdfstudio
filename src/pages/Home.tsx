@@ -68,22 +68,29 @@ const partyTools = [
   {
     path: '/ban-kiem-diem-dang-vien-mau-02a',
     icon: <FileText size={24} color="#dc2626" />,
-    title: 'Bản Kiểm Điểm Đảng Viên Cuối Năm Mẫu 02A (Lãnh Đạo, Quản Lý)',
-    desc: 'Bản tự đánh giá, xếp loại chất lượng năm 2026 cho cán bộ giữ chức vụ lãnh đạo, quản lý theo Hướng dẫn 43-HD/BTCTW và Công văn 2772-CV/BTCTW, xuất Word (.doc) chuẩn.',
+    title: 'Bản Kiểm Điểm Đảng Viên Mẫu 02A (Lãnh Đạo)',
+    desc: 'Bản tự đánh giá, xếp loại năm 2026 cho cán bộ giữ chức vụ lãnh đạo, quản lý theo HD 43 & CV 2772, xuất Word (.doc).',
+    isHot: true
+  },
+  {
+    path: '/ban-kiem-diem-dang-vien-mau-02b',
+    icon: <FileText size={24} color="#ea580c" />,
+    title: 'Bản Kiểm Điểm Đảng Viên Mẫu 02B (Cá Nhân)',
+    desc: 'Dành riêng cho đảng viên không giữ chức vụ lãnh đạo (giảng viên, nhân viên) theo HD 43 & CV 2772, xuất Word (.doc).',
     isHot: true
   },
   {
     path: '/bo-sung-ho-so-dang-vien',
     icon: <FileText size={24} color="#b91c1c" />,
     title: 'Phiếu Bổ Sung Hồ Sơ Đảng Viên (Mẫu 3-HSĐV)',
-    desc: 'Soạn thảo chuẩn hóa quy chuẩn "K" theo Ban Tổ chức Trung ương Đảng, xem trước trực quan tờ A4 và xuất file Word (.doc) 100% chuẩn văn bản Đảng.',
+    desc: 'Soạn thảo chuẩn hóa quy chuẩn "K" theo Ban Tổ chức Trung ương Đảng, xem trước trực quan A4 và xuất file Word (.doc).',
     isHot: true
   },
   {
     path: '/cong-tac-dang',
     icon: <Building2 size={24} color="#dc2626" />,
     title: 'Trung Tâm Quản Lý Văn Bản & Công Tác Đảng',
-    desc: 'Tổng hợp trọn bộ biểu mẫu Đảng bộ, Chi bộ: Phiếu bổ sung hồ sơ, Bản kiểm điểm đảng viên Mẫu 02A, Biên bản họp chi bộ, Trợ lý AI tra cứu Điều lệ Đảng.',
+    desc: 'Tổng hợp trọn bộ biểu mẫu Đảng: Phiếu bổ sung hồ sơ, Kiểm điểm Mẫu 02A/02B, Biên bản sinh hoạt, Trợ lý AI tra cứu.',
     isHot: true
   }
 ];
