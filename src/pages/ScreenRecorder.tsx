@@ -167,6 +167,11 @@ export default function ScreenRecorder() {
   // Bắt đầu quay
   const startRecording = async () => {
     try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        showAlert('Trình duyệt của bạn không hỗ trợ tính năng chia sẻ màn hình getDisplayMedia hoặc bạn đang duyệt ở kết nối không bảo mật.', 'Thiết Bị Không Hỗ Trợ');
+        return;
+      }
+
       stopAllMediaTracks();
       recordedChunksRef.current = [];
 
@@ -216,18 +221,26 @@ export default function ScreenRecorder() {
         setActiveStream(finalStream);
       } else {
         // Quay màn hình (screen hoặc both)
-        const displayMediaOptions: any = {
-          video: {
-            cursor: 'always',
-            displaySurface: 'monitor',
-            width: { ideal: targetWidth, max: targetWidth },
-            height: { ideal: targetHeight, max: targetHeight },
-            frameRate: { ideal: frameRate, max: 60 }
-          },
-          audio: enableSystemAudio
-        };
+        // Lưu ý: constraints getDisplayMedia không được ép chặt displaySurface hoặc monitor vì nhiều trình duyệt sẽ quăng lỗi OverconstrainedError
+        let screenStream: MediaStream;
+        try {
+          screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: {
+              width: { ideal: targetWidth, max: targetWidth },
+              height: { ideal: targetHeight, max: targetHeight },
+              frameRate: { ideal: frameRate, max: 60 }
+            },
+            audio: enableSystemAudio
+          });
+        } catch (firstErr: any) {
+          console.warn('Fallback getDisplayMedia với cấu hình tối giản:', firstErr);
+          // Fallback thử gọi getDisplayMedia video: true thuần túy nếu trình duyệt không hỗ trợ ràng buộc resolution
+          screenStream = await navigator.mediaDevices.getDisplayMedia({
+            video: true,
+            audio: enableSystemAudio
+          });
+        }
 
-        const screenStream = await navigator.mediaDevices.getDisplayMedia(displayMediaOptions);
         screenStreamRef.current = screenStream;
 
         // Nếu bật cả Mic
@@ -242,7 +255,8 @@ export default function ScreenRecorder() {
             // Hợp nhất các audio track
             const audioTracks = [...screenStream.getAudioTracks(), ...micStream.getAudioTracks()];
             finalStream = new MediaStream([...screenStream.getVideoTracks(), ...audioTracks]);
-          } catch {
+          } catch (micErr) {
+            console.warn('Không thể bật mic đồng thời:', micErr);
             // Không mở được mic thì lấy nguyên screen stream
             finalStream = screenStream;
           }
@@ -264,32 +278,50 @@ export default function ScreenRecorder() {
           }
         }
 
-        // Tự động dừng khi người dùng bấm "Stop sharing" trên popup trình duyệt
-        screenStream.getVideoTracks()[0].onended = () => {
-          stopRecording();
-        };
+        // Tự động dừng khi người dùng bấm "Stop sharing" trên thanh công cụ của trình duyệt
+        if (screenStream.getVideoTracks().length > 0) {
+          screenStream.getVideoTracks()[0].onended = () => {
+            stopRecording();
+          };
+        }
 
         setActiveStream(finalStream);
       }
 
       combinedStreamRef.current = finalStream;
 
-      // Khởi tạo MediaRecorder với videoBitsPerSecond tối ưu chất lượng cao
-      let mimeType = 'video/webm;codecs=vp9,opus';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'video/webm;codecs=vp8,opus';
-        if (!MediaRecorder.isTypeSupported(mimeType)) {
-          mimeType = recordMode === 'audio' ? 'audio/webm' : 'video/webm';
-        }
+      // Tìm codec MIME Type được trình duyệt hỗ trợ tốt nhất
+      const candidateTypes = [
+        'video/webm;codecs=vp9,opus',
+        'video/webm;codecs=vp8,opus',
+        'video/webm;codecs=h264,opus',
+        'video/webm',
+        'video/mp4;codecs=avc1,mp4a.40.2',
+        'video/mp4'
+      ];
+      let selectedMimeType = '';
+      if (recordMode === 'audio') {
+        const audioCandidateTypes = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+        selectedMimeType = audioCandidateTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
+      } else {
+        selectedMimeType = candidateTypes.find(t => MediaRecorder.isTypeSupported(t)) || '';
       }
 
-      const recorderOptions: MediaRecorderOptions = {
-        mimeType: MediaRecorder.isTypeSupported(mimeType) ? mimeType : undefined,
-        videoBitsPerSecond: recordMode !== 'audio' ? targetBitrate : undefined,
-        audioBitsPerSecond: 192000 // 192 kbps audio cao cấp
-      };
+      const recorderOptions: MediaRecorderOptions = {};
+      if (selectedMimeType) {
+        recorderOptions.mimeType = selectedMimeType;
+      }
+      if (recordMode !== 'audio' && targetBitrate) {
+        recorderOptions.videoBitsPerSecond = targetBitrate;
+      }
 
-      const recorder = new MediaRecorder(finalStream, recorderOptions);
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(finalStream, recorderOptions);
+      } catch (optErr) {
+        console.warn('MediaRecorder khởi tạo với option thất bại, thử chế độ mặc định:', optErr);
+        recorder = new MediaRecorder(finalStream);
+      }
 
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data && event.data.size > 0) {
@@ -299,7 +331,7 @@ export default function ScreenRecorder() {
 
       recorder.onstop = () => {
         const fullBlob = new Blob(recordedChunksRef.current, { 
-          type: recordMode === 'audio' ? 'audio/webm' : 'video/webm' 
+          type: selectedMimeType || (recordMode === 'audio' ? 'audio/webm' : 'video/webm') 
         });
         const url = URL.createObjectURL(fullBlob);
         setRecordedVideoUrl(url);
@@ -316,8 +348,10 @@ export default function ScreenRecorder() {
       setRecordingStatus('recording');
     } catch (err: any) {
       console.error('Lỗi khởi động quay:', err);
-      if (err.name !== 'NotAllowedError') {
-        showAlert(`Không thể bắt đầu ghi: ${err.message}`, 'Lỗi thiết bị');
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        showAlert('Bạn đã từ chối hoặc hủy cấp quyền chia sẻ màn hình. Vui lòng bấm "Bắt Đầu Ghi Màn Hình" và chọn màn hình hoặc thẻ tab cần quay trong cửa sổ nhắc của trình duyệt.', 'Chưa Cấp Quyền Chia Sẻ');
+      } else {
+        showAlert(`Không thể bắt đầu ghi: ${err.message || err.name || 'Lỗi không xác định'}`, 'Lỗi Thu Hình');
       }
     }
   };
