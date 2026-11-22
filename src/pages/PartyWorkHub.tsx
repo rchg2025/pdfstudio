@@ -17,6 +17,7 @@ import {
   PARTY_DOCUMENT_CATEGORIES, 
   type PartyDocumentTemplate 
 } from '../data/partyTemplatesCatalog';
+import { generatePartyDocHtml } from '../utils/partyGeneralDocGenerator';
 import './PartyWorkHub.css';
 
 export default function PartyWorkHub() {
@@ -43,130 +44,24 @@ export default function PartyWorkHub() {
     });
   }, [activeCategory, searchQuery]);
 
-  // Xuất file Word (.doc) nhanh cho biểu mẫu bất kỳ
+  // Xuất file Word (.doc) chuẩn thể thức và nội dung chuyên biệt cho từng biểu mẫu
   const handleExportQuickDoc = (template: PartyDocumentTemplate) => {
     setIsExporting(true);
     try {
-      const htmlContent = `
-        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head>
-          <meta charset='utf-8'>
-          <title>${template.title}</title>
-          <style>
-            @page {
-              size: A4;
-              margin: 20mm 15mm 20mm 25mm;
-            }
-            body {
-              font-family: 'Times New Roman', Times, serif;
-              font-size: 13pt;
-              line-height: 1.35;
-              color: #000000;
-            }
-            .header-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 20px;
-            }
-            .header-table td {
-              vertical-align: top;
-            }
-            .org-upper {
-              font-size: 11pt;
-              font-weight: bold;
-              text-transform: uppercase;
-              text-align: center;
-              margin: 0;
-            }
-            .doc-title {
-              font-size: 15pt;
-              font-weight: bold;
-              text-align: center;
-              text-transform: uppercase;
-              margin: 25px 0 10px 0;
-            }
-            .doc-sub {
-              font-size: 13pt;
-              font-style: italic;
-              text-align: center;
-              margin-bottom: 25px;
-            }
-            .content-p {
-              text-indent: 10mm;
-              margin: 8px 0;
-              text-align: justify;
-            }
-            .dotted-line {
-              border-bottom: 1px dotted #888;
-              height: 22px;
-              margin-bottom: 6px;
-            }
-          </style>
-        </head>
-        <body>
-          <table class="header-table">
-            <tr>
-              <td style="width: 48%; text-align: center;">
-                <p class="org-upper">ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH</p>
-                <p class="org-upper" style="font-size: 10pt;">ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC TP.HCM</p>
-                <p class="org-upper" style="font-size: 10.5pt; text-transform: none;"><strong>Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn</strong></p>
-                <p class="org-upper"><strong>Chi bộ 1</strong></p>
-                <div style="width: 80px; height: 1px; background: #000; margin: 4px auto 0 auto;"></div>
-                <p style="margin: 2px 0 0 0; font-size: 10pt;">*</p>
-              </td>
-              <td style="width: 52%; text-align: center;">
-                <p style="font-weight: bold; text-transform: uppercase; margin: 0; font-size: 11.5pt;"><u>ĐẢNG CỘNG SẢN VIỆT NAM</u></p>
-                ${template.code ? `<p style="margin: 4px 0 0 0; font-size: 11pt; font-weight: bold;">${template.code}</p>` : ''}
-                <p style="font-style: italic; margin: 10px 0 0 0; font-size: 11pt;">Thành phố Hồ Chí Minh, ngày ...... tháng ...... năm 2026</p>
-              </td>
-            </tr>
-          </table>
-
-          <div class="doc-title">${template.title}</div>
-          ${template.guidance ? `<div class="doc-sub">(${template.guidance})</div>` : '<div style="height: 15px;"></div>'}
-
-          <div style="margin: 15px 0;">
-            <p class="content-p">Họ và tên: <strong>${customInfo.hoVaTen || '...........................................................................................'}</strong></p>
-            <p class="content-p">Ngày, tháng, năm sinh: ${customInfo.namSinh || '........................................................'} Giới tính: .........................</p>
-            <p class="content-p">Chức vụ Đảng: ....................................... Chức vụ chuyên môn: ${customInfo.chucVu || '...........................................'}</p>
-            <p class="content-p">Đơn vị công tác: <strong>${customInfo.donVi || 'Trường Cao đẳng Bách khoa Nam Sài Gòn'}</strong></p>
-            <p class="content-p">Chi bộ sinh hoạt: <strong>Chi bộ 1</strong></p>
-          </div>
-
-          <div style="margin: 25px 0;">
-            <p><strong>NỘI DUNG VĂN BẢN:</strong></p>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-            <div class="dotted-line"></div>
-          </div>
-
-          <table style="width: 100%; margin-top: 40px; border-collapse: collapse;">
-            <tr>
-              <td style="width: 50%; text-align: center; vertical-align: top;">
-                <p style="font-weight: bold; margin: 0;">T/M CHI ỦY CHI BỘ</p>
-                <p style="font-style: italic; font-size: 11pt; margin: 2px 0 60px 0;">(Ký, ghi rõ họ tên)</p>
-              </td>
-              <td style="width: 50%; text-align: center; vertical-align: top;">
-                <p style="font-style: italic; font-size: 11pt; margin: 0;">TP. Hồ Chí Minh, ngày ..... tháng ..... năm 2026</p>
-                <p style="font-weight: bold; margin: 4px 0 0 0;">NGƯỜI KHAI / NGƯỜI LÀM ĐƠN</p>
-                <p style="font-style: italic; font-size: 11pt; margin: 2px 0 60px 0;">(Ký, ghi rõ họ tên)</p>
-                <p style="font-weight: bold; margin: 0;">${customInfo.hoVaTen || ''}</p>
-              </td>
-            </tr>
-          </table>
-        </body>
-        </html>
-      `;
+      const htmlContent = generatePartyDocHtml(template, {
+        hoVaTen: customInfo.hoVaTen,
+        namSinh: customInfo.namSinh,
+        chucVu: customInfo.chucVu,
+        donVi: customInfo.donVi,
+        chiBo: 'Chi bộ 1',
+        dangBoCoSo: 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn',
+        huyenUy: 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC TP.HCM',
+        tinhUy: 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH',
+        diaDanh: 'Thành phố Hồ Chí Minh'
+      });
 
       const blob = new Blob(['\ufeff', htmlContent], {
-        type: 'application/msword'
+        type: 'application/msword;charset=utf-8'
       });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');

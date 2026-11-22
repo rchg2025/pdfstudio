@@ -58,8 +58,7 @@ export const ALL_PARTY_TEMPLATES: PartyDocumentTemplate[] = [
     desc: 'Đăng ký rèn luyện tư tưởng chính trị, đạo đức lối sống, thực hiện nhiệm vụ và khắc phục hạn chế năm trước; chi ủy theo dõi và xác nhận.',
     guidance: 'Nghị quyết Trung ương 4 & Chỉ thị 05-CT/TW',
     isPopular: true,
-    status: 'ready',
-    targetPath: '/ban-kiem-diem-dang-vien-mau-02b'
+    status: 'generator'
   },
   {
     id: 'phieu-danh-gia-chat-luong-dv',
