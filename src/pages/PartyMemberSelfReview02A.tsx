@@ -67,10 +67,63 @@ export default function PartyMemberSelfReview02A() {
     });
   };
 
+  // Helper tính toán tự động hàng Tổng điểm KPI và Cả năm
+  const recalculateKpiRows = (rows: QuarterlyKpiRow[]): QuarterlyKpiRow[] => {
+    const nextRows = rows.map(r => ({ ...r }));
+    if (nextRows.length < 3) return nextRows;
+
+    const calcAverage = (vals: (string | number)[]): string => {
+      const nums = vals.map(v => parseFloat(String(v))).filter(v => !isNaN(v));
+      if (nums.length === 0) return '';
+      const avg = nums.reduce((a, b) => a + b, 0) / nums.length;
+      return Math.round(avg * 100) / 100 === Math.round(avg) ? avg.toFixed(0) : avg.toFixed(2).replace(/\.?0+$/, '');
+    };
+
+    // Hàng 0: Điểm tiêu chí chung
+    nextRows[0].year = calcAverage([nextRows[0].q1, nextRows[0].q2, nextRows[0].q3, nextRows[0].q4]);
+
+    // Hàng 1: Điểm tiêu chí về kết quả thực hiện nhiệm vụ
+    nextRows[1].year = calcAverage([nextRows[1].q1, nextRows[1].q2, nextRows[1].q3, nextRows[1].q4]);
+
+    // Hàng 2: Tổng điểm KPI = Hàng 0 + Hàng 1
+    const quarters = ['q1', 'q2', 'q3', 'q4'] as const;
+    quarters.forEach(q => {
+      const v0 = parseFloat(String(nextRows[0][q])) || 0;
+      const v1 = parseFloat(String(nextRows[1][q])) || 0;
+      const sum = v0 + v1;
+      nextRows[2][q] = sum > 0 ? (Math.round(sum * 100) / 100).toString() : '';
+    });
+    // Cả năm của Tổng điểm KPI = Trung bình cộng 4 quý của Tổng điểm KPI (hoặc Tổng điểm Cả năm)
+    nextRows[2].year = calcAverage([nextRows[2].q1, nextRows[2].q2, nextRows[2].q3, nextRows[2].q4]);
+
+    // Hàng 3 nếu là Mức xếp loại quý thì suy luận mức xếp loại theo điểm
+    if (nextRows[3]) {
+      const getRank = (scoreStr: string) => {
+        const s = parseFloat(scoreStr);
+        if (isNaN(s) || s === 0) return '';
+        if (s >= 90) return 'HTXSNV';
+        if (s >= 70) return 'HTTNV';
+        if (s >= 50) return 'HTNV';
+        return 'KHTNV';
+      };
+      quarters.forEach(q => {
+        if (!nextRows[3][q] || ['HTXSNV', 'HTTNV', 'HTNV', 'KHTNV'].includes(nextRows[3][q])) {
+          nextRows[3][q] = getRank(nextRows[2][q]);
+        }
+      });
+      if (!nextRows[3].year || ['HTXSNV', 'HTTNV', 'HTNV', 'KHTNV'].includes(nextRows[3].year)) {
+        nextRows[3].year = getRank(nextRows[2].year);
+      }
+    }
+
+    return nextRows;
+  };
+
   const handleKpiRowChange = (index: number, key: keyof QuarterlyKpiRow, value: string) => {
     setFormData(prev => {
-      const nextRows = [...prev.kpiRows];
+      let nextRows = [...prev.kpiRows];
       nextRows[index] = { ...nextRows[index], [key]: value };
+      nextRows = recalculateKpiRows(nextRows);
       return { ...prev, kpiRows: nextRows };
     });
   };
@@ -786,7 +839,18 @@ ${aiPrompt}
                           type="text" 
                           value={row.year} 
                           onChange={e => handleKpiRowChange(idx, 'year', e.target.value)}
-                          style={{ width: '100%', textAlign: 'center', fontWeight: 'bold', padding: '4px', border: '1px solid #94a3b8', borderRadius: '4px' }}
+                          placeholder="Tự động"
+                          title="Điểm cả năm tự động tính bằng trung bình cộng 4 quý (Quý I, II, III, IV)"
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center', 
+                            fontWeight: 'bold', 
+                            padding: '4px', 
+                            border: idx === 2 ? '2px solid #b91c1c' : '1px solid #94a3b8', 
+                            background: idx === 2 ? '#fef2f2' : '#ffffff',
+                            color: idx === 2 ? '#b91c1c' : 'inherit',
+                            borderRadius: '4px' 
+                          }}
                         />
                       </td>
                       <td style={{ padding: '4px', textAlign: 'center' }}>

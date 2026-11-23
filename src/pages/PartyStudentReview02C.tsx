@@ -48,7 +48,20 @@ export default function PartyStudentReview02C() {
   }, [formData]);
 
   const handleChange = (field: keyof PartyReview02CStudentData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [field]: value };
+      if (field === 'diemTieuChiChung' || field === 'diemThucHienNhiemVu') {
+        const chung = field === 'diemTieuChiChung' ? Number(value) : (prev.diemTieuChiChung || 0);
+        const nv = field === 'diemThucHienNhiemVu' ? Number(value) : (prev.diemThucHienNhiemVu || 0);
+        const total = (chung || 0) + (nv || 0);
+        // Tự động gợi ý mức xếp loại nếu chưa chọn thủ công
+        if (total >= 90) next.tuXepLoaiDangVien = 'Hoàn thành xuất sắc nhiệm vụ';
+        else if (total >= 70) next.tuXepLoaiDangVien = 'Hoàn thành tốt nhiệm vụ';
+        else if (total >= 50) next.tuXepLoaiDangVien = 'Hoàn thành nhiệm vụ';
+        else if (total > 0) next.tuXepLoaiDangVien = 'Không hoàn thành nhiệm vụ';
+      }
+      return next;
+    });
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2000);
   };
@@ -581,6 +594,15 @@ ${aiPrompt}
                   value={formData.diemThucHienNhiemVu}
                   onChange={e => handleChange('diemThucHienNhiemVu', Number(e.target.value))}
                 />
+              </div>
+
+              <div className="field-group span-2">
+                <div style={{ background: '#f8fafc', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontWeight: 600, color: '#334155' }}>Tổng điểm KPI tự chấm:</span>
+                  <span style={{ fontSize: '1.1rem', fontWeight: 700, color: '#b91c1c' }}>
+                    {(Number(formData.diemTieuChiChung) || 0) + (Number(formData.diemThucHienNhiemVu) || 0)} / 100 điểm
+                  </span>
+                </div>
               </div>
 
               <div className="field-group span-2">
