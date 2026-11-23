@@ -497,7 +497,18 @@ ${aiPrompt}
             {/* II.2 */}
             <div className="card-form-grid" style={{ marginTop: '0.5rem' }}>
               <div className="field-group span-2">
-                <label>2.1. Nguyên nhân khách quan</label>
+                <div className="textarea-label-row">
+                  <label>2.1. Nguyên nhân khách quan</label>
+                  <button
+                    type="button"
+                    className="btn-ai-field-opt"
+                    onClick={() => handleAiRewriteField('nguyenNhanKhachQuan', 'Nguyên nhân khách quan của hạn chế', formData.nguyenNhanKhachQuan)}
+                    disabled={loadingField === 'nguyenNhanKhachQuan'}
+                  >
+                    {loadingField === 'nguyenNhanKhachQuan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                    Viết lại AI
+                  </button>
+                </div>
                 <textarea 
                   rows={2}
                   value={formData.nguyenNhanKhachQuan}
@@ -505,7 +516,18 @@ ${aiPrompt}
                 />
               </div>
               <div className="field-group span-2">
-                <label>2.2. Nguyên nhân chủ quan</label>
+                <div className="textarea-label-row">
+                  <label>2.2. Nguyên nhân chủ quan</label>
+                  <button
+                    type="button"
+                    className="btn-ai-field-opt"
+                    onClick={() => handleAiRewriteField('nguyenNhanChuQuan', 'Nguyên nhân chủ quan của hạn chế', formData.nguyenNhanChuQuan)}
+                    disabled={loadingField === 'nguyenNhanChuQuan'}
+                  >
+                    {loadingField === 'nguyenNhanChuQuan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                    Viết lại AI
+                  </button>
+                </div>
                 <textarea 
                   rows={2}
                   value={formData.nguyenNhanChuQuan}
@@ -539,6 +561,18 @@ ${aiPrompt}
             {/* IV */}
             <div className="sub-section-title" style={{ marginTop: '1.25rem' }}>IV. Giải trình những vấn đề được gợi ý kiểm điểm (nếu có)</div>
             <div className="textarea-group">
+              <div className="textarea-label-row">
+                <label>Giải trình những vấn đề được gợi ý</label>
+                <button
+                  type="button"
+                  className="btn-ai-field-opt"
+                  onClick={() => handleAiRewriteField('giaiTrinhGoiYKiemDiem', 'Giải trình vấn đề được gợi ý kiểm điểm', formData.giaiTrinhGoiYKiemDiem)}
+                  disabled={loadingField === 'giaiTrinhGoiYKiemDiem'}
+                >
+                  {loadingField === 'giaiTrinhGoiYKiemDiem' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  Viết lại AI
+                </button>
+              </div>
               <textarea 
                 rows={2}
                 value={formData.giaiTrinhGoiYKiemDiem}
@@ -550,6 +584,18 @@ ${aiPrompt}
             {/* V */}
             <div className="sub-section-title" style={{ marginTop: '1.25rem' }}>V. Làm rõ trách nhiệm cá nhân đối với hạn chế của tập thể (nếu có)</div>
             <div className="textarea-group">
+              <div className="textarea-label-row">
+                <label>Trách nhiệm cá nhân đối với hạn chế của tập thể</label>
+                <button
+                  type="button"
+                  className="btn-ai-field-opt"
+                  onClick={() => handleAiRewriteField('trachNhiemTapThe', 'Làm rõ trách nhiệm cá nhân đối với hạn chế tập thể', formData.trachNhiemTapThe)}
+                  disabled={loadingField === 'trachNhiemTapThe'}
+                >
+                  {loadingField === 'trachNhiemTapThe' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  Viết lại AI
+                </button>
+              </div>
               <textarea 
                 rows={2}
                 value={formData.trachNhiemTapThe}

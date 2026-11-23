@@ -590,7 +590,18 @@ ${aiPrompt}
             {/* II.2 */}
             <div className="card-form-grid" style={{ marginTop: '0.5rem' }}>
               <div className="field-group span-2">
-                <label>2.1. Nguyên nhân khách quan</label>
+                <div className="textarea-label-row">
+                  <label>2.1. Nguyên nhân khách quan</label>
+                  <button
+                    type="button"
+                    className="btn-ai-field-opt"
+                    onClick={() => handleAiRewriteField('nguyenNhanKhachQuan', 'Nguyên nhân khách quan của hạn chế lãnh đạo', formData.nguyenNhanKhachQuan)}
+                    disabled={loadingField === 'nguyenNhanKhachQuan'}
+                  >
+                    {loadingField === 'nguyenNhanKhachQuan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                    Viết lại AI
+                  </button>
+                </div>
                 <textarea 
                   rows={2}
                   value={formData.nguyenNhanKhachQuan}
@@ -598,7 +609,18 @@ ${aiPrompt}
                 />
               </div>
               <div className="field-group span-2">
-                <label>2.2. Nguyên nhân chủ quan (chủ yếu)</label>
+                <div className="textarea-label-row">
+                  <label>2.2. Nguyên nhân chủ quan (chủ yếu)</label>
+                  <button
+                    type="button"
+                    className="btn-ai-field-opt"
+                    onClick={() => handleAiRewriteField('nguyenNhanChuQuan', 'Nguyên nhân chủ quan của hạn chế lãnh đạo', formData.nguyenNhanChuQuan)}
+                    disabled={loadingField === 'nguyenNhanChuQuan'}
+                  >
+                    {loadingField === 'nguyenNhanChuQuan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                    Viết lại AI
+                  </button>
+                </div>
                 <textarea 
                   rows={2}
                   value={formData.nguyenNhanChuQuan}
@@ -632,6 +654,18 @@ ${aiPrompt}
             {/* IV */}
             <div className="sub-section-title" style={{ marginTop: '1.25rem' }}>IV. Giải trình những vấn đề được gợi ý kiểm điểm nếu có</div>
             <div className="textarea-group">
+              <div className="textarea-label-row">
+                <label>Giải trình những vấn đề được gợi ý</label>
+                <button
+                  type="button"
+                  className="btn-ai-field-opt"
+                  onClick={() => handleAiRewriteField('giaiTrinhGoiYKiemDiem', 'Giải trình vấn đề được gợi ý kiểm điểm', formData.giaiTrinhGoiYKiemDiem)}
+                  disabled={loadingField === 'giaiTrinhGoiYKiemDiem'}
+                >
+                  {loadingField === 'giaiTrinhGoiYKiemDiem' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  Viết lại AI
+                </button>
+              </div>
               <textarea 
                 rows={2}
                 value={formData.giaiTrinhGoiYKiemDiem}
@@ -643,11 +677,23 @@ ${aiPrompt}
             {/* V */}
             <div className="sub-section-title" style={{ marginTop: '1.25rem' }}>V. Trách nhiệm của tập thể, cá nhân</div>
             <div className="textarea-group">
+              <div className="textarea-label-row">
+                <label>Làm rõ trách nhiệm lãnh đạo, chỉ đạo, quản lý điều hành cơ quan/đơn vị</label>
+                <button
+                  type="button"
+                  className="btn-ai-field-opt"
+                  onClick={() => handleAiRewriteField('trachNhiemTapTheCaNhan', 'Trách nhiệm của tập thể, cá nhân', formData.trachNhiemTapTheCaNhan)}
+                  disabled={loadingField === 'trachNhiemTapTheCaNhan'}
+                >
+                  {loadingField === 'trachNhiemTapTheCaNhan' ? <Loader2 size={13} className="spin" /> : <Wand2 size={13} />}
+                  Viết lại AI
+                </button>
+              </div>
               <textarea 
                 rows={3}
                 value={formData.trachNhiemTapTheCaNhan}
                 onChange={e => handleChange('trachNhiemTapTheCaNhan', e.target.value)}
-                placeholder="Làm rõ trách nhiệm lãnh đạo, chỉ đạo, quản lý điều hành cơ quan/đơn vị..."
+                placeholder="Làm rõ trách nhiệm lãnh đạo, chỉ đạo, quản lý điều hành cơ quan/đơn vị (nếu không có thì ghi: Không có)..."
               />
             </div>
 
