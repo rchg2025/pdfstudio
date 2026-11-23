@@ -202,10 +202,17 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
       });
 
       if (!response.ok) {
-        throw new Error('Không thể kết nối đến máy chủ AI');
+        throw new Error('Máy chủ AI hiện đang bận hoặc quá tải, vui lòng thử lại sau giây lát!');
       }
 
-      const resData = await response.json();
+      const resText = await response.text();
+      let resData: any = {};
+      try {
+        resData = JSON.parse(resText);
+      } catch {
+        throw new Error('Máy chủ AI phản hồi định dạng chưa phù hợp, vui lòng thử lại!');
+      }
+
       const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       let cleanText = '';
       try {
@@ -269,8 +276,15 @@ ${aiPrompt}
         })
       });
 
-      if (!response.ok) throw new Error('Không thể tạo phản hồi từ AI');
-      const resData = await response.json();
+      if (!response.ok) throw new Error('Máy chủ AI hiện đang bận, vui lòng thử lại sau giây lát!');
+      const resText = await response.text();
+      let resData: any = {};
+      try {
+        resData = JSON.parse(resText);
+      } catch {
+        throw new Error('Máy chủ phản hồi định dạng chưa phù hợp, vui lòng thử lại!');
+      }
+
       const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
       const match = cleanJson.match(/\{[\s\S]*\}/);
@@ -294,13 +308,16 @@ ${aiPrompt}
     <div className="party-review-page-container">
       {/* HEADER THANH CÔNG CỤ */}
       <div className="party-top-banner">
-        <div className="party-banner-left">
-          <div className="party-badge-tag">MẪU 02A-HD KĐ.ĐG 2026</div>
+        <div className="party-banner-info">
+          <div className="party-badge-tag">
+            <Award size={14} /> Mẫu 02A-HD KĐ.ĐG 2026
+          </div>
           <h1 className="party-page-heading">
-            Bản Kiểm Điểm Tự Đánh Giá, Xếp Loại Cá Nhân (Mẫu 02A)
+            <Building2 size={26} />
+            Bản Kiểm Điểm, Tự Đánh Giá Xếp Loại Cá Nhân Lãnh Đạo (Mẫu 02A)
           </h1>
           <p className="party-page-desc">
-            Áp dụng cho cá nhân giữ chức vụ lãnh đạo, quản lý — Theo Hướng dẫn số 397-HD/ĐU của Đảng ủy Trường Cao đẳng Bách khoa Nam Sài Gòn. Tích hợp bảng KPI các quý, chấm điểm 100đ và xuất file Word chuẩn thể thức.
+            Dành cho Đảng viên giữ chức vụ lãnh đạo, quản lý — Theo Hướng dẫn số 397-HD/ĐU của Đảng ủy Trường CĐ Bách khoa Nam Sài Gòn. Tự động tính điểm KPI 4 quý, tự chấm 100 điểm và xuất văn bản Word chuẩn thể thức.
           </p>
         </div>
 
@@ -315,19 +332,11 @@ ${aiPrompt}
           </button>
           <button 
             type="button" 
-            className="btn-review-act reset" 
-            onClick={handleReset}
-            title="Đặt lại mẫu chuẩn nguyên bản"
+            className="btn-review-act primary" 
+            onClick={handleDownloadDocx}
+            title="Tải về máy file Microsoft Word (.doc) chuẩn thể thức"
           >
-            <RotateCcw size={16} /> Mẫu Chuẩn
-          </button>
-          <button 
-            type="button" 
-            className="btn-review-act save" 
-            onClick={handleManualSave}
-            title="Lưu bản nháp vào trình duyệt"
-          >
-            <Check size={16} /> Lưu Nháp
+            <Download size={16} /> Tải File Word
           </button>
           <button 
             type="button" 
@@ -339,11 +348,19 @@ ${aiPrompt}
           </button>
           <button 
             type="button" 
-            className="btn-review-act primary" 
-            onClick={handleDownloadDocx}
-            title="Tải về máy file Microsoft Word (.doc)"
+            className="btn-review-act save" 
+            onClick={handleManualSave}
+            title="Lưu bản nháp vào trình duyệt"
           >
-            <Download size={16} /> Tải File Word
+            <Check size={16} /> Lưu Nháp
+          </button>
+          <button 
+            type="button" 
+            className="btn-review-act reset" 
+            onClick={handleReset}
+            title="Đặt lại mẫu chuẩn nguyên bản"
+          >
+            <RotateCcw size={16} /> Mẫu Chuẩn
           </button>
         </div>
       </div>

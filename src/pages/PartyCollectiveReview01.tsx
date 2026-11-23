@@ -101,10 +101,17 @@ Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn 
       });
 
       if (!response.ok) {
-        throw new Error('Không thể kết nối đến máy chủ AI');
+        throw new Error('Máy chủ AI hiện đang bận hoặc quá tải, vui lòng thử lại sau giây lát!');
       }
 
-      const resData = await response.json();
+      const resText = await response.text();
+      let resData: any = {};
+      try {
+        resData = JSON.parse(resText);
+      } catch {
+        throw new Error('Máy chủ AI phản hồi định dạng chưa phù hợp, vui lòng thử lại!');
+      }
+
       const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       let cleanText = '';
       try {
@@ -166,8 +173,15 @@ ${aiPrompt}
         })
       });
 
-      if (!response.ok) throw new Error('Không thể tạo phản hồi từ AI');
-      const resData = await response.json();
+      if (!response.ok) throw new Error('Máy chủ AI hiện đang bận, vui lòng thử lại sau giây lát!');
+      const resText = await response.text();
+      let resData: any = {};
+      try {
+        resData = JSON.parse(resText);
+      } catch {
+        throw new Error('Máy chủ phản hồi định dạng chưa phù hợp, vui lòng thử lại!');
+      }
+
       const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
       const match = cleanJson.match(/\{[\s\S]*\}/);
@@ -192,13 +206,15 @@ ${aiPrompt}
       {/* HEADER BANNER */}
       <div className="party-top-banner">
         <div className="party-banner-info">
-          <div className="party-banner-tag">HƯỚNG DẪN ĐÁNH GIÁ ĐẢNG VIÊN 2026</div>
+          <div className="party-badge-tag">
+            <Award size={14} /> Mẫu 01-HD KĐ.ĐG 2026
+          </div>
           <h1 className="party-page-heading">
             <Building2 size={26} />
             Báo Cáo Kiểm Điểm, Tự Đánh Giá Xếp Loại Tập Thể (Mẫu 01)
           </h1>
-          <p className="party-page-subtext">
-            Dành cho Cấp ủy, Chi bộ, Tập thể Lãnh đạo quản lý theo Hướng dẫn số 397-HD/ĐU ngày 20/11/2026 của Đảng ủy Trường CĐ Bách khoa Nam Sài Gòn.
+          <p className="party-page-desc">
+            Dành cho Cấp ủy, Chi bộ, Tập thể Lãnh đạo quản lý — Theo Hướng dẫn số 397-HD/ĐU ngày 20/11/2026 của Đảng ủy Trường CĐ Bách khoa Nam Sài Gòn. Hỗ trợ trợ lý AI hoàn thiện báo cáo và xuất Word chuẩn thể thức.
           </p>
         </div>
         <div className="party-banner-actions">
@@ -206,6 +222,7 @@ ${aiPrompt}
             type="button" 
             className="btn-review-act ai"
             onClick={() => setShowAiModal(true)}
+            title="Sử dụng trí tuệ nhân tạo để soạn thảo nhanh báo cáo kiểm điểm tập thể"
           >
             <Sparkles size={16} /> Soạn Bằng AI
           </button>
@@ -213,15 +230,25 @@ ${aiPrompt}
             type="button" 
             className="btn-review-act primary"
             onClick={handleDownloadDocx}
+            title="Tải về file Microsoft Word (.doc) chuẩn thể thức Đảng"
           >
             <Download size={16} /> Tải File Word
           </button>
           <button 
             type="button" 
-            className="btn-review-act secondary"
+            className="btn-review-act print"
             onClick={handlePrint}
+            title="In trực tiếp báo cáo ra giấy A4"
           >
             <Printer size={16} /> In Báo Cáo
+          </button>
+          <button 
+            type="button" 
+            className="btn-review-act reset"
+            onClick={handleReset}
+            title="Khôi phục lại nội dung mẫu chuẩn"
+          >
+            <RotateCcw size={16} /> Mẫu Chuẩn
           </button>
         </div>
       </div>

@@ -6,56 +6,73 @@
   box-sizing: border-box;
 }
 
-.party-top-banner {
-  background: linear-gradient(135deg, #b91c1c 0%, #881337 100%);
-  color: #fff;
+.party-top-banner,
+.review-top-banner {
+  background: linear-gradient(135deg, #991b1b 0%, #7f1d1d 50%, #450a0a 100%);
+  color: #ffffff;
   border-radius: 16px;
   padding: 1.5rem 2rem;
   margin-bottom: 1.75rem;
-  box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.35);
+  box-shadow: 0 10px 25px -5px rgba(153, 27, 27, 0.4), 0 4px 10px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(254, 240, 138, 0.25);
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: 1.25rem;
+  gap: 1.5rem;
   width: 100%;
   box-sizing: border-box;
 }
 
-.party-badge-tag {
-  display: inline-block;
-  background: rgba(255, 255, 255, 0.2);
+.party-badge-tag,
+.party-banner-tag,
+.review-badge-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(254, 240, 138, 0.18);
   color: #fef08a;
   font-weight: 700;
   font-size: 0.8rem;
-  padding: 3px 10px;
+  padding: 4px 12px;
   border-radius: 20px;
-  margin-bottom: 6px;
-  border: 1px solid rgba(254, 240, 138, 0.4);
+  margin-bottom: 8px;
+  border: 1px solid rgba(254, 240, 138, 0.45);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
-.party-page-heading {
+.party-page-heading,
+.review-page-heading {
   font-size: 1.45rem;
   font-weight: 800;
-  margin: 0 0 0.4rem 0;
+  margin: 0 0 0.5rem 0;
   display: flex;
   align-items: center;
   gap: 0.65rem;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 
-.party-page-desc {
+.party-page-desc,
+.party-page-subtext,
+.review-page-desc {
   margin: 0;
   font-size: 0.92rem;
-  opacity: 0.92;
-  line-height: 1.5;
-  max-width: 900px;
+  color: #fef2f2;
+  opacity: 0.95;
+  line-height: 1.55;
+  max-width: 920px;
 }
 
-.party-banner-actions {
+.party-banner-actions,
+.review-banner-actions {
   display: flex;
   gap: 0.75rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .btn-review-act {
@@ -67,44 +84,68 @@
   font-weight: 600;
   font-size: 0.88rem;
   cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
   white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
 }
 
+.btn-review-act:active {
+  transform: scale(0.98);
+}
+
+/* Nút tải File Word nổi bật */
 .btn-review-act.primary {
   background: #ffffff;
-  color: #b91c1c;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  color: #991b1b;
+  border: 1px solid #ffffff;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
 }
 
 .btn-review-act.primary:hover {
   background: #fef2f2;
+  color: #7f1d1d;
   transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
 }
 
+/* Nút Trợ lý AI vàng kim sang trọng */
 .btn-review-act.ai {
-  background: #fef08a;
-  color: #854d0e;
+  background: linear-gradient(135deg, #fef08a 0%, #fde047 100%);
+  color: #78350f;
   font-weight: 700;
+  border: 1px solid #facc15;
+  box-shadow: 0 4px 12px rgba(250, 204, 21, 0.35);
 }
 
 .btn-review-act.ai:hover {
-  background: #fde047;
+  background: linear-gradient(135deg, #fde047 0%, #eab308 100%);
+  color: #713f12;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(250, 204, 21, 0.45);
 }
 
+/* Các nút chức năng phụ rõ ràng, không bị chìm/mờ */
 .btn-review-act.reset,
 .btn-review-act.save,
-.btn-review-act.print {
-  background: rgba(255, 255, 255, 0.15);
+.btn-review-act.print,
+.btn-review-act.secondary {
+  background: rgba(255, 255, 255, 0.22);
   color: #ffffff;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  backdrop-filter: blur(4px);
+  font-weight: 600;
 }
 
 .btn-review-act.reset:hover,
 .btn-review-act.save:hover,
-.btn-review-act.print:hover {
-  background: rgba(255, 255, 255, 0.25);
+.btn-review-act.print:hover,
+.btn-review-act.secondary:hover {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.7);
+  transform: translateY(-1px);
+  color: #ffffff;
 }
 
 .review-save-toast {
