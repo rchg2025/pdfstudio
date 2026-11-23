@@ -104,22 +104,47 @@ export default function PartyMemberSelfReview02A() {
   ) => {
     setLoadingField(fieldKey);
     try {
-      const systemInstruction = `Bạn là chuyên gia cố vấn công tác Đảng và xây dựng tổ chức Đảng cho Trường Cao đẳng Bách khoa Nam Sài Gòn. Hãy biên soạn hoặc nâng cấp nội dung mục "${fieldTitle}" cho bản kiểm điểm cá nhân giữ chức vụ lãnh đạo, quản lý (Mẫu 02A-HD KĐ.ĐG 2026). Đảm bảo thể thức trang trọng, khách quan, cầu thị, thể hiện rõ vai trò người đứng đầu, đổi mới sáng tạo, dám nghĩ dám làm và tinh thần trách nhiệm. Chỉ trả về nội dung trực tiếp không thêm lời mở đầu hay kết thúc.`;
-      const prompt = `Nâng cấp hoặc trau chuốt nội dung sau cho mục "${fieldTitle}":\n"${currentValue || 'Chưa có nội dung, hãy viết mới mẫu mực cho cán bộ lãnh đạo cấp khoa/phòng trường cao đẳng.'}"`;
+      const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
+      const promptInstruction = `
+Bạn là chuyên gia cố vấn công tác Đảng và xây dựng tổ chức Đảng cho Trường Cao đẳng Bách khoa Nam Sài Gòn.
+Hãy biên soạn hoặc nâng cấp nội dung mục "${fieldTitle}" cho bản kiểm điểm cá nhân giữ chức vụ lãnh đạo, quản lý (Mẫu 02A-HD KĐ.ĐG 2026).
+Đảm bảo thể thức trang trọng, khách quan, cầu thị, thể hiện rõ vai trò người đứng đầu, đổi mới sáng tạo, dám nghĩ dám làm và tinh thần trách nhiệm gắn với tiêu chí năm 2026.
+Phân chia các ý rõ ràng có đánh số (1., 2., 3.), nêu rõ hành động, kết quả và giải pháp cụ thể.
 
-      const res = await fetch('/api/ai/generate', {
+Nội dung hiện tại hoặc ý chính cần viết lại:
+"""
+${currentValue || 'Chưa có nội dung, hãy viết mới mẫu mực cho cán bộ lãnh đạo cấp khoa/phòng trường cao đẳng.'}
+"""
+
+Trả về duy nhất JSON hợp lệ theo định dạng: {"content": "đoạn văn bản hoàn chỉnh, dài dặn, chuẩn xác theo đúng ngôn phong công tác Đảng"}
+      `;
+
+      const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, systemInstruction })
+        body: JSON.stringify({
+          topic: promptInstruction,
+          count: 1,
+          customApiKey: customKey || undefined
+        })
       });
 
-      if (!res.ok) {
+      if (!response.ok) {
         throw new Error('Không thể kết nối đến máy chủ AI');
       }
 
-      const json = await res.json();
-      if (json?.text) {
-        handleChange(fieldKey, json.text.trim());
+      const resData = await response.json();
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
+      let cleanText = '';
+      try {
+        const parsed = JSON.parse(rawText.replace(/```json\s*|```/g, '').trim());
+        cleanText = parsed.content || parsed.text || '';
+      } catch {
+        cleanText = rawText.replace(/```json\s*|```/g, '').trim();
+      }
+
+      if (cleanText) {
+        handleChange(fieldKey, cleanText);
       }
     } catch (err: any) {
       alert(`Lỗi trợ lý AI: ${err.message || 'Vui lòng thử lại sau'}`);
@@ -135,36 +160,50 @@ export default function PartyMemberSelfReview02A() {
     setAiError('');
 
     try {
-      const systemInstruction = `Bạn là chuyên gia công tác tổ chức Đảng ủy Trường Cao đẳng Bách khoa Nam Sài Gòn.
-Dựa trên thông tin đầu vào của cá nhân (cán bộ lãnh đạo, quản lý), hãy soạn thảo bản tự kiểm điểm cuối năm theo Mẫu 02A-HD KĐ.ĐG 2026.
-Bắt buộc trả về đúng định dạng JSON hợp lệ (không kèm Markdown block backticks \`\`\`json) với các trường sau:
+      const customKey = localStorage.getItem('rchg_gemini_api_key') || '';
+      const promptInstruction = `
+Bạn là chuyên gia công tác tổ chức Đảng ủy Trường Cao đẳng Bách khoa Nam Sài Gòn.
+Dựa trên thông tin tóm tắt sau đây của cá nhân (cán bộ lãnh đạo, quản lý), hãy soạn thảo hoàn chỉnh, dài dặn, mẫu mực toàn bộ các mục của Bản kiểm điểm Mẫu 02A-HD KĐ.ĐG 2026.
+Bắt buộc trả về DUY NHẤT một chuỗi JSON hợp lệ không có giải thích thêm:
 {
-  "uuDiemPhamChatChinhTri": "chuỗi",
-  "uuDiemThucHienNhiemVu": "chuỗi",
-  "uuDiemCamKetTuDuong": "chuỗi",
-  "uuDiemCongTacLanhDao": "chuỗi",
-  "uuDiemTrachNhiemDoiMoi": "chuỗi",
-  "uuDiemTrachNhiemNeuGuong": "chuỗi",
-  "hanCheKhuyetDiem": "chuỗi",
-  "nguyenNhanKhachQuan": "chuỗi",
-  "nguyenNhanChuQuan": "chuỗi",
-  "ketQuaKhacPhucNamTruoc": "chuỗi",
-  "giaiTrinhGoiYKiemDiem": "chuỗi",
-  "trachNhiemTapTheCaNhan": "chuỗi",
-  "phuongHuongKhacPhuc": "chuỗi"
-}`;
+  "uuDiemPhamChatChinhTri": "chuỗi dài dặn về phẩm chất chính trị, đạo đức lối sống, đoàn kết nội bộ...",
+  "uuDiemThucHienNhiemVu": "chuỗi dài dặn về kết quả hoàn thành 100% nhiệm vụ chuyên môn được giao năm 2026...",
+  "uuDiemCamKetTuDuong": "chuỗi về thực hiện cam kết tu dưỡng 2026, mối liên hệ nơi cư trú theo Quy định 213-QĐ/TW...",
+  "uuDiemCongTacLanhDao": "chuỗi phân tích kết quả lãnh đạo, chỉ đạo, quản lý đơn vị/chi bộ...",
+  "uuDiemTrachNhiemDoiMoi": "chuỗi thể hiện tinh thần năng động, dám nghĩ dám làm, đổi mới sáng tạo, chuyển đổi số...",
+  "uuDiemTrachNhiemNeuGuong": "chuỗi về trách nhiệm nêu gương của người đứng đầu, phòng chống tham nhũng, lãng phí, tiêu cực...",
+  "hanCheKhuyetDiem": "chuỗi nêu rõ các hạn chế khuyết điểm của bản thân trong lãnh đạo, chỉ đạo...",
+  "nguyenNhanKhachQuan": "chuỗi nguyên nhân khách quan...",
+  "nguyenNhanChuQuan": "chuỗi nguyên nhân chủ quan...",
+  "ketQuaKhacPhucNamTruoc": "chuỗi kết quả khắc phục hạn chế kỳ trước...",
+  "giaiTrinhGoiYKiemDiem": "Không có.",
+  "trachNhiemTapTheCaNhan": "Không có.",
+  "phuongHuongKhacPhuc": "chuỗi phương hướng, biện pháp, sản phẩm kết quả cần đạt và thời hạn hoàn thành cụ thể..."
+}
 
-      const res = await fetch('/api/ai/generate', {
+THÔNG TIN ĐẢNG VIÊN CUNG CẤP:
+"""
+${aiPrompt}
+"""
+      `;
+
+      const response = await fetch('/api/qa-wall?action=generate-ai-quiz', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: aiPrompt, systemInstruction })
+        body: JSON.stringify({
+          topic: promptInstruction,
+          count: 1,
+          customApiKey: customKey || undefined
+        })
       });
 
-      if (!res.ok) throw new Error('Không thể tạo phản hồi từ AI');
-      const data = await res.json();
-      const rawText = data?.text || '';
+      if (!response.ok) throw new Error('Không thể tạo phản hồi từ AI');
+      const resData = await response.json();
+      const rawText = resData?.questions?.[0]?.question || resData?.text || resData?.data || '';
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleanJson);
+      const match = cleanJson.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('Phản hồi từ AI không đúng cấu trúc JSON');
+      const parsed = JSON.parse(match[0]);
 
       setFormData(prev => ({
         ...prev,
