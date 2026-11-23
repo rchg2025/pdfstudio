@@ -51,6 +51,36 @@ export const ALL_TOOLS: ToolItem[] = [
     priority: 0.95,
     changefreq: 'weekly'
   },
+  {
+    path: '/cham-diem-dang-vien',
+    title: '📊 Khung Tiêu Chí & Biểu Điểm Đánh Giá Xếp Loại Đảng Viên 2026',
+    desc: 'Hệ thống tính điểm tự động theo Phụ lục 2 (Tập thể), Phụ lục 3 (Lãnh đạo), Phụ lục 4 (Không giữ chức vụ), Phụ lục 5 (Học sinh sinh viên) theo Hướng dẫn 397-HD/ĐU.',
+    category: 'party',
+    isHot: true,
+    keywords: ['biểu điểm đánh giá đảng viên', 'phụ lục 2', 'phụ lục 3', 'phụ lục 4', 'phụ lục 5', 'hướng dẫn 397-hd/đu', 'chấm điểm kpi đảng viên', 'đánh giá xếp loại đảng viên 2026'],
+    priority: 1.0,
+    changefreq: 'weekly'
+  },
+  {
+    path: '/kiem-diem-tap-the-mau-01',
+    title: '🏛️ Báo Cáo Kiểm Điểm Tự Đánh Giá Xếp Loại Tập Thể (Mẫu 01)',
+    desc: 'Bản kiểm điểm, tự đánh giá xếp loại chất lượng của tập thể Chi ủy, Chi bộ năm 2026 theo Hướng dẫn số 397-HD/ĐU ngày 20/11/2026.',
+    category: 'party',
+    isHot: true,
+    keywords: ['báo cáo kiểm điểm tập thể mẫu 01', 'mẫu 01-hd kd.dg 2026', 'kiểm điểm chi bộ', 'hướng dẫn 397-hd/đu'],
+    priority: 0.95,
+    changefreq: 'weekly'
+  },
+  {
+    path: '/ban-kiem-diem-dang-vien-mau-02c',
+    title: '🎓 Bản Kiểm Điểm Đảng Viên Học Sinh, Sinh Viên (Mẫu 02C)',
+    desc: 'Dành cho Đảng viên là học sinh, sinh viên không làm việc trong hệ thống chính trị theo Hướng dẫn 397-HD/ĐU ngày 20/11/2026, xuất file Word (.doc).',
+    category: 'party',
+    isHot: true,
+    keywords: ['bản kiểm điểm đảng viên sinh viên', 'mẫu 02c-hd kd.dg 2026', 'kiểm điểm đảng viên hssv', 'hướng dẫn 397-hd/đu'],
+    priority: 0.95,
+    changefreq: 'weekly'
+  },
 
   // ================= CÔNG CỤ GIẢNG DẠY & LMS (EDTECH) =================
   {

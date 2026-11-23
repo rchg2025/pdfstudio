@@ -87,6 +87,9 @@ const PartyMemberSelfReview02B = React.lazy(() => import('./pages/PartyMemberSel
 const PartyMemberCommitment = React.lazy(() => import('./pages/PartyMemberCommitment'));
 const PartyDocumentEditor = React.lazy(() => import('./pages/PartyDocumentEditor'));
 const PartyWorkHub = React.lazy(() => import('./pages/PartyWorkHub'));
+const PartyScoreEvaluator = React.lazy(() => import('./pages/PartyScoreEvaluator'));
+const PartyCollectiveReview01 = React.lazy(() => import('./pages/PartyCollectiveReview01'));
+const PartyStudentReview02C = React.lazy(() => import('./pages/PartyStudentReview02C'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const FallbackLoader = () => (
@@ -457,6 +460,28 @@ function App() {
             } />
             <Route path="soan-thao-bieu-mau-dang" element={
               <Suspense fallback={<FallbackLoader />}><PartyDocumentEditor /></Suspense>
+            } />
+            {/* Bộ công cụ mới theo Hướng dẫn số 397-HD/ĐU ngày 20/11/2026 */}
+            <Route path="cham-diem-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyScoreEvaluator /></Suspense>
+            } />
+            <Route path="bieu-diem-danh-gia-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyScoreEvaluator /></Suspense>
+            } />
+            <Route path="phu-luc-danh-gia-dang-vien" element={
+              <Suspense fallback={<FallbackLoader />}><PartyScoreEvaluator /></Suspense>
+            } />
+            <Route path="kiem-diem-tap-the-mau-01" element={
+              <Suspense fallback={<FallbackLoader />}><PartyCollectiveReview01 /></Suspense>
+            } />
+            <Route path="ban-kiem-diem-tap-the-mau-01" element={
+              <Suspense fallback={<FallbackLoader />}><PartyCollectiveReview01 /></Suspense>
+            } />
+            <Route path="ban-kiem-diem-dang-vien-mau-02c" element={
+              <Suspense fallback={<FallbackLoader />}><PartyStudentReview02C /></Suspense>
+            } />
+            <Route path="kiem-diem-dang-vien-hssv-mau-02c" element={
+              <Suspense fallback={<FallbackLoader />}><PartyStudentReview02C /></Suspense>
             } />
             {/* 404 Catch-All Route: Bắt mọi route không tồn tại thay vì để màn hình trắng */}
             <Route path="*" element={

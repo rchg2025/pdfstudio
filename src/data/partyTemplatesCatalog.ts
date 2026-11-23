@@ -83,14 +83,39 @@ export const ALL_PARTY_TEMPLATES: PartyDocumentTemplate[] = [
   },
   {
     id: 'bao-cao-kiem-diem-tap-the-chi-bo',
-    title: 'Báo cáo kiểm điểm tự phê bình và phê bình của tập thể Chi bộ',
-    code: 'Mẫu 01-HD KĐ.ĐG',
+    title: 'Báo cáo kiểm điểm tự phê bình và phê bình của tập thể Chi bộ (Mẫu 01)',
+    code: 'Mẫu 01-HD KĐ.ĐG 2026',
     category: 'kiem-diem',
     categoryLabel: 'Bản Kiểm Điểm & Đánh Giá',
-    desc: 'Bản kiểm điểm công tác lãnh đạo, chỉ đạo của Chi ủy, Chi bộ trong năm đánh giá kết quả thực hiện nhiệm vụ chính trị.',
-    guidance: 'Hướng dẫn số 25-HD/BTCTW',
+    desc: 'Bản kiểm điểm công tác lãnh đạo, chỉ đạo của Chi ủy, Chi bộ trong năm đánh giá kết quả thực hiện nhiệm vụ chính trị theo Hướng dẫn 397-HD/ĐU.',
+    guidance: 'Hướng dẫn số 397-HD/ĐU & HD 25-HD/BTCTW',
     isPopular: true,
-    status: 'generator'
+    status: 'ready',
+    targetPath: '/kiem-diem-tap-the-mau-01'
+  },
+  {
+    id: 'mau-02c-sinh-vien',
+    title: 'Bản kiểm điểm cá nhân cuối năm (Mẫu 02C - Đảng viên là học sinh, sinh viên)',
+    code: 'Mẫu 02C-HD KĐ.ĐG 2026',
+    category: 'kiem-diem',
+    categoryLabel: 'Bản Kiểm Điểm & Đánh Giá',
+    desc: 'Bản tự đánh giá, xếp loại chất lượng năm 2026 dành riêng cho Đảng viên là học sinh, sinh viên theo Hướng dẫn 397-HD/ĐU.',
+    guidance: 'Hướng dẫn số 397-HD/ĐU ngày 20/11/2026',
+    isPopular: true,
+    status: 'ready',
+    targetPath: '/ban-kiem-diem-dang-vien-mau-02c'
+  },
+  {
+    id: 'khung-tieu-chi-bieu-diem-397',
+    title: 'Khung tiêu chí & Biểu điểm đánh giá chất lượng (Phụ lục 2, 3, 4, 5)',
+    code: 'Biểu điểm 397-HD/ĐU',
+    category: 'kiem-diem',
+    categoryLabel: 'Bản Kiểm Điểm & Đánh Giá',
+    desc: 'Tự động tính điểm 100 điểm, đánh giá mức độ hoàn thành nhiệm vụ theo quy định chuẩn của Đảng ủy Nhà trường.',
+    guidance: 'Hướng dẫn số 397-HD/ĐU ngày 20/11/2026',
+    isPopular: true,
+    status: 'ready',
+    targetPath: '/cham-diem-dang-vien'
   },
 
   // 2. QUẢN LÝ HỒ SƠ & THẺ ĐẢNG
