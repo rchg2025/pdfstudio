@@ -1,0 +1,590 @@
+/* STYLES DÙNG CHUNG CHO CẢ MẪU 02A VÀ 02B */
+.party-review-page-container {
+  padding: 1.25rem 1.5rem 4rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.party-top-banner {
+  background: linear-gradient(135deg, #b91c1c 0%, #881337 100%);
+  color: #fff;
+  border-radius: 16px;
+  padding: 1.5rem 2rem;
+  margin-bottom: 1.75rem;
+  box-shadow: 0 10px 25px -5px rgba(185, 28, 28, 0.35);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.party-badge-tag {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.2);
+  color: #fef08a;
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+  border: 1px solid rgba(254, 240, 138, 0.4);
+}
+
+.party-page-heading {
+  font-size: 1.45rem;
+  font-weight: 800;
+  margin: 0 0 0.4rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  letter-spacing: -0.02em;
+}
+
+.party-page-desc {
+  margin: 0;
+  font-size: 0.92rem;
+  opacity: 0.92;
+  line-height: 1.5;
+  max-width: 900px;
+}
+
+.party-banner-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-review-act {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  white-space: nowrap;
+}
+
+.btn-review-act.primary {
+  background: #ffffff;
+  color: #b91c1c;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-review-act.primary:hover {
+  background: #fef2f2;
+  transform: translateY(-1px);
+}
+
+.btn-review-act.ai {
+  background: #fef08a;
+  color: #854d0e;
+  font-weight: 700;
+}
+
+.btn-review-act.ai:hover {
+  background: #fde047;
+}
+
+.btn-review-act.reset,
+.btn-review-act.save,
+.btn-review-act.print {
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.btn-review-act.reset:hover,
+.btn-review-act.save:hover,
+.btn-review-act.print:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.review-save-toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: #15803d;
+  color: #ffffff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  z-index: 999;
+}
+
+.btn-quick-k {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.btn-quick-k:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+}
+
+.btn-ai-field-opt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: #fdf2f8;
+  color: #be185d;
+  border: 1px solid #fbcfe8;
+  padding: 0.28rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.76rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn-ai-field-opt:hover {
+  background: #fce7f3;
+  color: #9d174d;
+  border-color: #f472b6;
+  transform: translateY(-1px);
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* 2-Column Split Workspace Grid */
+.party-workspace-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 1.75rem;
+  align-items: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Cột Trái Form Card */
+.party-form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.form-card-section {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1.35rem;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+  box-sizing: border-box;
+}
+
+.card-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid #fee2e2;
+  margin-bottom: 1rem;
+}
+
+.card-section-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #991b1b;
+}
+
+.card-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-group.span-2 {
+  grid-column: span 2;
+}
+
+.field-group label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+}
+
+.field-group input,
+.field-group select,
+.field-group textarea {
+  width: 100%;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #0f172a;
+  background: #ffffff;
+  box-sizing: border-box;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.field-group input:focus,
+.field-group select:focus,
+.field-group textarea:focus {
+  outline: none;
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12);
+}
+
+.sub-section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 1rem 0 0.5rem 0;
+  padding-left: 0.5rem;
+  border-left: 3px solid #b91c1c;
+}
+
+.textarea-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.textarea-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.textarea-label-row label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #334155;
+  flex: 1;
+  min-width: 220px;
+}
+
+.textarea-group textarea {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.textarea-group textarea:focus {
+  outline: none;
+  border-color: #b91c1c;
+  box-shadow: 0 0 0 3px rgba(185, 28, 28, 0.12);
+}
+
+/* Cột Phải Paper View A4 */
+.party-preview-column {
+  position: sticky;
+  top: 1rem;
+  width: 100%;
+}
+
+.review-preview-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px 12px 0 0;
+  padding: 0.75rem 1.25rem;
+  border-bottom: none;
+}
+
+.review-preview-title {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review-paper-viewport {
+  background: #525659;
+  padding: 1.5rem 1rem;
+  border-radius: 0 0 12px 12px;
+  border: 1px solid #e2e8f0;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.2);
+  display: flex;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.review-paper-sheet {
+  background: #ffffff;
+  width: 100%;
+  max-width: 210mm;
+  min-height: 297mm;
+  padding: 20mm 15mm;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  font-family: 'Times New Roman', Times, serif;
+  font-size: 13pt;
+  line-height: 1.4;
+  color: #000000;
+  box-sizing: border-box;
+  margin: 0 auto;
+}
+
+.paper-header-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: 20px;
+  font-size: 11pt;
+}
+
+.paper-org-left {
+  text-align: center;
+}
+
+.org-upper {
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+.paper-motto-right {
+  text-align: center;
+}
+
+.motto-main {
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 12.5pt;
+}
+
+.motto-stars {
+  font-size: 10pt;
+  letter-spacing: 2px;
+}
+
+.motto-date {
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.paper-title-block {
+  text-align: center;
+  margin: 16px 0 16px 0;
+}
+
+.paper-title-main {
+  font-size: 14pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 4px 0;
+}
+
+.paper-title-sub {
+  font-size: 13pt;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+
+.paper-note {
+  font-size: 11pt;
+  font-style: italic;
+  max-width: 90%;
+  margin: 0 auto;
+  line-height: 1.35;
+}
+
+.paper-p {
+  margin: 5px 0;
+  text-align: justify;
+}
+
+.paper-heading-1 {
+  font-size: 13.5pt;
+  font-weight: bold;
+  text-transform: uppercase;
+  margin: 16px 0 6px 0;
+}
+
+.paper-heading-2 {
+  font-size: 13pt;
+  font-weight: bold;
+  margin: 10px 0 4px 0;
+}
+
+.paper-heading-3 {
+  font-size: 13pt;
+  font-weight: bold;
+  margin: 6px 0 3px 0;
+}
+
+.paper-text-block {
+  text-align: justify;
+  text-indent: 10mm;
+  white-space: pre-line;
+  margin-bottom: 6px;
+}
+
+.paper-signature-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 25px;
+  text-align: center;
+}
+
+.sig-col-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Modal AI Helper */
+.review-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.review-ai-modal {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 620px;
+  width: 100%;
+  padding: 1.75rem;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1100px) {
+  .party-workspace-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  .party-preview-column {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .party-review-page-container {
+    padding: 0.75rem 0.5rem 3rem;
+  }
+
+  .party-top-banner {
+    padding: 1.25rem 1rem;
+    border-radius: 12px;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .party-page-heading {
+    font-size: 1.25rem;
+  }
+
+  .party-banner-actions {
+    width: 100%;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .btn-review-act {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .form-card-section {
+    padding: 1rem 0.75rem;
+    border-radius: 12px;
+  }
+
+  .card-form-grid {
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+
+  .field-group.span-2 {
+    grid-column: span 1;
+  }
+
+  .review-paper-viewport {
+    padding: 0.75rem 0.25rem;
+    max-height: 500px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .review-paper-sheet {
+    padding: 10mm 6mm;
+    font-size: 10pt;
+    line-height: 1.35;
+    min-width: unset;
+    width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
+  }
+
+  .paper-header-grid {
+    font-size: 10.5pt;
+  }
+
+  .paper-title-main {
+    font-size: 12pt;
+  }
+
+  .paper-signature-grid {
+    margin-top: 20px;
+    gap: 0.5rem;
+  }
+
+  .sig-col-center {
+    font-size: 10pt;
+  }
+}
