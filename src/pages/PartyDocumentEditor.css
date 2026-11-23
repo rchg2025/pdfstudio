@@ -336,7 +336,7 @@
 }
 
 .editor-paper-viewport {
-  background: #525659;
+  background: #f8fafc;
   padding: 1.5rem 1rem;
   border-radius: 0 0 12px 12px;
   border: 1px solid #e2e8f0;
@@ -354,7 +354,7 @@
   max-width: 210mm;
   min-height: 297mm;
   padding: 20mm 15mm;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); border: 1px solid #e2e8f0;
   font-family: 'Times New Roman', Times, serif;
   font-size: 13pt;
   line-height: 1.4;
@@ -481,7 +481,7 @@
 
   .editor-paper-viewport {
     padding: 0.75rem 0.25rem;
-    max-height: 500px;
+    
     width: 100%;
     box-sizing: border-box;
   }
