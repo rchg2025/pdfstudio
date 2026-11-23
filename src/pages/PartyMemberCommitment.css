@@ -481,12 +481,17 @@
     max-height: 480px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .review-paper-sheet {
-    padding: 20px 14px;
-    font-size: 10.5pt;
-    min-width: 310px;
+    padding: 16px 10px;
+    font-size: 10pt;
+    min-width: unset;
+    width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
   }
 
   .paper-header-grid {

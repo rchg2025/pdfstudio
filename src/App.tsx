@@ -87,6 +87,7 @@ const PartyMemberSelfReview02B = React.lazy(() => import('./pages/PartyMemberSel
 const PartyMemberCommitment = React.lazy(() => import('./pages/PartyMemberCommitment'));
 const PartyDocumentEditor = React.lazy(() => import('./pages/PartyDocumentEditor'));
 const PartyWorkHub = React.lazy(() => import('./pages/PartyWorkHub'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const FallbackLoader = () => (
   <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
@@ -456,6 +457,10 @@ function App() {
             } />
             <Route path="soan-thao-bieu-mau-dang" element={
               <Suspense fallback={<FallbackLoader />}><PartyDocumentEditor /></Suspense>
+            } />
+            {/* 404 Catch-All Route: Bắt mọi route không tồn tại thay vì để màn hình trắng */}
+            <Route path="*" element={
+              <Suspense fallback={<FallbackLoader />}><NotFound /></Suspense>
             } />
           </Route>
           {/* Dedicated Embed Player (No Navbar, No Footer for LMS/Iframe) */}

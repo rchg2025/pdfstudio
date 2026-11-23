@@ -482,11 +482,16 @@
   .editor-paper-viewport {
     padding: 0.75rem 0.25rem;
     max-height: 500px;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .editor-paper-sheet {
-    padding: 12mm 8mm;
-    font-size: 11pt;
-    min-width: 320px;
+    padding: 10mm 6mm;
+    font-size: 10pt;
+    min-width: unset;
+    width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
   }
 }

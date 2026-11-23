@@ -511,13 +511,18 @@
     padding: 0.75rem 0.25rem;
     max-height: 500px;
     overflow-x: auto;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .paper-sheet {
-    padding: 12mm 8mm;
-    font-size: 11pt;
+    padding: 10mm 6mm;
+    font-size: 10pt;
     line-height: 1.35;
-    min-width: 320px;
+    min-width: unset;
+    width: 100%;
+    box-sizing: border-box;
+    word-break: break-word;
   }
 
   .paper-header-grid {
