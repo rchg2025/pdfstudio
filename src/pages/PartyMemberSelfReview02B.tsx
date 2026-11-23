@@ -280,9 +280,9 @@ ${aiPrompt}
       )}
 
       {/* 2-COLUMN SPLIT: FORM TRÁI - PREVIEW PHẢI */}
-      <div className="review-workspace-grid">
+      <div className="party-workspace-grid">
         {/* CỘT TRÁI: FORM NHẬP LIỆU */}
-        <div className="review-form-column">
+        <div className="party-form-column">
           {/* KHỐI 1: TỔ CHỨC & ĐỊA DANH */}
           <div className="form-card-section">
             <div className="card-section-header">
@@ -768,7 +768,7 @@ ${aiPrompt}
         </div>
 
         {/* CỘT PHẢI: XEM TRƯỚC PAPER VIEW A4 */}
-        <div className="review-preview-column">
+        <div className="party-preview-column">
           <div className="review-preview-toolbar">
             <div className="review-preview-title">
               <FileText size={18} color="#b91c1c" />

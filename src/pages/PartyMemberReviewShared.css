@@ -183,9 +183,11 @@
 }
 
 /* 2-Column Split Workspace Grid */
-.party-workspace-grid {
+.party-workspace-grid,
+.review-workspace-grid,
+.party-review-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: 1.1fr 0.9fr;
   gap: 1.75rem;
   align-items: start;
   width: 100%;
@@ -193,11 +195,24 @@
 }
 
 /* Cột Trái Form Card */
-.party-form-column {
+.party-form-column,
+.review-form-column,
+.party-review-form {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
   width: 100%;
+  min-width: 0;
+}
+
+/* Cột Phải Paper View A4 */
+.party-preview-column,
+.review-preview-column,
+.party-review-sticky {
+  position: sticky;
+  top: 1rem;
+  width: 100%;
+  min-width: 0;
 }
 
 .form-card-section {
@@ -321,10 +336,15 @@
 }
 
 /* Cột Phải Paper View A4 */
-.party-preview-column {
+.party-preview-column,
+.review-preview-column,
+.party-review-sticky {
   position: sticky;
   top: 1rem;
   width: 100%;
+  min-width: 0;
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
 }
 
 .review-preview-toolbar {
@@ -508,12 +528,18 @@
 }
 
 @media (max-width: 1100px) {
-  .party-workspace-grid {
+  .party-workspace-grid,
+  .review-workspace-grid,
+  .party-review-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  .party-preview-column {
+  .party-preview-column,
+  .review-preview-column,
+  .party-review-sticky {
     position: static;
+    max-height: none;
+    overflow-y: visible;
   }
 }
 
