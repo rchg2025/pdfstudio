@@ -113,11 +113,20 @@ const Navbar = () => {
               <span className="nav-badge-new" style={{ background: '#b91c1c' }}>MỚI</span>
               ⭐ Công Tác Đảng
             </NavLink>
+            <NavLink to="/cham-diem-dang-vien" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
+              📊 Biểu Điểm Đánh Giá
+            </NavLink>
+            <NavLink to="/kiem-diem-tap-the-mau-01" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
+              🏛️ Kiểm Điểm Tập Thể
+            </NavLink>
             <NavLink to="/ban-kiem-diem-dang-vien-mau-02a" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
               🎖️ Mẫu 02A (Lãnh Đạo)
             </NavLink>
             <NavLink to="/ban-kiem-diem-dang-vien-mau-02b" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
               🎖️ Mẫu 02B (Cá Nhân)
+            </NavLink>
+            <NavLink to="/ban-kiem-diem-dang-vien-mau-02c" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
+              🎓 Mẫu 02C (HSSV)
             </NavLink>
             <NavLink to="/ban-cam-ket-tu-duong-ren-luyen-dang-vien" className={({isActive}) => isActive ? "nav-link active font-medium text-rose-700" : "nav-link font-medium text-rose-700"}>
               ✍️ Cam Kết Tu Dưỡng
@@ -287,6 +296,22 @@ const Navbar = () => {
               </div>
             </NavLink>
 
+            <NavLink to="/cham-diem-dang-vien" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>📊</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Biểu Điểm Đánh Giá 397-HD/ĐU</div>
+                <div className="mfc-desc">Chấm điểm Phụ lục 2, 3, 4, 5 tự động</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/kiem-diem-tap-the-mau-01" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>🏛️</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Kiểm Điểm Tập Thể (Mẫu 01)</div>
+                <div className="mfc-desc">Dành cho Chi bộ, Cấp ủy, Ban Giám hiệu</div>
+              </div>
+            </NavLink>
+
             <NavLink to="/ban-kiem-diem-dang-vien-mau-02a" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
               <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>🎖️</div>
               <div className="mfc-info">
@@ -300,6 +325,14 @@ const Navbar = () => {
               <div className="mfc-info">
                 <div className="mfc-title">Kiểm Điểm Mẫu 02B (Cá Nhân)</div>
                 <div className="mfc-desc">Dành cho viên chức, giảng viên, AI hỗ trợ</div>
+              </div>
+            </NavLink>
+
+            <NavLink to="/ban-kiem-diem-dang-vien-mau-02c" className={({isActive}) => isActive ? "mobile-featured-card active" : "mobile-featured-card"}>
+              <div className="mfc-icon" style={{ background: 'rgba(185, 28, 28, 0.15)', color: '#b91c1c' }}>🎓</div>
+              <div className="mfc-info">
+                <div className="mfc-title">Kiểm Điểm Mẫu 02C (HSSV)</div>
+                <div className="mfc-desc">Dành cho Đảng viên là học sinh sinh viên</div>
               </div>
             </NavLink>
 
