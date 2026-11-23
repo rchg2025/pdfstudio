@@ -289,11 +289,30 @@ ${aiPrompt}
       const cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
       const match = cleanJson.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('Phản hồi từ AI không đúng cấu trúc JSON');
-      const parsed = JSON.parse(match[0]);
+      const rawParsed = JSON.parse(match[0]);
+
+      // Chuẩn hóa tên khóa để đảm bảo không bị mất nội dung nếu AI trả về key có dấu cách hoặc sai chính tả nhẹ
+      const normalizedParsed: Record<string, any> = {};
+      for (const [k, v] of Object.entries(rawParsed)) {
+        const cleanKey = k.replace(/[\s\-_]/g, '');
+        normalizedParsed[cleanKey] = v;
+      }
 
       setFormData(prev => ({
         ...prev,
-        ...parsed
+        uuDiemPhamChatChinhTri: normalizedParsed['uuDiemPhamChatChinhTri'] || rawParsed['uuDiemPhamChatChinhTri'] || prev.uuDiemPhamChatChinhTri,
+        uuDiemThucHienNhiemVu: normalizedParsed['uuDiemThucHienNhiemVu'] || rawParsed['uuDiemThucHienNhiemVu'] || prev.uuDiemThucHienNhiemVu,
+        uuDiemCamKetTuDuong: normalizedParsed['uuDiemCamKetTuDuong'] || rawParsed['uuDiemCamKetTuDuong'] || prev.uuDiemCamKetTuDuong,
+        uuDiemCongTacLanhDao: normalizedParsed['uuDiemCongTacLanhDao'] || rawParsed['uuDiemCongTacLanhDao'] || normalizedParsed['uuDiemCongTacLanh Dao'] || prev.uuDiemCongTacLanhDao,
+        uuDiemTrachNhiemDoiMoi: normalizedParsed['uuDiemTrachNhiemDoiMoi'] || rawParsed['uuDiemTrachNhiemDoiMoi'] || prev.uuDiemTrachNhiemDoiMoi,
+        uuDiemTrachNhiemNeuGuong: normalizedParsed['uuDiemTrachNhiemNeuGuong'] || rawParsed['uuDiemTrachNhiemNeuGuong'] || prev.uuDiemTrachNhiemNeuGuong,
+        hanCheKhuyetDiem: normalizedParsed['hanCheKhuyetDiem'] || rawParsed['hanCheKhuyetDiem'] || prev.hanCheKhuyetDiem,
+        nguyenNhanKhachQuan: normalizedParsed['nguyenNhanKhachQuan'] || rawParsed['nguyenNhanKhachQuan'] || prev.nguyenNhanKhachQuan,
+        nguyenNhanChuQuan: normalizedParsed['nguyenNhanChuQuan'] || rawParsed['nguyenNhanChuQuan'] || prev.nguyenNhanChuQuan,
+        ketQuaKhacPhucNamTruoc: normalizedParsed['ketQuaKhacPhucNamTruoc'] || rawParsed['ketQuaKhacPhucNamTruoc'] || prev.ketQuaKhacPhucNamTruoc,
+        giaiTrinhGoiYKiemDiem: normalizedParsed['giaiTrinhGoiYKiemDiem'] || rawParsed['giaiTrinhGoiYKiemDiem'] || prev.giaiTrinhGoiYKiemDiem,
+        trachNhiemTapTheCaNhan: normalizedParsed['trachNhiemTapTheCaNhan'] || rawParsed['trachNhiemTapTheCaNhan'] || prev.trachNhiemTapTheCaNhan,
+        phuongHuongKhacPhuc: normalizedParsed['phuongHuongKhacPhuc'] || rawParsed['phuongHuongKhacPhuc'] || prev.phuongHuongKhacPhuc
       }));
       setShowAiModal(false);
       setAiPrompt('');

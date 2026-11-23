@@ -32,8 +32,9 @@ function generateCuidLike() {
 
 // Danh sách các model fallback theo thứ tự ưu tiên: Ưu tiên các model hoạt động ổn định nhất, không bị lỗi 429 quota hay 503 spike
 const DEFAULT_GEMINI_FALLBACKS = [
-  'gemini-3-flash-preview',
   'gemini-3.5-flash-lite',
+  'gemini-3-flash-preview',
+  'gemini-robotics-er-2-preview',
   'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
   'gemini-flash-lite-latest',
@@ -72,21 +73,18 @@ async function resolveGeminiModels(apiKey: string, preferredModel?: string): Pro
           !m.includes('banana') &&
           !m.includes('lyria') &&
           !m.includes('computer-use') &&
-          !m.includes('robotics') &&
           !m.includes('aqa')
         );
 
         // Phân loại và sắp xếp thứ tự ưu tiên:
-        // Model gemini-3-flash-preview có hạn mức lớn, phản hồi đầy đủ và chuẩn xác nhất
-        const premierFlash = textModels.filter((m: string) => m === 'gemini-3-flash-preview');
-        // flash-lite
-        const flashLite = textModels.filter((m: string) => (m.includes('flash-lite') || m.includes('lite')) && m !== 'gemini-3-flash-preview').reverse();
-        // flash tiêu chuẩn
-        const flashStandard = textModels.filter((m: string) => m.includes('flash') && !m.includes('flash-lite') && !m.includes('lite') && m !== 'gemini-3-flash-preview').reverse();
-        // Các model còn lại (Gemma, Pro...)
-        const otherModels = textModels.filter((m: string) => !m.includes('flash')).reverse();
+        // 1. flash-lite và robotics-er-2: phản hồi nhanh, quota cao
+        const flashLite = textModels.filter((m: string) => m.includes('flash-lite') || m.includes('lite') || m.includes('robotics')).reverse();
+        // 2. flash tiêu chuẩn
+        const flashStandard = textModels.filter((m: string) => m.includes('flash') && !m.includes('flash-lite') && !m.includes('lite') && !m.includes('robotics')).reverse();
+        // 3. Các model còn lại (Gemma, Pro...)
+        const otherModels = textModels.filter((m: string) => !m.includes('flash') && !m.includes('robotics')).reverse();
 
-        for (const m of [...premierFlash, ...flashLite, ...flashStandard, ...otherModels]) {
+        for (const m of [...flashLite, ...flashStandard, ...otherModels]) {
           modelsSet.add(m);
         }
       }
@@ -941,7 +939,7 @@ ${customPrompt ? '5. EXTRA INSTRUCTIONS: ' + customPrompt : ''}`;
                   responseMimeType: 'application/json'
                 }
               }),
-              signal: AbortSignal.timeout(35000)
+              signal: AbortSignal.timeout(18000)
             });
 
             if (!gRes.ok) {
