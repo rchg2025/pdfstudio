@@ -351,9 +351,9 @@ export default function PartyStudentReview02C() {
               {/* Header 2 cột */}
               <div className="paper-header-grid">
                 <div className="paper-org-left">
-                  <div className="org-upper">{formData.tinhUy}</div>
-                  <div className="org-upper">{formData.huyenUy}</div>
-                  <div>Chi bộ: {formData.chiBo.toUpperCase()}</div>
+                  <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{formData.huyenUy}</div>
+                  <div style={{ fontWeight: 'bold' }}>CHI BỘ: {formData.chiBo.toUpperCase()}</div>
+                  <div style={{ width: '80px', height: '1px', background: '#000', margin: '3px auto 0 auto' }}></div>
                 </div>
                 <div className="paper-motto-right">
                   <div className="motto-main">ĐẢNG CỘNG SẢN VIỆT NAM</div>

@@ -239,11 +239,10 @@ export function exportPartyMemberProfileDocx(data: PartyMemberProfileData) {
     <!-- HEADER 2 CỘT -->
     <table class="table-header">
       <tr>
-        <td style="width: 50%; text-align: left;">
-          <div style="font-weight: bold; text-transform: uppercase; font-size: 12pt;">${data.tinhUy || 'ĐẢNG BỘ ...................................'}</div>
-          <div style="font-weight: bold; text-transform: uppercase; font-size: 12pt;">${data.huyenUy || '.......................................................'}</div>
-          <div style="font-weight: bold; font-size: 12pt;">${data.dangBoCoSo || 'Đảng bộ cơ sở .................................'}</div>
-          <div style="font-size: 12pt;">Chi bộ: ${data.chiBo || '............................................'}</div>
+        <td style="width: 50%; text-align: center;">
+          <div style="font-weight: bold; text-transform: uppercase; font-size: 12pt;">${data.dangBoCoSo || 'ĐẢNG BỘ TRƯỜNG CAO ĐẲNG<br>BÁCH KHOA NAM SÀI GÒN'}</div>
+          <div style="font-weight: bold; font-size: 12pt; margin-top: 2px;">CHI BỘ: ${data.chiBo || '………..'}</div>
+          <div style="width: 100px; height: 1px; background: #000; margin: 4px auto;"></div>
         </td>
         <td style="width: 50%; text-align: center;">
           <div style="font-weight: bold; font-size: 13pt; text-transform: uppercase;">ĐẢNG CỘNG SẢN VIỆT NAM</div>

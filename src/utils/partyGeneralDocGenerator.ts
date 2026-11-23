@@ -14,7 +14,6 @@ interface DocumentExportOptions {
 }
 
 export function generatePartyDocHtml(template: PartyDocumentTemplate, options: DocumentExportOptions = {}): string {
-  const tinhUy = options.tinhUy || 'ĐẢNG BỘ THÀNH PHỐ HỒ CHÍ MINH';
   const huyenUy = options.huyenUy || 'ĐẢNG BỘ CÁC TRƯỜNG CAO ĐẲNG ĐẠI HỌC TP.HCM';
   const dangBoCoSo = options.dangBoCoSo || 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn';
   const chiBo = options.chiBo || 'Chi bộ 1';
@@ -335,9 +334,7 @@ export function generatePartyDocHtml(template: PartyDocumentTemplate, options: D
       <table class="header-table">
         <tr>
           <td style="width: 48%; text-align: center;">
-            <p class="org-upper">${tinhUy}</p>
-            <p class="org-upper" style="font-size: 10pt;">${huyenUy}</p>
-            <p class="org-upper" style="font-size: 10.5pt; text-transform: none;"><strong>${dangBoCoSo}</strong></p>
+            <p class="org-upper" style="font-size: 11pt;"><strong>${dangBoCoSo}</strong></p>
             <p class="org-upper"><strong>${chiBo}</strong></p>
             <div style="width: 80px; height: 1px; background: #000; margin: 4px auto 0 auto;"></div>
             <p style="margin: 2px 0 0 0; font-size: 10pt;">*</p>

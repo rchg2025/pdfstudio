@@ -135,16 +135,8 @@ export default function PartyCollectiveReview01() {
             </div>
 
             <div className="review-form-row">
-              <div className="review-field">
-                <label>Đảng bộ cấp trên</label>
-                <input 
-                  type="text" 
-                  value={formData.tinhUy} 
-                  onChange={e => handleChange('tinhUy', e.target.value)}
-                />
-              </div>
-              <div className="review-field">
-                <label>Đảng ủy cơ sở</label>
+              <div className="review-field" style={{ flex: 1 }}>
+                <label>Đảng bộ cơ sở</label>
                 <input 
                   type="text" 
                   value={formData.huyenUy} 
@@ -347,9 +339,9 @@ export default function PartyCollectiveReview01() {
               {/* Header 2 cột */}
               <div className="paper-header-grid">
                 <div className="paper-org-left">
-                  <div className="org-upper">{formData.tinhUy}</div>
-                  <div className="org-upper">{formData.huyenUy}</div>
-                  <div>CHI BỘ: {formData.chiBo.toUpperCase()}</div>
+                  <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{formData.huyenUy}</div>
+                  <div style={{ fontWeight: 'bold' }}>CHI BỘ: {formData.chiBo.toUpperCase()}</div>
+                  <div style={{ width: '80px', height: '1px', background: '#000', margin: '3px auto 0 auto' }}></div>
                 </div>
                 <div className="paper-motto-right">
                   <div className="motto-main">ĐẢNG CỘNG SẢN VIỆT NAM</div>

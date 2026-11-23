@@ -252,24 +252,7 @@ ${aiPrompt}
               </button>
             </div>
 
-            <div className="review-form-row">
-              <div className="review-field">
-                <label>Đảng bộ cấp trên / Tỉnh ủy</label>
-                <input 
-                  type="text" 
-                  value={formData.tinhUy} 
-                  onChange={e => handleChange('tinhUy', e.target.value)}
-                />
-              </div>
-              <div className="review-field">
-                <label>Đảng ủy cấp trên trực tiếp</label>
-                <input 
-                  type="text" 
-                  value={formData.huyenUy} 
-                  onChange={e => handleChange('huyenUy', e.target.value)}
-                />
-              </div>
-            </div>
+
 
             <div className="review-form-row">
               <div className="review-field">
@@ -490,10 +473,9 @@ ${aiPrompt}
               {/* Header 2 cột */}
               <div className="paper-header-grid">
                 <div className="paper-org-left">
-                  <div className="org-upper">{formData.tinhUy}</div>
-                  <div className="org-upper">{formData.huyenUy}</div>
-                  <div style={{ fontWeight: 'bold' }}>{formData.dangBoCoSo}</div>
-                  <div>Chi bộ: {formData.chiBo || formData.chiBoSinhHoat}</div>
+                  <div style={{ fontWeight: 'bold', textTransform: 'uppercase' }}>{formData.dangBoCoSo || 'ĐẢNG BỘ TRƯỜNG CAO ĐẲNG BÁCH KHOA NAM SÀI GÒN'}</div>
+                  <div style={{ fontWeight: 'bold' }}>CHI BỘ: {formData.chiBo || formData.chiBoSinhHoat || '………..'}</div>
+                  <div style={{ width: '80px', height: '1px', background: '#000', margin: '3px auto 0 auto' }}></div>
                 </div>
                 <div className="paper-motto-right">
                   <div className="motto-main">ĐẢNG CỘNG SẢN VIỆT NAM</div>

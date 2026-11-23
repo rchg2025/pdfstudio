@@ -127,9 +127,7 @@ export function exportPartyCommitmentDocx(data: PartyCommitmentData) {
       <table class="header-table">
         <tr>
           <td style="width: 48%; text-align: center;">
-            <p class="org-upper">${data.tinhUy || 'THÀNH ỦY THÀNH PHỐ HỒ CHÍ MINH'}</p>
-            <p class="org-upper" style="font-size: 10pt;">${data.huyenUy || 'ĐẢNG BỘ KHỐI ĐẠI HỌC CAO ĐẲNG TP.HCM'}</p>
-            <p class="org-upper" style="font-size: 10.5pt; text-transform: none;"><strong>${data.dangBoCoSo || 'Đảng bộ Trường Cao đẳng Bách khoa Nam Sài Gòn'}</strong></p>
+            <p class="org-upper" style="font-size: 11pt;"><strong>${data.dangBoCoSo || 'ĐẢNG BỘ TRƯỜNG CAO ĐẲNG BÁCH KHOA NAM SÀI GÒN'}</strong></p>
             <p class="org-upper"><strong>${data.chiBo || 'Chi bộ 1'}</strong></p>
             <div style="width: 80px; height: 1px; background: #000; margin: 4px auto 0 auto;"></div>
             <p style="margin: 2px 0 0 0; font-size: 10pt;">*</p>

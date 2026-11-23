@@ -243,24 +243,7 @@ Trả về duy nhất chuỗi JSON hợp lệ không có markdown bọc ngoài: 
               </span>
             </div>
 
-            <div className="editor-form-row">
-              <div className="editor-field">
-                <label>Đảng bộ cấp trên / Tỉnh ủy</label>
-                <input 
-                  type="text" 
-                  value={formData.tinhUy} 
-                  onChange={e => handleChange('tinhUy', e.target.value)} 
-                />
-              </div>
-              <div className="editor-field">
-                <label>Đảng ủy Khối / Huyện ủy cấp trên trực tiếp</label>
-                <input 
-                  type="text" 
-                  value={formData.huyenUy} 
-                  onChange={e => handleChange('huyenUy', e.target.value)} 
-                />
-              </div>
-            </div>
+
 
             <div className="editor-form-row">
               <div className="editor-field">
@@ -510,9 +493,7 @@ Trả về duy nhất chuỗi JSON hợp lệ không có markdown bọc ngoài: 
                 <tbody>
                   <tr>
                     <td className="paper-org-col" style={{ width: '48%' }}>
-                      <p className="org-upper">{formData.tinhUy}</p>
-                      <p className="org-upper" style={{ fontSize: '9.5pt' }}>{formData.huyenUy}</p>
-                      <p className="org-upper" style={{ fontSize: '10pt', textTransform: 'none' }}>
+                      <p className="org-upper" style={{ fontSize: '11pt' }}>
                         <strong>{formData.dangBoCoSo}</strong>
                       </p>
                       <p className="org-upper" style={{ fontSize: '10.5pt' }}>
