@@ -30,13 +30,13 @@ function generateCuidLike() {
   return 'c' + Math.random().toString(36).substring(2, 10) + Date.now().toString(36);
 }
 
-// Danh sách các model fallback theo thứ tự ưu tiên: các model flash-lite phản hồi cực nhanh (~1-2s), ổn định, không bị quá tải
+// Danh sách các model fallback theo thứ tự ưu tiên: Ưu tiên các model hoạt động ổn định nhất, không bị lỗi 429 quota hay 503 spike
 const DEFAULT_GEMINI_FALLBACKS = [
-  'gemini-flash-lite-latest',
+  'gemini-3-flash-preview',
   'gemini-3.5-flash-lite',
   'gemini-3.1-flash-lite',
   'gemini-3.1-flash-lite-preview',
-  'gemini-3-flash-preview',
+  'gemini-flash-lite-latest',
   'gemini-3.5-flash',
   'gemini-3.8-flash'
 ];
@@ -76,15 +76,17 @@ async function resolveGeminiModels(apiKey: string, preferredModel?: string): Pro
           !m.includes('aqa')
         );
 
-        // Phân loại: 
-        // 1. flash-lite: Tốc độ phản hồi cực nhanh ~1s, tỷ lệ thành công cao, không bị 503 Spike overload
-        const flashLite = textModels.filter((m: string) => m.includes('flash-lite') || m.includes('lite')).reverse();
-        // 2. flash tiêu chuẩn
-        const flashStandard = textModels.filter((m: string) => m.includes('flash') && !m.includes('flash-lite') && !m.includes('lite')).reverse();
-        // 3. Các model còn lại
+        // Phân loại và sắp xếp thứ tự ưu tiên:
+        // Model gemini-3-flash-preview có hạn mức lớn, phản hồi đầy đủ và chuẩn xác nhất
+        const premierFlash = textModels.filter((m: string) => m === 'gemini-3-flash-preview');
+        // flash-lite
+        const flashLite = textModels.filter((m: string) => (m.includes('flash-lite') || m.includes('lite')) && m !== 'gemini-3-flash-preview').reverse();
+        // flash tiêu chuẩn
+        const flashStandard = textModels.filter((m: string) => m.includes('flash') && !m.includes('flash-lite') && !m.includes('lite') && m !== 'gemini-3-flash-preview').reverse();
+        // Các model còn lại (Gemma, Pro...)
         const otherModels = textModels.filter((m: string) => !m.includes('flash')).reverse();
 
-        for (const m of [...flashLite, ...flashStandard, ...otherModels]) {
+        for (const m of [...premierFlash, ...flashLite, ...flashStandard, ...otherModels]) {
           modelsSet.add(m);
         }
       }
