@@ -124,7 +124,26 @@ export default function PartyMemberSelfReview02B() {
       let nextRows = [...prev.kpiRows];
       nextRows[index] = { ...nextRows[index], [key]: value };
       nextRows = recalculateKpiRows(nextRows);
-      return { ...prev, kpiRows: nextRows };
+
+      // Tự động lấy điểm cả năm từ bảng KPI nhập vào 2 mục tự chấm
+      const yearChung = parseFloat(nextRows[0]?.year) || 0;
+      const yearNv = parseFloat(nextRows[1]?.year) || 0;
+      const total = yearChung + yearNv;
+
+      let suggestedRank = prev.tuXepLoaiDangVien;
+      if (total >= 90) suggestedRank = 'Hoàn thành xuất sắc nhiệm vụ';
+      else if (total >= 70) suggestedRank = 'Hoàn thành tốt nhiệm vụ';
+      else if (total >= 50) suggestedRank = 'Hoàn thành nhiệm vụ';
+      else if (total > 0) suggestedRank = 'Không hoàn thành nhiệm vụ';
+
+      return { 
+        ...prev, 
+        kpiRows: nextRows,
+        diemTieuChiChung: yearChung > 0 ? Math.round(yearChung * 100) / 100 : prev.diemTieuChiChung,
+        diemThucHienNhiemVu: yearNv > 0 ? Math.round(yearNv * 100) / 100 : prev.diemThucHienNhiemVu,
+        tongDiemTuCham: total > 0 ? Math.round(total * 100) / 100 : prev.tongDiemTuCham,
+        tuXepLoaiDangVien: suggestedRank
+      };
     });
   };
 
