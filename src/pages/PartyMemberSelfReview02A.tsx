@@ -826,7 +826,17 @@ ${aiPrompt}
                           type="text" 
                           value={row.q1} 
                           onChange={e => handleKpiRowChange(idx, 'q1', e.target.value)}
-                          style={{ width: '100%', textAlign: 'center', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                          readOnly={idx === 2 || idx === 3}
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center', 
+                            padding: '4px', 
+                            border: idx === 2 ? '1.5px solid #f87171' : '1px solid #cbd5e1', 
+                            background: idx === 2 ? '#fef2f2' : (idx === 3 ? '#f8fafc' : '#ffffff'),
+                            fontWeight: idx >= 2 ? 'bold' : 'normal',
+                            color: idx === 2 ? '#b91c1c' : 'inherit',
+                            borderRadius: '4px' 
+                          }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
@@ -834,7 +844,17 @@ ${aiPrompt}
                           type="text" 
                           value={row.q2} 
                           onChange={e => handleKpiRowChange(idx, 'q2', e.target.value)}
-                          style={{ width: '100%', textAlign: 'center', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                          readOnly={idx === 2 || idx === 3}
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center', 
+                            padding: '4px', 
+                            border: idx === 2 ? '1.5px solid #f87171' : '1px solid #cbd5e1', 
+                            background: idx === 2 ? '#fef2f2' : (idx === 3 ? '#f8fafc' : '#ffffff'),
+                            fontWeight: idx >= 2 ? 'bold' : 'normal',
+                            color: idx === 2 ? '#b91c1c' : 'inherit',
+                            borderRadius: '4px' 
+                          }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
@@ -842,7 +862,17 @@ ${aiPrompt}
                           type="text" 
                           value={row.q3} 
                           onChange={e => handleKpiRowChange(idx, 'q3', e.target.value)}
-                          style={{ width: '100%', textAlign: 'center', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                          readOnly={idx === 2 || idx === 3}
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center', 
+                            padding: '4px', 
+                            border: idx === 2 ? '1.5px solid #f87171' : '1px solid #cbd5e1', 
+                            background: idx === 2 ? '#fef2f2' : (idx === 3 ? '#f8fafc' : '#ffffff'),
+                            fontWeight: idx >= 2 ? 'bold' : 'normal',
+                            color: idx === 2 ? '#b91c1c' : 'inherit',
+                            borderRadius: '4px' 
+                          }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
@@ -850,7 +880,17 @@ ${aiPrompt}
                           type="text" 
                           value={row.q4} 
                           onChange={e => handleKpiRowChange(idx, 'q4', e.target.value)}
-                          style={{ width: '100%', textAlign: 'center', padding: '4px', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                          readOnly={idx === 2 || idx === 3}
+                          style={{ 
+                            width: '100%', 
+                            textAlign: 'center', 
+                            padding: '4px', 
+                            border: idx === 2 ? '1.5px solid #f87171' : '1px solid #cbd5e1', 
+                            background: idx === 2 ? '#fef2f2' : (idx === 3 ? '#f8fafc' : '#ffffff'),
+                            fontWeight: idx >= 2 ? 'bold' : 'normal',
+                            color: idx === 2 ? '#b91c1c' : 'inherit',
+                            borderRadius: '4px' 
+                          }}
                         />
                       </td>
                       <td style={{ padding: '4px' }}>
