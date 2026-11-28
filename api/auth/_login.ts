@@ -13,10 +13,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     // Sử dụng Dynamic Imports để ngăn lỗi sập Server ngay lúc khởi động (Boot Crash)
     // Cách này sẽ giúp chúng ta bắt được chính xác thư viện nào đang gây lỗi trên Vercel.
-    let PrismaClient, bcrypt, jwt;
+    let prisma, bcrypt, jwt;
     
     try {
-      PrismaClient = (await import('@prisma/client')).PrismaClient;
+      const prismaModule = await import('../_lib/prisma.js');
+      prisma = prismaModule.prisma;
     } catch (e: any) { throw new Error("Lỗi tải Prisma: " + e.message); }
     
     try {
@@ -28,11 +29,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const jwtModule = await import('jsonwebtoken');
       jwt = jwtModule.default || jwtModule;
     } catch (e: any) { throw new Error("Lỗi tải jsonwebtoken: " + e.message); }
-    
-    let prisma;
-    try {
-      prisma = new PrismaClient();
-    } catch (e: any) { throw new Error("Lỗi khởi tạo Prisma DB: " + e.message); }
     
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {

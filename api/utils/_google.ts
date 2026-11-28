@@ -2,8 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const { PrismaClient } = await import('@prisma/client');
-    const prisma = new PrismaClient();
+    const { prisma } = await import('../_lib/prisma.js');
     
     const setting = await prisma.setting.findUnique({ where: { key: 'googleClientId' } });
     const clientId = setting?.value || '';
