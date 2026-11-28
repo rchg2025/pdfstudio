@@ -1,3 +1,8 @@
+// Load .env automatically if running in Node.js
+if (typeof process.loadEnvFile === 'function' && !process.env.POSTGRES_PRISMA_URL && !process.env.DATABASE_URL) {
+  try { process.loadEnvFile(); } catch {}
+}
+
 import { PrismaClient } from '@prisma/client'
 
 const globalForPrisma = globalThis as unknown as {

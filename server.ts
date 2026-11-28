@@ -1,3 +1,8 @@
+// Load .env automatically if running in Node.js
+if (typeof process.loadEnvFile === 'function') {
+  try { process.loadEnvFile(); } catch {}
+}
+
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
